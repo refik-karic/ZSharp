@@ -21,10 +21,6 @@ class Model final {
   }
 
   Model(const Model<T>& copy) {
-    if (this == &copy) {
-      return;
-    }
-
     *this = copy;
   }
 

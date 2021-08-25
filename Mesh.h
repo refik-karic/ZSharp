@@ -23,10 +23,6 @@ class Mesh final {
   }
 
   Mesh(const Mesh<T>& copy) {
-    if (this == &copy) {
-      return;
-    }
-
     *this = copy;
   }
   

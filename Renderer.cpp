@@ -17,7 +17,7 @@ Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
   : mBuffer(width, height, stride)
 {
   std::filesystem::path assetToLoad = std::filesystem::current_path().parent_path().append("pyramids.json");
-  AssetLoader::LoadModel<float>(assetToLoad.string().c_str(), mModel);
+  AssetLoader::LoadModelJSON<float>(assetToLoad.string().c_str(), mModel);
   
   std::size_t indexBufSize = 0;
   for (Mesh<float>& mesh : mModel.GetMeshData()) {

@@ -27,6 +27,7 @@ target_sources(ZSharp
         Camera.h
         Common.h
         Constants.h
+	      FileString.h
         FileUtilities.h
         Framebuffer.h
         GlobalEdgeTable.h
@@ -52,8 +53,10 @@ target_sources(ZSharp
         ZColor.h
         ZConfig.h
         ZDrawing.h
+        OBJFile.h
 	
         AssetLoader.cpp
+	      FileString.cpp
         FileUtilities.cpp
         Framebuffer.cpp
         GlobalEdgeTable.cpp
@@ -62,6 +65,7 @@ target_sources(ZSharp
         IntelIntrinsics.cpp
         JsonObject.cpp
 	      JsonScanner.cpp
+        OBJFile.cpp
         Renderer.cpp
         Scanner.cpp
 	      Token.cpp

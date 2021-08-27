@@ -15,7 +15,7 @@ class AssetLoader final {
   AssetLoader() = delete;
 
   template <typename T>
-  static void LoadModel(const char* fileName, Model<T>& model) {
+  static void LoadModelJSON(const char* fileName, Model<T>& model) {
     JsonScanner scanner;
     JsonObject jsonObject;
 
@@ -49,6 +49,10 @@ class AssetLoader final {
         mesh.SetTriangle(triIndicies, triIndex);
       }
     }
+  }
+
+  static void LoadModelOBJ() {
+
   }
 
   private:

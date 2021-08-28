@@ -16,9 +16,9 @@ namespace ZSharp {
 Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
   : mBuffer(width, height, stride)
 {
-  std::filesystem::path assetToLoad = std::filesystem::current_path().parent_path().append("pyramids.json");
-  AssetLoader::LoadModelJSON<float>(assetToLoad.string().c_str(), mModel);
-  
+  FileString assetName("C:\\Users\\Refik Karic\\Desktop\\backpack.txt");
+  AssetLoader::LoadModelOBJ(assetName, mModel);
+
   std::size_t indexBufSize = 0;
   for (Mesh<float>& mesh : mModel.GetMeshData()) {
     indexBufSize += (mesh.GetTriangleFaceTable().size() * Constants::TRI_VERTS);
@@ -29,7 +29,7 @@ Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
 
   mCameraPos[0] = 0.0f;
   mCameraPos[1] = 0.0f;
-  mCameraPos[2] = 35.0f;
+  mCameraPos[2] = 15.0f;
 
   InputManager* inputManager = InputManager::GetInstance();
   inputManager->Register(this);

@@ -24,9 +24,7 @@ class VertexBuffer final {
   }
 
   VertexBuffer(const VertexBuffer<T>& rhs) {
-    if (this != &rhs) {
-      *this = rhs;
-    }
+    *this = rhs;
   }
 
   void operator=(const VertexBuffer<T>& rhs) {

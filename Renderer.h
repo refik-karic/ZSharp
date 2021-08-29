@@ -34,11 +34,11 @@ class Renderer final : public IInputListener {
 
   private:
 
-  Camera<float> mCamera;
-  Vec3<float> mCameraPos;
+  Camera mCamera;
+  Vec3 mCameraPos;
 
   Framebuffer mBuffer;
-  Model<float> mModel;
+  Model mModel;
 
   std::int64_t mFrameCount = 0;
   std::int64_t mRotationSpeed = 4;
@@ -46,11 +46,11 @@ class Renderer final : public IInputListener {
   bool mPauseTransforms = false;
 
   std::shared_ptr<IndexBuffer> mIndexBuffer;
-  std::shared_ptr<VertexBuffer<float>> mVertexBuffer;
+  std::shared_ptr<VertexBuffer> mVertexBuffer;
 
   void MoveCamera(Direction direction, float amount);
 
-  void RotateCamera(Mat4x4<float>::Axis direction, float angleDegrees);
+  void RotateCamera(Mat4x4::Axis direction, float angleDegrees);
 
   void ChangeSpeed(std::int64_t amount);
 

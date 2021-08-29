@@ -70,6 +70,8 @@ target_sources(ZSharp
         Scanner.cpp
 	      Token.cpp
         UtilMath.cpp
+        Vec3.cpp
+        Vec4.cpp
         ZColor.cpp
         ZConfig.cpp
         ZDrawing.cpp

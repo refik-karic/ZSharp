@@ -24,7 +24,7 @@ class OBJFile {
   public:
   OBJFile(FileString& objFilePath, AssetFormat format);
 
-  const std::vector<ZSharp::Vec4<float>>& GetVerts();
+  const std::vector<ZSharp::Vec4>& GetVerts();
 
   const std::vector<OBJFace>& GetFaces();
 
@@ -37,11 +37,11 @@ class OBJFile {
   private:
   bool mVerboseParse = false;
 
-  std::vector<ZSharp::Vec4<float>> mVerts;
+  std::vector<ZSharp::Vec4> mVerts;
 
-  std::vector<ZSharp::Vec3<float>> mNormals;
+  std::vector<ZSharp::Vec3> mNormals;
 
-  std::vector<ZSharp::Vec3<float>> mUVCoords;
+  std::vector<ZSharp::Vec3> mUVCoords;
 
   std::vector<OBJFace> mFaces;
 
@@ -51,9 +51,9 @@ class OBJFile {
 
   void ParseLine(std::string& currentLine);
 
-  void ParseVec3(ZSharp::Vec3<float>& fillVec, std::string& line, float fallback);
+  void ParseVec3(ZSharp::Vec3& fillVec, std::string& line, float fallback);
 
-  void ParseVec4(ZSharp::Vec4<float>& fillVec, std::string& line, float fallback);
+  void ParseVec4(ZSharp::Vec4& fillVec, std::string& line, float fallback);
 
   void ParseFace(OBJFace& fillFace, std::string& line);
 };

@@ -18,7 +18,7 @@ OBJFile::OBJFile(FileString& objFilePath, AssetFormat format) {
   }
 }
 
-const std::vector<ZSharp::Vec4<float>>& OBJFile::GetVerts() {
+const std::vector<ZSharp::Vec4>& OBJFile::GetVerts() {
   return mVerts;
 }
 
@@ -34,7 +34,7 @@ void OBJFile::Serialize(FileString& destPath) {
     file.write(reinterpret_cast<char*>(&vertSize), sizeof(std::size_t));
 
     // Write vertex vector
-    file.write(reinterpret_cast<char*>(mVerts.data()), vertSize * sizeof(ZSharp::Vec4<float>));
+    file.write(reinterpret_cast<char*>(mVerts.data()), vertSize * sizeof(ZSharp::Vec4));
 
     // Write size of face vector
     std::size_t faceSize = mFaces.size();
@@ -74,7 +74,7 @@ void OBJFile::Deserialize(FileString& objFilePath) {
     mVerts.resize(vertSize);
 
     // Read verticies
-    file.read(reinterpret_cast<char*>(mVerts.data()), vertSize * sizeof(ZSharp::Vec4<float>));
+    file.read(reinterpret_cast<char*>(mVerts.data()), vertSize * sizeof(ZSharp::Vec4));
 
     // Read face size
     std::size_t faceSize = 0;
@@ -95,7 +95,7 @@ void OBJFile::ParseLine(std::string& currentLine) {
     case 'v':
       if (rawLine[1] == 'n') {
         // Vertex Normals.
-        ZSharp::Vec3<float> vertex;
+        ZSharp::Vec3 vertex;
         std::string choppedLine(rawLine + 3);
         ParseVec3(vertex, choppedLine, 0.0f);
         mNormals.push_back(vertex);
@@ -109,14 +109,14 @@ void OBJFile::ParseLine(std::string& currentLine) {
       }
       else if (rawLine[1] == 't') {
         // Vertex Texture Coordinates (U, V, W).
-        ZSharp::Vec3<float> vertex;
+        ZSharp::Vec3 vertex;
         std::string choppedLine(rawLine + 3);
         ParseVec3(vertex, choppedLine, 0.0f);
         mUVCoords.push_back(vertex);
       }
       else {
         // Vertex Data.
-        ZSharp::Vec4<float> vertex;
+        ZSharp::Vec4 vertex;
         std::string choppedLine(rawLine + 2);
         ParseVec4(vertex, choppedLine, 1.0f);
         mVerts.push_back(vertex);
@@ -145,13 +145,13 @@ void OBJFile::ParseLine(std::string& currentLine) {
   }
 }
 
-void OBJFile::ParseVec3(ZSharp::Vec3<float>& fillVec, std::string& line, float fallback) {
-  ZSharp::Vec4<float> sacrifice;
+void OBJFile::ParseVec3(ZSharp::Vec3& fillVec, std::string& line, float fallback) {
+  ZSharp::Vec4 sacrifice;
   ParseVec4(sacrifice, line, fallback);
   std::memcpy(*fillVec, *sacrifice, sizeof(float) * 3);
 }
 
-void OBJFile::ParseVec4(ZSharp::Vec4<float>& fillVec, std::string& line, float fallback) {
+void OBJFile::ParseVec4(ZSharp::Vec4& fillVec, std::string& line, float fallback) {
   std::size_t nextPos = 0;
 
   for (std::int32_t i = 0; i < 4; ++i) {

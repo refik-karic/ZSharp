@@ -16,8 +16,7 @@ class AssetLoader final {
   public:
   AssetLoader() = delete;
 
-  template <typename T>
-  static void LoadModelJSON(const char* fileName, Model<T>& model) {
+  static void LoadModelJSON(const char* fileName, Model& model) {
     JsonScanner scanner;
     JsonObject jsonObject;
 
@@ -29,16 +28,16 @@ class AssetLoader final {
     }
 
     scanner.PopulateJsonObject(jsonObject, tokens);
-    model = Model<T>(jsonObject.GetValue().dataArray.size());
+    model = Model(jsonObject.GetValue().dataArray.size());
     
     for (std::size_t meshIndex = 0; meshIndex < jsonObject.GetValue().dataArray.size(); ++meshIndex) {
       auto indicies = jsonObject.GetValue().dataArray[meshIndex].dataObject.get()->GetValue().dataArray[0].dataObject.get();
       auto verticies = jsonObject.GetValue().dataArray[meshIndex].dataObject.get()->GetValue().dataArray[1].dataObject.get();
 
-      Mesh<T>& mesh = model[meshIndex];
-      std::vector<T> vertData(verticies->GetValue().dataArray.size());
+      Mesh& mesh = model[meshIndex];
+      std::vector<float> vertData(verticies->GetValue().dataArray.size());
       for (std::size_t i = 0; i < vertData.size(); ++i) {
-        vertData[i] = static_cast<T>(verticies->GetValue().dataArray[i].dataFloat);
+        vertData[i] = static_cast<float>(verticies->GetValue().dataArray[i].dataFloat);
       }
 
       mesh.SetData(vertData.data(), vertData.size(), indicies->GetValue().dataArray.size());
@@ -53,21 +52,21 @@ class AssetLoader final {
     }
   }
 
-  static void LoadModelOBJ(FileString& fileName, Model<float>& model) {
+  static void LoadModelOBJ(FileString& fileName, Model& model) {
     OBJFile objFile(fileName, AssetFormat::Serialized);
 
     // TODO: This step needs to be removed, possibly by making a Mesh contain Vec4's rather than Vec3's.
     std::vector<float> scratchBuf;
     scratchBuf.resize(objFile.GetVerts().size() * 3);
     std::size_t scratchIndex = 0;
-    for (const Vec4<float>& vert : objFile.GetVerts()) {
+    for (const Vec4& vert : objFile.GetVerts()) {
       scratchBuf[scratchIndex++] = vert[0];
       scratchBuf[scratchIndex++] = vert[1];
       scratchBuf[scratchIndex++] = vert[2];
     }
 
-    model = Model<float>(1);
-    Mesh<float>& mesh = model[0];
+    model = Model(1);
+    Mesh& mesh = model[0];
 
     std::size_t indexSize = objFile.GetFaces().size();
     mesh.SetData(scratchBuf.data(), scratchBuf.size(), indexSize);

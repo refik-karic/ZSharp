@@ -4,7 +4,7 @@
 
 namespace ZSharp {
 
-double DegreesToRadians(double degrees) {
+float DegreesToRadians(float degrees) {
   return degrees * Constants::PI_OVER_180;
 }
 

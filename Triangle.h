@@ -6,7 +6,6 @@
 
 namespace ZSharp {
 
-template<typename T>
 class Triangle final {
   public:
 
@@ -16,11 +15,11 @@ class Triangle final {
     mIndicies{p1, p2, p3}
   { }
 
-  Triangle(const Triangle<T>& copy) {
+  Triangle(const Triangle& copy) {
     *this = copy;
   }
 
-  void operator=(const Triangle<T>& rhs) {
+  void operator=(const Triangle& rhs) {
     if (this == &rhs) {
       return;
     }

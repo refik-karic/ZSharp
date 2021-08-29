@@ -9,7 +9,6 @@
 
 namespace ZSharp {
 
-template<typename T>
 class Mesh final {
   public:
 
@@ -22,11 +21,11 @@ class Mesh final {
     mTriangleFaceTable.resize(numTriangleFaces);
   }
 
-  Mesh(const Mesh<T>& copy) {
+  Mesh(const Mesh& copy) {
     *this = copy;
   }
   
-  void operator=(const Mesh<T>& rhs) {
+  void operator=(const Mesh& rhs) {
     if (this == &rhs) {
       return;
     }
@@ -35,7 +34,7 @@ class Mesh final {
     mTriangleFaceTable = rhs.mTriangleFaceTable;
   }
 
-  void SetData(const T* vertData, std::size_t numVerts, std::size_t numTriangleFaces) {
+  void SetData(const float* vertData, std::size_t numVerts, std::size_t numTriangleFaces) {
     mVertTable.resize(numVerts);
 
     for (std::size_t i = 0; i < numVerts; ++i) {
@@ -45,7 +44,7 @@ class Mesh final {
     mTriangleFaceTable.resize(numTriangleFaces);
   }
 
-  void SetVertex(const Vec4<T>& vertex, std::size_t index, std::size_t numElements) {
+  void SetVertex(const Vec4& vertex, std::size_t index, std::size_t numElements) {
     std::size_t vertIndex = 0;
     for (std::size_t i = index; i < index + numElements; ++i) {
       mVertTable[i] = vertex[vertIndex];
@@ -54,30 +53,30 @@ class Mesh final {
   }
 
   void SetTriangle(const std::array<size_t, 3>& triangleFaceData, std::size_t index) {
-    Triangle<T>& triangle = mTriangleFaceTable[index];
+    Triangle& triangle = mTriangleFaceTable[index];
     triangle[0] = triangleFaceData[0];
     triangle[1] = triangleFaceData[1];
     triangle[2] = triangleFaceData[2];
   }
 
-  std::vector<T>& GetVertTable() {
+  std::vector<float>& GetVertTable() {
     return mVertTable;
   }
 
-  const std::vector<T>& GetVertTable() const {
+  const std::vector<float>& GetVertTable() const {
     return mVertTable;
   }
 
-  std::vector<Triangle<T>>& GetTriangleFaceTable() {
+  std::vector<Triangle>& GetTriangleFaceTable() {
     return mTriangleFaceTable;
   }
 
-  const std::vector<Triangle<T>>& GetTriangleFaceTable() const {
+  const std::vector<Triangle>& GetTriangleFaceTable() const {
     return mTriangleFaceTable;
   }
 
   private:
-  std::vector<T> mVertTable;
-  std::vector<Triangle<T>> mTriangleFaceTable;
+  std::vector<float> mVertTable;
+  std::vector<Triangle> mTriangleFaceTable;
 };
 }

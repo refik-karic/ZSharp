@@ -16,20 +16,20 @@ namespace ZSharp {
 Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
   : mBuffer(width, height, stride)
 {
-  FileString assetName("C:\\Users\\Refik Karic\\Desktop\\backpack.txt");
+  FileString assetName("C:\\Users\\kr\\Desktop\\backpack.txt");
   AssetLoader::LoadModelOBJ(assetName, mModel);
 
   std::size_t indexBufSize = 0;
-  for (Mesh<float>& mesh : mModel.GetMeshData()) {
+  for (Mesh& mesh : mModel.GetMeshData()) {
     indexBufSize += (mesh.GetTriangleFaceTable().size() * Constants::TRI_VERTS);
   }
 
   mIndexBuffer = std::make_shared<IndexBuffer>(indexBufSize);
-  mVertexBuffer = std::make_shared<VertexBuffer<float>>(indexBufSize * Constants::TRI_VERTS, Constants::TRI_VERTS);
+  mVertexBuffer = std::make_shared<VertexBuffer>(indexBufSize * Constants::TRI_VERTS, Constants::TRI_VERTS);
 
   mCameraPos[0] = 0.0f;
   mCameraPos[1] = 0.0f;
-  mCameraPos[2] = 15.0f;
+  mCameraPos[2] = 25.0f;
 
   InputManager* inputManager = InputManager::GetInstance();
   inputManager->Register(this);
@@ -46,11 +46,11 @@ std::uint8_t* Renderer::RenderNextFrame() {
 
   mModel.FillBuffers(*mVertexBuffer, *mIndexBuffer);
 
-  Mat4x4<float> rotationMatrix;
-  Mat4x4<float>::Identity(rotationMatrix);
-  Mat4x4<float>::SetRotation(rotationMatrix,
-                          static_cast<float>(DegreesToRadians(static_cast<double>(mFrameCount))),
-                          Mat4x4<float>::Axis::Y);
+  Mat4x4 rotationMatrix;
+  Mat4x4::Identity(rotationMatrix);
+  Mat4x4::SetRotation(rotationMatrix,
+                          DegreesToRadians(static_cast<float>(mFrameCount)),
+                          Mat4x4::Axis::Y);
 
   if (!mPauseTransforms) {
     mFrameCount += mRotationSpeed;
@@ -96,11 +96,11 @@ void Renderer::MoveCamera(Direction direction, float amount) {
   }
 }
 
-void Renderer::RotateCamera(Mat4x4<float>::Axis direction, float angleDegrees) {
-  Mat4x4<float> rotationMatrix;
-  Mat4x4<float>::Identity(rotationMatrix);
-  Mat4x4<float>::SetRotation(rotationMatrix,
-    static_cast<float>(DegreesToRadians(static_cast<double>(angleDegrees))),
+void Renderer::RotateCamera(Mat4x4::Axis direction, float angleDegrees) {
+  Mat4x4 rotationMatrix;
+  Mat4x4::Identity(rotationMatrix);
+  Mat4x4::SetRotation(rotationMatrix,
+    DegreesToRadians(angleDegrees),
     direction);
 
   mCamera.RotateCamera(rotationMatrix);
@@ -147,10 +147,10 @@ void Renderer::OnKeyDown(std::uint8_t key) {
       MoveCamera(ZSharp::Renderer::Direction::LEFT, 1.0F);
       break;
     case 'Q':
-      RotateCamera(Mat4x4<float>::Axis::Y, 1.0F);
+      RotateCamera(Mat4x4::Axis::Y, 1.0F);
       break;
     case 'E':
-      RotateCamera(Mat4x4<float>::Axis::Y, -1.0F);
+      RotateCamera(Mat4x4::Axis::Y, -1.0F);
       break;
       // TODO: Come up with a better system for mapping non trivial keys.
     case 0x26: // VK_UP Windows

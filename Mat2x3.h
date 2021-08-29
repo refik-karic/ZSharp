@@ -6,7 +6,6 @@
 
 namespace ZSharp {
 
-template<typename T>
 class Mat2x3 final {
   public:
 
@@ -19,11 +18,11 @@ class Mat2x3 final {
 
   Mat2x3() {}
 
-  Mat2x3(const Mat2x3<T>& copy) {
+  Mat2x3(const Mat2x3& copy) {
     *this = copy;
   }
 
-  void operator=(const Mat2x3<T>& matrix) {
+  void operator=(const Mat2x3& matrix) {
     if (this == &matrix) {
       return;
     }
@@ -33,16 +32,16 @@ class Mat2x3 final {
     }
   }
 
-  Vec3<T>& operator[](std::size_t index) {
+  Vec3& operator[](std::size_t index) {
     return mData[index];
   }
 
-  const Vec3<T>& operator[](std::size_t index) const {
+  const Vec3& operator[](std::size_t index) const {
     return mData[index];
   }
 
-  Mat2x3<T> operator*(T scalar) {
-    Mat2x3<T> result;
+  Mat2x3 operator*(float scalar) {
+    Mat2x3 result;
 
     for (std::size_t row = 0; row < Rows; row++) {
       result[row] = mData[row] * scalar;
@@ -51,10 +50,10 @@ class Mat2x3 final {
     return result;
   }
 
-  Mat2x3<T> operator*(const Mat2x3<T>& matrix) {
-    Mat2x3<T> result;
+  Mat2x3 operator*(const Mat2x3& matrix) {
+    Mat2x3 result;
 
-    Mat2x3<T> rhsTranspose(Mat2x3<T>::Transpose(matrix));
+    Mat2x3 rhsTranspose(Mat2x3::Transpose(matrix));
 
     for (std::size_t row = 0; row < Rows; row++) {
       for (std::size_t col = 0; col < Columns; col++) {
@@ -65,30 +64,27 @@ class Mat2x3 final {
     return result;
   }
 
-  static void Identity(Mat2x3<T>& matrix) {
-    T zero{};
-    T one{1};
-
+  static void Identity(Mat2x3& matrix) {
     for (std::size_t row = 0; row < Rows; row++) {
       for (std::size_t col = 0; col < Columns; col++) {
         if (row == col) {
-          matrix[row][col] = one;
+          matrix[row][col] = 1.f;
         }
         else {
-          matrix[row][col] = zero;
+          matrix[row][col] = 0.f;
         }
       }
     }
   }
 
-  static void Clear(Mat2x3<T>& matrix) {
+  static void Clear(Mat2x3& matrix) {
     for (std::size_t row = 0; row < Rows; row++) {
-      Vec3<T>::Clear(matrix[row]);
+      Vec3::Clear(matrix[row]);
     }
   }
 
-  static Mat2x3<T> Transpose(const Mat2x3<T>& matrix) {
-    Mat2x3<T> result;
+  static Mat2x3 Transpose(const Mat2x3& matrix) {
+    Mat2x3 result;
 
     for (std::size_t row = 0; row < Rows; row++) {
       for (std::size_t col = 0; col < Columns; col++) {
@@ -99,58 +95,58 @@ class Mat2x3 final {
     return result;
   }
 
-  static void SetTranslation(Mat2x3<T>& matrix, const Vec3<T>& translation) {
+  static void SetTranslation(Mat2x3& matrix, const Vec3& translation) {
     std::size_t lastColumn = Columns - 1;
     for (std::size_t row = 0; row < Columns; row++) {
       matrix[row][lastColumn] = translation[row];
     }
   }
 
-  static void SetScale(Mat2x3<T>& matrix, const Vec3<T>& scale) {
+  static void SetScale(Mat2x3& matrix, const Vec3& scale) {
     for (std::size_t row = 0; row < Columns; row++) {
       matrix[row][row] = scale[row];
     }
   }
 
-  static void SetRotation(Mat2x3<T>& matrix, T angle, Axis axis) {
+  static void SetRotation(Mat2x3& matrix, float angle, Axis axis) {
 #pragma warning(disable: 4244)
 
     switch (axis) {
       case Axis::Z:
       case Axis::TWO_DIMENSIONS:
-        matrix[0][0] = cos(static_cast<double>(angle));
-        matrix[0][1] = -1 * sin(static_cast<double>(angle));
-        matrix[1][0] = sin(static_cast<double>(angle));
-        matrix[1][1] = cos(static_cast<double>(angle));
-        matrix[2][2] = 1;
+        matrix[0][0] = cosf(angle);
+        matrix[0][1] = -1.f * sinf(angle);
+        matrix[1][0] = sinf(angle);
+        matrix[1][1] = cosf(angle);
+        matrix[2][2] = 1.f;
 
         if (axis == Axis::Z) {
-          matrix[3][3] = 1;
+          matrix[3][3] = 1.f;
         }
         break;
       case Axis::X:
-        matrix[0][0] = 1;
-        matrix[1][1] = cos(static_cast<double>(angle));
-        matrix[1][2] = -1 * sin(static_cast<double>(angle));
-        matrix[2][1] = sin(static_cast<double>(angle));
-        matrix[2][2] = cos(static_cast<double>(angle));
-        matrix[3][3] = 1;
+        matrix[0][0] = 1.f;
+        matrix[1][1] = cosf(angle);
+        matrix[1][2] = -1.f * sinf(angle);
+        matrix[2][1] = sinf(angle);
+        matrix[2][2] = cosf(angle);
+        matrix[3][3] = 1.f;
         break;
       case Axis::Y:
-        matrix[0][0] = cos(static_cast<double>(angle));
-        matrix[0][2] = sin(static_cast<double>(angle));
-        matrix[1][1] = 1;
-        matrix[2][0] = -1 * sin(static_cast<double>(angle));
-        matrix[2][2] = cos(static_cast<double>(angle));
-        matrix[3][3] = 1;
+        matrix[0][0] = cosf(angle);
+        matrix[0][2] = sinf(angle);
+        matrix[1][1] = 1.f;
+        matrix[2][0] = -1.f * sinf(angle);
+        matrix[2][2] = cosf(angle);
+        matrix[3][3] = 1.f;
         break;
     }
 
 #pragma warning(default: 4244)
   }
 
-  static Vec3<T> ApplyTransform(const Mat2x3<T>& matrix, const Vec3<T>& domain) {
-    Vec3<T> codomainResult;
+  static Vec3 ApplyTransform(const Mat2x3& matrix, const Vec3& domain) {
+    Vec3 codomainResult;
 
     for (std::size_t row = 0; row < Rows; row++) {
       codomainResult[row] = domain * matrix[row];
@@ -162,7 +158,7 @@ class Mat2x3 final {
   private:
   static const std::size_t Rows = 2;
   static const std::size_t Columns = 3;
-  Vec3<T> mData[Rows];
+  Vec3 mData[Rows];
 };
 
 }

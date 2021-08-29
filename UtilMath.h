@@ -4,7 +4,7 @@
 
 namespace ZSharp {
 
-double DegreesToRadians(double degrees);
+float DegreesToRadians(float degrees);
 
 template <typename T>
 T NewtonRaphsonSqrt(T val) {

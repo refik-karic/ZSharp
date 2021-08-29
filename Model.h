@@ -10,7 +10,6 @@
 
 namespace ZSharp {
 
-template<typename T>
 class Model final {
   public:
 
@@ -20,11 +19,11 @@ class Model final {
     
   }
 
-  Model(const Model<T>& copy) {
+  Model(const Model& copy) {
     *this = copy;
   }
 
-  void operator=(const Model<T>& rhs) {
+  void operator=(const Model& rhs) {
     if (this == &rhs) {
       return;
     }
@@ -32,7 +31,7 @@ class Model final {
     mData = rhs.mData;
   }
 
-  Mesh<T>& operator[](std::size_t index) {
+  Mesh& operator[](std::size_t index) {
     return mData[index];
   }
 
@@ -40,18 +39,18 @@ class Model final {
     return mData.size();
   }
 
-  std::vector<Mesh<T>>& GetMeshData() {
+  std::vector<Mesh>& GetMeshData() {
     return mData;
   }
 
-  const std::vector<Mesh<T>>& GetMeshData() const {
+  const std::vector<Mesh>& GetMeshData() const {
     return mData;
   }
 
-  void FillBuffers(VertexBuffer<T>& vertexBuffer, IndexBuffer& indexBuffer) const {
-    for(const Mesh<T>& mesh : mData) {
+  void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const {
+    for(const Mesh& mesh : mData) {
       for(std::size_t i = 0; i < mesh.GetTriangleFaceTable().size(); ++i) {
-        const Triangle<T>& triangle = mesh.GetTriangleFaceTable()[i];
+        const Triangle& triangle = mesh.GetTriangleFaceTable()[i];
         indexBuffer.CopyInputData(triangle.GetData(), i * Constants::TRI_VERTS, Constants::TRI_VERTS);
       }
 
@@ -60,7 +59,7 @@ class Model final {
   }
 
   private:
-  std::vector<Mesh<T>> mData;
+  std::vector<Mesh> mData;
 };
 
 }

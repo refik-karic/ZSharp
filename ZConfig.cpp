@@ -42,13 +42,12 @@ void ZConfig::SetBytesPerPixel(std::size_t bytesPerPixel) {
 ZConfig::ZConfig() {
   //std::filesystem::path workingDirectory = std::filesystem::current_path().parent_path();
   
-
   // Low res
   SetViewportWidth(640);
   SetViewportHeight(480);
   // High res
-  //SetViewportWidth(1920);
-  //SetViewportHeight(1080);
+  //SetViewportWidth(1280);
+  //SetViewportHeight(720);
   SetBytesPerPixel(4);
 }
 

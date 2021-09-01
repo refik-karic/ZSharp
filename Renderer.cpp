@@ -1,7 +1,5 @@
 ﻿#include <cstddef>
 
-#include <filesystem>
-
 #include "AssetLoader.h"
 #include "Constants.h"
 #include "InputManager.h"

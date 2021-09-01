@@ -4,6 +4,7 @@
 
 #include "Constants.h"
 #include "IndexBuffer.h"
+#include "UtilMath.h"
 #include "Vec3.h"
 #include "VertexBuffer.h"
 
@@ -12,7 +13,7 @@ namespace ZSharp {
 class ZAlgorithm final {
   public:
   static bool Inside(const Vec3& point, const Vec3& clipEdge) {
-    return ((clipEdge * (point - clipEdge)) <= 0.f);
+    return FloatLessThanEqual((clipEdge * (point - clipEdge)), 0.f, 1.e-5f);
   }
 
   static Vec3 GetParametricVector(float point, Vec3 start, Vec3 end) {
@@ -76,7 +77,7 @@ class ZAlgorithm final {
       Vec3 p2p1 = thirdEdge - secondEdge;
       Vec3 triangleNormal = Vec3::Cross(p1p0, p2p1);
       float dotResult = (viewer - secondEdge) * triangleNormal;
-      if(dotResult <= 0.f) {
+      if(FloatLessThanEqual(dotResult, 0.f, 1.e-5f)) {
         indexBuffer.RemoveTriangle((i / Constants::TRI_VERTS) - 1);
       }
     }

@@ -56,6 +56,7 @@ target_sources(ZSharp
         OBJFile.h
 	
         AssetLoader.cpp
+        Camera.cpp
 	      FileString.cpp
         FileUtilities.cpp
         Framebuffer.cpp

@@ -28,15 +28,7 @@ class IndexBuffer final {
 
   void RemoveTriangle(std::size_t index);
 
-  void AppendClipData(const Triangle& triangle) {
-    if(mWorkingSize + mClipLength + Constants::TRI_VERTS > mData.size()) {
-      return;
-    }
-
-    const std::size_t* data = reinterpret_cast<const std::size_t*>(&triangle);
-    std::memcpy(mClipData + mClipLength, data, Constants::TRI_VERTS * sizeof(std::size_t));
-    mClipLength += Constants::TRI_VERTS;
-  }
+  void AppendClipData(const Triangle& triangle);
 
   std::size_t GetClipLength() const;
 

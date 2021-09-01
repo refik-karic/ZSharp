@@ -6,17 +6,16 @@ namespace ZSharp {
 
 float DegreesToRadians(float degrees);
 
-template <typename T>
-T NewtonRaphsonSqrt(T val) {
-  std::size_t iterations = 10;
+float NewtonRaphsonSqrt(float val);
 
-  T x0 = {};
-  x0 += 1;
+bool FloatEqual(float a, float b, float epsilon);
 
-  for (std::size_t i = 0; i < iterations; ++i) {
-    x0 = x0 - (((x0 * x0) - val) / (2 * x0));
-  }
+bool FloatLessThan(float a, float b, float epsilon);
 
-  return x0;
-}
+bool FloatLessThanEqual(float a, float b, float epsilon);
+
+bool FloatGreaterThan(float a, float b, float epsilon);
+
+bool FloatGreaterThanEqual(float a, float b, float epsilon);
+
 }

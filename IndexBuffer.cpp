@@ -63,6 +63,16 @@ void IndexBuffer::RemoveTriangle(std::size_t index) {
   }
 }
 
+void IndexBuffer::AppendClipData(const Triangle& triangle) {
+    if (mWorkingSize + mClipLength + Constants::TRI_VERTS > mData.size()) {
+        return;
+    }
+
+    const std::size_t* data = reinterpret_cast<const std::size_t*>(&triangle);
+    std::memcpy(mClipData + mClipLength, data, Constants::TRI_VERTS * sizeof(std::size_t));
+    mClipLength += Constants::TRI_VERTS;
+}
+
 std::size_t IndexBuffer::GetClipLength() const {
   return mClipLength;
 }

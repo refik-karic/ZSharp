@@ -66,6 +66,8 @@ target_sources(ZSharp
         IntelIntrinsics.cpp
         JsonObject.cpp
 	      JsonScanner.cpp
+        Mat2x3.cpp
+        Mat4x4.cpp
         OBJFile.cpp
         Renderer.cpp
         Scanner.cpp
@@ -73,6 +75,8 @@ target_sources(ZSharp
         UtilMath.cpp
         Vec3.cpp
         Vec4.cpp
+        VertexBuffer.cpp
+        ZAlgorithm.cpp
         ZColor.cpp
         ZConfig.cpp
         ZDrawing.cpp

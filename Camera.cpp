@@ -36,17 +36,17 @@ void Camera::MoveCamera(const Vec3& position) {
 
 void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
   Vec4 rotatedVec(mLook);
-  rotatedVec = Mat4x4::ApplyTransform(rotationMatrix, rotatedVec);
+  rotatedVec = rotationMatrix.ApplyTransform(rotatedVec);
 
-  Vec4::Homogenize(rotatedVec, 3);
+  rotatedVec.Homogenize(3);
   mLook[0] = rotatedVec[0];
   mLook[1] = rotatedVec[1];
   mLook[2] = rotatedVec[2];
 
   rotatedVec = mUp;
-  rotatedVec = Mat4x4::ApplyTransform(rotationMatrix, rotatedVec);
+  rotatedVec = rotationMatrix.ApplyTransform(rotatedVec);
 
-  Vec4::Homogenize(rotatedVec, 3);
+  rotatedVec.Homogenize(3);
   mUp[0] = rotatedVec[0];
   mUp[1] = rotatedVec[1];
   mUp[2] = rotatedVec[2];
@@ -55,18 +55,18 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
 void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   Vec3 w;
   w = mLook * -1.f;
-  Vec3::Normalize(w);
+  w.Normalize();
 
   Vec3 v;
   v = mUp - (w * (mUp * w));
-  Vec3::Normalize(v);
+  v.Normalize();
 
   Vec3 u;
-  u = Vec3::Cross(v, w);
+  u = v.Cross(w);
 
   Mat4x4 translation;
-  Mat4x4::Identity(translation);
-  Mat4x4::SetTranslation(translation, (mPosition * -1.f));
+  translation.Identity();
+  translation.SetTranslation(mPosition * -1.f);
 
   Mat4x4 uToE;
   uToE[0] = u;
@@ -75,8 +75,8 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   uToE[3][3] = 1.f;
 
   Mat4x4 scale;
-  scale[0][0] = 1.f / (mFarPlane * (std::tanf((mFovHoriz * (Constants::PI_OVER_180 / 2.f)))));
-  scale[1][1] = 1.f / (mFarPlane * (std::tanf((mFovVert * (Constants::PI_OVER_180 / 2.f)))));
+  scale[0][0] = 1.f / (mFarPlane * (tanf((mFovHoriz * (Constants::PI_OVER_180 / 2.f)))));
+  scale[1][1] = 1.f / (mFarPlane * (tanf((mFovVert * (Constants::PI_OVER_180 / 2.f)))));
   scale[2][2] = 1.f / mFarPlane;
   scale[3][3] = 1.f;
 
@@ -96,20 +96,20 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   windowTransform[1][2] = static_cast<float>(mHeight);
   windowTransform = windowTransform * (1.f / 2.f);
 
-  ZAlgorithm::CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
+  CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 
   std::size_t homogenizedStride = vertexBuffer.GetHomogenizedStride();
   for (std::size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
     float* vertexData = vertexBuffer.GetInputData(i);
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexData));
     vertexVector[3] = 1.f;
-    vertexVector = Mat4x4::ApplyTransform(unhing, vertexVector);
+    vertexVector = unhing.ApplyTransform(vertexVector);
   }
 
   for (std::size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
     float* vertexData = vertexBuffer.GetInputData(i);
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexData));
-    Vec4::Homogenize(vertexVector, 3);
+    vertexVector.Homogenize(3);
   }
 
   ClipTriangles(vertexBuffer, indexBuffer);
@@ -118,8 +118,8 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   for (std::size_t i = 0; i < vertexBuffer.GetClipLength(); i += inputStride) {
     float* vertexData = vertexBuffer.GetClipData(i);
     Vec3& vertexVector = *(reinterpret_cast<Vec3*>(vertexData));
-    Vec3::Homogenize(vertexVector, 2);
-    vertexVector = Mat2x3::ApplyTransform(windowTransform, vertexVector);
+    vertexVector.Homogenize(2);
+    vertexVector = windowTransform.ApplyTransform(vertexVector);
   }
 }
 
@@ -140,24 +140,24 @@ void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
     };
 
     currentEdge[0] = 1.f;
-    numClippedVerts = ZAlgorithm::SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
 
     currentEdge[0] = 0.f;
     currentEdge[1] = 1.f;
-    numClippedVerts = ZAlgorithm::SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
 
     currentEdge[0] = -1.f;
     currentEdge[1] = 0.f;
-    numClippedVerts = ZAlgorithm::SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
 
     currentEdge[0] = 0.f;
     currentEdge[1] = -1.f;
-    numClippedVerts = ZAlgorithm::SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
 
     currentEdge[1] = 0.f;
     currentEdge[2] = -1.f;
-    numClippedVerts = ZAlgorithm::SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
-    Vec3::Clear(currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    currentEdge.Clear();
 
     if (numClippedVerts > 0) {
       std::size_t currentClipIndex = vertexBuffer.GetClipLength() / Constants::TRI_VERTS;

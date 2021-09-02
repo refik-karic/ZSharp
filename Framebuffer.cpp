@@ -1,7 +1,8 @@
-﻿#include "Common.h"
-#include "Framebuffer.h"
+﻿#include "Framebuffer.h"
 
 #include <cstdlib>
+
+#include "Common.h"
 
 #ifdef __AVX512F__
 #include "IntelIntrinsics.h"
@@ -17,7 +18,9 @@ Framebuffer::Framebuffer(std::size_t width,
 {
   mTotalSize = stride * height;
   mPixelBuffer = static_cast<std::uint8_t*>(_aligned_malloc(mTotalSize, 64));
+#ifdef __AVX512F__
   mScratchBuffer = static_cast<std::uint8_t*>(_aligned_malloc(64, 64));
+#endif
 }
 
 Framebuffer::~Framebuffer(){
@@ -25,9 +28,11 @@ Framebuffer::~Framebuffer(){
     _aligned_free(mPixelBuffer);
   }
 
+#ifdef __AVX512F__
   if (mScratchBuffer != nullptr) {
     _aligned_free(mScratchBuffer);
   }
+#endif
 }
 
 void Framebuffer::SetPixel(const std::size_t x, const std::size_t y, const ZColor color) {

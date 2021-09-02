@@ -1,5 +1,6 @@
-#include "Constants.h"
 #include "IndexBuffer.h"
+
+#include "Constants.h"
 
 namespace ZSharp {
 
@@ -11,9 +12,7 @@ IndexBuffer::IndexBuffer(std::size_t size) :
 }
 
 IndexBuffer::IndexBuffer(const IndexBuffer& rhs) {
-  if (this != &rhs) {
-    *this = rhs;
-  }
+  *this = rhs;
 }
 
 void IndexBuffer::operator=(const IndexBuffer& rhs) {

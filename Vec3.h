@@ -82,15 +82,15 @@ class Vec3 final {
     return result;
   }
 
-  static Vec3 Cross(const Vec3& v1, const Vec3& v2);
+  Vec3 Cross(const Vec3& vec);
 
-  static float Length(const Vec3& vector);
+  float Length() const;
 
-  static void Normalize(Vec3& vector);
+  void Normalize();
 
-  static void Homogenize(Vec3& vector, std::size_t element);
+  void Homogenize(std::size_t element);
 
-  static void Clear(Vec3& vector);
+  void Clear();
 
   private:
   static const std::size_t Elements = 3;

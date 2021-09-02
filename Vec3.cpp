@@ -5,7 +5,7 @@
 namespace ZSharp {
 
 Vec3::Vec3() {
-  Vec3::Clear(*this);
+  Clear();
 }
 
 Vec3::Vec3(float x, float y, float z) {
@@ -18,36 +18,36 @@ Vec3::Vec3(const Vec3& copy) {
   *this = copy;
 }
 
-Vec3 Vec3::Cross(const Vec3& v1, const Vec3& v2) {
+Vec3 Vec3::Cross(const Vec3& vec) {
   Vec3 result(
-    (v1[1] * v2[2]) - (v1[2] * v2[1]),
-    (v1[2] * v2[0]) - (v1[0] * v2[2]),
-    (v1[0] * v2[1]) - (v1[1] * v2[0])
+    (mData[1] * vec[2]) - (mData[2] * vec[1]),
+    (mData[2] * vec[0]) - (mData[0] * vec[2]),
+    (mData[0] * vec[1]) - (mData[1] * vec[0])
   );
   return result;
 }
 
-float Vec3::Length(const Vec3& vector) {
-  return sqrtf(vector * vector);
+float Vec3::Length() const {
+  return sqrtf((*this) * (*this));
 }
 
-void Vec3::Normalize(Vec3& vector) {
-  float invSqrt(1.f / Length(vector));
-  vector[0] *= invSqrt;
-  vector[1] *= invSqrt;
-  vector[2] *= invSqrt;
+void Vec3::Normalize() {
+  float invSqrt(1.f / Length());
+  mData[0] *= invSqrt;
+  mData[1] *= invSqrt;
+  mData[2] *= invSqrt;
 }
 
-void Vec3::Homogenize(Vec3& vector, std::size_t element) {
-  float divisor(vector[element]);
+void Vec3::Homogenize(std::size_t element) {
+  float divisor(mData[element]);
 
   for (std::size_t i = 0; i <= element; i++) {
-    vector[i] /= divisor;
+    mData[i] /= divisor;
   }
 }
 
-void Vec3::Clear(Vec3& vector) {
-  std::memset(*vector, 0, sizeof(Elements));
+void Vec3::Clear() {
+  std::memset(mData, 0, sizeof(mData));
 }
 
 }

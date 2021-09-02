@@ -98,13 +98,13 @@ class Vec4 final {
     return result;
   }
 
-  static float Length(const Vec4& vector);
+  float Length() const;
 
-  static void Normalize(Vec4 vector);
+  void Normalize();
 
-  static void Homogenize(Vec4& vector, std::size_t element);
+  void Homogenize(std::size_t element);
 
-  static void Clear(Vec4& vector);
+  void Clear();
 
   private:
   static const std::size_t Elements = 4;

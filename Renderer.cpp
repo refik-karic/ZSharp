@@ -27,7 +27,7 @@ Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
 
   mCameraPos[0] = 0.0f;
   mCameraPos[1] = 0.0f;
-  mCameraPos[2] = 25.0f;
+  mCameraPos[2] = 35.0f;
 
   InputManager* inputManager = InputManager::GetInstance();
   inputManager->Register(this);
@@ -45,10 +45,8 @@ std::uint8_t* Renderer::RenderNextFrame() {
   mModel.FillBuffers(*mVertexBuffer, *mIndexBuffer);
 
   Mat4x4 rotationMatrix;
-  Mat4x4::Identity(rotationMatrix);
-  Mat4x4::SetRotation(rotationMatrix,
-                          DegreesToRadians(static_cast<float>(mFrameCount)),
-                          Mat4x4::Axis::Y);
+  rotationMatrix.Identity();
+  rotationMatrix.SetRotation(DegreesToRadians(static_cast<float>(mFrameCount)), Mat4x4::Axis::Y);
 
   if (!mPauseTransforms) {
     mFrameCount += mRotationSpeed;
@@ -96,10 +94,8 @@ void Renderer::MoveCamera(Direction direction, float amount) {
 
 void Renderer::RotateCamera(Mat4x4::Axis direction, float angleDegrees) {
   Mat4x4 rotationMatrix;
-  Mat4x4::Identity(rotationMatrix);
-  Mat4x4::SetRotation(rotationMatrix,
-    DegreesToRadians(angleDegrees),
-    direction);
+  rotationMatrix.Identity();
+  rotationMatrix.SetRotation(DegreesToRadians(angleDegrees), direction);
 
   mCamera.RotateCamera(rotationMatrix);
 }

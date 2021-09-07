@@ -5,38 +5,41 @@
 
 namespace ZSharp {
 bool InsidePlane(const Vec3& point, const Vec3& clipEdge) {
-  return FloatLessThanEqual((clipEdge * (point - clipEdge)), 0.f, 1.e-5f);
+  return clipEdge * (point - clipEdge) < 0.f;
 }
 
-Vec3 GetParametricVector(float point, Vec3 start, Vec3 end) {
+Vec3 GetParametricVector(const float point, const Vec3& start, const Vec3& end) {
   return (start + ((end - start) * point));
 }
 
-float ParametricLinePlaneIntersection(Vec3 start, Vec3 end, Vec3 edgeNormal, Vec3 edgePoint) {
+float ParametricLinePlaneIntersection(const Vec3& start, const Vec3& end, const Vec3& edgeNormal, const Vec3& edgePoint) {
   float numerator = edgeNormal * (start - edgePoint);
-  float denominator = (edgeNormal * -1.f) * (end - start);
+  float denominator = (-edgeNormal) * (end - start);
   return (numerator / denominator);
 }
 
-std::size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, std::size_t numInputVerts, const Vec3& clipEdge) {
+std::size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const std::size_t numInputVerts, const Vec3& clipEdge) {
   std::size_t numOutputVerts = 0;
   std::array<Vec3, 6> outputVerts;
 
   for (std::size_t i = 0; i < numInputVerts; ++i) {
     std::size_t nextIndex = (i + 1) % numInputVerts;
 
-    if (!InsidePlane(inputVerts[i], clipEdge) && !InsidePlane(inputVerts[nextIndex], clipEdge)) {
+    bool p0Inside = InsidePlane(inputVerts[i], clipEdge);
+    bool p1Inside = InsidePlane(inputVerts[nextIndex], clipEdge);
+
+    if (!p0Inside && !p1Inside) {
       continue;
     }
-    else if (InsidePlane(inputVerts[i], clipEdge) && InsidePlane(inputVerts[nextIndex], clipEdge)) {
+    else if (p0Inside && p1Inside) {
       outputVerts[numOutputVerts] = inputVerts[nextIndex];
       ++numOutputVerts;
     }
     else {
       const float parametricValue = ParametricLinePlaneIntersection(inputVerts[i], inputVerts[nextIndex], clipEdge, clipEdge);
-      const Vec3 clipPoint = GetParametricVector(parametricValue, inputVerts[i], inputVerts[nextIndex]);
+      const Vec3 clipPoint(GetParametricVector(parametricValue, inputVerts[i], inputVerts[nextIndex]));
 
-      if (!InsidePlane(inputVerts[i], clipEdge)) {
+      if (!p0Inside) {
         outputVerts[numOutputVerts] = clipPoint;
         ++numOutputVerts;
         outputVerts[numOutputVerts] = inputVerts[nextIndex];
@@ -65,11 +68,11 @@ void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& ind
     const Vec3& firstEdge = *(reinterpret_cast<const Vec3*>(v1));
     const Vec3& secondEdge = *(reinterpret_cast<const Vec3*>(v2));
     const Vec3& thirdEdge = *(reinterpret_cast<const Vec3*>(v3));
-    Vec3 p1p0 = secondEdge - firstEdge;
-    Vec3 p2p1 = thirdEdge - secondEdge;
-    Vec3 triangleNormal = p1p0.Cross(p2p1);
+    const Vec3 p1p0(secondEdge - firstEdge);
+    const Vec3 p2p1(thirdEdge - secondEdge);
+    const Vec3 triangleNormal(p1p0.Cross(p2p1));
     float dotResult = (viewer - secondEdge) * triangleNormal;
-    if (FloatLessThanEqual(dotResult, 0.f, 1.e-5f)) {
+    if (dotResult < 0.f) {
       indexBuffer.RemoveTriangle((i / Constants::TRI_VERTS) - 1);
     }
   }

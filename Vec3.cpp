@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "UtilMath.h"
+
 namespace ZSharp {
 
 Vec3::Vec3() {
@@ -18,7 +20,7 @@ Vec3::Vec3(const Vec3& copy) {
   *this = copy;
 }
 
-Vec3 Vec3::Cross(const Vec3& vec) {
+Vec3 Vec3::Cross(const Vec3& vec) const {
   Vec3 result(
     (mData[1] * vec[2]) - (mData[2] * vec[1]),
     (mData[2] * vec[0]) - (mData[0] * vec[2]),

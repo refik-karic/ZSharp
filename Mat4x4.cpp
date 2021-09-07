@@ -63,8 +63,6 @@ void Mat4x4::SetScale(const Vec4& scale) {
 }
 
 void Mat4x4::SetRotation(float angle, Axis axis) {
-#pragma warning(disable: 4244)
-
   switch (axis) {
   case Axis::Z:
   case Axis::TWO_DIMENSIONS:
@@ -95,8 +93,6 @@ void Mat4x4::SetRotation(float angle, Axis axis) {
     mData[3][3] = 1.f;
     break;
   }
-
-#pragma warning(default: 4244)
 }
 
 Vec4 Mat4x4::ApplyTransform(const Vec4& domain) const {

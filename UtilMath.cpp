@@ -23,6 +23,12 @@ float NewtonRaphsonSqrt(float val) {
     return x0;
 }
 
+bool IsNegativeFloat(const float a)
+{
+    const std::uint8_t* floatBits = reinterpret_cast<const std::uint8_t*>(&a);
+    return (((floatBits[3]) & 0x01) > 0);
+}
+
 bool FloatEqual(float a, float b, float epsilon) {
   return (fabs(a - b) <= epsilon);
 }

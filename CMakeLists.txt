@@ -1,11 +1,11 @@
 add_library(ZSharp)
 
 set(ASSETS
-	db_schema.json
-	pyramid.json
-	pyramids.json
-	triangles.json
-	ZSharpInit.ini
+  db_schema.json
+  pyramid.json
+  pyramids.json
+  triangles.json
+  ZSharpInit.ini
 )
 
 set(ASSET_PATHS
@@ -27,7 +27,7 @@ target_sources(ZSharp
         Camera.h
         Common.h
         Constants.h
-	      FileString.h
+	    FileString.h
         FileUtilities.h
         Framebuffer.h
         GlobalEdgeTable.h
@@ -57,7 +57,7 @@ target_sources(ZSharp
 	
         AssetLoader.cpp
         Camera.cpp
-	      FileString.cpp
+	    FileString.cpp
         FileUtilities.cpp
         Framebuffer.cpp
         GlobalEdgeTable.cpp
@@ -65,13 +65,13 @@ target_sources(ZSharp
         InputManager.cpp
         IntelIntrinsics.cpp
         JsonObject.cpp
-	      JsonScanner.cpp
+	    JsonScanner.cpp
         Mat2x3.cpp
         Mat4x4.cpp
         OBJFile.cpp
         Renderer.cpp
         Scanner.cpp
-	      Token.cpp
+	    Token.cpp
         UtilMath.cpp
         Vec3.cpp
         Vec4.cpp
@@ -87,21 +87,26 @@ target_sources(ZSharp
 set(ZSharp_Compile_Options 
   /favor:INTEL64
   /fp:fast
-	/guard:cf-
+  /guard:cf-
   /permissive-
-	/sdl-
+  /sdl-
   /source-charset:utf-8
-	/std:c++latest
-	/D_UNICODE
+  /std:c++latest
+  /D_UNICODE
   /Gw
   /Gy
   /GL
-	/GR-
-	/GS-
-	/MP
-	/U_MBCS
+  /GR-
+  /GS-
+  /MP
+  /U_MBCS
   /W4
-	/WX
+  /WX
+)
+
+target_compile_definitions(ZSharp PRIVATE 
+  FORCE_AVX512
+  FORCE_SSE
 )
 
 target_compile_options(ZSharp PRIVATE 

@@ -4,7 +4,7 @@
 
 #include "Common.h"
 
-#ifdef __AVX512F__
+#ifdef FORCE_AVX512
 #include "IntelIntrinsics.h"
 #endif
 
@@ -18,7 +18,7 @@ Framebuffer::Framebuffer(std::size_t width,
 {
   mTotalSize = stride * height;
   mPixelBuffer = static_cast<std::uint8_t*>(_aligned_malloc(mTotalSize, 64));
-#ifdef __AVX512F__
+#ifdef FORCE_AVX512
   mScratchBuffer = static_cast<std::uint8_t*>(_aligned_malloc(64, 64));
 #endif
 }
@@ -28,7 +28,7 @@ Framebuffer::~Framebuffer(){
     _aligned_free(mPixelBuffer);
   }
 
-#ifdef __AVX512F__
+#ifdef FORCE_AVX512
   if (mScratchBuffer != nullptr) {
     _aligned_free(mScratchBuffer);
   }
@@ -55,7 +55,7 @@ void Framebuffer::SetRow(const std::size_t y, const std::size_t x1, const std::s
 }
 
 void Framebuffer::Clear(const ZColor color) {
-#if __AVX512F__
+#if FORCE_AVX512
   for (std::size_t i = 0; i < 16; ++i) {
     *(reinterpret_cast<std::uint32_t*>(mScratchBuffer) + i) = color.Color;
   }

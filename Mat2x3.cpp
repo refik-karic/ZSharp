@@ -54,8 +54,6 @@ void Mat2x3::SetScale(const Vec3& scale) {
 }
 
 void Mat2x3::SetRotation(float angle, Axis axis) {
-#pragma warning(disable: 4244)
-
   switch (axis) {
   case Axis::Z:
   case Axis::TWO_DIMENSIONS:
@@ -86,8 +84,6 @@ void Mat2x3::SetRotation(float angle, Axis axis) {
     mData[3][3] = 1.f;
     break;
   }
-
-#pragma warning(default: 4244)
 }
 
 Vec3 Mat2x3::ApplyTransform(const Vec3& domain) const {

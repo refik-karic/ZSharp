@@ -6,7 +6,7 @@
 namespace ZSharp {
 
 class Vec3 final {
-  public:
+public:
   Vec3();
 
   Vec3(float x, float y, float z);
@@ -47,8 +47,8 @@ class Vec3 final {
 
   Vec3 operator+(const Vec3& vector) const {
     Vec3 result(
-      mData[0] + vector[0], 
-      mData[1] + vector[1], 
+      mData[0] + vector[0],
+      mData[1] + vector[1],
       mData[2] + vector[2]
     );
     return result;
@@ -56,9 +56,18 @@ class Vec3 final {
 
   Vec3 operator-(const Vec3& vector) const {
     Vec3 result(
-      mData[0] - vector[0], 
-      mData[1] - vector[1], 
+      mData[0] - vector[0],
+      mData[1] - vector[1],
       mData[2] - vector[2]
+    );
+    return result;
+  }
+
+  Vec3 operator-() const {
+    Vec3 result(
+      -mData[0],
+      -mData[1],
+      -mData[2]
     );
     return result;
   }
@@ -82,7 +91,7 @@ class Vec3 final {
     return result;
   }
 
-  Vec3 Cross(const Vec3& vec);
+  Vec3 Cross(const Vec3& vec) const;
 
   float Length() const;
 
@@ -92,7 +101,7 @@ class Vec3 final {
 
   void Clear();
 
-  private:
+private:
   static const std::size_t Elements = 3;
   float mData[Elements];
 };

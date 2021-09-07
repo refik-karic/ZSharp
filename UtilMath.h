@@ -8,6 +8,8 @@ float DegreesToRadians(float degrees);
 
 float NewtonRaphsonSqrt(float val);
 
+bool IsNegativeFloat(const float a);
+
 bool FloatEqual(float a, float b, float epsilon);
 
 bool FloatLessThan(float a, float b, float epsilon);

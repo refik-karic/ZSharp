@@ -12,6 +12,8 @@ class VertexBuffer final {
   public:
   VertexBuffer(std::size_t size, std::size_t stride);
 
+  ~VertexBuffer();
+
   VertexBuffer(const VertexBuffer& rhs);
 
   void operator=(const VertexBuffer& rhs) {
@@ -19,13 +21,13 @@ class VertexBuffer final {
       return;
     }
 
-    mData = rhs.mData;
+    std::memcpy(mData, rhs.mData, rhs.mAllocatedSize);
     mWorkingSize = rhs.mWorkingSize;
     mClipLength = rhs.mClipLength;
     mInputStride = rhs.mInputStride;
     mHomogenizedStride = rhs.mHomogenizedStride;
     mInputSize = rhs.mInputSize;
-    mClipData = mData.data() + mInputSize;
+    mClipData = mData + mInputSize;
   }
 
   float operator[](std::size_t index) const {
@@ -63,7 +65,7 @@ class VertexBuffer final {
   std::size_t GetClipLength() const;
 
   private:
-  std::vector<float> mData;
+  float* mData;
   float* mClipData;
   std::size_t mInputSize = 0;
   std::size_t mAllocatedSize = 0;

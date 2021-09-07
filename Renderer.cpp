@@ -14,7 +14,7 @@ namespace ZSharp {
 Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
   : mBuffer(width, height, stride)
 {
-  FileString assetName("C:\\Users\\kr\\Desktop\\backpack.txt");
+  FileString assetName("C:\\Users\\refik\\Desktop\\backpack.txt");
   AssetLoader::LoadModelOBJ(assetName, mModel);
 
   std::size_t indexBufSize = 0;
@@ -27,7 +27,7 @@ Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
 
   mCameraPos[0] = 0.0f;
   mCameraPos[1] = 0.0f;
-  mCameraPos[2] = 35.0f;
+  mCameraPos[2] = 15.0f;
 
   InputManager* inputManager = InputManager::GetInstance();
   inputManager->Register(this);
@@ -66,10 +66,10 @@ std::uint8_t* Renderer::RenderNextFrame() {
   mCamera.PerspectiveProjection(*mVertexBuffer, *mIndexBuffer);
 
   if (mRenderMode) {
-    ZDrawing::DrawTrianglesFlat(mBuffer, *mVertexBuffer, *mIndexBuffer, colorRed);
+    DrawTrianglesFlat(mBuffer, *mVertexBuffer, *mIndexBuffer, colorRed);
   }
   else {
-    ZDrawing::DrawTrianglesWireframe(mBuffer, *mVertexBuffer, *mIndexBuffer, colorRed);
+    DrawTrianglesWireframe(mBuffer, *mVertexBuffer, *mIndexBuffer, colorRed);
   }
 
   return mBuffer.GetBuffer();

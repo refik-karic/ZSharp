@@ -10,6 +10,8 @@
 #include "ZAlgorithm.h"
 #include "ZConfig.h"
 
+#define DEBUG_CLIPPING 0
+
 namespace ZSharp {
 Camera::Camera() {
   ZConfig& config = ZConfig::GetInstance();
@@ -53,8 +55,7 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
 }
 
 void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
-  Vec3 w;
-  w = mLook * -1.f;
+  Vec3 w(-mLook);
   w.Normalize();
 
   Vec3 v;
@@ -66,7 +67,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   Mat4x4 translation;
   translation.Identity();
-  translation.SetTranslation(mPosition * -1.f);
+  translation.SetTranslation(-mPosition);
 
   Mat4x4 uToE;
   uToE[0] = u;
@@ -85,14 +86,14 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   unhing[1][1] = mFarPlane - mNearPlane;
   unhing[2][2] = mFarPlane;
   unhing[2][3] = mNearPlane;
-  unhing[3][2] = (mFarPlane - mNearPlane) * -1.f;
+  unhing[3][2] = -(mFarPlane - mNearPlane);
 
   unhing = unhing * (scale * (uToE * translation));
 
   Mat2x3 windowTransform;
   windowTransform[0][0] = static_cast<float>(mWidth);
   windowTransform[0][2] = static_cast<float>(mWidth);
-  windowTransform[1][1] = static_cast<float>(mHeight) * -1.f;
+  windowTransform[1][1] = -static_cast<float>(mHeight);
   windowTransform[1][2] = static_cast<float>(mHeight);
   windowTransform = windowTransform * (1.f / 2.f);
 
@@ -139,6 +140,13 @@ void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
       *(reinterpret_cast<Vec3*>(v3))
     };
 
+#if DEBUG_CLIPPING
+    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(clippedVerts.data()), 3 * Constants::TRI_VERTS);
+    std::size_t currentClipIndex = vertexBuffer.GetClipLength() / Constants::TRI_VERTS;
+    Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
+    indexBuffer.AppendClipData(nextTriangle);
+    (void)numClippedVerts;
+#else
     currentEdge[0] = 1.f;
     numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
 
@@ -185,6 +193,7 @@ void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
         indexBuffer.AppendClipData(nextTriangle);
       }
     }
+#endif
   }
 }
 }

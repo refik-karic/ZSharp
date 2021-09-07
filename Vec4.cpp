@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "UtilMath.h"
+
 namespace ZSharp {
 
 Vec4::Vec4() {

@@ -6,11 +6,17 @@ namespace ZSharp {
 VertexBuffer::VertexBuffer(std::size_t size, std::size_t stride) :
   mClipLength(0),
   mInputSize(size + (size / Constants::TRI_VERTS)),
-  mAllocatedSize((size + (size / Constants::TRI_VERTS)) + (size * Constants::MAX_VERTS_AFTER_CLIP)),
-  mData((size + (size / Constants::TRI_VERTS)) + (size * Constants::MAX_VERTS_AFTER_CLIP)),
+  mAllocatedSize(((size + (size / Constants::TRI_VERTS)) + (size * Constants::MAX_VERTS_AFTER_CLIP)) * sizeof(float)),
   mInputStride(stride),
   mHomogenizedStride(stride + (stride / Constants::TRI_VERTS)) {
-  mClipData = mData.data() + mInputSize;
+  mData = static_cast<float*>(_aligned_malloc(mAllocatedSize, 16));
+  mClipData = mData + mInputSize;
+}
+
+VertexBuffer::~VertexBuffer() {
+  if (mData != nullptr) {
+    _aligned_free(mData);
+  }
 }
 
 VertexBuffer::VertexBuffer(const VertexBuffer& rhs) {
@@ -34,7 +40,7 @@ std::size_t VertexBuffer::GetInputStride() const {
 }
 
 void VertexBuffer::CopyInputData(const float* data, std::size_t index, std::size_t length) {
-  float* currentIndex = mData.data() + index;
+  float* currentIndex = mData + index;
   for (std::size_t i = 0; i < length; i += mInputStride) {
     for (std::size_t j = 0; j < mInputStride / Constants::TRI_VERTS; j++) {
       std::memcpy(currentIndex, (data + i) + (j * Constants::TRI_VERTS), Constants::TRI_VERTS * sizeof(float));
@@ -46,11 +52,11 @@ void VertexBuffer::CopyInputData(const float* data, std::size_t index, std::size
 }
 
 float* VertexBuffer::GetInputData(std::size_t index, std::size_t stride) {
-  return mData.data() + (index * stride);
+  return mData + (index * stride);
 }
 
 const float* VertexBuffer::GetInputData(std::size_t index, std::size_t stride) const {
-  return mData.data() + (index * stride);
+  return mData + (index * stride);
 }
 
 float* VertexBuffer::GetClipData(std::size_t index, std::size_t stride) {
@@ -62,22 +68,22 @@ const float* VertexBuffer::GetClipData(std::size_t index, std::size_t stride) co
 }
 
 void VertexBuffer::Clear() {
-  std::memset(mData.data(), 0, mData.size() * sizeof(float));
+  std::memset(mData, 0, mAllocatedSize);
   mWorkingSize = 0;
   mClipLength = 0;
-  mClipData = mData.data() + mInputSize;
+  mClipData = mData + mInputSize;
 }
 
 void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
   for (std::size_t i = 0; i < mWorkingSize; i += mHomogenizedStride) {
-    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(mData.data() + i));
+    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(mData + i));
     vertexVector[3] = 1.f;
     vertexVector = transform.ApplyTransform(vertexVector);
   }
 }
 
 void VertexBuffer::AppendClipData(const float* data, std::size_t length) {
-  if (mInputSize + mClipLength + length > mAllocatedSize) {
+  if (mInputSize + mClipLength + (length * sizeof(float)) > mAllocatedSize) {
     return;
   }
 

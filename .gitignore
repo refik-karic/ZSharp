@@ -22,6 +22,9 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Bb]uild
+MinSizeRel/
+RelWithDebInfo/
+ZSharp.dir/
 
 # Visual Studio 2015 cache/options directory
 .vs/

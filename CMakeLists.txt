@@ -85,19 +85,10 @@ target_sources(ZSharp
 )
 
 set(ZSharp_Compile_Options 
-  /favor:INTEL64
-  /fp:fast
-  /guard:cf-
-  /permissive-
-  /sdl-
   /source-charset:utf-8
   /std:c++latest
   /D_UNICODE
-  /Gw
-  /Gy
-  /GL
   /GR-
-  /GS-
   /MP
   /U_MBCS
   /W4

@@ -90,6 +90,9 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   unhing = unhing * (scale * (uToE * translation));
 
+  mWidth = ZConfig::GetInstance().GetViewportWidth();
+  mHeight = ZConfig::GetInstance().GetViewportHeight();
+
   Mat2x3 windowTransform;
   windowTransform[0][0] = static_cast<float>(mWidth);
   windowTransform[0][2] = static_cast<float>(mWidth);

@@ -1,8 +1,5 @@
 #pragma once
 
-#include <vector>
-
-#include "Constants.h"
 #include "Triangle.h"
 
 namespace ZSharp {
@@ -11,6 +8,8 @@ class IndexBuffer final {
   public:
 
   IndexBuffer(std::size_t size);
+
+  ~IndexBuffer();
 
   IndexBuffer(const IndexBuffer& rhs);
 
@@ -35,9 +34,10 @@ class IndexBuffer final {
   std::size_t GetClipData(std::size_t index) const;
 
   private:
-  std::vector<std::size_t> mData;
+  std::size_t* mData;
   std::size_t* mClipData;
   std::size_t mInputSize = 0;
+  std::size_t mAllocatedSize = 0;
   std::size_t mWorkingSize = 0;
   std::size_t mClipLength = 0;
 };

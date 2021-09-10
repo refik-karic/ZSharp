@@ -1,5 +1,8 @@
 #include "VertexBuffer.h"
 
+#include <malloc.h>
+#include <memory.h>
+
 #include "Vec4.h"
 
 namespace ZSharp {
@@ -43,7 +46,7 @@ void VertexBuffer::CopyInputData(const float* data, std::size_t index, std::size
   float* currentIndex = mData + index;
   for (std::size_t i = 0; i < length; i += mInputStride) {
     for (std::size_t j = 0; j < mInputStride / Constants::TRI_VERTS; j++) {
-      std::memcpy(currentIndex, (data + i) + (j * Constants::TRI_VERTS), Constants::TRI_VERTS * sizeof(float));
+      memcpy(currentIndex, (data + i) + (j * Constants::TRI_VERTS), Constants::TRI_VERTS * sizeof(float));
       currentIndex[3] = 1.f;
       currentIndex += 4;
       mWorkingSize += 4;
@@ -68,7 +71,7 @@ const float* VertexBuffer::GetClipData(std::size_t index, std::size_t stride) co
 }
 
 void VertexBuffer::Clear() {
-  std::memset(mData, 0, mAllocatedSize);
+  memset(mData, 0, mAllocatedSize);
   mWorkingSize = 0;
   mClipLength = 0;
   mClipData = mData + mInputSize;
@@ -87,7 +90,7 @@ void VertexBuffer::AppendClipData(const float* data, std::size_t length) {
     return;
   }
 
-  std::memcpy(mClipData + mClipLength, data, length * sizeof(float));
+  memcpy(mClipData + mClipLength, data, length * sizeof(float));
   mClipLength += length;
 }
 

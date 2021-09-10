@@ -1,14 +1,24 @@
 #include "IndexBuffer.h"
 
+#include <malloc.h>
+#include <memory.h>
+
 #include "Constants.h"
 
 namespace ZSharp {
 
 IndexBuffer::IndexBuffer(std::size_t size) :
-  mData(size * Constants::MAX_INDICIES_AFTER_CLIP),
-  mInputSize(size)
+  mInputSize(size),
+  mAllocatedSize(size* Constants::MAX_INDICIES_AFTER_CLIP * sizeof(std::size_t))
 {
-  mClipData = mData.data() + mInputSize;
+  mData = static_cast<std::size_t*>(_aligned_malloc(mAllocatedSize, 16));
+  mClipData = mData + mInputSize;
+}
+
+IndexBuffer::~IndexBuffer() {
+  if (mData != nullptr) {
+    _aligned_free(mData);
+  }
 }
 
 IndexBuffer::IndexBuffer(const IndexBuffer& rhs) {
@@ -20,10 +30,10 @@ void IndexBuffer::operator=(const IndexBuffer& rhs) {
     return;
   }
 
-  mData = rhs.mData;
+  memcpy(mData, rhs.mData, rhs.mAllocatedSize);
   mInputSize = rhs.mInputSize;
   mClipLength = rhs.mClipLength;
-  mClipData = mData.data() + mInputSize;
+  mClipData = mData + mInputSize;
   mWorkingSize = rhs.mWorkingSize;
 }
 
@@ -40,19 +50,19 @@ std::size_t IndexBuffer::GetWorkingSize() const {
 }
 
 void IndexBuffer::CopyInputData(const std::size_t* data, std::size_t index, std::size_t length) {
-  std::memcpy(mData.data() + index, data, length * sizeof(std::size_t));
+  memcpy(mData + index, data, length * sizeof(std::size_t));
   mWorkingSize += length;
 }
 
 void IndexBuffer::Clear() {
-  std::memset(mData.data(), 0, mData.size() * sizeof(std::size_t));
+  memset(mData, 0, mAllocatedSize);
   mClipLength = 0;
   mWorkingSize = 0;
-  mClipData = mData.data() + mInputSize;
+  mClipData = mData + mInputSize;
 }
 
 void IndexBuffer::RemoveTriangle(std::size_t index) {
-  std::memcpy(mData.data() + (index * Constants::TRI_VERTS), mData.data() + mWorkingSize - Constants::TRI_VERTS, Constants::TRI_VERTS * sizeof(std::size_t));
+  memcpy(mData + (index * Constants::TRI_VERTS), mData + mWorkingSize - Constants::TRI_VERTS, Constants::TRI_VERTS * sizeof(std::size_t));
   
   if(mWorkingSize < Constants::TRI_VERTS) {
     mWorkingSize = 0;
@@ -63,12 +73,12 @@ void IndexBuffer::RemoveTriangle(std::size_t index) {
 }
 
 void IndexBuffer::AppendClipData(const Triangle& triangle) {
-    if (mWorkingSize + mClipLength + Constants::TRI_VERTS > mData.size()) {
+    if (mWorkingSize + mClipLength + Constants::TRI_VERTS > mAllocatedSize) {
         return;
     }
 
     const std::size_t* data = reinterpret_cast<const std::size_t*>(&triangle);
-    std::memcpy(mClipData + mClipLength, data, Constants::TRI_VERTS * sizeof(std::size_t));
+    memcpy(mClipData + mClipLength, data, Constants::TRI_VERTS * sizeof(std::size_t));
     mClipLength += Constants::TRI_VERTS;
 }
 

@@ -27,6 +27,8 @@ class ZConfig final {
 
   void SetBytesPerPixel(std::size_t bytesPerPixel);
 
+  bool SizeChanged(std::size_t width, std::size_t height);
+
   private:
 
   ZConfig();

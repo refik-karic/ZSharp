@@ -18,7 +18,10 @@ class Framebuffer final {
   void SetRow(const std::size_t y, const std::size_t x1, const std::size_t x2, const ZColor color);
   void Clear(const ZColor color);
   std::uint8_t* GetBuffer();
+  std::size_t GetWidth() const;
+  std::size_t GetHeight() const;
   std::size_t GetSize() const;
+  void Resize();
 
   private:
   uint8_t* mPixelBuffer = nullptr;

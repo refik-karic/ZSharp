@@ -8,6 +8,7 @@
 #include "Triangle.h"
 #include "UtilMath.h"
 #include "ZColor.h"
+#include "ZConfig.h"
 #include "ZDrawing.h"
 
 namespace ZSharp {
@@ -34,6 +35,12 @@ Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
 }
 
 std::uint8_t* Renderer::RenderNextFrame() {
+  ZConfig& config = ZConfig::GetInstance();
+
+  if (config.SizeChanged(mBuffer.GetWidth(), mBuffer.GetHeight())) {
+    mBuffer.Resize();
+  }
+
   InputManager* inputManager = InputManager::GetInstance();
   inputManager->Process();
 

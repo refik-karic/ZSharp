@@ -1,8 +1,5 @@
 #pragma once
 
-#include <string>
-#include <vector>
-
 #include "Constants.h"
 #include "Mat4x4.h"
 

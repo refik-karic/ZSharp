@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include "Common.h"
+#include "ZConfig.h"
 
 #ifdef FORCE_AVX512
 #include "IntelIntrinsics.h"
@@ -55,19 +56,34 @@ void Framebuffer::SetRow(const std::size_t y, const std::size_t x1, const std::s
 }
 
 void Framebuffer::Clear(const ZColor color) {
+  const std::size_t numPixels = (mWidth * mHeight);
 #if FORCE_AVX512
-  for (std::size_t i = 0; i < 16; ++i) {
-    *(reinterpret_cast<std::uint32_t*>(mScratchBuffer) + i) = color.Color;
+  if ((numPixels % 64) > 0) {
+    ZSharp::MemsetAny(reinterpret_cast<std::uint32_t*>(mPixelBuffer),
+      color.Color,
+      numPixels);
   }
+  else {
+    for (std::size_t i = 0; i < 16; ++i) {
+      *(reinterpret_cast<std::uint32_t*>(mScratchBuffer) + i) = color.Color;
+    }
 
-  avx512memsetaligned(mPixelBuffer, mScratchBuffer, mTotalSize);
+    avx512memsetaligned(mPixelBuffer, mScratchBuffer, mTotalSize);
+  }
 #else
-  const std::size_t cachedSize = mTotalSize / sizeof(std::uintptr_t);
-  std::uintptr_t* pBuf = reinterpret_cast<std::uintptr_t*>(mPixelBuffer);
-  const std::uintptr_t convColor = (static_cast<std::uintptr_t>(color.Color) << 32) | color.Color;
+  if ((numPixels % sizeof(std::uintptr_t)) > 0) {
+    ZSharp::MemsetAny(reinterpret_cast<std::uint32_t*>(mPixelBuffer),
+      color.Color,
+      numPixels);
+  }
+  else {
+    const std::size_t cachedSize = mTotalSize / sizeof(std::uintptr_t);
+    std::uintptr_t* pBuf = reinterpret_cast<std::uintptr_t*>(mPixelBuffer);
+    const std::uintptr_t convColor = (static_cast<std::uintptr_t>(color.Color) << 32) | color.Color;
 
-  for (std::size_t i = 0; i < cachedSize; i++) {
-    pBuf[i] = convColor;
+    for (std::size_t i = 0; i < cachedSize; i++) {
+      pBuf[i] = convColor;
+    }
   }
 #endif
 }
@@ -76,8 +92,28 @@ std::uint8_t* Framebuffer::GetBuffer() {
   return mPixelBuffer;
 }
 
+std::size_t Framebuffer::GetWidth() const {
+  return mWidth;
+}
+
+std::size_t Framebuffer::GetHeight() const {
+  return mHeight;
+}
+
 std::size_t Framebuffer::GetSize() const {
   return mTotalSize;
+}
+
+void Framebuffer::Resize() {
+  if (mPixelBuffer != nullptr) {
+    _aligned_free(mPixelBuffer);
+  }
+
+  mWidth = ZConfig::GetInstance().GetViewportWidth();
+  mHeight = ZConfig::GetInstance().GetViewportHeight();
+  mStride = mWidth * 4;
+  mTotalSize = mStride * mHeight;
+  mPixelBuffer = static_cast<std::uint8_t*>(_aligned_malloc(mTotalSize, 64));
 }
 
 }

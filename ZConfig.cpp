@@ -1,7 +1,5 @@
 #include "ZConfig.h"
 
-#include <filesystem>
-
 namespace ZSharp {
 
 ZConfig& ZConfig::GetInstance() {
@@ -39,15 +37,13 @@ void ZConfig::SetBytesPerPixel(std::size_t bytesPerPixel) {
   mViewportStride = mViewportWidth * bytesPerPixel;
 }
 
+bool ZConfig::SizeChanged(std::size_t width, std::size_t height) {
+  return ((width != mViewportWidth) || (height != mViewportHeight));
+}
+
 ZConfig::ZConfig() {
-  //std::filesystem::path workingDirectory = std::filesystem::current_path().parent_path();
-  
-  // Low res
   SetViewportWidth(640);
   SetViewportHeight(480);
-  // High res
-  //SetViewportWidth(1920);
-  //SetViewportHeight(1080);
   SetBytesPerPixel(4);
 }
 

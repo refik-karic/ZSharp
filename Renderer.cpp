@@ -65,8 +65,8 @@ std::uint8_t* Renderer::RenderNextFrame() {
 
   mVertexBuffer->ApplyTransform(rotationMatrix);
   
-  ZColor colorRed{ZColors::RED};
-  ZColor colorBlue{ZColors::BLUE};
+  const ZColor colorRed{ZColors::RED};
+  const ZColor colorBlue{ZColors::BLUE};
 
   mBuffer.Clear(colorBlue);
 
@@ -82,7 +82,7 @@ std::uint8_t* Renderer::RenderNextFrame() {
   return mBuffer.GetBuffer();
 }
 
-void Renderer::MoveCamera(Direction direction, float amount) {
+void Renderer::MoveCamera(Direction direction, const float amount) {
   switch (direction) {
     case Direction::UP:
       mCameraPos[1] -= amount;
@@ -99,7 +99,7 @@ void Renderer::MoveCamera(Direction direction, float amount) {
   }
 }
 
-void Renderer::RotateCamera(Mat4x4::Axis direction, float angleDegrees) {
+void Renderer::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {
   Mat4x4 rotationMatrix;
   rotationMatrix.Identity();
   rotationMatrix.SetRotation(DegreesToRadians(angleDegrees), direction);

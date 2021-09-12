@@ -5,7 +5,6 @@
 
 #include "IndexBuffer.h"
 #include "Mesh.h"
-#include "Triangle.h"
 #include "VertexBuffer.h"
 
 namespace ZSharp {
@@ -13,15 +12,11 @@ namespace ZSharp {
 class Model final {
   public:
 
-  Model() {}
+  Model();
 
-  Model(std::size_t numMesh) : mData(numMesh) {
-    
-  }
+  Model(std::size_t numMesh);
 
-  Model(const Model& copy) {
-    *this = copy;
-  }
+  Model(const Model& copy);
 
   void operator=(const Model& rhs) {
     if (this == &rhs) {
@@ -35,28 +30,13 @@ class Model final {
     return mData[index];
   }
 
-  std::size_t MeshCount() const {
-    return mData.size();
-  }
+  std::size_t MeshCount() const;
 
-  std::vector<Mesh>& GetMeshData() {
-    return mData;
-  }
+  std::vector<Mesh>& GetMeshData();
 
-  const std::vector<Mesh>& GetMeshData() const {
-    return mData;
-  }
+  const std::vector<Mesh>& GetMeshData() const;
 
-  void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const {
-    for(const Mesh& mesh : mData) {
-      for(std::size_t i = 0; i < mesh.GetTriangleFaceTable().size(); ++i) {
-        const Triangle& triangle = mesh.GetTriangleFaceTable()[i];
-        indexBuffer.CopyInputData(triangle.GetData(), i * Constants::TRI_VERTS, Constants::TRI_VERTS);
-      }
-
-      vertexBuffer.CopyInputData(mesh.GetVertTable().data(), 0, mesh.GetVertTable().size());
-    }
-  }
+  void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const;
 
   private:
   std::vector<Mesh> mData;

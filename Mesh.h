@@ -12,18 +12,11 @@ namespace ZSharp {
 class Mesh final {
   public:
 
-  Mesh() {
+  Mesh();
 
-  }
+  Mesh(std::size_t numVerts, std::size_t numTriangleFaces);
 
-  Mesh(std::size_t numVerts, std::size_t numTriangleFaces) {
-    mVertTable.resize(numVerts);
-    mTriangleFaceTable.resize(numTriangleFaces);
-  }
-
-  Mesh(const Mesh& copy) {
-    *this = copy;
-  }
+  Mesh(const Mesh& copy);
   
   void operator=(const Mesh& rhs) {
     if (this == &rhs) {
@@ -34,46 +27,19 @@ class Mesh final {
     mTriangleFaceTable = rhs.mTriangleFaceTable;
   }
 
-  void SetData(const float* vertData, std::size_t numVerts, std::size_t numTriangleFaces) {
-    mVertTable.resize(numVerts);
+  void SetData(const float* vertData, std::size_t numVerts, std::size_t numTriangleFaces);
 
-    for (std::size_t i = 0; i < numVerts; ++i) {
-      mVertTable[i] = *(vertData + i);
-    }
+  void SetVertex(const Vec4& vertex, std::size_t index, std::size_t numElements);
 
-    mTriangleFaceTable.resize(numTriangleFaces);
-  }
+  void SetTriangle(const std::array<size_t, 3>& triangleFaceData, std::size_t index);
 
-  void SetVertex(const Vec4& vertex, std::size_t index, std::size_t numElements) {
-    std::size_t vertIndex = 0;
-    for (std::size_t i = index; i < index + numElements; ++i) {
-      mVertTable[i] = vertex[vertIndex];
-      ++vertIndex;
-    }
-  }
+  std::vector<float>& GetVertTable();
 
-  void SetTriangle(const std::array<size_t, 3>& triangleFaceData, std::size_t index) {
-    Triangle& triangle = mTriangleFaceTable[index];
-    triangle[0] = triangleFaceData[0];
-    triangle[1] = triangleFaceData[1];
-    triangle[2] = triangleFaceData[2];
-  }
+  const std::vector<float>& GetVertTable() const;
 
-  std::vector<float>& GetVertTable() {
-    return mVertTable;
-  }
+  std::vector<Triangle>& GetTriangleFaceTable();
 
-  const std::vector<float>& GetVertTable() const {
-    return mVertTable;
-  }
-
-  std::vector<Triangle>& GetTriangleFaceTable() {
-    return mTriangleFaceTable;
-  }
-
-  const std::vector<Triangle>& GetTriangleFaceTable() const {
-    return mTriangleFaceTable;
-  }
+  const std::vector<Triangle>& GetTriangleFaceTable() const;
 
   private:
   std::vector<float> mVertTable;

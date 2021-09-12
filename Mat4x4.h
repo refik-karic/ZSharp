@@ -10,7 +10,6 @@ namespace ZSharp {
 class Mat4x4 final {
   public:
   enum class Axis {
-    TWO_DIMENSIONS,
     X,
     Y,
     Z

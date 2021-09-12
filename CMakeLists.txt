@@ -1,26 +1,5 @@
 add_library(ZSharp)
 
-set(ASSETS
-  db_schema.json
-  pyramid.json
-  pyramids.json
-  triangles.json
-  ZSharpInit.ini
-)
-
-set(ASSET_PATHS
-	${CMAKE_SOURCE_DIR}/ZSharp/db_schema.json
-	${CMAKE_SOURCE_DIR}/ZSharp/pyramid.json
-	${CMAKE_SOURCE_DIR}/ZSharp/pyramids.json
-	${CMAKE_SOURCE_DIR}/ZSharp/triangles.json
-	${CMAKE_SOURCE_DIR}/ZSharp/ZSharpInit.ini
-)
-
-set_property(
-	TARGET ZSharp
-	PROPERTY ZSHARP_ASSETS ${ASSET_PATHS}
-)
-
 target_sources(ZSharp
     PRIVATE
         AssetLoader.h
@@ -68,9 +47,12 @@ target_sources(ZSharp
 	    JsonScanner.cpp
         Mat2x3.cpp
         Mat4x4.cpp
+        Mesh.cpp
+        Model.cpp
         OBJFile.cpp
         Renderer.cpp
         Scanner.cpp
+        Triangle.cpp
 	    Token.cpp
         UtilMath.cpp
         Vec3.cpp
@@ -80,8 +62,6 @@ target_sources(ZSharp
         ZColor.cpp
         ZConfig.cpp
         ZDrawing.cpp
-		
-	${JSON_ASSETS}
 )
 
 set(ZSharp_Compile_Options 

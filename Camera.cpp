@@ -75,9 +75,10 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   uToE[2] = w;
   uToE[3][3] = 1.f;
 
+  const float fovScale = (Constants::PI_OVER_180 / 2.f);
   Mat4x4 scale;
-  scale[0][0] = 1.f / (mFarPlane * (tanf((mFovHoriz * (Constants::PI_OVER_180 / 2.f)))));
-  scale[1][1] = 1.f / (mFarPlane * (tanf((mFovVert * (Constants::PI_OVER_180 / 2.f)))));
+  scale[0][0] = 1.f / (mFarPlane * (tanf((mFovHoriz * fovScale))));
+  scale[1][1] = 1.f / (mFarPlane * (tanf((mFovVert * fovScale))));
   scale[2][2] = 1.f / mFarPlane;
   scale[3][3] = 1.f;
 
@@ -102,7 +103,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 
-  std::size_t homogenizedStride = vertexBuffer.GetHomogenizedStride();
+  const std::size_t homogenizedStride = vertexBuffer.GetHomogenizedStride();
   for (std::size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
     float* vertexData = vertexBuffer.GetInputData(i);
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexData));
@@ -118,7 +119,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   ClipTriangles(vertexBuffer, indexBuffer);
 
-  std::size_t inputStride = vertexBuffer.GetInputStride();
+  const std::size_t inputStride = vertexBuffer.GetInputStride();
   for (std::size_t i = 0; i < vertexBuffer.GetClipLength(); i += inputStride) {
     float* vertexData = vertexBuffer.GetClipData(i);
     Vec3& vertexVector = *(reinterpret_cast<Vec3*>(vertexData));

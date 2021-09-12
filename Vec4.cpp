@@ -7,7 +7,7 @@
 namespace ZSharp {
 
 Vec4::Vec4() {
-  Vec4::Clear();
+  Clear();
 }
 
 Vec4::Vec4(float x, float y, float z, float w) {

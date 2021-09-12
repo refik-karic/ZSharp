@@ -48,9 +48,9 @@ class Renderer final : public IInputListener {
   std::shared_ptr<IndexBuffer> mIndexBuffer;
   std::shared_ptr<VertexBuffer> mVertexBuffer;
 
-  void MoveCamera(Direction direction, float amount);
+  void MoveCamera(Direction direction, const float amount);
 
-  void RotateCamera(Mat4x4::Axis direction, float angleDegrees);
+  void RotateCamera(Mat4x4::Axis direction, const float angleDegrees);
 
   void ChangeSpeed(std::int64_t amount);
 

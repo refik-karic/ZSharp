@@ -9,15 +9,11 @@ namespace ZSharp {
 class Triangle final {
   public:
 
-  Triangle() {}
+  Triangle();
 
-  Triangle(std::size_t p1, std::size_t p2, std::size_t p3) :
-    mIndicies{p1, p2, p3}
-  { }
+  Triangle(std::size_t p1, std::size_t p2, std::size_t p3);
 
-  Triangle(const Triangle& copy) {
-    *this = copy;
-  }
+  Triangle(const Triangle& copy);
 
   void operator=(const Triangle& rhs) {
     if (this == &rhs) {
@@ -37,13 +33,9 @@ class Triangle final {
     return mIndicies[index];
   }
 
-  const std::size_t* GetData() {
-    return mIndicies;
-  }
+  const std::size_t* GetData();
 
-  const std::size_t* GetData() const {
-    return mIndicies;
-  }
+  const std::size_t* GetData() const;
 
   private:
   std::size_t mIndicies[Constants::TRI_VERTS] = {0, 0, 0};

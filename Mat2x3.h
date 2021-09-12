@@ -10,7 +10,6 @@ class Mat2x3 final {
   public:
 
   enum class Axis {
-    TWO_DIMENSIONS,
     X,
     Y,
     Z

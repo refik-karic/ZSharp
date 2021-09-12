@@ -65,16 +65,12 @@ void Mat4x4::SetScale(const Vec4& scale) {
 void Mat4x4::SetRotation(float angle, Axis axis) {
   switch (axis) {
   case Axis::Z:
-  case Axis::TWO_DIMENSIONS:
     mData[0][0] = cosf(angle);
     mData[0][1] = -1.f * sinf(angle);
     mData[1][0] = sinf(angle);
     mData[1][1] = cosf(angle);
     mData[2][2] = 1.f;
-
-    if (axis == Axis::Z) {
-      mData[3][3] = 1.f;
-    }
+    mData[3][3] = 1.f;
     break;
   case Axis::X:
     mData[0][0] = 1.f;

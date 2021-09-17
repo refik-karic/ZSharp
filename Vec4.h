@@ -10,7 +10,7 @@
 
 namespace ZSharp {
 
-class Vec4 final {
+class alignas(16) Vec4 final {
   public:
   Vec4();
 
@@ -59,7 +59,7 @@ class Vec4 final {
   Vec4 operator+(const Vec4& vector) const {
 #ifdef FORCE_SSE
     Vec4 result;
-    sse128addufloats(mData, vector.mData, result.mData);
+    aligned_sse128addfloats(mData, vector.mData, result.mData);
     return result;
 #else
     Vec4 result(
@@ -75,7 +75,7 @@ class Vec4 final {
   Vec4 operator-(const Vec4& vector) const {
 #ifdef FORCE_SSE
     Vec4 result;
-    sse128subufloats(mData, vector.mData, result.mData);
+    aligned_sse128subfloats(mData, vector.mData, result.mData);
     return result;
 #else
     Vec4 result(
@@ -101,7 +101,7 @@ class Vec4 final {
   Vec4 operator*(float scalar) const {
 #ifdef FORCE_SSE
     Vec4 result;
-    sse128mulufloat(mData, scalar, result.mData);
+    aligned_sse128mulfloat(mData, scalar, result.mData);
     return result;
 #else
     Vec4 result(
@@ -116,7 +116,7 @@ class Vec4 final {
 
   float operator*(const Vec4& vector) {
 #ifdef FORCE_SSE
-    return sse128mulufloatssum(mData, vector.mData);
+    return aligned_sse128mulfloatssum(mData, vector.mData);
 #else
     float result = (mData[0] * vector[0]);
     result += (mData[1] * vector[1]);
@@ -128,7 +128,7 @@ class Vec4 final {
 
   float operator*(const Vec4& vector) const {
 #ifdef FORCE_SSE
-    return sse128mulufloatssum(mData, vector.mData);
+    return aligned_sse128mulfloatssum(mData, vector.mData);
 #else
     float result = (mData[0] * vector[0]);
     result += (mData[1] * vector[1]);

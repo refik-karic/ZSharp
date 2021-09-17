@@ -68,7 +68,7 @@ void Framebuffer::Clear(const ZColor color) {
       *(reinterpret_cast<std::uint32_t*>(mScratchBuffer) + i) = color.Color;
     }
 
-    avx512memsetaligned(mPixelBuffer, mScratchBuffer, mTotalSize);
+    aligned_avx512memset(mPixelBuffer, mScratchBuffer, mTotalSize);
   }
 #else
   if ((numPixels % sizeof(std::uintptr_t)) > 0) {

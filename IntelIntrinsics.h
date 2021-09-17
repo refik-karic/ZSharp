@@ -4,14 +4,22 @@
 
 namespace ZSharp {
 
-void sse128addufloats(const float* a, const float* b, float* dest);
+void aligned_sse128addfloats(const float* a, const float* b, float* dest);
 
-void sse128subufloats(const float* a, const float* b, float* dest);
+void aligned_sse128subfloats(const float* a, const float* b, float* dest);
 
-void sse128mulufloat(const float* a, const float b, float* dest);
+void aligned_sse128mulfloat(const float* a, const float b, float* dest);
 
-float sse128mulufloatssum(const float* a, const float* b);
+float aligned_sse128mulfloatssum(const float* a, const float* b);
 
-void avx512memsetaligned(void* __restrict dest, void* const __restrict value, const std::size_t numBytes);
+void aligned_avx512memset(void* __restrict dest, void* const __restrict value, const std::size_t numBytes);
+
+void unaligned_sse128addfloats(const float* a, const float* b, float* dest);
+
+void unaligned_sse128subfloats(const float* a, const float* b, float* dest);
+
+void unaligned_sse128mulfloat(const float* a, const float b, float* dest);
+
+float unaligned_sse128mulfloatssum(const float* a, const float* b);
 
 }

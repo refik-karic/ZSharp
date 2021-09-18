@@ -1,11 +1,12 @@
 #pragma once
 
 #include "FileString.h"
-
+#include "ISerializable.h"
 #include "Vec3.h"
 #include "Vec4.h"
 
-struct OBJFaceElement {
+namespace ZSharp {
+struct alignas(8) OBJFaceElement {
   std::uint64_t vertexIndex = 0;
   std::uint64_t uvIndex = 0;
   std::uint64_t normalIndex = 0;
@@ -20,21 +21,23 @@ enum class AssetFormat : std::size_t {
   Serialized, // Stripped asset that can be batch loaded.
 };
 
-class OBJFile {
-  public:
+class OBJFile : public ISerializable {
+public:
   OBJFile(FileString& objFilePath, AssetFormat format);
 
   const std::vector<ZSharp::Vec4>& GetVerts();
 
   const std::vector<OBJFace>& GetFaces();
 
-  void Serialize(FileString& destPath);
+  virtual void Serialize(FileString& destPath) override;
+
+  virtual void Deserialize(FileString& objFilePath) override;
 
   void SetVerboseParse(bool state);
 
-  protected:
+protected:
 
-  private:
+private:
   bool mVerboseParse = false;
 
   std::vector<ZSharp::Vec4> mVerts;
@@ -47,8 +50,6 @@ class OBJFile {
 
   void ParseRaw(FileString& objFilePath);
 
-  void Deserialize(FileString& objFilePath);
-
   void ParseLine(std::string& currentLine);
 
   void ParseVec3(ZSharp::Vec3& fillVec, std::string& line, float fallback);
@@ -57,3 +58,4 @@ class OBJFile {
 
   void ParseFace(OBJFace& fillFace, std::string& line);
 };
+}

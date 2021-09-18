@@ -14,6 +14,7 @@ target_sources(ZSharp
         IndexBuffer.h
         InputManager.h
         IntelIntrinsics.h
+        ISerializable.h
         JsonObject.h
         JsonScanner.h
         Mat2x3.h

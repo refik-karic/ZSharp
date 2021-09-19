@@ -101,7 +101,6 @@ void Renderer::MoveCamera(Direction direction, const float amount) {
 
 void Renderer::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {
   Mat4x4 rotationMatrix;
-  rotationMatrix.Identity();
   rotationMatrix.SetRotation(DegreesToRadians(angleDegrees), direction);
 
   mCamera.RotateCamera(rotationMatrix);

@@ -67,12 +67,6 @@ class Mat2x3 final {
 
   Mat2x3 Transpose() const;
 
-  void SetTranslation(const Vec3& translation);
-
-  void SetScale(const Vec3& scale);
-
-  void SetRotation(float angle, Axis axis);
-
   Vec3 ApplyTransform(const Vec3& domain) const;
 
   private:

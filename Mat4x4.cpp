@@ -66,7 +66,7 @@ void Mat4x4::SetRotation(float angle, Axis axis) {
   switch (axis) {
   case Axis::Z:
     mData[0][0] = cosf(angle);
-    mData[0][1] = -1.f * sinf(angle);
+    mData[0][1] = -sinf(angle);
     mData[1][0] = sinf(angle);
     mData[1][1] = cosf(angle);
     mData[2][2] = 1.f;
@@ -75,7 +75,7 @@ void Mat4x4::SetRotation(float angle, Axis axis) {
   case Axis::X:
     mData[0][0] = 1.f;
     mData[1][1] = cosf(angle);
-    mData[1][2] = -1.f * sinf(angle);
+    mData[1][2] = -sinf(angle);
     mData[2][1] = sinf(angle);
     mData[2][2] = cosf(angle);
     mData[3][3] = 1.f;
@@ -84,7 +84,7 @@ void Mat4x4::SetRotation(float angle, Axis axis) {
     mData[0][0] = cosf(angle);
     mData[0][2] = sinf(angle);
     mData[1][1] = 1.f;
-    mData[2][0] = -1.f * sinf(angle);
+    mData[2][0] = -sinf(angle);
     mData[2][2] = cosf(angle);
     mData[3][3] = 1.f;
     break;

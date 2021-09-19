@@ -22,6 +22,7 @@ class alignas(16) Vec4 final {
 
   void operator=(const Vec3& vector) {
     std::memcpy(mData, *vector, sizeof(mData));
+    mData[3] = 1.f;
   }
 
   void operator=(const Vec4& vector) {

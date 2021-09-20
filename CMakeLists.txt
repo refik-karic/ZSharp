@@ -18,9 +18,11 @@ target_sources(ZSharp
         JsonObject.h
         JsonScanner.h
         Mat2x3.h
+        Mat3x3.h
         Mat4x4.h
         Mesh.h
         Model.h
+        Quaternion.h
         Renderer.h
         Scanner.h
         Token.h
@@ -47,10 +49,12 @@ target_sources(ZSharp
         JsonObject.cpp
 	    JsonScanner.cpp
         Mat2x3.cpp
+        Mat3x3.cpp
         Mat4x4.cpp
         Mesh.cpp
         Model.cpp
         OBJFile.cpp
+        Quaternion.cpp
         Renderer.cpp
         Scanner.cpp
         Triangle.cpp

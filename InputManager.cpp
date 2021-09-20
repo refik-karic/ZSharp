@@ -15,6 +15,29 @@ void InputManager::Update(std::uint8_t key, InputManager::KeyState state) {
   mKeyboard[key] = state;
 }
 
+void InputManager::UpdateMousePosition(std::int32_t x, std::int32_t y) {
+  if (mMousePressed) {
+    mCurrentMouseX = x;
+    mCurrentMouseY = y;
+  }
+  else {
+    mOldMouseX = x;
+    mOldMouseY = y;
+  }
+}
+
+void InputManager::UpdateMouseState(bool pressedDown) {
+  mMousePressed = pressedDown;
+}
+
+void InputManager::ResetMouse() {
+  mMousePressed = false;
+  mOldMouseX = 0;
+  mOldMouseY = 0;
+  mCurrentMouseX = 0;
+  mCurrentMouseY = 0;
+}
+
 void InputManager::Process() {
   for (uint8_t i = 0; i < mKeyboard.size(); ++i) {
     switch (mKeyboard[i]) {
@@ -37,6 +60,14 @@ void InputManager::Process() {
     }
   }
 
+  if (mMousePressed) {
+    for (IInputListener* listener : mListenerList) {
+      if (listener != nullptr) {
+        listener->OnMouseMove(mOldMouseX, mOldMouseY, mCurrentMouseX, mCurrentMouseY);
+      }
+    }
+  }
+
   mKeyboard.fill(KeyState::Clear);
 }
 
@@ -53,5 +84,9 @@ void InputManager::Unregister(IInputListener* inputListener) {
       break;
     }
   }
+}
+
+bool InputManager::IsMousePressed() const {
+  return mMousePressed;
 }
 }

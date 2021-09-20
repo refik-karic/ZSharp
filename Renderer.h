@@ -32,6 +32,8 @@ class Renderer final : public IInputListener {
 
   void OnKeyUp(std::uint8_t key) override;
 
+  void OnMouseMove(std::int32_t oldX, std::int32_t oldY, std::int32_t x, std::int32_t y) override;
+
   private:
 
   Camera mCamera;

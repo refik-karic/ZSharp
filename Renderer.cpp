@@ -4,6 +4,7 @@
 #include "Constants.h"
 #include "InputManager.h"
 #include "Mat4x4.h"
+#include "Quaternion.h"
 #include "Renderer.h"
 #include "Triangle.h"
 #include "UtilMath.h"
@@ -100,10 +101,22 @@ void Renderer::MoveCamera(Direction direction, const float amount) {
 }
 
 void Renderer::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {
-  Mat4x4 rotationMatrix;
-  rotationMatrix.SetRotation(DegreesToRadians(angleDegrees), direction);
+  Vec3 rotationAxis;
+  switch (direction) {
+    case Mat4x4::Axis::X:
+      rotationAxis[0] = 1.f;
+      break;
+    case Mat4x4::Axis::Y:
+      rotationAxis[1] = 1.f;
+      break;
+    case Mat4x4::Axis::Z:
+      rotationAxis[2] = 1.f;
+      break;
+  }
 
-  mCamera.RotateCamera(rotationMatrix);
+  Quaternion quat(DegreesToRadians(angleDegrees), rotationAxis);
+  Mat4x4 rotation(quat.GetRotationMatrix());
+  mCamera.RotateCamera(rotation);
 }
 
 void Renderer::ChangeSpeed(std::int64_t amount) {
@@ -166,6 +179,14 @@ void Renderer::OnKeyDown(std::uint8_t key) {
 
 void Renderer::OnKeyUp(std::uint8_t key) {
   (void)key;
+}
+
+void Renderer::OnMouseMove(std::int32_t oldX, std::int32_t oldY, std::int32_t x, std::int32_t y) {
+  std::int32_t deltaX = x - oldX;
+  std::int32_t deltaY = y - oldY;
+
+  (void)deltaX;
+  (void)deltaY;
 }
 
 }

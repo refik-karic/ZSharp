@@ -42,8 +42,8 @@ bool ZConfig::SizeChanged(std::size_t width, std::size_t height) {
 }
 
 ZConfig::ZConfig() {
-  SetViewportWidth(640);
-  SetViewportHeight(480);
+  SetViewportWidth(1920);
+  SetViewportHeight(1080);
   SetBytesPerPixel(4);
 }
 

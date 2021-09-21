@@ -29,7 +29,7 @@ Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
 
   mCameraPos[0] = 0.0f;
   mCameraPos[1] = 0.0f;
-  mCameraPos[2] = 15.0f;
+  mCameraPos[2] = 25.0f;
 
   InputManager* inputManager = InputManager::GetInstance();
   inputManager->Register(this);
@@ -119,11 +119,16 @@ void Renderer::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {
   mCamera.RotateCamera(rotation);
 }
 
+void Renderer::RotateTrackball(Quaternion quat) {
+  Mat4x4 rotation(quat.GetRotationMatrix());
+  mCamera.RotateCamera(rotation);
+}
+
 void Renderer::ChangeSpeed(std::int64_t amount) {
-  if(mRotationSpeed + amount > 10) {
+  if (mRotationSpeed + amount > 10) {
     mRotationSpeed = 10;
   }
-  else if(mRotationSpeed + amount < 1) {
+  else if (mRotationSpeed + amount < 1) {
     mRotationSpeed = 1;
   }
   else {
@@ -141,39 +146,39 @@ void Renderer::PauseTransforms() {
 
 void Renderer::OnKeyDown(std::uint8_t key) {
   switch (key) {
-    case 'P':
-      PauseTransforms();
-      break;
-    case 'R':
-      FlipRenderMode();
-      break;
-    case 'W':
-      MoveCamera(ZSharp::Renderer::Direction::UP, 1.0F);
-      break;
-    case 'S':
-      MoveCamera(ZSharp::Renderer::Direction::DOWN, 1.0F);
-      break;
-    case 'A':
-      MoveCamera(ZSharp::Renderer::Direction::RIGHT, 1.0F);
-      break;
-    case 'D':
-      MoveCamera(ZSharp::Renderer::Direction::LEFT, 1.0F);
-      break;
-    case 'Q':
-      RotateCamera(Mat4x4::Axis::Y, 1.0F);
-      break;
-    case 'E':
-      RotateCamera(Mat4x4::Axis::Y, -1.0F);
-      break;
-      // TODO: Come up with a better system for mapping non trivial keys.
-    case 0x26: // VK_UP Windows
-      ChangeSpeed(1);
-      break;
-    case 0x28:
-      ChangeSpeed(-1);
-      break;
-    default:
-      break;
+  case 'P':
+    PauseTransforms();
+    break;
+  case 'R':
+    FlipRenderMode();
+    break;
+  case 'W':
+    MoveCamera(ZSharp::Renderer::Direction::UP, 1.0F);
+    break;
+  case 'S':
+    MoveCamera(ZSharp::Renderer::Direction::DOWN, 1.0F);
+    break;
+  case 'A':
+    MoveCamera(ZSharp::Renderer::Direction::RIGHT, 1.0F);
+    break;
+  case 'D':
+    MoveCamera(ZSharp::Renderer::Direction::LEFT, 1.0F);
+    break;
+  case 'Q':
+    RotateCamera(Mat4x4::Axis::Y, 1.0F);
+    break;
+  case 'E':
+    RotateCamera(Mat4x4::Axis::Y, -1.0F);
+    break;
+    // TODO: Come up with a better system for mapping non trivial keys.
+  case 0x26: // VK_UP Windows
+    ChangeSpeed(1);
+    break;
+  case 0x28:
+    ChangeSpeed(-1);
+    break;
+  default:
+    break;
   }
 }
 
@@ -182,11 +187,33 @@ void Renderer::OnKeyUp(std::uint8_t key) {
 }
 
 void Renderer::OnMouseMove(std::int32_t oldX, std::int32_t oldY, std::int32_t x, std::int32_t y) {
-  std::int32_t deltaX = x - oldX;
-  std::int32_t deltaY = y - oldY;
+  Vec3 V1(ProjectClick((float)x, (float)y));
+  Vec3 V2(ProjectClick((float)oldX, (float)oldY));
+  V1.Normalize();
+  V2.Normalize();
+  Vec3 N(V1.Cross(V2));
+  float theta = acosf(V1 * V2);
+  N = N * sinf(theta / 2.f);
+  Quaternion quat(cosf(theta / 2.f), N);
+  RotateTrackball(quat);
+}
 
-  (void)deltaX;
-  (void)deltaY;
+Vec3 Renderer::ProjectClick(float x, float y) {
+  ZConfig& config = ZConfig::GetInstance();
+  std::int32_t width = (std::int32_t)config.GetViewportWidth();
+  const float radius = (float)width / 2.f;
+
+  bool insideSphere = ((x * x) + (y * y)) < ((radius * radius) / 2.f);
+  float z = 0.f;
+  if (insideSphere) {
+    z = sqrtf((radius * radius) - ((x * x) + (y * y)));
+  }
+  else {
+    z = (((radius * radius) / 2.f) / sqrtf(((x * x) + (y * y))));
+  }
+
+  Vec3 result(x, y, z);
+  return result;
 }
 
 }

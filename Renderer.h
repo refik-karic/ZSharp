@@ -7,6 +7,7 @@
 #include "IInputListener.h"
 #include "Mat4x4.h"
 #include "Model.h"
+#include "Quaternion.h"
 #include "Vec3.h"
 #include "ZColor.h"
 
@@ -54,10 +55,14 @@ class Renderer final : public IInputListener {
 
   void RotateCamera(Mat4x4::Axis direction, const float angleDegrees);
 
+  void RotateTrackball(Quaternion quat);
+
   void ChangeSpeed(std::int64_t amount);
 
   void FlipRenderMode();
 
   void PauseTransforms();
+
+  Vec3 ProjectClick(float x, float y);
 };
 }

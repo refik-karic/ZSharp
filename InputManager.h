@@ -19,9 +19,9 @@ class InputManager final {
 
   static InputManager* GetInstance();
 
-  void Update(std::uint8_t key, KeyState state);
+  void Update(uint8_t key, KeyState state);
 
-  void UpdateMousePosition(std::int32_t x, std::int32_t y);
+  void UpdateMousePosition(int32_t x, int32_t y);
 
   void UpdateMouseState(bool pressedDown);
 
@@ -43,9 +43,9 @@ class InputManager final {
   std::array<KeyState, UINT8_MAX> mKeyboard;
 
   bool mMousePressed = false;
-  std::int32_t mOldMouseX = 0;
-  std::int32_t mOldMouseY = 0;
-  std::int32_t mCurrentMouseX = 0;
-  std::int32_t mCurrentMouseY = 0;
+  int32_t mOldMouseX = 0;
+  int32_t mOldMouseY = 0;
+  int32_t mCurrentMouseX = 0;
+  int32_t mCurrentMouseY = 0;
 };
 }

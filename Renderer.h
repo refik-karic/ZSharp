@@ -18,22 +18,22 @@ class Renderer final : public IInputListener {
   enum class Direction {
     LEFT,
     RIGHT,
-    UP,
-    DOWN
+    FORWARD,
+    BACK
   };
 
-  Renderer(std::size_t width, std::size_t height, std::size_t stride);
+  Renderer(size_t width, size_t height, size_t stride);
 
   Renderer(const Renderer&) = delete;
   void operator=(const Renderer&) = delete;
 
-  std::uint8_t* RenderNextFrame();
+  uint8_t* RenderNextFrame();
 
-  void OnKeyDown(std::uint8_t key) override;
+  void OnKeyDown(uint8_t key) override;
 
-  void OnKeyUp(std::uint8_t key) override;
+  void OnKeyUp(uint8_t key) override;
 
-  void OnMouseMove(std::int32_t oldX, std::int32_t oldY, std::int32_t x, std::int32_t y) override;
+  void OnMouseMove(int32_t oldX, int32_t oldY, int32_t x, int32_t y) override;
 
   private:
 
@@ -43,8 +43,8 @@ class Renderer final : public IInputListener {
   Framebuffer mBuffer;
   Model mModel;
 
-  std::int64_t mFrameCount = 0;
-  std::int64_t mRotationSpeed = 4;
+  int64_t mFrameCount = 0;
+  int64_t mRotationSpeed = 4;
   bool mRenderMode = false;
   bool mPauseTransforms = false;
 
@@ -57,7 +57,7 @@ class Renderer final : public IInputListener {
 
   void RotateTrackball(Quaternion quat);
 
-  void ChangeSpeed(std::int64_t amount);
+  void ChangeSpeed(int64_t amount);
 
   void FlipRenderMode();
 

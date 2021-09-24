@@ -31,8 +31,8 @@ void OBJFile::Serialize(FileString& destPath) {
   std::ofstream file(destPath.GetAbsolutePath(), std::ios::out | std::ios::binary | std::ios::trunc);
   if (file.is_open()) {
     // Write length of vertex vector
-    std::size_t vertSize = mVerts.size();
-    file.write(reinterpret_cast<char*>(&vertSize), sizeof(std::size_t));
+    size_t vertSize = mVerts.size();
+    file.write(reinterpret_cast<char*>(&vertSize), sizeof(size_t));
 
     // Write vertex vector
     for (Vec4& vector : mVerts) {
@@ -40,8 +40,8 @@ void OBJFile::Serialize(FileString& destPath) {
     }
 
     // Write size of face vector
-    std::size_t faceSize = mFaces.size();
-    file.write(reinterpret_cast<char*>(&faceSize), sizeof(std::size_t));
+    size_t faceSize = mFaces.size();
+    file.write(reinterpret_cast<char*>(&faceSize), sizeof(size_t));
 
     // Write face vector
     for (OBJFace& face : mFaces) {
@@ -57,24 +57,24 @@ void OBJFile::Deserialize(FileString& objFilePath) {
   std::ifstream file(objFilePath.GetAbsolutePath(), std::ios::in | std::ios::binary);
   if (file.is_open()) {
     // Read vert size
-    std::size_t vertSize = 0;
-    file.read(reinterpret_cast<char*>(&vertSize), sizeof(std::size_t));
+    size_t vertSize = 0;
+    file.read(reinterpret_cast<char*>(&vertSize), sizeof(size_t));
     mVerts.resize(vertSize);
 
     // Read verticies
-    for (std::size_t i = 0; i < vertSize; ++i) {
+    for (size_t i = 0; i < vertSize; ++i) {
       Vec4 vector;
       file.read(reinterpret_cast<char*>(&vector), sizeof(ZSharp::Vec4));
       mVerts[i] = vector;
     }
 
     // Read face size
-    std::size_t faceSize = 0;
-    file.read(reinterpret_cast<char*>(&faceSize), sizeof(std::size_t));
+    size_t faceSize = 0;
+    file.read(reinterpret_cast<char*>(&faceSize), sizeof(size_t));
     mFaces.resize(faceSize);
 
     // Read face vector
-    for (std::size_t i = 0; i < faceSize; ++i) {
+    for (size_t i = 0; i < faceSize; ++i) {
       OBJFace face;
       file.read(reinterpret_cast<char*>(&face), sizeof(OBJFace));
       mFaces[i] = face;
@@ -165,9 +165,9 @@ void OBJFile::ParseVec3(ZSharp::Vec3& fillVec, std::string& line, float fallback
 }
 
 void OBJFile::ParseVec4(ZSharp::Vec4& fillVec, std::string& line, float fallback) {
-  std::size_t nextPos = 0;
+  size_t nextPos = 0;
 
-  for (std::int32_t i = 0; i < 4; ++i) {
+  for (int32_t i = 0; i < 4; ++i) {
     if (!line.empty()) {
       fillVec[i] = std::stof(line, &nextPos);
     }
@@ -181,10 +181,10 @@ void OBJFile::ParseVec4(ZSharp::Vec4& fillVec, std::string& line, float fallback
 }
 
 void OBJFile::ParseFace(OBJFace& fillFace, std::string& line) {
-  std::size_t nextPos = 0;
-  for (std::int32_t i = 0; i < 3; ++i) {
+  size_t nextPos = 0;
+  for (int32_t i = 0; i < 3; ++i) {
     if (!line.empty()) {
-      std::uint64_t vertexIndex = std::stoull(line, &nextPos);
+      uint64_t vertexIndex = std::stoull(line, &nextPos);
       ++nextPos;
       fillFace.triangleFace[i].vertexIndex = vertexIndex;
 
@@ -200,7 +200,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, std::string& line) {
     }
 
     if (!line.empty()) {
-      std::uint64_t textureIndex = std::stoull(line, &nextPos);
+      uint64_t textureIndex = std::stoull(line, &nextPos);
       ++nextPos;
       fillFace.triangleFace[i].uvIndex = textureIndex;
 
@@ -216,7 +216,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, std::string& line) {
     }
 
     if (!line.empty()) {
-      std::uint64_t normalIndex = std::stoull(line, &nextPos);
+      uint64_t normalIndex = std::stoull(line, &nextPos);
       ++nextPos;
       fillFace.triangleFace[i].normalIndex = normalIndex;
 

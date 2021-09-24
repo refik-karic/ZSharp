@@ -8,27 +8,27 @@
 namespace ZSharp {
 class Framebuffer final {
   public:
-  Framebuffer(std::size_t width, std::size_t height, std::size_t stride);
+  Framebuffer(size_t width, size_t height, size_t stride);
   ~Framebuffer();
 
   Framebuffer(const Framebuffer&) = delete;
   void operator=(const Framebuffer&) = delete;
 
-  void SetPixel(const std::size_t x, const std::size_t y, const ZColor color);
-  void SetRow(const std::size_t y, const std::size_t x1, const std::size_t x2, const ZColor color);
+  void SetPixel(const size_t x, const size_t y, const ZColor color);
+  void SetRow(const size_t y, const size_t x1, const size_t x2, const ZColor color);
   void Clear(const ZColor color);
-  std::uint8_t* GetBuffer();
-  std::size_t GetWidth() const;
-  std::size_t GetHeight() const;
-  std::size_t GetSize() const;
+  uint8_t* GetBuffer();
+  size_t GetWidth() const;
+  size_t GetHeight() const;
+  size_t GetSize() const;
   void Resize();
 
   private:
   uint8_t* mPixelBuffer = nullptr;
   uint8_t* mScratchBuffer = nullptr;
-  std::size_t mWidth;
-  std::size_t mHeight;
-  std::size_t mStride;
-  std::size_t mTotalSize;
+  size_t mWidth;
+  size_t mHeight;
+  size_t mStride;
+  size_t mTotalSize;
 };
 }

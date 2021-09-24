@@ -26,7 +26,7 @@ class JsonObject final {
     union {
       bool dataBool;
       double dataFloat;
-      std::int64_t dataInt;
+      int64_t dataInt;
     };
     std::shared_ptr<JsonObject> dataObject;
     std::vector<JsonValue> dataArray;

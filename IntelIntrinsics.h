@@ -12,7 +12,7 @@ void aligned_sse128mulfloat(const float* a, const float b, float* dest);
 
 float aligned_sse128mulfloatssum(const float* a, const float* b);
 
-void aligned_avx512memset(void* __restrict dest, void* const __restrict value, const std::size_t numBytes);
+void aligned_avx512memset(void* __restrict dest, void* const __restrict value, const size_t numBytes);
 
 void unaligned_sse128addfloats(const float* a, const float* b, float* dest);
 

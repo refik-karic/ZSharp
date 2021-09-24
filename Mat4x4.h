@@ -24,23 +24,23 @@ class Mat4x4 final {
       return;
     }
 
-    for (std::size_t row = 0; row < Rows; row++) {
+    for (size_t row = 0; row < Rows; row++) {
       mData[row] = matrix[row];
     }
   }
 
-  Vec4& operator[](std::size_t index) {
+  Vec4& operator[](size_t index) {
     return mData[index];
   }
 
-  const Vec4& operator[](std::size_t index) const {
+  const Vec4& operator[](size_t index) const {
     return mData[index];
   }
 
   Mat4x4 operator*(float scalar) {
     Mat4x4 result;
 
-    for (std::size_t row = 0; row < Rows; row++) {
+    for (size_t row = 0; row < Rows; row++) {
       result[row] = mData[row] * scalar;
     }
 
@@ -52,8 +52,8 @@ class Mat4x4 final {
 
     Mat4x4 rhsTranspose(matrix.Transpose());
 
-    for (std::size_t row = 0; row < Rows; row++) {
-      for (std::size_t col = 0; col < Columns; col++) {
+    for (size_t row = 0; row < Rows; row++) {
+      for (size_t col = 0; col < Columns; col++) {
         result[row][col] = mData[row] * rhsTranspose[col];
       }
     }
@@ -78,8 +78,8 @@ class Mat4x4 final {
   Vec4 ApplyTransform(const Vec4& domain) const;
 
   private:
-  static const std::size_t Rows = 4;
-  static const std::size_t Columns = 4;
+  static const size_t Rows = 4;
+  static const size_t Columns = 4;
   Vec4 mData[Rows];
 };
 

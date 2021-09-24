@@ -40,10 +40,10 @@ void Vec3::Normalize() {
   mData[2] *= invSqrt;
 }
 
-void Vec3::Homogenize(std::size_t element) {
+void Vec3::Homogenize(size_t element) {
   float divisor(mData[element]);
 
-  for (std::size_t i = 0; i <= element; i++) {
+  for (size_t i = 0; i <= element; i++) {
     mData[i] /= divisor;
   }
 }

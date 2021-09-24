@@ -11,7 +11,7 @@ class Triangle final {
 
   Triangle();
 
-  Triangle(std::size_t p1, std::size_t p2, std::size_t p3);
+  Triangle(size_t p1, size_t p2, size_t p3);
 
   Triangle(const Triangle& copy);
 
@@ -25,20 +25,20 @@ class Triangle final {
     mIndicies[2] = rhs[2];
   }
 
-  std::size_t operator[](std::size_t index) const {
+  size_t operator[](size_t index) const {
     return mIndicies[index];
   }
 
-  std::size_t& operator[](std::size_t index) {
+  size_t& operator[](size_t index) {
     return mIndicies[index];
   }
 
-  const std::size_t* GetData();
+  const size_t* GetData();
 
-  const std::size_t* GetData() const;
+  const size_t* GetData() const;
 
   private:
-  std::size_t mIndicies[Constants::TRI_VERTS] = {0, 0, 0};
+  size_t mIndicies[TRI_VERTS] = {0, 0, 0};
 };
 
 }

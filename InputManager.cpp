@@ -11,11 +11,11 @@ InputManager* InputManager::GetInstance() {
   return &inputManager;
 }
 
-void InputManager::Update(std::uint8_t key, InputManager::KeyState state) {
+void InputManager::Update(uint8_t key, InputManager::KeyState state) {
   mKeyboard[key] = state;
 }
 
-void InputManager::UpdateMousePosition(std::int32_t x, std::int32_t y) {
+void InputManager::UpdateMousePosition(int32_t x, int32_t y) {
   if (mMousePressed) {
     mCurrentMouseX = x;
     mCurrentMouseY = y;
@@ -76,7 +76,7 @@ void InputManager::Register(IInputListener* inputListener) {
 }
 
 void InputManager::Unregister(IInputListener* inputListener) {
-  for (std::size_t i = 0; i < mListenerList.size(); ++i) {
+  for (size_t i = 0; i < mListenerList.size(); ++i) {
     IInputListener* listener = mListenerList[i];
     
     if (listener == inputListener) {

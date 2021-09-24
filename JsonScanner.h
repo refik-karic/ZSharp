@@ -27,7 +27,7 @@ class JsonScanner : public Scanner {
 
   bool IsDigit(char letter);
 
-  std::int64_t TokenToInt(Token token);
+  int64_t TokenToInt(Token token);
 
   double TokenToFloat(Token token);
 

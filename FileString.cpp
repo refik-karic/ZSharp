@@ -80,7 +80,7 @@ void FileString::CacheAbsolutePath() {
 
   mAbsolutePath.append(mVolume);
   mAbsolutePath.append(mDirectorySeparator);
-  for (std::uint32_t i = 0; i < mDirectories.size(); ++i) {
+  for (uint32_t i = 0; i < mDirectories.size(); ++i) {
     mAbsolutePath.append(mDirectories[i]);
     
     if (i != (mDirectories.size() - 1)) {

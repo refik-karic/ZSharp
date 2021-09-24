@@ -24,12 +24,12 @@ float aligned_sse128mulfloatssum(const float* a, const float* b) {
   return _mm_cvtss_f32(mulResult);
 }
 
-void aligned_avx512memset(void* __restrict dest, void* const __restrict value, const std::size_t numBytes) {
-  std::size_t* nextDest = reinterpret_cast<std::size_t*>(dest);
-  const std::size_t end = numBytes / sizeof(std::size_t);
+void aligned_avx512memset(void* __restrict dest, void* const __restrict value, const size_t numBytes) {
+  size_t* nextDest = reinterpret_cast<size_t*>(dest);
+  const size_t end = numBytes / sizeof(size_t);
 
   __m512i repData = _mm512_load_epi32(value);
-  for (std::size_t i = 0; i < end; i += sizeof(std::size_t)) {
+  for (size_t i = 0; i < end; i += sizeof(size_t)) {
     _mm512_store_epi32(nextDest + i, repData);
   }
 }

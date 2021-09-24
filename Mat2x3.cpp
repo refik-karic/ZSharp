@@ -11,8 +11,8 @@ Mat2x3::Mat2x3(const Mat2x3& copy) {
 }
 
 void Mat2x3::Identity() {
-  for (std::size_t row = 0; row < Rows; row++) {
-    for (std::size_t col = 0; col < Columns; col++) {
+  for (size_t row = 0; row < Rows; row++) {
+    for (size_t col = 0; col < Columns; col++) {
       if (row == col) {
         mData[row][col] = 1.f;
       }
@@ -24,7 +24,7 @@ void Mat2x3::Identity() {
 }
 
 void Mat2x3::Clear() {
-  for (std::size_t row = 0; row < Rows; row++) {
+  for (size_t row = 0; row < Rows; row++) {
     mData[row].Clear();
   }
 }
@@ -32,8 +32,8 @@ void Mat2x3::Clear() {
 Mat2x3 Mat2x3::Transpose() const {
   Mat2x3 result;
 
-  for (std::size_t row = 0; row < Rows; row++) {
-    for (std::size_t col = 0; col < Columns; col++) {
+  for (size_t row = 0; row < Rows; row++) {
+    for (size_t col = 0; col < Columns; col++) {
       result[row][col] = mData[col][row];
     }
   }
@@ -44,7 +44,7 @@ Mat2x3 Mat2x3::Transpose() const {
 Vec3 Mat2x3::ApplyTransform(const Vec3& domain) const {
   Vec3 codomainResult;
 
-  for (std::size_t row = 0; row < Rows; row++) {
+  for (size_t row = 0; row < Rows; row++) {
     codomainResult[row] = domain * mData[row];
   }
 

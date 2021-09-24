@@ -7,16 +7,16 @@
 namespace ZSharp {
 
 float DegreesToRadians(float degrees) {
-  return degrees * Constants::PI_OVER_180;
+  return degrees * PI_OVER_180;
 }
 
 float NewtonRaphsonSqrt(float val) {
-    const std::size_t iterations = 10;
+    const size_t iterations = 10;
 
     float x0 = 0.f;
     x0 += 1.f;
 
-    for (std::size_t i = 0; i < iterations; ++i) {
+    for (size_t i = 0; i < iterations; ++i) {
         x0 = x0 - (((x0 * x0) - val) / (2.f * x0));
     }
 
@@ -25,7 +25,7 @@ float NewtonRaphsonSqrt(float val) {
 
 bool IsNegativeFloat(const float a)
 {
-    const std::uint8_t* floatBits = reinterpret_cast<const std::uint8_t*>(&a);
+    const uint8_t* floatBits = reinterpret_cast<const uint8_t*>(&a);
     return (((floatBits[3]) & 0x01) > 0);
 }
 

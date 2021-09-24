@@ -19,11 +19,11 @@ class Scanner {
   void ScanTokens(const char* fileName, std::vector<Token>& tokens);
 
   protected:
-  std::size_t mStart = 0;
+  size_t mStart = 0;
   
-  std::size_t mCurrent = 0;
+  size_t mCurrent = 0;
   
-  std::size_t mLine = 0;
+  size_t mLine = 0;
 
   bool IsAtEnd(std::vector<char>& fileBuffer);
 

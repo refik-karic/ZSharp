@@ -24,25 +24,25 @@ void DrawTrianglesWireframe(Framebuffer& framebuffer,
     ZColor color);
 
 void DrawRunSlice(Framebuffer& framebuffer,
-    std::int32_t x1,
-    std::int32_t y1,
-    std::int32_t x2,
-    std::int32_t y2,
+    int32_t x1,
+    int32_t y1,
+    int32_t x2,
+    int32_t y2,
     ZColor color);
 
 void TracePrimitive(GlobalEdgeTable& edgeTable, 
-    std::array<std::int32_t, 2>& p1, 
-    std::array<std::int32_t, 2>& p2, 
-    std::array<std::int32_t, 2>& p3, 
+    std::array<int32_t, 2>& p1, 
+    std::array<int32_t, 2>& p2, 
+    std::array<int32_t, 2>& p3, 
     ZColor color, 
-    std::size_t primitiveIndex);
+    size_t primitiveIndex);
 
 void TraceLine(GlobalEdgeTable& edgeTable,
-    std::int32_t x1,
-    std::int32_t y1,
-    std::int32_t x2,
-    std::int32_t y2,
+    int32_t x1,
+    int32_t y1,
+    int32_t x2,
+    int32_t y2,
     ZColor color,
-    std::size_t primitiveIndex);
+    size_t primitiveIndex);
 
 }

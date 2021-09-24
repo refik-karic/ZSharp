@@ -24,23 +24,23 @@ class Mat2x3 final {
       return;
     }
 
-    for (std::size_t row = 0; row < Rows; row++) {
+    for (size_t row = 0; row < Rows; row++) {
       mData[row] = matrix[row];
     }
   }
 
-  Vec3& operator[](std::size_t index) {
+  Vec3& operator[](size_t index) {
     return mData[index];
   }
 
-  const Vec3& operator[](std::size_t index) const {
+  const Vec3& operator[](size_t index) const {
     return mData[index];
   }
 
   Mat2x3 operator*(float scalar) {
     Mat2x3 result;
 
-    for (std::size_t row = 0; row < Rows; row++) {
+    for (size_t row = 0; row < Rows; row++) {
       result[row] = mData[row] * scalar;
     }
 
@@ -52,8 +52,8 @@ class Mat2x3 final {
 
     Mat2x3 rhsTranspose(matrix.Transpose());
 
-    for (std::size_t row = 0; row < Rows; row++) {
-      for (std::size_t col = 0; col < Columns; col++) {
+    for (size_t row = 0; row < Rows; row++) {
+      for (size_t col = 0; col < Columns; col++) {
         result[row][col] = mData[row] * rhsTranspose[col];
       }
     }
@@ -70,8 +70,8 @@ class Mat2x3 final {
   Vec3 ApplyTransform(const Vec3& domain) const;
 
   private:
-  static const std::size_t Rows = 2;
-  static const std::size_t Columns = 3;
+  static const size_t Rows = 2;
+  static const size_t Columns = 3;
   Vec3 mData[Rows];
 };
 

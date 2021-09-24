@@ -75,7 +75,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   uToE[2] = w;
   uToE[3][3] = 1.f;
 
-  const float fovScale = (Constants::PI_OVER_180 / 2.f);
+  const float fovScale = (PI_OVER_180 / 2.f);
   Mat4x4 scale;
   scale[0][0] = 1.f / (mFarPlane * (tanf((mFovHoriz * fovScale))));
   scale[1][1] = 1.f / (mFarPlane * (tanf((mFovVert * fovScale))));
@@ -103,15 +103,15 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 
-  const std::size_t homogenizedStride = vertexBuffer.GetHomogenizedStride();
-  for (std::size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
+  const size_t homogenizedStride = vertexBuffer.GetHomogenizedStride();
+  for (size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
     float* vertexData = vertexBuffer.GetInputData(i);
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexData));
     vertexVector[3] = 1.f;
     vertexVector = unhing.ApplyTransform(vertexVector);
   }
 
-  for (std::size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
+  for (size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
     float* vertexData = vertexBuffer.GetInputData(i);
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexData));
     vertexVector.Homogenize(3);
@@ -119,8 +119,8 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   ClipTriangles(vertexBuffer, indexBuffer);
 
-  const std::size_t inputStride = vertexBuffer.GetInputStride();
-  for (std::size_t i = 0; i < vertexBuffer.GetClipLength(); i += inputStride) {
+  const size_t inputStride = vertexBuffer.GetInputStride();
+  for (size_t i = 0; i < vertexBuffer.GetClipLength(); i += inputStride) {
     float* vertexData = vertexBuffer.GetClipData(i);
     Vec3& vertexVector = *(reinterpret_cast<Vec3*>(vertexData));
     vertexVector.Homogenize(2);
@@ -131,13 +131,13 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   Vec3 currentEdge;
 
-  std::size_t inputStride = vertexBuffer.GetHomogenizedStride();
-  std::size_t endEBO = indexBuffer.GetWorkingSize();
-  for (std::size_t i = 0; i < endEBO; i += Constants::TRI_VERTS) {
+  size_t inputStride = vertexBuffer.GetHomogenizedStride();
+  size_t endEBO = indexBuffer.GetWorkingSize();
+  for (size_t i = 0; i < endEBO; i += TRI_VERTS) {
     float* v1 = vertexBuffer.GetInputData(indexBuffer[i], inputStride);
     float* v2 = vertexBuffer.GetInputData(indexBuffer[i + 1], inputStride);
     float* v3 = vertexBuffer.GetInputData(indexBuffer[i + 2], inputStride);
-    std::size_t numClippedVerts = 3;
+    size_t numClippedVerts = 3;
     std::array<Vec3, 6> clippedVerts{
       *(reinterpret_cast<Vec3*>(v1)),
       *(reinterpret_cast<Vec3*>(v2)),
@@ -145,8 +145,8 @@ void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
     };
 
 #if DEBUG_CLIPPING
-    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(clippedVerts.data()), 3 * Constants::TRI_VERTS);
-    std::size_t currentClipIndex = vertexBuffer.GetClipLength() / Constants::TRI_VERTS;
+    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(clippedVerts.data()), 3 * TRI_VERTS);
+    size_t currentClipIndex = vertexBuffer.GetClipLength() / TRI_VERTS;
     Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
     indexBuffer.AppendClipData(nextTriangle);
     (void)numClippedVerts;
@@ -172,19 +172,19 @@ void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
     currentEdge.Clear();
 
     if (numClippedVerts > 0) {
-      std::size_t currentClipIndex = vertexBuffer.GetClipLength() / Constants::TRI_VERTS;
+      size_t currentClipIndex = vertexBuffer.GetClipLength() / TRI_VERTS;
       const float* clippedVertData = reinterpret_cast<const float*>(clippedVerts.data());
-      vertexBuffer.AppendClipData(clippedVertData, numClippedVerts * Constants::TRI_VERTS);
+      vertexBuffer.AppendClipData(clippedVertData, numClippedVerts * TRI_VERTS);
 
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
       indexBuffer.AppendClipData(nextTriangle);
 
-      for (std::size_t j = 1; j <= numClippedVerts - Constants::TRI_VERTS; ++j) {
+      for (size_t j = 1; j <= numClippedVerts - TRI_VERTS; ++j) {
         nextTriangle[0] = ((2 * j) % numClippedVerts) + currentClipIndex;
 
-        if (j == numClippedVerts - Constants::TRI_VERTS) {
-          std::size_t secondPos = (((numClippedVerts - 4) >> 1) + 1);
-          std::size_t thirdPos = ((numClippedVerts - Constants::TRI_VERTS) + 1);
+        if (j == numClippedVerts - TRI_VERTS) {
+          size_t secondPos = (((numClippedVerts - 4) >> 1) + 1);
+          size_t thirdPos = ((numClippedVerts - TRI_VERTS) + 1);
 
           nextTriangle[1] = (((2 * j) + secondPos) % numClippedVerts) + currentClipIndex;
           nextTriangle[2] = (((2 * j) + thirdPos) % numClippedVerts) + currentClipIndex;

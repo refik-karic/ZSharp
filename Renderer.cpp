@@ -13,19 +13,19 @@
 #include "ZDrawing.h"
 
 namespace ZSharp {
-Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
+Renderer::Renderer(size_t width, size_t height, size_t stride)
   : mBuffer(width, height, stride)
 {
   FileString assetName("C:\\Users\\refik\\Desktop\\backpack.txt");
   AssetLoader::LoadModelOBJ(assetName, mModel);
 
-  std::size_t indexBufSize = 0;
+  size_t indexBufSize = 0;
   for (Mesh& mesh : mModel.GetMeshData()) {
-    indexBufSize += (mesh.GetTriangleFaceTable().size() * Constants::TRI_VERTS);
+    indexBufSize += (mesh.GetTriangleFaceTable().size() * TRI_VERTS);
   }
 
   mIndexBuffer = std::make_shared<IndexBuffer>(indexBufSize);
-  mVertexBuffer = std::make_shared<VertexBuffer>(indexBufSize * Constants::TRI_VERTS, Constants::TRI_VERTS);
+  mVertexBuffer = std::make_shared<VertexBuffer>(indexBufSize * TRI_VERTS, TRI_VERTS);
 
   mCameraPos[0] = 0.0f;
   mCameraPos[1] = 0.0f;
@@ -35,7 +35,7 @@ Renderer::Renderer(std::size_t width, std::size_t height, std::size_t stride)
   inputManager->Register(this);
 }
 
-std::uint8_t* Renderer::RenderNextFrame() {
+uint8_t* Renderer::RenderNextFrame() {
   ZConfig& config = ZConfig::GetInstance();
 
   if (config.SizeChanged(mBuffer.GetWidth(), mBuffer.GetHeight())) {
@@ -85,17 +85,17 @@ std::uint8_t* Renderer::RenderNextFrame() {
 
 void Renderer::MoveCamera(Direction direction, const float amount) {
   switch (direction) {
-    case Direction::UP:
-      mCameraPos[1] -= amount;
+    case Direction::FORWARD:
+      mCameraPos[2] -= amount;
       break;
-    case Direction::DOWN:
-      mCameraPos[1] += amount;
+    case Direction::BACK:
+      mCameraPos[2] += amount;
       break;
     case Direction::LEFT:
-      mCameraPos[0] -= amount;
+      mCameraPos[0] += amount;
       break;
     case Direction::RIGHT:
-      mCameraPos[0] += amount;
+      mCameraPos[0] -= amount;
       break;
   }
 }
@@ -124,7 +124,7 @@ void Renderer::RotateTrackball(Quaternion quat) {
   mCamera.RotateCamera(rotation);
 }
 
-void Renderer::ChangeSpeed(std::int64_t amount) {
+void Renderer::ChangeSpeed(int64_t amount) {
   if (mRotationSpeed + amount > 10) {
     mRotationSpeed = 10;
   }
@@ -144,7 +144,7 @@ void Renderer::PauseTransforms() {
   mPauseTransforms = !mPauseTransforms;
 }
 
-void Renderer::OnKeyDown(std::uint8_t key) {
+void Renderer::OnKeyDown(uint8_t key) {
   switch (key) {
   case 'P':
     PauseTransforms();
@@ -153,10 +153,10 @@ void Renderer::OnKeyDown(std::uint8_t key) {
     FlipRenderMode();
     break;
   case 'W':
-    MoveCamera(ZSharp::Renderer::Direction::UP, 1.0F);
+    MoveCamera(ZSharp::Renderer::Direction::FORWARD, 1.0F);
     break;
   case 'S':
-    MoveCamera(ZSharp::Renderer::Direction::DOWN, 1.0F);
+    MoveCamera(ZSharp::Renderer::Direction::BACK, 1.0F);
     break;
   case 'A':
     MoveCamera(ZSharp::Renderer::Direction::RIGHT, 1.0F);
@@ -182,25 +182,24 @@ void Renderer::OnKeyDown(std::uint8_t key) {
   }
 }
 
-void Renderer::OnKeyUp(std::uint8_t key) {
+void Renderer::OnKeyUp(uint8_t key) {
   (void)key;
 }
 
-void Renderer::OnMouseMove(std::int32_t oldX, std::int32_t oldY, std::int32_t x, std::int32_t y) {
+void Renderer::OnMouseMove(int32_t oldX, int32_t oldY, int32_t x, int32_t y) {
   Vec3 V1(ProjectClick((float)x, (float)y));
   Vec3 V2(ProjectClick((float)oldX, (float)oldY));
   V1.Normalize();
   V2.Normalize();
   Vec3 N(V1.Cross(V2));
   float theta = acosf(V1 * V2);
-  N = N * sinf(theta / 2.f);
-  Quaternion quat(cosf(theta / 2.f), N);
+  Quaternion quat(DegreesToRadians(theta), N);
   RotateTrackball(quat);
 }
 
 Vec3 Renderer::ProjectClick(float x, float y) {
   ZConfig& config = ZConfig::GetInstance();
-  std::int32_t width = (std::int32_t)config.GetViewportWidth();
+  int32_t width = (int32_t)config.GetViewportWidth();
   const float radius = (float)width / 2.f;
 
   bool insideSphere = ((x * x) + (y * y)) < ((radius * radius) / 2.f);

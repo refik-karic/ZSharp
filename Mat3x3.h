@@ -17,23 +17,23 @@ class Mat3x3 {
       return;
     }
 
-    for (std::size_t row = 0; row < Rows; row++) {
+    for (size_t row = 0; row < Rows; row++) {
       mData[row] = copy[row];
     }
   }
 
-  Vec3& operator[](std::size_t index) {
+  Vec3& operator[](size_t index) {
     return mData[index];
   }
 
-  const Vec3& operator[](std::size_t index) const {
+  const Vec3& operator[](size_t index) const {
     return mData[index];
   }
 
   Mat3x3 operator*(float scalar) {
     Mat3x3 result;
 
-    for (std::size_t row = 0; row < Rows; row++) {
+    for (size_t row = 0; row < Rows; row++) {
       result[row] = mData[row] * scalar;
     }
 
@@ -45,8 +45,8 @@ class Mat3x3 {
 
     Mat3x3 rhsTranspose(matrix.Transpose());
 
-    for (std::size_t row = 0; row < Rows; row++) {
-      for (std::size_t col = 0; col < Columns; col++) {
+    for (size_t row = 0; row < Rows; row++) {
+      for (size_t col = 0; col < Columns; col++) {
         result[row][col] = mData[row] * rhsTranspose[col];
       }
     }
@@ -61,8 +61,8 @@ class Mat3x3 {
   Mat3x3 Transpose() const;
 
   private:
-  static const std::size_t Rows = 3;
-  static const std::size_t Columns = 3;
+  static const size_t Rows = 3;
+  static const size_t Columns = 3;
   Vec3 mData[Rows];
 };
 

@@ -7,7 +7,7 @@ namespace ZSharp {
 
 class VertexBuffer final {
   public:
-  VertexBuffer(std::size_t size, std::size_t stride);
+  VertexBuffer(size_t size, size_t stride);
 
   ~VertexBuffer();
 
@@ -27,49 +27,49 @@ class VertexBuffer final {
     mClipData = mData + mInputSize;
   }
 
-  float operator[](std::size_t index) const {
+  float operator[](size_t index) const {
     return mData[index];
   }
 
-  float& operator[](std::size_t index) {
+  float& operator[](size_t index) {
     return mData[index];
   }
 
-  std::size_t GetTotalSize() const;
+  size_t GetTotalSize() const;
 
-  std::size_t GetWorkingSize() const;
+  size_t GetWorkingSize() const;
 
-  std::size_t GetHomogenizedStride() const;
+  size_t GetHomogenizedStride() const;
 
-  std::size_t GetInputStride() const;
+  size_t GetInputStride() const;
 
-  void CopyInputData(const float* data, std::size_t index, std::size_t length);
+  void CopyInputData(const float* data, size_t index, size_t length);
 
-  float* GetInputData(std::size_t index = 0, std::size_t stride = 1);
+  float* GetInputData(size_t index = 0, size_t stride = 1);
 
-  const float* GetInputData(std::size_t index = 0, std::size_t stride = 1) const;
+  const float* GetInputData(size_t index = 0, size_t stride = 1) const;
 
-  float* GetClipData(std::size_t index = 0, std::size_t stride = 1);
+  float* GetClipData(size_t index = 0, size_t stride = 1);
 
-  const float* GetClipData(std::size_t index = 0, std::size_t stride = 1) const;
+  const float* GetClipData(size_t index = 0, size_t stride = 1) const;
 
   void Clear();
 
   void ApplyTransform(const Mat4x4& transform);
 
-  void AppendClipData(const float* data, std::size_t length);
+  void AppendClipData(const float* data, size_t length);
 
-  std::size_t GetClipLength() const;
+  size_t GetClipLength() const;
 
   private:
   float* mData;
   float* mClipData;
-  std::size_t mInputSize = 0;
-  std::size_t mAllocatedSize = 0;
-  std::size_t mWorkingSize = 0;
-  std::size_t mClipLength = 0;
-  std::size_t mInputStride = 0;
-  std::size_t mHomogenizedStride = 0;
+  size_t mInputSize = 0;
+  size_t mAllocatedSize = 0;
+  size_t mWorkingSize = 0;
+  size_t mClipLength = 0;
+  size_t mInputStride = 0;
+  size_t mHomogenizedStride = 0;
 };
 
 }

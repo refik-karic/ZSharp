@@ -18,22 +18,22 @@ class GlobalEdgeTable final {
   GlobalEdgeTable(const GlobalEdgeTable&) = delete;
   void operator=(const GlobalEdgeTable&) = delete;
 
-  void AddPoint(std::size_t yIndex, std::size_t x, ZColor color, std::size_t primitiveIndex);
+  void AddPoint(size_t yIndex, size_t x, ZColor color, size_t primitiveIndex);
   void Clear();
   void Draw(Framebuffer& frameBuffer);
 
   private:
   
   struct ScanLine {
-    std::size_t x1;
-    std::size_t x2;
-    std::size_t primitiveIndex;
+    size_t x1;
+    size_t x2;
+    size_t primitiveIndex;
     ZColor color;
   };
 
   typedef std::vector<ScanLine> ScanLineList;
 
-  std::map<std::size_t, ScanLineList> mEdgeTable;
+  std::map<size_t, ScanLineList> mEdgeTable;
 };
 
 }

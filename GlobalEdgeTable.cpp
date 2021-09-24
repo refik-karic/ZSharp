@@ -2,7 +2,7 @@
 
 namespace ZSharp {
 
-void GlobalEdgeTable::AddPoint(std::size_t yIndex, std::size_t x, ZColor color, std::size_t primitiveIndex) {
+void GlobalEdgeTable::AddPoint(size_t yIndex, size_t x, ZColor color, size_t primitiveIndex) {
   ScanLineList& list = mEdgeTable[yIndex];
 
   if (list.empty()) {

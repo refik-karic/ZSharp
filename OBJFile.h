@@ -7,16 +7,16 @@
 
 namespace ZSharp {
 struct alignas(8) OBJFaceElement {
-  std::uint64_t vertexIndex = 0;
-  std::uint64_t uvIndex = 0;
-  std::uint64_t normalIndex = 0;
+  uint64_t vertexIndex = 0;
+  uint64_t uvIndex = 0;
+  uint64_t normalIndex = 0;
 };
 
 struct OBJFace {
   OBJFaceElement triangleFace[3];
 };
 
-enum class AssetFormat : std::size_t {
+enum class AssetFormat : size_t {
   Raw, // Unchanged source asset, requires parsing.
   Serialized, // Stripped asset that can be batch loaded.
 };

@@ -229,8 +229,8 @@ bool JsonScanner::IsDigit(char letter) {
   return letter >= '0' && letter <= '9';
 }
 
-std::int64_t JsonScanner::TokenToInt(Token token) {
-  return static_cast<std::int64_t>(std::atoll(token.GetData().c_str()));
+int64_t JsonScanner::TokenToInt(Token token) {
+  return static_cast<int64_t>(std::atoll(token.GetData().c_str()));
 }
 
 double JsonScanner::TokenToFloat(Token token) {

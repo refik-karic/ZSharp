@@ -18,12 +18,12 @@ float ParametricLinePlaneIntersection(const Vec3& start, const Vec3& end, const 
   return (numerator / denominator);
 }
 
-std::size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const std::size_t numInputVerts, const Vec3& clipEdge) {
-  std::size_t numOutputVerts = 0;
+size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
+  size_t numOutputVerts = 0;
   std::array<Vec3, 6> outputVerts;
 
-  for (std::size_t i = 0; i < numInputVerts; ++i) {
-    std::size_t nextIndex = (i + 1) % numInputVerts;
+  for (size_t i = 0; i < numInputVerts; ++i) {
+    size_t nextIndex = (i + 1) % numInputVerts;
 
     bool p0Inside = InsidePlane(inputVerts[i], clipEdge);
     bool p1Inside = InsidePlane(inputVerts[nextIndex], clipEdge);
@@ -52,7 +52,7 @@ std::size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const std::si
     }
   }
 
-  for (std::size_t i = 0; i < numOutputVerts; ++i) {
+  for (size_t i = 0; i < numOutputVerts; ++i) {
     inputVerts[i] = outputVerts[i];
   }
 
@@ -60,8 +60,8 @@ std::size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const std::si
 }
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, Vec3 viewer) {
-  const std::size_t stride = vertexBuffer.GetHomogenizedStride();
-  for (std::size_t i = indexBuffer.GetWorkingSize(); i >= Constants::TRI_VERTS; i -= Constants::TRI_VERTS) {
+  const size_t stride = vertexBuffer.GetHomogenizedStride();
+  for (size_t i = indexBuffer.GetWorkingSize(); i >= TRI_VERTS; i -= TRI_VERTS) {
     const float* v1 = vertexBuffer.GetInputData(indexBuffer[i - 3], stride);
     const float* v2 = vertexBuffer.GetInputData(indexBuffer[i - 2], stride);
     const float* v3 = vertexBuffer.GetInputData(indexBuffer[i - 1], stride);
@@ -73,7 +73,7 @@ void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& ind
     const Vec3 triangleNormal(p1p0.Cross(p2p1));
     float dotResult = (viewer - secondEdge) * triangleNormal;
     if (dotResult < 0.f) {
-      indexBuffer.RemoveTriangle((i / Constants::TRI_VERTS) - 1);
+      indexBuffer.RemoveTriangle((i / TRI_VERTS) - 1);
     }
   }
 }

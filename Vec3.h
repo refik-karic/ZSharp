@@ -37,11 +37,11 @@ public:
     return &mData[0];
   }
 
-  float operator[](const std::size_t index) const {
+  float operator[](const size_t index) const {
     return mData[index];
   }
 
-  float& operator[](const std::size_t index) {
+  float& operator[](const size_t index) {
     return mData[index];
   }
 
@@ -97,12 +97,12 @@ public:
 
   void Normalize();
 
-  void Homogenize(std::size_t element);
+  void Homogenize(size_t element);
 
   void Clear();
 
 private:
-  static const std::size_t Elements = 3;
+  static const size_t Elements = 3;
   float mData[Elements];
 };
 

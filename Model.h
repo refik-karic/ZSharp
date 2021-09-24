@@ -14,7 +14,7 @@ class Model final {
 
   Model();
 
-  Model(std::size_t numMesh);
+  Model(size_t numMesh);
 
   Model(const Model& copy);
 
@@ -26,11 +26,11 @@ class Model final {
     mData = rhs.mData;
   }
 
-  Mesh& operator[](std::size_t index) {
+  Mesh& operator[](size_t index) {
     return mData[index];
   }
 
-  std::size_t MeshCount() const;
+  size_t MeshCount() const;
 
   std::vector<Mesh>& GetMeshData();
 

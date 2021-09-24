@@ -49,11 +49,11 @@ class alignas(16) Vec4 final {
     return &mData[0];
   }
 
-  float operator[](const std::size_t index) const {
+  float operator[](const size_t index) const {
     return mData[index];
   }
 
-  float& operator[](const std::size_t index) {
+  float& operator[](const size_t index) {
     return mData[index];
   }
 
@@ -143,12 +143,12 @@ class alignas(16) Vec4 final {
 
   void Normalize();
 
-  void Homogenize(std::size_t element);
+  void Homogenize(size_t element);
 
   void Clear();
 
   private:
-  static const std::size_t Elements = 4;
+  static const size_t Elements = 4;
   float mData[Elements];
 };
 

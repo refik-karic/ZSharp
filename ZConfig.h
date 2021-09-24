@@ -13,29 +13,29 @@ class ZConfig final {
 
   static ZConfig& GetInstance();
 
-  std::size_t GetViewportWidth() const;
+  size_t GetViewportWidth() const;
 
-  std::size_t GetViewportHeight() const;
+  size_t GetViewportHeight() const;
 
-  std::size_t GetViewportStride() const;
+  size_t GetViewportStride() const;
 
-  std::size_t GetBytesPerPixel() const;
+  size_t GetBytesPerPixel() const;
 
-  void SetViewportWidth(std::size_t width);
+  void SetViewportWidth(size_t width);
 
-  void SetViewportHeight(std::size_t height);
+  void SetViewportHeight(size_t height);
 
-  void SetBytesPerPixel(std::size_t bytesPerPixel);
+  void SetBytesPerPixel(size_t bytesPerPixel);
 
-  bool SizeChanged(std::size_t width, std::size_t height);
+  bool SizeChanged(size_t width, size_t height);
 
   private:
 
   ZConfig();
 
-  std::size_t mViewportWidth = 0;
-  std::size_t mViewportHeight = 0;
-  std::size_t mBytesPerPixel = 0;
-  std::size_t mViewportStride = 0;
+  size_t mViewportWidth = 0;
+  size_t mViewportHeight = 0;
+  size_t mBytesPerPixel = 0;
+  size_t mViewportStride = 0;
 };
 }

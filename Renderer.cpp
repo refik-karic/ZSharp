@@ -24,8 +24,8 @@ Renderer::Renderer(size_t width, size_t height, size_t stride)
     indexBufSize += (mesh.GetTriangleFaceTable().size() * TRI_VERTS);
   }
 
-  mIndexBuffer = std::make_shared<IndexBuffer>(indexBufSize);
-  mVertexBuffer = std::make_shared<VertexBuffer>(indexBufSize * TRI_VERTS, TRI_VERTS);
+  mIndexBuffer.Resize(indexBufSize);
+  mVertexBuffer.Resize(indexBufSize * TRI_VERTS, TRI_VERTS);
 
   mCameraPos[0] = 0.0f;
   mCameraPos[1] = 0.0f;
@@ -47,10 +47,10 @@ uint8_t* Renderer::RenderNextFrame() {
 
   mCamera.MoveCamera(mCameraPos);
 
-  mIndexBuffer->Clear();
-  mVertexBuffer->Clear();
+  mIndexBuffer.Clear();
+  mVertexBuffer.Clear();
 
-  mModel.FillBuffers(*mVertexBuffer, *mIndexBuffer);
+  mModel.FillBuffers(mVertexBuffer, mIndexBuffer);
 
   Mat4x4 rotationMatrix;
   rotationMatrix.Identity();
@@ -64,20 +64,20 @@ uint8_t* Renderer::RenderNextFrame() {
     mFrameCount = 0;
   }
 
-  mVertexBuffer->ApplyTransform(rotationMatrix);
+  mVertexBuffer.ApplyTransform(rotationMatrix);
   
   const ZColor colorRed{ZColors::RED};
   const ZColor colorBlue{ZColors::BLUE};
 
   mBuffer.Clear(colorBlue);
 
-  mCamera.PerspectiveProjection(*mVertexBuffer, *mIndexBuffer);
+  mCamera.PerspectiveProjection(mVertexBuffer, mIndexBuffer);
 
   if (mRenderMode) {
-    DrawTrianglesFlat(mBuffer, *mVertexBuffer, *mIndexBuffer, colorRed);
+    DrawTrianglesFlat(mBuffer, mVertexBuffer, mIndexBuffer, colorRed);
   }
   else {
-    DrawTrianglesWireframe(mBuffer, *mVertexBuffer, *mIndexBuffer, colorRed);
+    DrawTrianglesWireframe(mBuffer, mVertexBuffer, mIndexBuffer, colorRed);
   }
 
   return mBuffer.GetBuffer();

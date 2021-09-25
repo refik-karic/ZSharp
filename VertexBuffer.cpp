@@ -72,6 +72,22 @@ const float* VertexBuffer::GetClipData(size_t index, size_t stride) const {
   return mClipData + (index * stride);
 }
 
+void VertexBuffer::Resize(size_t size, size_t stride) {
+  if (mData != nullptr) {
+    _aligned_free(mData);
+  }
+
+  mClipLength = 0;
+  mInputSize = size + (size / TRI_VERTS);
+  mAllocatedSize = ((size + (size / TRI_VERTS)) + (size * MAX_VERTS_AFTER_CLIP)) * sizeof(float);
+  mInputStride = stride;
+  mHomogenizedStride = stride + (stride / TRI_VERTS);
+  mData = static_cast<float*>(_aligned_malloc(mAllocatedSize, 16));
+  mClipData = mData + mInputSize;
+  mWorkingSize = 0;
+  mClipLength = 0;
+}
+
 void VertexBuffer::Clear() {
   memset(mData, 0, mAllocatedSize);
   mWorkingSize = 0;

@@ -1,7 +1,5 @@
 ﻿#pragma once
 
-#include <memory>
-
 #include "Camera.h"
 #include "Framebuffer.h"
 #include "IInputListener.h"
@@ -48,8 +46,8 @@ class Renderer final : public IInputListener {
   bool mRenderMode = false;
   bool mPauseTransforms = false;
 
-  std::shared_ptr<IndexBuffer> mIndexBuffer;
-  std::shared_ptr<VertexBuffer> mVertexBuffer;
+  IndexBuffer mIndexBuffer;
+  VertexBuffer mVertexBuffer;
 
   void MoveCamera(Direction direction, const float amount);
 

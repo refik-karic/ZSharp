@@ -56,6 +56,19 @@ void IndexBuffer::CopyInputData(const size_t* data, size_t index, size_t length)
   mWorkingSize += length;
 }
 
+void IndexBuffer::Resize(size_t size) {
+  if (mData != nullptr) {
+    _aligned_free(mData);
+  }
+
+  mInputSize = size;
+  mAllocatedSize = size * MAX_INDICIES_AFTER_CLIP * sizeof(size_t);
+  mData = static_cast<size_t*>(_aligned_malloc(mAllocatedSize, 16));
+  mClipData = mData + mInputSize;
+  mClipLength = 0;
+  mWorkingSize = 0;
+}
+
 void IndexBuffer::Clear() {
   memset(mData, 0, mAllocatedSize);
   mClipLength = 0;

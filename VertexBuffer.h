@@ -7,6 +7,8 @@ namespace ZSharp {
 
 class VertexBuffer final {
   public:
+  VertexBuffer() = default;
+
   VertexBuffer(size_t size, size_t stride);
 
   ~VertexBuffer();
@@ -53,6 +55,8 @@ class VertexBuffer final {
 
   const float* GetClipData(size_t index = 0, size_t stride = 1) const;
 
+  void Resize(size_t size, size_t stride);
+
   void Clear();
 
   void ApplyTransform(const Mat4x4& transform);
@@ -62,8 +66,8 @@ class VertexBuffer final {
   size_t GetClipLength() const;
 
   private:
-  float* mData;
-  float* mClipData;
+  float* mData = nullptr;
+  float* mClipData = nullptr;
   size_t mInputSize = 0;
   size_t mAllocatedSize = 0;
   size_t mWorkingSize = 0;

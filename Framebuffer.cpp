@@ -10,9 +10,7 @@
 #endif
 
 namespace ZSharp {
-Framebuffer::Framebuffer(size_t width, 
-  size_t height,
-  size_t stride) :
+Framebuffer::Framebuffer(size_t width, size_t height, size_t stride) : 
   mWidth(width),
   mHeight(height),
   mStride(stride)

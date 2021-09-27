@@ -5,8 +5,9 @@
 
 #include "Vec4.h"
 
-namespace ZSharp {
 static constexpr size_t MAX_VERTS_AFTER_CLIP = 2;
+
+namespace ZSharp {
 
 VertexBuffer::VertexBuffer(size_t size, size_t stride) :
   mClipLength(0),

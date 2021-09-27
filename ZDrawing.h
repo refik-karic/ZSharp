@@ -31,9 +31,9 @@ void DrawRunSlice(Framebuffer& framebuffer,
     ZColor color);
 
 void TracePrimitive(GlobalEdgeTable& edgeTable, 
-    std::array<int32_t, 2>& p1, 
-    std::array<int32_t, 2>& p2, 
-    std::array<int32_t, 2>& p3, 
+    std::array<size_t, 2>& p1,
+    std::array<size_t, 2>& p2,
+    std::array<size_t, 2>& p3,
     ZColor color, 
     size_t primitiveIndex);
 

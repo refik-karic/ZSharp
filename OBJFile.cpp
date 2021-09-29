@@ -19,7 +19,7 @@ OBJFile::OBJFile(FileString& objFilePath, AssetFormat format) {
   }
 }
 
-const std::vector<ZSharp::Vec4>& OBJFile::GetVerts() {
+const std::vector<Vec4>& OBJFile::GetVerts() {
   return mVerts;
 }
 
@@ -36,7 +36,25 @@ void OBJFile::Serialize(FileString& destPath) {
 
     // Write vertex vector
     for (Vec4& vector : mVerts) {
-      file.write(reinterpret_cast<char*>(&vector), sizeof(ZSharp::Vec4));
+      file.write(reinterpret_cast<char*>(&vector), sizeof(Vec4));
+    }
+
+    // Write length of the normal vector
+    size_t normalSize = mNormals.size();
+    file.write(reinterpret_cast<char*>(&normalSize), sizeof(size_t));
+
+    // Write normal vector
+    for (Vec3& normal : mNormals) {
+      file.write(reinterpret_cast<char*>(&normal), sizeof(Vec3));
+    }
+
+    // Write length of the uv vector
+    size_t uvSize = mUVCoords.size();
+    file.write(reinterpret_cast<char*>(&uvSize), sizeof(size_t));
+
+    // Write uv vector
+    for (Vec3& uv : mUVCoords) {
+      file.write(reinterpret_cast<char*>(&uv), sizeof(Vec3));
     }
 
     // Write size of face vector
@@ -64,8 +82,32 @@ void OBJFile::Deserialize(FileString& objFilePath) {
     // Read verticies
     for (size_t i = 0; i < vertSize; ++i) {
       Vec4 vector;
-      file.read(reinterpret_cast<char*>(&vector), sizeof(ZSharp::Vec4));
+      file.read(reinterpret_cast<char*>(&vector), sizeof(Vec4));
       mVerts[i] = vector;
+    }
+
+    // Read normal size
+    size_t normalSize = 0;
+    file.read(reinterpret_cast<char*>(&normalSize), sizeof(size_t));
+    mNormals.resize(normalSize);
+
+    // Read normals
+    for (size_t i = 0; i < normalSize; ++i) {
+      Vec3 normal;
+      file.read(reinterpret_cast<char*>(&normal), sizeof(Vec3));
+      mNormals[i] = normal;
+    }
+
+    // Read uv size
+    size_t uvSize = 0;
+    file.read(reinterpret_cast<char*>(&uvSize), sizeof(size_t));
+    mUVCoords.resize(uvSize);
+
+    // Read uvs
+    for (size_t i = 0; i < uvSize; ++i) {
+      Vec3 uv;
+      file.read(reinterpret_cast<char*>(&uv), sizeof(Vec3));
+      mUVCoords[i] = uv;
     }
 
     // Read face size
@@ -108,7 +150,7 @@ void OBJFile::ParseLine(std::string& currentLine) {
   case 'v':
     if (rawLine[1] == 'n') {
       // Vertex Normals.
-      ZSharp::Vec3 vertex;
+      Vec3 vertex;
       std::string choppedLine(rawLine + 3);
       ParseVec3(vertex, choppedLine, 0.0f);
       mNormals.push_back(vertex);
@@ -122,14 +164,14 @@ void OBJFile::ParseLine(std::string& currentLine) {
     }
     else if (rawLine[1] == 't') {
       // Vertex Texture Coordinates (U, V, W).
-      ZSharp::Vec3 vertex;
+      Vec3 vertex;
       std::string choppedLine(rawLine + 3);
       ParseVec3(vertex, choppedLine, 0.0f);
       mUVCoords.push_back(vertex);
     }
     else {
       // Vertex Data.
-      ZSharp::Vec4 vertex;
+      Vec4 vertex;
       std::string choppedLine(rawLine + 2);
       ParseVec4(vertex, choppedLine, 1.0f);
       mVerts.push_back(vertex);
@@ -158,13 +200,13 @@ void OBJFile::ParseLine(std::string& currentLine) {
   }
 }
 
-void OBJFile::ParseVec3(ZSharp::Vec3& fillVec, std::string& line, float fallback) {
-  ZSharp::Vec4 sacrifice;
+void OBJFile::ParseVec3(Vec3& fillVec, std::string& line, float fallback) {
+  Vec4 sacrifice;
   ParseVec4(sacrifice, line, fallback);
   std::memcpy(*fillVec, *sacrifice, sizeof(float) * 3);
 }
 
-void OBJFile::ParseVec4(ZSharp::Vec4& fillVec, std::string& line, float fallback) {
+void OBJFile::ParseVec4(Vec4& fillVec, std::string& line, float fallback) {
   size_t nextPos = 0;
 
   for (int32_t i = 0; i < 4; ++i) {

@@ -25,7 +25,7 @@ class OBJFile : public ISerializable {
 public:
   OBJFile(FileString& objFilePath, AssetFormat format);
 
-  const std::vector<ZSharp::Vec4>& GetVerts();
+  const std::vector<Vec4>& GetVerts();
 
   const std::vector<OBJFace>& GetFaces();
 
@@ -40,11 +40,11 @@ protected:
 private:
   bool mVerboseParse = false;
 
-  std::vector<ZSharp::Vec4> mVerts;
+  std::vector<Vec4> mVerts;
 
-  std::vector<ZSharp::Vec3> mNormals;
+  std::vector<Vec3> mNormals;
 
-  std::vector<ZSharp::Vec3> mUVCoords;
+  std::vector<Vec3> mUVCoords;
 
   std::vector<OBJFace> mFaces;
 
@@ -52,9 +52,9 @@ private:
 
   void ParseLine(std::string& currentLine);
 
-  void ParseVec3(ZSharp::Vec3& fillVec, std::string& line, float fallback);
+  void ParseVec3(Vec3& fillVec, std::string& line, float fallback);
 
-  void ParseVec4(ZSharp::Vec4& fillVec, std::string& line, float fallback);
+  void ParseVec4(Vec4& fillVec, std::string& line, float fallback);
 
   void ParseFace(OBJFace& fillFace, std::string& line);
 };

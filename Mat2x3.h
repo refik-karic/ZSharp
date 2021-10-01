@@ -40,9 +40,8 @@ class Mat2x3 final {
   Mat2x3 operator*(float scalar) {
     Mat2x3 result;
 
-    for (size_t row = 0; row < Rows; row++) {
-      result[row] = mData[row] * scalar;
-    }
+    result[0] = mData[0] * scalar;
+    result[1] = mData[1] * scalar;
 
     return result;
   }

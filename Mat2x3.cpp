@@ -44,9 +44,9 @@ Mat2x3 Mat2x3::Transpose() const {
 Vec3 Mat2x3::ApplyTransform(const Vec3& domain) const {
   Vec3 codomainResult;
 
-  for (size_t row = 0; row < Rows; row++) {
-    codomainResult[row] = domain * mData[row];
-  }
+  codomainResult[0] = domain * mData[0];
+  codomainResult[1] = domain * mData[1];
+  codomainResult[2] = domain * mData[3];
 
   return codomainResult;
 }

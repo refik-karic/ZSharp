@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#include "UtilMath.h"
-
 namespace ZSharp {
 
 Vec4::Vec4() {
@@ -30,19 +28,27 @@ float Vec4::Length() const {
 }
 
 void Vec4::Normalize() {
-  float invSqrt(1.f / Length());
+  const float invSqrt = 1.f / Length();
+#ifdef FORCE_SSE
+  aligned_sse128mulfloat(mData, invSqrt, mData);
+#else
   mData[0] *= invSqrt;
   mData[1] *= invSqrt;
   mData[2] *= invSqrt;
   mData[3] *= invSqrt;
+#endif
 }
 
-void Vec4::Homogenize(size_t element) {
-  float divisor(mData[element]);
-
-  for (size_t i = 0; i <= element; i++) {
-    mData[i] /= divisor;
-  }
+void Vec4::Homogenize() {
+  const float invDivisor = 1.f / mData[3];
+#ifdef FORCE_SSE
+  aligned_sse128mulfloat(mData, invDivisor, mData);
+#else
+  mData[0] *= invDivisor;
+  mData[1] *= invDivisor;
+  mData[2] *= invDivisor;
+  mData[3] *= invDivisor;
+#endif
 }
 
 void Vec4::Clear() {

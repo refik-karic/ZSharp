@@ -143,7 +143,7 @@ class alignas(16) Vec4 final {
 
   void Normalize();
 
-  void Homogenize(size_t element);
+  void Homogenize();
 
   void Clear();
 

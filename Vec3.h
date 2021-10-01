@@ -97,7 +97,7 @@ public:
 
   void Normalize();
 
-  void Homogenize(size_t element);
+  void Homogenize();
 
   void Clear();
 

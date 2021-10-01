@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#include "UtilMath.h"
-
 namespace ZSharp {
 
 Vec3::Vec3() {
@@ -34,18 +32,17 @@ float Vec3::Length() const {
 }
 
 void Vec3::Normalize() {
-  float invSqrt(1.f / Length());
+  const float invSqrt(1.f / Length());
   mData[0] *= invSqrt;
   mData[1] *= invSqrt;
   mData[2] *= invSqrt;
 }
 
-void Vec3::Homogenize(size_t element) {
-  float divisor(mData[element]);
-
-  for (size_t i = 0; i <= element; i++) {
-    mData[i] /= divisor;
-  }
+void Vec3::Homogenize() {
+  const float invDivisor = 1.f / mData[2];
+  mData[0] *= invDivisor;
+  mData[1] *= invDivisor;
+  mData[2] *= invDivisor;
 }
 
 void Vec3::Clear() {

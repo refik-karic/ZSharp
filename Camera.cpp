@@ -40,7 +40,7 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
   Vec4 rotatedVec(mLook);
   rotatedVec = rotationMatrix.ApplyTransform(rotatedVec);
 
-  rotatedVec.Homogenize(3);
+  rotatedVec.Homogenize();
   mLook[0] = rotatedVec[0];
   mLook[1] = rotatedVec[1];
   mLook[2] = rotatedVec[2];
@@ -48,7 +48,7 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
   rotatedVec = mUp;
   rotatedVec = rotationMatrix.ApplyTransform(rotatedVec);
 
-  rotatedVec.Homogenize(3);
+  rotatedVec.Homogenize();
   mUp[0] = rotatedVec[0];
   mUp[1] = rotatedVec[1];
   mUp[2] = rotatedVec[2];
@@ -114,7 +114,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   for (size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
     float* vertexData = vertexBuffer.GetInputData(i);
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexData));
-    vertexVector.Homogenize(3);
+    vertexVector.Homogenize();
   }
 
   ClipTriangles(vertexBuffer, indexBuffer);
@@ -123,7 +123,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   for (size_t i = 0; i < vertexBuffer.GetClipLength(); i += inputStride) {
     float* vertexData = vertexBuffer.GetClipData(i);
     Vec3& vertexVector = *(reinterpret_cast<Vec3*>(vertexData));
-    vertexVector.Homogenize(2);
+    vertexVector.Homogenize();
     vertexVector = windowTransform.ApplyTransform(vertexVector);
   }
 }

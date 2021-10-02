@@ -115,18 +115,6 @@ class alignas(16) Vec4 final {
 #endif
   }
 
-  float operator*(const Vec4& vector) {
-#ifdef FORCE_SSE
-    return aligned_sse128mulfloatssum(mData, vector.mData);
-#else
-    float result = (mData[0] * vector[0]);
-    result += (mData[1] * vector[1]);
-    result += (mData[2] * vector[2]);
-    result += (mData[3] * vector[3]);
-    return result;
-#endif
-  }
-
   float operator*(const Vec4& vector) const {
 #ifdef FORCE_SSE
     return aligned_sse128mulfloatssum(mData, vector.mData);

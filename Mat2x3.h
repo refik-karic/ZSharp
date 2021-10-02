@@ -23,10 +23,9 @@ class Mat2x3 final {
     if (this == &matrix) {
       return;
     }
-
-    for (size_t row = 0; row < Rows; row++) {
-      mData[row] = matrix[row];
-    }
+    
+    mData[0] = matrix[0];
+    mData[1] = matrix[1];
   }
 
   Vec3& operator[](size_t index) {
@@ -37,7 +36,7 @@ class Mat2x3 final {
     return mData[index];
   }
 
-  Mat2x3 operator*(float scalar) {
+  Mat2x3 operator*(float scalar) const {
     Mat2x3 result;
 
     result[0] = mData[0] * scalar;
@@ -46,7 +45,7 @@ class Mat2x3 final {
     return result;
   }
 
-  Mat2x3 operator*(const Mat2x3& matrix) {
+  Mat2x3 operator*(const Mat2x3& matrix) const {
     Mat2x3 result;
 
     Mat2x3 rhsTranspose(matrix.Transpose());

@@ -77,18 +77,8 @@ public:
     return result;
   }
 
-  float operator*(const Vec3& vector) {
-    float result = (mData[0] * vector[0]);
-    result += (mData[1] * vector[1]);
-    result += (mData[2] * vector[2]);
-    return result;
-  }
-
   float operator*(const Vec3& vector) const {
-    float result = (mData[0] * vector[0]);
-    result += (mData[1] * vector[1]);
-    result += (mData[2] * vector[2]);
-    return result;
+    return (mData[0] * vector[0]) + (mData[1] * vector[1]) + (mData[2] * vector[2]);
   }
 
   Vec3 Cross(const Vec3& vec) const;

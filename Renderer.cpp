@@ -17,7 +17,7 @@ Renderer::Renderer(size_t width, size_t height, size_t stride)
   : mBuffer(width, height, stride)
 {
   FileString assetName("C:\\Users\\refik\\Desktop\\backpack.txt");
-  AssetLoader::LoadModelOBJ(assetName, mModel);
+  LoadModelOBJ(assetName, mModel);
 
   size_t indexBufSize = 0;
   for (Mesh& mesh : mModel.GetMeshData()) {
@@ -31,8 +31,8 @@ Renderer::Renderer(size_t width, size_t height, size_t stride)
   mCameraPos[1] = 0.0f;
   mCameraPos[2] = 25.0f;
 
-  InputManager* inputManager = InputManager::GetInstance();
-  inputManager->Register(this);
+  InputManager& inputManager = InputManager::GetInstance();
+  inputManager.Register(this);
 }
 
 uint8_t* Renderer::RenderNextFrame() {
@@ -42,8 +42,8 @@ uint8_t* Renderer::RenderNextFrame() {
     mBuffer.Resize();
   }
 
-  InputManager* inputManager = InputManager::GetInstance();
-  inputManager->Process();
+  InputManager& inputManager = InputManager::GetInstance();
+  inputManager.Process();
 
   mCamera.MoveCamera(mCameraPos);
 

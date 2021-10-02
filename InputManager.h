@@ -17,7 +17,9 @@ class InputManager final {
     Up
   };
 
-  static InputManager* GetInstance();
+  static InputManager& GetInstance();
+
+  InputManager(const InputManager&) = delete;
 
   void Update(uint8_t key, KeyState state);
 

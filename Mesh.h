@@ -14,7 +14,7 @@ class Mesh final {
 
   Mesh();
 
-  Mesh(size_t numVerts, size_t numTriangleFaces);
+  Mesh(size_t numVerts, size_t stride, size_t numTriangleFaces);
 
   Mesh(const Mesh& copy);
   
@@ -27,11 +27,11 @@ class Mesh final {
     mTriangleFaceTable = rhs.mTriangleFaceTable;
   }
 
-  void SetData(const float* vertData, size_t numVerts, size_t numTriangleFaces);
+  void SetData(const float* vertData, size_t numVerts, size_t stride, size_t numTriangleFaces);
 
   void SetVertex(const Vec4& vertex, size_t index, size_t numElements);
 
-  void SetTriangle(const std::array<size_t, 3>& triangleFaceData, size_t index);
+  void SetTriangle(const Triangle& triangle, size_t index);
 
   std::vector<float>& GetVertTable();
 
@@ -42,6 +42,7 @@ class Mesh final {
   const std::vector<Triangle>& GetTriangleFaceTable() const;
 
   private:
+  size_t mStride = 0;
   std::vector<float> mVertTable;
   std::vector<Triangle> mTriangleFaceTable;
 };

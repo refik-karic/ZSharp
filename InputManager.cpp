@@ -6,9 +6,9 @@ InputManager::InputManager()
   mKeyboard.fill(KeyState::Clear);
 }
 
-InputManager* InputManager::GetInstance() {
+InputManager& InputManager::GetInstance() {
   static InputManager inputManager;
-  return &inputManager;
+  return inputManager;
 }
 
 void InputManager::Update(uint8_t key, InputManager::KeyState state) {

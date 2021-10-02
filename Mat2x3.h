@@ -45,25 +45,9 @@ class Mat2x3 final {
     return result;
   }
 
-  Mat2x3 operator*(const Mat2x3& matrix) const {
-    Mat2x3 result;
-
-    Mat2x3 rhsTranspose(matrix.Transpose());
-
-    for (size_t row = 0; row < Rows; row++) {
-      for (size_t col = 0; col < Columns; col++) {
-        result[row][col] = mData[row] * rhsTranspose[col];
-      }
-    }
-
-    return result;
-  }
-
   void Identity();
 
   void Clear();
-
-  Mat2x3 Transpose() const;
 
   Vec3 ApplyTransform(const Vec3& domain) const;
 

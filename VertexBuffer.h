@@ -20,13 +20,8 @@ class VertexBuffer final {
       return;
     }
 
-    std::memcpy(mData, rhs.mData, rhs.mAllocatedSize);
-    mWorkingSize = rhs.mWorkingSize;
-    mClipLength = rhs.mClipLength;
-    mInputStride = rhs.mInputStride;
-    mHomogenizedStride = rhs.mHomogenizedStride;
-    mInputSize = rhs.mInputSize;
-    mClipData = mData + mInputSize;
+    Resize(rhs.mInputSize, rhs.mInputStride);
+    memcpy(mData, rhs.mData, rhs.mAllocatedSize);
   }
 
   float operator[](size_t index) const {

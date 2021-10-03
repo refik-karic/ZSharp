@@ -32,11 +32,8 @@ void IndexBuffer::operator=(const IndexBuffer& rhs) {
     return;
   }
 
+  Resize(rhs.mInputSize);
   memcpy(mData, rhs.mData, rhs.mAllocatedSize);
-  mInputSize = rhs.mInputSize;
-  mClipLength = rhs.mClipLength;
-  mClipData = mData + mInputSize;
-  mWorkingSize = rhs.mWorkingSize;
 }
 
 size_t IndexBuffer::operator[](size_t index) const {

@@ -3,10 +3,12 @@
 #include <array>
 #include <vector>
 
+#include "IndexBuffer.h"
 #include "JsonObject.h"
 #include "JsonScanner.h"
 #include "OBJFile.h"
 #include "Token.h"
+#include "VertexBuffer.h"
 
 namespace ZSharp {
 void LoadModelJSON(const char* fileName, Model& model) {

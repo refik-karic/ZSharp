@@ -31,6 +31,7 @@ target_sources(ZSharp
         Vec3.h
         Vec4.h
         VertexBuffer.h
+        World.h
         ZAlgorithm.h
         ZColor.h
         ZConfig.h
@@ -63,6 +64,7 @@ target_sources(ZSharp
         Vec3.cpp
         Vec4.cpp
         VertexBuffer.cpp
+        World.cpp
         ZAlgorithm.cpp
         ZColor.cpp
         ZConfig.cpp

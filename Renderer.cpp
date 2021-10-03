@@ -1,13 +1,16 @@
-﻿#include <cstddef>
+﻿#include "Renderer.h"
 
-#include "AssetLoader.h"
+#include <cstddef>
+
 #include "Constants.h"
+#include "IndexBuffer.h"
 #include "InputManager.h"
 #include "Mat4x4.h"
+#include "Model.h"
 #include "Quaternion.h"
-#include "Renderer.h"
 #include "Triangle.h"
 #include "UtilMath.h"
+#include "VertexBuffer.h"
 #include "ZColor.h"
 #include "ZConfig.h"
 #include "ZDrawing.h"
@@ -16,16 +19,8 @@ namespace ZSharp {
 Renderer::Renderer(size_t width, size_t height, size_t stride)
   : mBuffer(width, height, stride)
 {
-  FileString assetName("C:\\Users\\refik\\Desktop\\backpack.txt");
-  LoadModelOBJ(assetName, mModel);
-
-  size_t indexBufSize = 0;
-  for (Mesh& mesh : mModel.GetMeshData()) {
-    indexBufSize += (mesh.GetTriangleFaceTable().size() * TRI_VERTS);
-  }
-
-  mIndexBuffer.Resize(indexBufSize);
-  mVertexBuffer.Resize(indexBufSize * TRI_VERTS, TRI_VERTS);
+  FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
+  mWorld.LoadModel(tempModelPath);
 
   mCameraPos[0] = 0.0f;
   mCameraPos[1] = 0.0f;
@@ -47,11 +42,6 @@ uint8_t* Renderer::RenderNextFrame() {
 
   mCamera.MoveCamera(mCameraPos);
 
-  mIndexBuffer.Clear();
-  mVertexBuffer.Clear();
-
-  mModel.FillBuffers(mVertexBuffer, mIndexBuffer);
-
   Mat4x4 rotationMatrix;
   rotationMatrix.Identity();
   rotationMatrix.SetRotation(DegreesToRadians(static_cast<float>(mFrameCount)), Mat4x4::Axis::Y);
@@ -64,20 +54,29 @@ uint8_t* Renderer::RenderNextFrame() {
     mFrameCount = 0;
   }
 
-  mVertexBuffer.ApplyTransform(rotationMatrix);
-  
   const ZColor colorRed{ZColors::RED};
   const ZColor colorBlue{ZColors::BLUE};
 
   mBuffer.Clear(colorBlue);
 
-  mCamera.PerspectiveProjection(mVertexBuffer, mIndexBuffer);
+  for (size_t i = 0; i < mWorld.GetTotalModels(); ++i) {
+    Model& model = mWorld.GetModels()[i];
+    VertexBuffer& vertexBuffer = mWorld.GetVertexBuffers()[i];
+    IndexBuffer& indexBuffer = mWorld.GetIndexBuffers()[i];
 
-  if (mRenderMode) {
-    DrawTrianglesFlat(mBuffer, mVertexBuffer, mIndexBuffer, colorRed);
-  }
-  else {
-    DrawTrianglesWireframe(mBuffer, mVertexBuffer, mIndexBuffer, colorRed);
+    vertexBuffer.Clear();
+    indexBuffer.Clear();
+    model.FillBuffers(vertexBuffer, indexBuffer);
+
+    vertexBuffer.ApplyTransform(rotationMatrix);
+    mCamera.PerspectiveProjection(vertexBuffer, indexBuffer);
+
+    if (mRenderMode) {
+      DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer, colorRed);
+    }
+    else {
+      DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer, colorRed);
+    }
   }
 
   return mBuffer.GetBuffer();

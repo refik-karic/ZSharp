@@ -4,9 +4,9 @@
 #include "Framebuffer.h"
 #include "IInputListener.h"
 #include "Mat4x4.h"
-#include "Model.h"
 #include "Quaternion.h"
 #include "Vec3.h"
+#include "World.h"
 #include "ZColor.h"
 
 namespace ZSharp {
@@ -39,15 +39,12 @@ class Renderer final : public IInputListener {
   Vec3 mCameraPos;
 
   Framebuffer mBuffer;
-  Model mModel;
+  World mWorld;
 
   int64_t mFrameCount = 0;
   int64_t mRotationSpeed = 4;
   bool mRenderMode = false;
   bool mPauseTransforms = false;
-
-  IndexBuffer mIndexBuffer;
-  VertexBuffer mVertexBuffer;
 
   void MoveCamera(Direction direction, const float amount);
 

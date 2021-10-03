@@ -37,6 +37,4 @@ void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) co
   }
 }
 
-
-
 }

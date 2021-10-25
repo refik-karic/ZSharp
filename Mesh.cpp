@@ -15,12 +15,14 @@ Mesh::Mesh(const Mesh& copy) {
   *this = copy;
 }
 
-void Mesh::SetData(const float* vertData, size_t numVerts, size_t stride, size_t numTriangleFaces) {
-  mVertTable.resize(numVerts);
+void Mesh::Resize(size_t vertexLength, size_t stride, size_t faceTableLength) {
+  mVertTable.resize(vertexLength);
+  mTriangleFaceTable.resize(faceTableLength);
   mStride = stride;
+}
 
+void Mesh::SetData(const float* vertData, size_t numVerts) {
   memcpy(mVertTable.data(), vertData, numVerts);
-  mTriangleFaceTable.resize(numTriangleFaces);
 }
 
 void Mesh::SetVertex(const Vec4& vertex, size_t index, size_t numElements) {

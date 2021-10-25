@@ -26,7 +26,9 @@ class Mesh final {
     mTriangleFaceTable = rhs.mTriangleFaceTable;
   }
 
-  void SetData(const float* vertData, size_t numVerts, size_t stride, size_t numTriangleFaces);
+  void Resize(size_t vertexLength, size_t stride, size_t faceTableLength);
+
+  void SetData(const float* vertData, size_t numVerts);
 
   void SetVertex(const Vec4& vertex, size_t index, size_t numElements);
 

@@ -60,11 +60,10 @@ size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const size_t numIn
 }
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, Vec3 viewer) {
-  const size_t stride = vertexBuffer.GetHomogenizedStride();
-  for (size_t i = indexBuffer.GetWorkingSize(); i >= TRI_VERTS; i -= TRI_VERTS) {
-    const float* v1 = vertexBuffer.GetInputData(indexBuffer[i - 3], stride);
-    const float* v2 = vertexBuffer.GetInputData(indexBuffer[i - 2], stride);
-    const float* v3 = vertexBuffer.GetInputData(indexBuffer[i - 1], stride);
+  for (size_t i = indexBuffer.GetIndexSize(); i >= TRI_VERTS; i -= TRI_VERTS) {
+    const float* v1 = vertexBuffer[indexBuffer[i - 3]];
+    const float* v2 = vertexBuffer[indexBuffer[i - 2]];
+    const float* v3 = vertexBuffer[indexBuffer[i - 1]];
     const Vec3& firstEdge = *(reinterpret_cast<const Vec3*>(v1));
     const Vec3& secondEdge = *(reinterpret_cast<const Vec3*>(v2));
     const Vec3& thirdEdge = *(reinterpret_cast<const Vec3*>(v3));

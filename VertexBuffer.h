@@ -7,9 +7,8 @@ namespace ZSharp {
 
 class VertexBuffer final {
   public:
-  VertexBuffer() = default;
 
-  VertexBuffer(size_t size, size_t stride);
+  VertexBuffer() = default;
 
   ~VertexBuffer();
 
@@ -20,39 +19,35 @@ class VertexBuffer final {
       return;
     }
 
-    Resize(rhs.mInputSize, rhs.mInputStride);
+    Resize(rhs.mInputSize, rhs.mStride, rhs.mIndexSize);
     memcpy(mData, rhs.mData, rhs.mAllocatedSize);
   }
 
-  float operator[](size_t index) const {
-    return mData[index];
+  float* operator[](size_t index) const {
+    return mData + (index * mStride);
   }
 
-  float& operator[](size_t index) {
-    return mData[index];
+  float* operator[](size_t index) {
+    return mData + (index * mStride);
   }
+
+  const float* GetClipData(size_t index) const;
+
+  float* GetClipData(size_t index);
 
   size_t GetTotalSize() const;
 
-  size_t GetWorkingSize() const;
+  size_t GetVertSize() const;
 
-  size_t GetHomogenizedStride() const;
-
-  size_t GetInputStride() const;
+  size_t GetStride() const;
 
   void CopyInputData(const float* data, size_t index, size_t length);
 
-  float* GetInputData(size_t index = 0, size_t stride = 1);
-
-  const float* GetInputData(size_t index = 0, size_t stride = 1) const;
-
-  float* GetClipData(size_t index = 0, size_t stride = 1);
-
-  const float* GetClipData(size_t index = 0, size_t stride = 1) const;
-
-  void Resize(size_t size, size_t stride);
+  void Resize(size_t vertexSize, size_t stride, size_t indexSize);
 
   void Clear();
+
+  void Reset();
 
   void ApplyTransform(const Mat4x4& transform);
 
@@ -64,11 +59,11 @@ class VertexBuffer final {
   float* mData = nullptr;
   float* mClipData = nullptr;
   size_t mInputSize = 0;
+  size_t mIndexSize = 0;
   size_t mAllocatedSize = 0;
   size_t mWorkingSize = 0;
   size_t mClipLength = 0;
-  size_t mInputStride = 0;
-  size_t mHomogenizedStride = 0;
+  size_t mStride = 0;
 };
 
 }

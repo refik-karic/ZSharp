@@ -103,24 +103,15 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 
-  const size_t homogenizedStride = vertexBuffer.GetHomogenizedStride();
-  for (size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
-    float* vertexData = vertexBuffer.GetInputData(i);
-    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexData));
-    vertexVector[3] = 1.f;
+  for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
+    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
     vertexVector = unhing.ApplyTransform(vertexVector);
-  }
-
-  for (size_t i = 0; i < vertexBuffer.GetWorkingSize(); i += homogenizedStride) {
-    float* vertexData = vertexBuffer.GetInputData(i);
-    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexData));
     vertexVector.Homogenize();
   }
 
   ClipTriangles(vertexBuffer, indexBuffer);
 
-  const size_t inputStride = vertexBuffer.GetInputStride();
-  for (size_t i = 0; i < vertexBuffer.GetClipLength(); i += inputStride) {
+  for (size_t i = 0; i < vertexBuffer.GetClipLength(); ++i) {
     float* vertexData = vertexBuffer.GetClipData(i);
     Vec3& vertexVector = *(reinterpret_cast<Vec3*>(vertexData));
     vertexVector.Homogenize();
@@ -129,27 +120,28 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 }
 
 void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
+  static const size_t MAX_OUT_CLIP_VERTS = 6;
+
   Vec3 currentEdge;
 
-  size_t inputStride = vertexBuffer.GetHomogenizedStride();
-  size_t endEBO = indexBuffer.GetWorkingSize();
-  for (size_t i = 0; i < endEBO; i += TRI_VERTS) {
-    float* v1 = vertexBuffer.GetInputData(indexBuffer[i], inputStride);
-    float* v2 = vertexBuffer.GetInputData(indexBuffer[i + 1], inputStride);
-    float* v3 = vertexBuffer.GetInputData(indexBuffer[i + 2], inputStride);
+  for (size_t i = 0; i < indexBuffer.GetIndexSize(); i += TRI_VERTS) {
+    Vec3* v1 = reinterpret_cast<Vec3*>(vertexBuffer[indexBuffer[i]]);
+    Vec3* v2 = reinterpret_cast<Vec3*>(vertexBuffer[indexBuffer[i + 1]]);
+    Vec3* v3 = reinterpret_cast<Vec3*>(vertexBuffer[indexBuffer[i + 2]]);
     size_t numClippedVerts = 3;
-    std::array<Vec3, 6> clippedVerts{
-      *(reinterpret_cast<Vec3*>(v1)),
-      *(reinterpret_cast<Vec3*>(v2)),
-      *(reinterpret_cast<Vec3*>(v3))
-    };
+    std::array<Vec3, MAX_OUT_CLIP_VERTS> clippedVerts{*v1, *v2, *v3};
 
 #if DEBUG_CLIPPING
-    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(clippedVerts.data()), 3 * TRI_VERTS);
     size_t currentClipIndex = vertexBuffer.GetClipLength() / TRI_VERTS;
+
+    std::array<Vec4, MAX_OUT_CLIP_VERTS> tempClippedVerts;
+    for (size_t j = 0; j < numClippedVerts; ++j) {
+      tempClippedVerts[j] = clippedVerts[j];
+    }
+
+    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(tempClippedVerts.data()), 3);
     Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
     indexBuffer.AppendClipData(nextTriangle);
-    (void)numClippedVerts;
 #else
     currentEdge[0] = 1.f;
     numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
@@ -173,8 +165,14 @@ void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
 
     if (numClippedVerts > 0) {
       size_t currentClipIndex = vertexBuffer.GetClipLength() / TRI_VERTS;
-      const float* clippedVertData = reinterpret_cast<const float*>(clippedVerts.data());
-      vertexBuffer.AppendClipData(clippedVertData, numClippedVerts * TRI_VERTS);
+
+      std::array<Vec4, 6> tempClippedVerts;
+      for (size_t j = 0; j < numClippedVerts; ++j) {
+        tempClippedVerts[j] = clippedVerts[j];
+      }
+
+      const float* clippedVertData = reinterpret_cast<const float*>(tempClippedVerts.data());
+      vertexBuffer.AppendClipData(clippedVertData, numClippedVerts);
 
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
       indexBuffer.AppendClipData(nextTriangle);

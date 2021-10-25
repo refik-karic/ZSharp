@@ -5,17 +5,9 @@
 
 #include "Constants.h"
 
-namespace ZSharp {
-
 static constexpr size_t MAX_INDICIES_AFTER_CLIP = 4;
 
-IndexBuffer::IndexBuffer(size_t size) :
-  mInputSize(size),
-  mAllocatedSize(size* MAX_INDICIES_AFTER_CLIP * sizeof(size_t))
-{
-  mData = static_cast<size_t*>(_aligned_malloc(mAllocatedSize, 16));
-  mClipData = mData + mInputSize;
-}
+namespace ZSharp {
 
 IndexBuffer::~IndexBuffer() {
   if (mData != nullptr) {
@@ -44,7 +36,7 @@ size_t& IndexBuffer::operator[](size_t index) {
   return mData[index];
 }
 
-size_t IndexBuffer::GetWorkingSize() const {
+size_t IndexBuffer::GetIndexSize() const {
   return mWorkingSize;
 }
 
@@ -68,6 +60,10 @@ void IndexBuffer::Resize(size_t size) {
 
 void IndexBuffer::Clear() {
   memset(mData, 0, mAllocatedSize);
+  Reset();
+}
+
+void IndexBuffer::Reset() {
   mClipLength = 0;
   mWorkingSize = 0;
   mClipData = mData + mInputSize;
@@ -89,8 +85,7 @@ void IndexBuffer::AppendClipData(const Triangle& triangle) {
         return;
     }
 
-    const size_t* data = reinterpret_cast<const size_t*>(&triangle);
-    memcpy(mClipData + mClipLength, data, TRI_VERTS * sizeof(size_t));
+    memcpy(mClipData + mClipLength, &triangle, sizeof(Triangle));
     mClipLength += TRI_VERTS;
 }
 

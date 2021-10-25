@@ -64,8 +64,8 @@ uint8_t* Renderer::RenderNextFrame() {
     VertexBuffer& vertexBuffer = mWorld.GetVertexBuffers()[i];
     IndexBuffer& indexBuffer = mWorld.GetIndexBuffers()[i];
 
-    vertexBuffer.Clear();
-    indexBuffer.Clear();
+    vertexBuffer.Reset();
+    indexBuffer.Reset();
     model.FillBuffers(vertexBuffer, indexBuffer);
 
     vertexBuffer.ApplyTransform(rotationMatrix);

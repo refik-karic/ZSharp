@@ -5,19 +5,9 @@
 
 #include "Vec4.h"
 
-static constexpr size_t MAX_VERTS_AFTER_CLIP = 2;
+static constexpr size_t MAX_INDICIES_AFTER_CLIP = 4;
 
 namespace ZSharp {
-
-VertexBuffer::VertexBuffer(size_t size, size_t stride) :
-  mClipLength(0),
-  mInputSize(size + (size / TRI_VERTS)),
-  mAllocatedSize(((size + (size / TRI_VERTS)) + (size * MAX_VERTS_AFTER_CLIP)) * sizeof(float)),
-  mInputStride(stride),
-  mHomogenizedStride(stride + (stride / TRI_VERTS)) {
-  mData = static_cast<float*>(_aligned_malloc(mAllocatedSize, 16));
-  mClipData = mData + mInputSize;
-}
 
 VertexBuffer::~VertexBuffer() {
   if (mData != nullptr) {
@@ -33,56 +23,36 @@ size_t VertexBuffer::GetTotalSize() const {
   return mAllocatedSize;
 }
 
-size_t VertexBuffer::GetWorkingSize() const {
+size_t VertexBuffer::GetVertSize() const {
   return mWorkingSize;
 }
 
-size_t VertexBuffer::GetHomogenizedStride() const {
-  return mHomogenizedStride;
-}
-
-size_t VertexBuffer::GetInputStride() const {
-  return mInputStride;
+size_t VertexBuffer::GetStride() const {
+  return mStride;
 }
 
 void VertexBuffer::CopyInputData(const float* data, size_t index, size_t length) {
-  float* currentIndex = mData + index;
-  for (size_t i = 0; i < length; i += mInputStride) {
-    for (size_t j = 0; j < mInputStride / TRI_VERTS; j++) {
-      memcpy(currentIndex, (data + i) + (j * TRI_VERTS), TRI_VERTS * sizeof(float));
-      currentIndex[3] = 1.f;
-      currentIndex += 4;
-      mWorkingSize += 4;
-    }
-  }
+  memcpy(mData + index, data, length);
+  mWorkingSize += (length / mStride);
 }
 
-float* VertexBuffer::GetInputData(size_t index, size_t stride) {
-  return mData + (index * stride);
+float* VertexBuffer::GetClipData(size_t index) {
+  return mClipData + (index * mStride);
 }
 
-const float* VertexBuffer::GetInputData(size_t index, size_t stride) const {
-  return mData + (index * stride);
+const float* VertexBuffer::GetClipData(size_t index) const {
+  return mClipData + (index * mStride);
 }
 
-float* VertexBuffer::GetClipData(size_t index, size_t stride) {
-  return mClipData + (index * stride);
-}
-
-const float* VertexBuffer::GetClipData(size_t index, size_t stride) const {
-  return mClipData + (index * stride);
-}
-
-void VertexBuffer::Resize(size_t size, size_t stride) {
+void VertexBuffer::Resize(size_t vertexSize, size_t stride, size_t indexSize) {
   if (mData != nullptr) {
     _aligned_free(mData);
   }
 
-  mClipLength = 0;
-  mInputSize = size + (size / TRI_VERTS);
-  mAllocatedSize = ((size + (size / TRI_VERTS)) + (size * MAX_VERTS_AFTER_CLIP)) * sizeof(float);
-  mInputStride = stride;
-  mHomogenizedStride = stride + (stride / TRI_VERTS);
+  mInputSize = vertexSize;
+  mIndexSize = indexSize;
+  mAllocatedSize = ((vertexSize * sizeof(float)) + (indexSize * MAX_INDICIES_AFTER_CLIP * sizeof(float)));
+  mStride = stride;
   mData = static_cast<float*>(_aligned_malloc(mAllocatedSize, 16));
   mClipData = mData + mInputSize;
   mWorkingSize = 0;
@@ -91,25 +61,29 @@ void VertexBuffer::Resize(size_t size, size_t stride) {
 
 void VertexBuffer::Clear() {
   memset(mData, 0, mAllocatedSize);
+  Reset();
+}
+
+void VertexBuffer::Reset() {
   mWorkingSize = 0;
   mClipLength = 0;
   mClipData = mData + mInputSize;
 }
 
 void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
-  for (size_t i = 0; i < mWorkingSize; i += mHomogenizedStride) {
-    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(mData + i));
-    vertexVector[3] = 1.f;
+  for (size_t i = 0; i < GetVertSize(); ++i) {
+    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(mData + (i * mStride)));
     vertexVector = transform.ApplyTransform(vertexVector);
   }
 }
 
 void VertexBuffer::AppendClipData(const float* data, size_t length) {
-  if (mInputSize + mClipLength + (length * sizeof(float)) > mAllocatedSize) {
+  size_t usedBytes = (mInputSize + (mClipLength * mStride)) * sizeof(float);
+  if (usedBytes + (length * sizeof(Vec4)) > mAllocatedSize) {
     return;
   }
 
-  memcpy(mClipData + mClipLength, data, length * sizeof(float));
+  memcpy(mClipData + (mClipLength * mStride), data, length * sizeof(Vec4));
   mClipLength += length;
 }
 

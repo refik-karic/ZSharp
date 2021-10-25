@@ -29,12 +29,14 @@ void World::LoadModel(FileString& path) {
   IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.size() - 1];
 
   size_t indexBufSize = 0;
+  size_t vertBufSize = 0;
   for (Mesh& mesh : cachedModel.GetMeshData()) {
     indexBufSize += (mesh.GetTriangleFaceTable().size() * TRI_VERTS);
+    vertBufSize += mesh.GetVertTable().size();
   }
 
   cachedIndexBuffer.Resize(indexBufSize);
-  cachedVertBuffer.Resize(indexBufSize * TRI_VERTS, TRI_VERTS);
+  cachedVertBuffer.Resize(vertBufSize, 4, indexBufSize);
 }
 
 size_t World::GetTotalModels() const {

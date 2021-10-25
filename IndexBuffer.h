@@ -9,8 +9,6 @@ class IndexBuffer final {
 
   IndexBuffer() = default;
 
-  IndexBuffer(size_t size);
-
   ~IndexBuffer();
 
   IndexBuffer(const IndexBuffer& rhs);
@@ -21,13 +19,15 @@ class IndexBuffer final {
 
   size_t& operator[](size_t index);
 
-  size_t GetWorkingSize() const;
+  size_t GetIndexSize() const;
 
   void CopyInputData(const size_t* data, size_t index, size_t length);
 
   void Resize(size_t size);
 
   void Clear();
+
+  void Reset();
 
   void RemoveTriangle(size_t index);
 

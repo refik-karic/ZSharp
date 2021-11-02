@@ -101,7 +101,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   windowTransform[1][2] = static_cast<float>(mHeight);
   windowTransform = windowTransform * (1.f / 2.f);
 
-  CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
+  //CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 
   for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));

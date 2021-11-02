@@ -21,7 +21,11 @@ void LoadModelOBJ(FileString& fileName, Model& model) {
   size_t indexSize = objFile.GetFaces().size();
   // TODO: Set the correct stride here.
   mesh.Resize(vertSize, 4, indexSize);
-  mesh.SetData(reinterpret_cast<const float*>(objFile.GetVerts().data()), vertSize);
+
+  for (size_t i = 0; i < objFile.GetVerts().size(); ++i) {
+    const Vec4& vector = objFile.GetVerts()[i];
+    mesh.SetData(reinterpret_cast<const float*>(&vector), i * 4, sizeof(Vec4));
+  }
 
   const std::vector<OBJFace>& faceList = objFile.GetFaces();
   for (size_t triIndex = 0; triIndex < indexSize; ++triIndex) {

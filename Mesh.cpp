@@ -21,16 +21,8 @@ void Mesh::Resize(size_t vertexLength, size_t stride, size_t faceTableLength) {
   mStride = stride;
 }
 
-void Mesh::SetData(const float* vertData, size_t numVerts) {
-  memcpy(mVertTable.data(), vertData, numVerts);
-}
-
-void Mesh::SetVertex(const Vec4& vertex, size_t index, size_t numElements) {
-  size_t vertIndex = 0;
-  for (size_t i = index; i < index + numElements; ++i) {
-    mVertTable[i] = vertex[vertIndex];
-    ++vertIndex;
-  }
+void Mesh::SetData(const float* vertData, size_t index, size_t numVerts) {
+  memcpy(mVertTable.data() + index, vertData, numVerts);
 }
 
 void Mesh::SetTriangle(const Triangle& triangle, size_t index) {

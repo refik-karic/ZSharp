@@ -32,8 +32,8 @@ size_t VertexBuffer::GetStride() const {
 }
 
 void VertexBuffer::CopyInputData(const float* data, size_t index, size_t length) {
-  memcpy(mData + index, data, length);
-  mWorkingSize += (length / mStride);
+  memcpy(mData + index, data, length * sizeof(float));
+  mWorkingSize += length;
 }
 
 float* VertexBuffer::GetClipData(size_t index) {

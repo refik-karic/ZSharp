@@ -28,9 +28,7 @@ class Mesh final {
 
   void Resize(size_t vertexLength, size_t stride, size_t faceTableLength);
 
-  void SetData(const float* vertData, size_t numVerts);
-
-  void SetVertex(const Vec4& vertex, size_t index, size_t numElements);
+  void SetData(const float* vertData, size_t index, size_t numVerts);
 
   void SetTriangle(const Triangle& triangle, size_t index);
 

@@ -10,14 +10,14 @@ float NewtonRaphsonSqrt(float val);
 
 bool IsNegativeFloat(const float a);
 
-bool FloatEqual(float a, float b, float epsilon);
+bool FloatEqual(float a, float b, float epsilon = 1.e-5f);
 
-bool FloatLessThan(float a, float b, float epsilon);
+bool FloatLessThan(float a, float b, float epsilon = 1.e-5f);
 
-bool FloatLessThanEqual(float a, float b, float epsilon);
+bool FloatLessThanEqual(float a, float b, float epsilon = 1.e-5f);
 
-bool FloatGreaterThan(float a, float b, float epsilon);
+bool FloatGreaterThan(float a, float b, float epsilon = 1.e-5f);
 
-bool FloatGreaterThanEqual(float a, float b, float epsilon);
+bool FloatGreaterThanEqual(float a, float b, float epsilon = 1.e-5f);
 
 }

@@ -58,12 +58,10 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   Vec3 w(-mLook);
   w.Normalize();
 
-  Vec3 v;
-  v = mUp - (w * (mUp * w));
+  Vec3 v(mUp - (w * (mUp * w)));
   v.Normalize();
 
-  Vec3 u;
-  u = v.Cross(w);
+  Vec3 u(v.Cross(w));
 
   Mat4x4 translation;
   translation.Identity();
@@ -101,7 +99,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   windowTransform[1][2] = static_cast<float>(mHeight);
   windowTransform = windowTransform * (1.f / 2.f);
 
-  //CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
+  CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 
   for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
@@ -121,15 +119,17 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
 void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   static const size_t MAX_OUT_CLIP_VERTS = 6;
-
   Vec3 currentEdge;
 
   for (size_t i = 0; i < indexBuffer.GetIndexSize(); i += TRI_VERTS) {
-    Vec3* v1 = reinterpret_cast<Vec3*>(vertexBuffer[indexBuffer[i]]);
-    Vec3* v2 = reinterpret_cast<Vec3*>(vertexBuffer[indexBuffer[i + 1]]);
-    Vec3* v3 = reinterpret_cast<Vec3*>(vertexBuffer[indexBuffer[i + 2]]);
+    size_t i1 = indexBuffer[i];
+    size_t i2 = indexBuffer[i + 1];
+    size_t i3 = indexBuffer[i + 2];
+    Vec3& v1 = *reinterpret_cast<Vec3*>(vertexBuffer[i1]);
+    Vec3& v2 = *reinterpret_cast<Vec3*>(vertexBuffer[i2]);
+    Vec3& v3 = *reinterpret_cast<Vec3*>(vertexBuffer[i3]);
     size_t numClippedVerts = 3;
-    std::array<Vec3, MAX_OUT_CLIP_VERTS> clippedVerts{*v1, *v2, *v3};
+    std::array<Vec3, MAX_OUT_CLIP_VERTS> clippedVerts{v1, v2, v3};
 
 #if DEBUG_CLIPPING
     size_t currentClipIndex = vertexBuffer.GetClipLength() / TRI_VERTS;
@@ -164,7 +164,7 @@ void Camera::ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer)
     currentEdge.Clear();
 
     if (numClippedVerts > 0) {
-      size_t currentClipIndex = vertexBuffer.GetClipLength() / TRI_VERTS;
+      size_t currentClipIndex = vertexBuffer.GetClipLength();
 
       std::array<Vec4, 6> tempClippedVerts;
       for (size_t j = 0; j < numClippedVerts; ++j) {

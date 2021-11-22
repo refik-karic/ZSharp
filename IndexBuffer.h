@@ -2,6 +2,8 @@
 
 #include "Triangle.h"
 
+#include <memory.h>
+
 namespace ZSharp {
 
 class IndexBuffer final {
@@ -13,11 +15,22 @@ class IndexBuffer final {
 
   IndexBuffer(const IndexBuffer& rhs);
 
-  void operator=(const IndexBuffer& rhs);
+  void operator=(const IndexBuffer& rhs) {
+    if (this == &rhs) {
+      return;
+    }
 
-  size_t operator[](size_t index) const;
+    Resize(rhs.mInputSize);
+    memcpy(mData, rhs.mData, rhs.mAllocatedSize);
+  }
 
-  size_t& operator[](size_t index);
+  size_t operator[](size_t index) const {
+    return mData[index];
+  }
+
+  size_t& operator[](size_t index) {
+    return mData[index];
+  }
 
   size_t GetIndexSize() const;
 

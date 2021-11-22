@@ -8,10 +8,8 @@ Vec3::Vec3() {
   Clear();
 }
 
-Vec3::Vec3(float x, float y, float z) {
-  mData[0] = x;
-  mData[1] = y;
-  mData[2] = z;
+Vec3::Vec3(float x, float y, float z)
+  : mData{x, y, z} {
 }
 
 Vec3::Vec3(const Vec3& copy) {
@@ -46,7 +44,7 @@ void Vec3::Homogenize() {
 }
 
 void Vec3::Clear() {
-  std::memset(mData, 0, sizeof(mData));
+  memset(mData, 0, sizeof(mData));
 }
 
 }

@@ -1,5 +1,7 @@
 #include "Mesh.h"
 
+#include "UtilMath.h"
+
 namespace ZSharp {
 Mesh::Mesh() {
 

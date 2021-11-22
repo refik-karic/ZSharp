@@ -16,6 +16,6 @@ float ParametricLinePlaneIntersection(const Vec3& start, const Vec3& end, const 
 
 size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge);
 
-void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, Vec3 viewer);
+void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer);
 
 }

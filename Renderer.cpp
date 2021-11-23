@@ -22,9 +22,7 @@ Renderer::Renderer(size_t width, size_t height, size_t stride)
   FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
   mWorld.LoadModel(tempModelPath);
 
-  mCameraPos[0] = 0.0f;
-  mCameraPos[1] = 0.0f;
-  mCameraPos[2] = 25.0f;
+  mCamera.MoveCamera(Vec3(0.f, 0.f, 25.f));
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.Register(this);
@@ -39,8 +37,6 @@ uint8_t* Renderer::RenderNextFrame() {
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.Process();
-
-  mCamera.MoveCamera(mCameraPos);
 
   Mat4x4 rotationMatrix;
   rotationMatrix.Identity();
@@ -83,20 +79,24 @@ uint8_t* Renderer::RenderNextFrame() {
 }
 
 void Renderer::MoveCamera(Direction direction, const float amount) {
+  Vec3 cameraPosition(mCamera.GetPosition());
+  
   switch (direction) {
     case Direction::FORWARD:
-      mCameraPos[2] -= amount;
+      cameraPosition[2] -= amount;
       break;
     case Direction::BACK:
-      mCameraPos[2] += amount;
+      cameraPosition[2] += amount;
       break;
     case Direction::LEFT:
-      mCameraPos[0] += amount;
+      cameraPosition[0] += amount;
       break;
     case Direction::RIGHT:
-      mCameraPos[0] -= amount;
+      cameraPosition[0] -= amount;
       break;
   }
+
+  mCamera.MoveCamera(cameraPosition);
 }
 
 void Renderer::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {

@@ -56,7 +56,7 @@ void IndexBuffer::RemoveTriangle(size_t index) {
   assert(index <= mWorkingSize);
 
   size_t* srcAddr = mData + (mWorkingSize - TRI_VERTS);
-  size_t* destAddr = mData + (index * TRI_VERTS);
+  size_t* destAddr = mData + index;
   memcpy(destAddr, srcAddr, TRI_VERTS * sizeof(size_t));
   
   if (mWorkingSize < TRI_VERTS) {

@@ -33,7 +33,5 @@ class Camera final {
 
   std::intptr_t mWidth;
   std::intptr_t mHeight;
-
-  void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 };
 }

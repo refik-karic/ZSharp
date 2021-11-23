@@ -8,11 +8,8 @@ Vec4::Vec4() {
   Clear();
 }
 
-Vec4::Vec4(float x, float y, float z, float w) {
-  mData[0] = x;
-  mData[1] = y;
-  mData[2] = z;
-  mData[3] = w;
+Vec4::Vec4(float x, float y, float z, float w)
+  : mData{x, y, z, w} {
 }
 
 Vec4::Vec4(const Vec4& copy) {
@@ -52,7 +49,7 @@ void Vec4::Homogenize() {
 }
 
 void Vec4::Clear() {
-  std::memset(mData, 0, sizeof(mData));
+  memset(mData, 0, sizeof(mData));
 }
 
 }

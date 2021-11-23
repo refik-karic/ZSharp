@@ -102,11 +102,12 @@ void Mat4x4::SetRotation(float angle, Axis axis) {
 }
 
 Vec4 Mat4x4::ApplyTransform(const Vec4& domain) const {
-  Vec4 codomainResult;
-  codomainResult[0] = domain * mData[0];
-  codomainResult[1] = domain * mData[1];
-  codomainResult[2] = domain * mData[2];
-  codomainResult[3] = domain * mData[3];
+  Vec4 codomainResult(
+    domain * mData[0],
+    domain * mData[1],
+    domain * mData[2],
+    domain * mData[3]
+  );
   return codomainResult;
 }
 

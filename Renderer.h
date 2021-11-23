@@ -36,8 +36,6 @@ class Renderer final : public IInputListener {
   private:
 
   Camera mCamera;
-  Vec3 mCameraPos;
-
   Framebuffer mBuffer;
   World mWorld;
 

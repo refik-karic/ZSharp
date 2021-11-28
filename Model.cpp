@@ -17,22 +17,22 @@ Model::Model(const Model& copy) {
 }
 
 size_t Model::MeshCount() const {
-  return mData.size();
+  return mData.Size();
 }
 
-std::vector<Mesh>& Model::GetMeshData() {
+Array<Mesh>& Model::GetMeshData() {
   return mData;
 }
 
-const std::vector<Mesh>& Model::GetMeshData() const {
+const Array<Mesh>& Model::GetMeshData() const {
   return mData;
 }
 
 void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const {
   for (const Mesh& mesh : mData) {
 #if FAST_LOAD
-    indexBuffer.CopyInputData(reinterpret_cast<const size_t*>(mesh.GetTriangleFaceTable().data()), 0, mesh.GetTriangleFaceTable().size() * TRI_VERTS);
-    vertexBuffer.CopyInputData(mesh.GetVertTable().data(), 0, mesh.GetVertTable().size());
+    indexBuffer.CopyInputData(reinterpret_cast<const size_t*>(mesh.GetTriangleFaceTable().GetData()), 0, mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
+    vertexBuffer.CopyInputData(mesh.GetVertTable().GetData(), 0, mesh.GetVertTable().Size());
 #else
     for (size_t i = 0; i < mesh.GetTriangleFaceTable().size(); ++i) {
       const Triangle& triangle = mesh.GetTriangleFaceTable()[i];
@@ -46,5 +46,4 @@ void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) co
 #endif
   }
 }
-
 }

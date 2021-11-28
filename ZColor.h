@@ -15,7 +15,8 @@ union ZColor {
 enum ZColors : uint32_t {
   RED = 0xFFFF0000,
   BLUE = 0xFF0000FF,
-  GREEN = 0xFF00FF00
+  GREEN = 0xFF00FF00,
+  WHITE = 0xFFFFFFFF
 };
 
 }

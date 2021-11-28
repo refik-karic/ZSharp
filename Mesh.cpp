@@ -9,8 +9,8 @@ Mesh::Mesh() {
 
 Mesh::Mesh(size_t numVerts, size_t stride, size_t numTriangleFaces) :
   mStride(stride) {
-  mVertTable.resize(numVerts);
-  mTriangleFaceTable.resize(numTriangleFaces);
+  mVertTable.Resize(numVerts);
+  mTriangleFaceTable.Resize(numTriangleFaces);
 }
 
 Mesh::Mesh(const Mesh& copy) {
@@ -18,32 +18,32 @@ Mesh::Mesh(const Mesh& copy) {
 }
 
 void Mesh::Resize(size_t vertexLength, size_t stride, size_t faceTableLength) {
-  mVertTable.resize(vertexLength);
-  mTriangleFaceTable.resize(faceTableLength);
+  mVertTable.Resize(vertexLength);
+  mTriangleFaceTable.Resize(faceTableLength);
   mStride = stride;
 }
 
 void Mesh::SetData(const float* vertData, size_t index, size_t numVerts) {
-  memcpy(mVertTable.data() + index, vertData, numVerts);
+  memcpy(mVertTable.GetData() + index, vertData, numVerts);
 }
 
 void Mesh::SetTriangle(const Triangle& triangle, size_t index) {
   mTriangleFaceTable[index] = triangle;
 }
 
-std::vector<float>& Mesh::GetVertTable() {
+Array<float>& Mesh::GetVertTable() {
   return mVertTable;
 }
 
-const std::vector<float>& Mesh::GetVertTable() const {
+const Array<float>& Mesh::GetVertTable() const {
   return mVertTable;
 }
 
-std::vector<Triangle>& Mesh::GetTriangleFaceTable() {
+Array<Triangle>& Mesh::GetTriangleFaceTable() {
   return mTriangleFaceTable;
 }
 
-const std::vector<Triangle>& Mesh::GetTriangleFaceTable() const {
+const Array<Triangle>& Mesh::GetTriangleFaceTable() const {
   return mTriangleFaceTable;
 }
 }

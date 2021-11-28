@@ -2,6 +2,7 @@ add_library(ZSharp)
 
 target_sources(ZSharp
     PRIVATE
+        Array.h
         AssetLoader.h
         Camera.h
         Common.h

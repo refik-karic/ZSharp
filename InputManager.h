@@ -1,10 +1,10 @@
 #pragma once
 
 #include <array>
-#include <vector>
 
 #include <cstdint>
 
+#include "Array.h"
 #include "IInputListener.h"
 
 namespace ZSharp {
@@ -40,7 +40,7 @@ class InputManager final {
   private:
   InputManager();
 
-  std::vector<IInputListener*> mListenerList;
+  Array<IInputListener*> mListenerList;
 
   std::array<KeyState, UINT8_MAX> mKeyboard;
 

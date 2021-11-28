@@ -9,30 +9,30 @@ World::World() {
 void World::LoadModel(FileString& path) {
   {
     Model model;
-    mActiveModels.push_back(model);
+    mActiveModels.PushBack(model);
   }
 
   {
     VertexBuffer vertBuffer;
-    mVertexBuffers.push_back(vertBuffer);
+    mVertexBuffers.PushBack(vertBuffer);
   }
 
   {
     IndexBuffer indexBuffer;
-    mIndexBuffers.push_back(indexBuffer);
+    mIndexBuffers.PushBack(indexBuffer);
   }
   
-  Model& cachedModel = mActiveModels[mActiveModels.size() - 1];
+  Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
   LoadModelOBJ(path, cachedModel);
 
-  VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.size() - 1];
-  IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.size() - 1];
+  VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.Size() - 1];
+  IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.Size() - 1];
 
   size_t indexBufSize = 0;
   size_t vertBufSize = 0;
   for (Mesh& mesh : cachedModel.GetMeshData()) {
-    indexBufSize += (mesh.GetTriangleFaceTable().size() * TRI_VERTS);
-    vertBufSize += mesh.GetVertTable().size();
+    indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
+    vertBufSize += mesh.GetVertTable().Size();
   }
 
   cachedIndexBuffer.Resize(indexBufSize);
@@ -40,18 +40,18 @@ void World::LoadModel(FileString& path) {
 }
 
 size_t World::GetTotalModels() const {
-  return mActiveModels.size();
+  return mActiveModels.Size();
 }
 
-std::vector<Model>& World::GetModels() {
+Array<Model>& World::GetModels() {
   return mActiveModels;
 }
 
-std::vector<VertexBuffer>& World::GetVertexBuffers() {
+Array<VertexBuffer>& World::GetVertexBuffers() {
   return mVertexBuffers;
 }
 
-std::vector<IndexBuffer>& World::GetIndexBuffers() {
+Array<IndexBuffer>& World::GetIndexBuffers() {
   return mIndexBuffers;
 }
 }

@@ -1,9 +1,8 @@
 ﻿#include "AssetLoader.h"
 
-#include <array>
 #include <cassert>
-#include <vector>
 
+#include "Array.h"
 #include "IndexBuffer.h"
 #include "JsonObject.h"
 #include "JsonScanner.h"
@@ -19,18 +18,18 @@ void LoadModelOBJ(FileString& fileName, Model& model) {
   model = Model(1);
   Mesh& mesh = model[0];
 
-  size_t vertSize = objFile.GetVerts().size() * (sizeof(Vec4) / sizeof(float));
-  size_t indexSize = objFile.GetFaces().size();
+  size_t vertSize = objFile.GetVerts().Size() * (sizeof(Vec4) / sizeof(float));
+  size_t indexSize = objFile.GetFaces().Size();
   // TODO: Set the correct stride here.
   mesh.Resize(vertSize, 4, indexSize);
 
-  for (size_t i = 0; i < objFile.GetVerts().size(); ++i) {
+  for (size_t i = 0; i < objFile.GetVerts().Size(); ++i) {
     const Vec4& vector = objFile.GetVerts()[i];
     assert(FloatEqual(vector[3], 1.f));
     mesh.SetData(reinterpret_cast<const float*>(&vector), i * 4, sizeof(Vec4));
   }
 
-  const std::vector<OBJFace>& faceList = objFile.GetFaces();
+  const Array<OBJFace>& faceList = objFile.GetFaces();
   for (size_t triIndex = 0; triIndex < indexSize; ++triIndex) {
     Triangle triangle(static_cast<size_t>(faceList[triIndex].triangleFace[0].vertexIndex),
       static_cast<size_t>(faceList[triIndex].triangleFace[1].vertexIndex),

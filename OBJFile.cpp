@@ -19,11 +19,11 @@ OBJFile::OBJFile(FileString& objFilePath, AssetFormat format) {
   }
 }
 
-const std::vector<Vec4>& OBJFile::GetVerts() {
+const Array<Vec4>& OBJFile::GetVerts() {
   return mVerts;
 }
 
-const std::vector<OBJFace>& OBJFile::GetFaces() {
+const Array<OBJFace>& OBJFile::GetFaces() {
   return mFaces;
 }
 
@@ -31,7 +31,7 @@ void OBJFile::Serialize(FileString& destPath) {
   std::ofstream file(destPath.GetAbsolutePath(), std::ios::out | std::ios::binary | std::ios::trunc);
   if (file.is_open()) {
     // Write length of vertex vector
-    size_t vertSize = mVerts.size();
+    size_t vertSize = mVerts.Size();
     file.write(reinterpret_cast<char*>(&vertSize), sizeof(size_t));
 
     // Write vertex vector
@@ -40,7 +40,7 @@ void OBJFile::Serialize(FileString& destPath) {
     }
 
     // Write length of the normal vector
-    size_t normalSize = mNormals.size();
+    size_t normalSize = mNormals.Size();
     file.write(reinterpret_cast<char*>(&normalSize), sizeof(size_t));
 
     // Write normal vector
@@ -49,7 +49,7 @@ void OBJFile::Serialize(FileString& destPath) {
     }
 
     // Write length of the uv vector
-    size_t uvSize = mUVCoords.size();
+    size_t uvSize = mUVCoords.Size();
     file.write(reinterpret_cast<char*>(&uvSize), sizeof(size_t));
 
     // Write uv vector
@@ -58,7 +58,7 @@ void OBJFile::Serialize(FileString& destPath) {
     }
 
     // Write size of face vector
-    size_t faceSize = mFaces.size();
+    size_t faceSize = mFaces.Size();
     file.write(reinterpret_cast<char*>(&faceSize), sizeof(size_t));
 
     // Write face vector
@@ -77,7 +77,7 @@ void OBJFile::Deserialize(FileString& objFilePath) {
     // Read vert size
     size_t vertSize = 0;
     file.read(reinterpret_cast<char*>(&vertSize), sizeof(size_t));
-    mVerts.resize(vertSize);
+    mVerts.Resize(vertSize);
 
     // Read verticies
     for (size_t i = 0; i < vertSize; ++i) {
@@ -89,7 +89,7 @@ void OBJFile::Deserialize(FileString& objFilePath) {
     // Read normal size
     size_t normalSize = 0;
     file.read(reinterpret_cast<char*>(&normalSize), sizeof(size_t));
-    mNormals.resize(normalSize);
+    mNormals.Resize(normalSize);
 
     // Read normals
     for (size_t i = 0; i < normalSize; ++i) {
@@ -101,7 +101,7 @@ void OBJFile::Deserialize(FileString& objFilePath) {
     // Read uv size
     size_t uvSize = 0;
     file.read(reinterpret_cast<char*>(&uvSize), sizeof(size_t));
-    mUVCoords.resize(uvSize);
+    mUVCoords.Resize(uvSize);
 
     // Read uvs
     for (size_t i = 0; i < uvSize; ++i) {
@@ -113,7 +113,7 @@ void OBJFile::Deserialize(FileString& objFilePath) {
     // Read face size
     size_t faceSize = 0;
     file.read(reinterpret_cast<char*>(&faceSize), sizeof(size_t));
-    mFaces.resize(faceSize);
+    mFaces.Resize(faceSize);
 
     // Read face vector
     for (size_t i = 0; i < faceSize; ++i) {
@@ -153,7 +153,7 @@ void OBJFile::ParseLine(std::string& currentLine) {
       Vec3 vertex;
       std::string choppedLine(rawLine + 3);
       ParseVec3(vertex, choppedLine, 0.0f);
-      mNormals.push_back(vertex);
+      mNormals.PushBack(vertex);
     }
     else if (rawLine[1] == 'p') {
       // Vertex Parameters.
@@ -167,14 +167,14 @@ void OBJFile::ParseLine(std::string& currentLine) {
       Vec3 vertex;
       std::string choppedLine(rawLine + 3);
       ParseVec3(vertex, choppedLine, 0.0f);
-      mUVCoords.push_back(vertex);
+      mUVCoords.PushBack(vertex);
     }
     else {
       // Vertex Data.
       Vec4 vertex;
       std::string choppedLine(rawLine + 2);
       ParseVec4(vertex, choppedLine, 1.0f);
-      mVerts.push_back(vertex);
+      mVerts.PushBack(vertex);
     }
     break;
   case 'f':
@@ -183,7 +183,7 @@ void OBJFile::ParseLine(std::string& currentLine) {
     OBJFace face;
     std::string choppedLine(rawLine + 2);
     ParseFace(face, choppedLine);
-    mFaces.push_back(face);
+    mFaces.PushBack(face);
   }
   break;
   case 'l':
@@ -203,7 +203,7 @@ void OBJFile::ParseLine(std::string& currentLine) {
 void OBJFile::ParseVec3(Vec3& fillVec, std::string& line, float fallback) {
   Vec4 sacrifice;
   ParseVec4(sacrifice, line, fallback);
-  std::memcpy(*fillVec, *sacrifice, sizeof(float) * 3);
+  memcpy(*fillVec, *sacrifice, sizeof(float) * 3);
 }
 
 void OBJFile::ParseVec4(Vec4& fillVec, std::string& line, float fallback) {

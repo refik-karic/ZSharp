@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Array.h"
 #include "FileString.h"
 #include "ISerializable.h"
 #include "Vec3.h"
@@ -25,9 +26,9 @@ class OBJFile : public ISerializable {
 public:
   OBJFile(FileString& objFilePath, AssetFormat format);
 
-  const std::vector<Vec4>& GetVerts();
+  const Array<Vec4>& GetVerts();
 
-  const std::vector<OBJFace>& GetFaces();
+  const Array<OBJFace>& GetFaces();
 
   virtual void Serialize(FileString& destPath) override;
 
@@ -40,13 +41,13 @@ protected:
 private:
   bool mVerboseParse = false;
 
-  std::vector<Vec4> mVerts;
+  Array<Vec4> mVerts;
 
-  std::vector<Vec3> mNormals;
+  Array<Vec3> mNormals;
 
-  std::vector<Vec3> mUVCoords;
+  Array<Vec3> mUVCoords;
 
-  std::vector<OBJFace> mFaces;
+  Array<OBJFace> mFaces;
 
   void ParseRaw(FileString& objFilePath);
 

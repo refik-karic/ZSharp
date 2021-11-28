@@ -1,11 +1,10 @@
 #pragma once
 
+#include "Array.h"
 #include "FileString.h"
 #include "IndexBuffer.h"
 #include "Model.h"
 #include "VertexBuffer.h"
-
-#include <vector>
 
 namespace ZSharp {
 class World final {
@@ -17,18 +16,18 @@ class World final {
 
   size_t GetTotalModels() const;
 
-  std::vector<Model>& GetModels();
+  Array<Model>& GetModels();
 
-  std::vector<VertexBuffer>& GetVertexBuffers();
+  Array<VertexBuffer>& GetVertexBuffers();
 
-  std::vector<IndexBuffer>& GetIndexBuffers();
+  Array<IndexBuffer>& GetIndexBuffers();
 
   protected:
 
   private:
-  std::vector<Model> mActiveModels;
-  std::vector<VertexBuffer> mVertexBuffers;
-  std::vector<IndexBuffer> mIndexBuffers;
+  Array<Model> mActiveModels;
+  Array<VertexBuffer> mVertexBuffers;
+  Array<IndexBuffer> mIndexBuffers;
 };
 
 }

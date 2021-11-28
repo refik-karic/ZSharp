@@ -9,7 +9,7 @@
 
 namespace ZSharp {
 bool InsidePlane(const Vec3& point, const Vec3& clipEdge) {
-  return clipEdge * (point - clipEdge) < 0.f;
+  return FloatLessThan(clipEdge * (point - clipEdge), 0.f);
 }
 
 Vec3 GetParametricVector(const float point, const Vec3& start, const Vec3& end) {

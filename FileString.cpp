@@ -4,7 +4,7 @@
 #include <cstring>
 
 // Exampe: C:\Users\kr\Desktop\ZSharp-Tools\src\Debug
-
+namespace ZSharp {
 FileString::FileString(const std::string& absoluteFilePath) {
   const char* volume = std::strchr(absoluteFilePath.c_str(), ':');
 
@@ -101,4 +101,5 @@ void FileString::CacheAbsolutePath() {
   }
 
   mDirty = false;
+}
 }

@@ -72,11 +72,11 @@ void InputManager::Process() {
 }
 
 void InputManager::Register(IInputListener* inputListener) {
-  mListenerList.push_back(inputListener);
+  mListenerList.PushBack(inputListener);
 }
 
 void InputManager::Unregister(IInputListener* inputListener) {
-  for (size_t i = 0; i < mListenerList.size(); ++i) {
+  for (size_t i = 0; i < mListenerList.Size(); ++i) {
     IInputListener* listener = mListenerList[i];
     
     if (listener == inputListener) {

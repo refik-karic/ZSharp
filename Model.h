@@ -1,10 +1,11 @@
 ﻿#pragma once
 
 #include <cstddef>
-#include <vector>
 
+#include "Array.h"
 #include "IndexBuffer.h"
 #include "Mesh.h"
+#include "Vec4.h"
 #include "VertexBuffer.h"
 
 namespace ZSharp {
@@ -32,14 +33,14 @@ class Model final {
 
   size_t MeshCount() const;
 
-  std::vector<Mesh>& GetMeshData();
+  Array<Mesh>& GetMeshData();
 
-  const std::vector<Mesh>& GetMeshData() const;
+  const Array<Mesh>& GetMeshData() const;
 
   void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const;
 
   private:
-  std::vector<Mesh> mData;
+  Array<Mesh> mData;
 };
 
 }

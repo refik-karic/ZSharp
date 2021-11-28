@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstddef>
-#include <vector>
 
+#include "Array.h"
 #include "Triangle.h"
 #include "Vec4.h"
 
@@ -32,17 +32,17 @@ class Mesh final {
 
   void SetTriangle(const Triangle& triangle, size_t index);
 
-  std::vector<float>& GetVertTable();
+  Array<float>& GetVertTable();
 
-  const std::vector<float>& GetVertTable() const;
+  const Array<float>& GetVertTable() const;
 
-  std::vector<Triangle>& GetTriangleFaceTable();
+  Array<Triangle>& GetTriangleFaceTable();
 
-  const std::vector<Triangle>& GetTriangleFaceTable() const;
+  const Array<Triangle>& GetTriangleFaceTable() const;
 
   private:
   size_t mStride = 0;
-  std::vector<float> mVertTable;
-  std::vector<Triangle> mTriangleFaceTable;
+  Array<float> mVertTable;
+  Array<Triangle> mTriangleFaceTable;
 };
 }

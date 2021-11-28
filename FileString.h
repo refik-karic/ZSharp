@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+namespace ZSharp {
 class FileString {
   public:
   FileString(const std::string& absoluteFilePath);
@@ -35,3 +36,4 @@ class FileString {
 
   void CacheAbsolutePath();
 };
+}

@@ -5,7 +5,7 @@ namespace ZSharp {
 void GlobalEdgeTable::AddPoint(size_t yIndex, size_t x, ZColor color, size_t primitiveIndex) {
   ScanLineList& list = mEdgeTable[yIndex];
 
-  if (list.empty()) {
+  if (list.IsEmpty()) {
     ScanLine scanLine{
       x,
       x,
@@ -13,10 +13,10 @@ void GlobalEdgeTable::AddPoint(size_t yIndex, size_t x, ZColor color, size_t pri
       color
     };
 
-    list.push_back(scanLine);
+    list.PushBack(scanLine);
   }
   else {
-    ScanLine& lastScanLine = list[list.size() - 1];
+    ScanLine& lastScanLine = list[list.Size() - 1];
 
     if(lastScanLine.primitiveIndex != primitiveIndex) {
       ScanLine scanLine{
@@ -26,7 +26,7 @@ void GlobalEdgeTable::AddPoint(size_t yIndex, size_t x, ZColor color, size_t pri
         color
       };
 
-      list.push_back(scanLine);
+      list.PushBack(scanLine);
     }
     else {
       if(lastScanLine.x1 > x) {

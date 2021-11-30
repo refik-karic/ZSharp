@@ -3,8 +3,8 @@
 #include <cstddef>
 
 #include <map>
-#include <vector>
 
+#include "Array.h"
 #include "Framebuffer.h"
 #include "ZColor.h"
 
@@ -31,7 +31,7 @@ class GlobalEdgeTable final {
     ZColor color;
   };
 
-  typedef std::vector<ScanLine> ScanLineList;
+  typedef Array<ScanLine> ScanLineList;
 
   std::map<size_t, ScanLineList> mEdgeTable;
 };

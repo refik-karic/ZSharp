@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdlib>
-#include <cstring>
 
 namespace ZSharp {
 
@@ -48,13 +47,15 @@ class Array final {
 
   ~Array() {
     if (mData != nullptr) {
-      free(mData);
+      delete[] mData;
     }
   }
 
   Array(const Array& rhs) {
     FreshAlloc(rhs.mSize);
-    memcpy(mData, rhs.mData, rhs.mSize * sizeof(T));
+    for (size_t i = 0; i < rhs.mSize; ++i) {
+      mData[i] = rhs[i];
+    }
   }
 
   Array(const Array&&) = delete;
@@ -63,7 +64,9 @@ class Array final {
     if (this != &rhs && rhs.mSize > 0) {
       Clear();
       Resize(rhs.mSize);
-      memcpy(mData, rhs.mData, rhs.mSize * sizeof(T));
+      for (size_t i = 0; i < rhs.mSize; ++i) {
+        mData[i] = rhs[i];
+      }
     }
   }
 
@@ -86,7 +89,9 @@ class Array final {
   }
 
   void Clear() {
-    memset(mData, 0, sizeof(T) * mSize);
+    for (size_t i = 0; i < mSize; ++i) {
+      mData[i] = T();
+    }
   }
 
   size_t Size() const {
@@ -101,9 +106,16 @@ class Array final {
     if (mData == nullptr) {
       FreshAlloc(size);
     }
-    else {
-      // TODO: This fails with std::map for some reason.
-      realloc(mData, size);
+    else if (mSize != size) {
+      T* newAlloc = new T[size];
+      size_t copyLength = (size > mSize) ? mSize : size;
+
+      for (size_t i = 0; i < copyLength; ++i) {
+        newAlloc[i] = mData[i];
+      }
+
+      delete[] mData;
+      mData = newAlloc;
       mSize = size;
     }
   }
@@ -126,7 +138,7 @@ class Array final {
   size_t mSize = 0;
 
   void FreshAlloc(size_t size) {
-    mData = static_cast<T*>(malloc(sizeof(T) * size));
+    mData = new T[size];
     mSize = size;
     Clear();
   }

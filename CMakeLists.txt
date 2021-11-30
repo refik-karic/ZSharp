@@ -37,6 +37,7 @@ target_sources(ZSharp
         ZColor.h
         ZConfig.h
         ZDrawing.h
+        ZString.h
         OBJFile.h
 	
         AssetLoader.cpp

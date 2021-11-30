@@ -3,7 +3,8 @@
 #include <cstdlib>
 
 #include <string>
-#include <vector>
+
+#include "Array.h"
 
 namespace ZSharp {
 class FileString {
@@ -12,7 +13,7 @@ class FileString {
 
   const std::string& GetVolume() const;
 
-  const std::vector<std::string>& GetDirectories() const;
+  const Array<std::string>& GetDirectories() const;
 
   const std::string& GetFilename() const;
 
@@ -24,7 +25,7 @@ class FileString {
 
   private:
   std::string mVolume;
-  std::vector<std::string> mDirectories;
+  Array<std::string> mDirectories;
   std::string mFilename;
   std::string mExtension;
 

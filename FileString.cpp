@@ -26,7 +26,7 @@ FileString::FileString(const std::string& absoluteFilePath) {
 
     if (nextDirectory != nullptr) {
       std::string parsedDirectory(absoluteFilePath.c_str(), (directory - absoluteFilePath.c_str()) + 1, (nextDirectory - directory) - 1);
-      mDirectories.push_back(parsedDirectory);
+      mDirectories.PushBack(parsedDirectory);
     }
     else {
       directory++;
@@ -41,7 +41,7 @@ FileString::FileString(const std::string& absoluteFilePath) {
       }
       else {
         std::string parsedDirectory(directory);
-        mDirectories.push_back(parsedDirectory);
+        mDirectories.PushBack(parsedDirectory);
       }
     }
     
@@ -55,7 +55,7 @@ const std::string& FileString::GetVolume() const {
   return mVolume;
 }
 
-const std::vector<std::string>& FileString::GetDirectories() const {
+const Array<std::string>& FileString::GetDirectories() const {
   return mDirectories;
 }
 
@@ -80,10 +80,10 @@ void FileString::CacheAbsolutePath() {
 
   mAbsolutePath.append(mVolume);
   mAbsolutePath.append(mDirectorySeparator);
-  for (uint32_t i = 0; i < mDirectories.size(); ++i) {
+  for (uint32_t i = 0; i < mDirectories.Size(); ++i) {
     mAbsolutePath.append(mDirectories[i]);
     
-    if (i != (mDirectories.size() - 1)) {
+    if (i != (mDirectories.Size() - 1)) {
       mAbsolutePath.append(mDirectorySeparator);
     }
     else if(!mFilename.empty()) {

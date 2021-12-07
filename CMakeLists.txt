@@ -71,6 +71,7 @@ target_sources(ZSharp
         ZColor.cpp
         ZConfig.cpp
         ZDrawing.cpp
+        ZString.cpp
 )
 
 set(ZSharp_Compile_Options 

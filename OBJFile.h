@@ -1,8 +1,11 @@
 #pragma once
 
+#include <cstdint>
+
 #include "Array.h"
 #include "FileString.h"
 #include "ISerializable.h"
+#include "ZString.h"
 #include "Vec3.h"
 #include "Vec4.h"
 
@@ -51,12 +54,12 @@ private:
 
   void ParseRaw(FileString& objFilePath);
 
-  void ParseLine(std::string& currentLine);
+  void ParseLine(const char* currentLine);
 
-  void ParseVec3(Vec3& fillVec, std::string& line, float fallback);
+  void ParseVec3(Vec3& fillVec, String& line, float fallback);
 
-  void ParseVec4(Vec4& fillVec, std::string& line, float fallback);
+  void ParseVec4(Vec4& fillVec, String& line, float fallback);
 
-  void ParseFace(OBJFace& fillFace, std::string& line);
+  void ParseFace(OBJFace& fillFace, String& line);
 };
 }

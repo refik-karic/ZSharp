@@ -2,38 +2,37 @@
 
 #include <cstdlib>
 
-#include <string>
-
 #include "Array.h"
+#include "ZString.h"
 
 namespace ZSharp {
 class FileString {
   public:
-  FileString(const std::string& absoluteFilePath);
+  FileString(const String& absoluteFilePath);
 
-  const std::string& GetVolume() const;
+  const String& GetVolume() const;
 
-  const Array<std::string>& GetDirectories() const;
+  const Array<String>& GetDirectories() const;
 
-  const std::string& GetFilename() const;
+  const String& GetFilename() const;
 
-  const std::string& GetExtension() const;
+  const String& GetExtension() const;
 
-  const std::string& GetAbsolutePath();
+  const String& GetAbsolutePath();
 
   protected:
 
   private:
-  std::string mVolume;
-  Array<std::string> mDirectories;
-  std::string mFilename;
-  std::string mExtension;
+  String mVolume;
+  Array<String> mDirectories;
+  String mFilename;
+  String mExtension;
 
   // Cache the last absolute path string.
   bool mDirty = false;
-  std::string mDirectorySeparator = "\\";
-  std::string mExtensionSeparator = ".";
-  std::string mAbsolutePath;
+  String mDirectorySeparator = "\\";
+  String mExtensionSeparator = ".";
+  String mAbsolutePath;
 
   void CacheAbsolutePath();
 };

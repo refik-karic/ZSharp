@@ -19,6 +19,7 @@ namespace ZSharp {
 Renderer::Renderer(size_t width, size_t height, size_t stride)
   : mBuffer(width, height, stride)
 {
+  // TODO: String copies correctly, cached absolute path is wrong.
   FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
   mWorld.LoadModel(tempModelPath);
 

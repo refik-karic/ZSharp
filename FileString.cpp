@@ -5,19 +5,19 @@
 
 // Exampe: C:\Users\kr\Desktop\ZSharp-Tools\src\Debug
 namespace ZSharp {
-FileString::FileString(const std::string& absoluteFilePath) {
-  const char* volume = std::strchr(absoluteFilePath.c_str(), ':');
+FileString::FileString(const String& absoluteFilePath) {
+  const char* volume = strchr(absoluteFilePath.Str(), ':');
 
   if (volume != nullptr) {
-    mVolume.append(absoluteFilePath.c_str(), 0, (volume - absoluteFilePath.c_str()) + 1);
+    mVolume.Append(absoluteFilePath.Str(), 0, (volume - absoluteFilePath.Str()) + 1);
   }
 
-  for (const char* directory = std::strchr(absoluteFilePath.c_str(), '\\'); directory != nullptr;) {
+  for (const char* directory = strchr(absoluteFilePath.Str(), '\\'); directory != nullptr;) {
     const char* nextDirectory = directory;
     nextDirectory++;
 
     if (nextDirectory != nullptr) {
-      nextDirectory = std::strchr(nextDirectory, '\\');
+      nextDirectory = strchr(nextDirectory, '\\');
     }
     else {
       directory = nullptr;
@@ -25,22 +25,22 @@ FileString::FileString(const std::string& absoluteFilePath) {
     }
 
     if (nextDirectory != nullptr) {
-      std::string parsedDirectory(absoluteFilePath.c_str(), (directory - absoluteFilePath.c_str()) + 1, (nextDirectory - directory) - 1);
+      String parsedDirectory(absoluteFilePath.Str(), (directory - absoluteFilePath.Str()) + 1, (nextDirectory - directory) - 1);
       mDirectories.PushBack(parsedDirectory);
     }
     else {
       directory++;
-      const char* extension = std::strchr(directory, '.');
+      const char* extension = strchr(directory, '.');
       if (extension != nullptr) {
-        std::string parsedFilename(directory, 0, extension - directory);
+        String parsedFilename(directory, 0, extension - directory);
         mFilename = parsedFilename;
 
         extension++;
-        std::string parsedExtension(extension);
+        String parsedExtension(extension);
         mExtension = parsedExtension;
       }
       else {
-        std::string parsedDirectory(directory);
+        String parsedDirectory(directory);
         mDirectories.PushBack(parsedDirectory);
       }
     }
@@ -51,23 +51,23 @@ FileString::FileString(const std::string& absoluteFilePath) {
   CacheAbsolutePath();
 }
 
-const std::string& FileString::GetVolume() const {
+const String& FileString::GetVolume() const {
   return mVolume;
 }
 
-const Array<std::string>& FileString::GetDirectories() const {
+const Array<String>& FileString::GetDirectories() const {
   return mDirectories;
 }
 
-const std::string& FileString::GetFilename() const {
+const String& FileString::GetFilename() const {
   return mFilename;
 }
 
-const std::string& FileString::GetExtension() const {
+const String& FileString::GetExtension() const {
   return mExtension;
 }
 
-const std::string& FileString::GetAbsolutePath() {
+const String& FileString::GetAbsolutePath() {
   if (mDirty) {
     CacheAbsolutePath();
   }
@@ -76,27 +76,27 @@ const std::string& FileString::GetAbsolutePath() {
 }
 
 void FileString::CacheAbsolutePath() {
-  mAbsolutePath.clear();
+  mAbsolutePath.Clear();
 
-  mAbsolutePath.append(mVolume);
-  mAbsolutePath.append(mDirectorySeparator);
-  for (uint32_t i = 0; i < mDirectories.Size(); ++i) {
-    mAbsolutePath.append(mDirectories[i]);
+  mAbsolutePath.Append(mVolume);
+  mAbsolutePath.Append(mDirectorySeparator);
+  for (size_t i = 0; i < mDirectories.Size(); ++i) {
+    mAbsolutePath.Append(mDirectories[i]);
     
     if (i != (mDirectories.Size() - 1)) {
-      mAbsolutePath.append(mDirectorySeparator);
+      mAbsolutePath.Append(mDirectorySeparator);
     }
-    else if(!mFilename.empty()) {
-      mAbsolutePath.append(mDirectorySeparator);
+    else if(!mFilename.IsEmpty()) {
+      mAbsolutePath.Append(mDirectorySeparator);
     }
   }
 
-  if (!mFilename.empty()) {
-    mAbsolutePath.append(mFilename);
+  if (!mFilename.IsEmpty()) {
+    mAbsolutePath.Append(mFilename);
 
-    if (!mExtension.empty()) {
-      mAbsolutePath.append(mExtensionSeparator);
-      mAbsolutePath.append(mExtension);
+    if (!mExtension.IsEmpty()) {
+      mAbsolutePath.Append(mExtensionSeparator);
+      mAbsolutePath.Append(mExtension);
     }
   }
 

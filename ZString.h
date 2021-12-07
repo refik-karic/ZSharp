@@ -1,34 +1,54 @@
 #pragma once
 
 #include <cstdlib>
-#include <cstring>
 
 namespace ZSharp {
 class String final {
   public:
-  String(const char* str) {
-    if (IsShort(str)) {
-      CopyShort(str);
+  String();
+
+  String(const char* str);
+
+  String(const char* str, size_t offset, size_t size);
+
+  String(const String& rhs);
+
+  ~String();
+
+  const char* Str() const;
+
+  String* operator=(const String& rhs) {
+    if (this != &rhs) {
+      Copy(rhs.Str());
     }
-    else {
-      CopyLong(str);
-    }
+
+    return this;
   }
 
-  ~String() {
-    if (!IsMarkedShort()) {
-      FreeLong();
-    }
+  String operator+(const char* str) {
+    String result(*this);
+    result.Append(str);
+    return result;
   }
 
-  const char* Str() {
-    return GetString();
-  }
+  void Append(const String& str);
+
+  void Append(const char* str, size_t offset, size_t size);
+
+  void Append(const char* str);
+
+  bool IsEmpty();
+
+  void Clear();
+
+  size_t GetSize(bool includeNull = true) const;
+
+  String SubStr(size_t start, size_t end);
 
   private:
   struct LongString {
-    size_t capacity;
     size_t size;
+    size_t capacity;
     char* data;
   };
 
@@ -47,62 +67,43 @@ class String final {
     ShortString shortStr;
   } mOverlapData;
 
-  bool IsShort(const char* str) const {
-    return strlen(str) < MinCapaity;
-  }
+  bool IsShort(const char* str) const;
 
-  bool IsMarkedShort() const {
-    return (mOverlapData.shortStr.size & 0x80) > 0;
-  }
+  bool IsMarkedShort() const;
 
-  void MarkShort(bool isShort) {
-    mOverlapData.shortStr.size = (isShort) ? ((mOverlapData.shortStr.size & 0x7F) | 0x80) : (mOverlapData.shortStr.size & 0x7F);
-  }
+  void MarkShort(bool isShort);
 
   // Short String helpers.
-  void SetShortLength(const char* str) {
-    mOverlapData.shortStr.size = static_cast<unsigned char>(strlen(str) + 1);
-  }
+  void SetShortLength(size_t length);
 
-  unsigned char GetShortLength() const {
-    return mOverlapData.shortStr.size;
-  }
+  unsigned char GetShortLength() const;
 
-  void CopyShort(const char* str) {
-    SetShortLength(str);
-    strncpy_s(mOverlapData.shortStr.data, GetShortLength(), str, GetShortLength());
-    MarkShort(true);
-  }
+  void CopyShort(const char* str);
+
+  void AppendShort(const char* str, size_t offset, size_t length);
 
   // Long String helpers.
-  void SetLongLength(const char* str) {
-    size_t length = strlen(str) + 1;
-    mOverlapData.longStr.size = length;
-    mOverlapData.longStr.capacity = length;
-  }
+  void SetLongLength(size_t length);
 
-  size_t GetLongLength() const {
-    return mOverlapData.longStr.size;
-  }
+  size_t GetLongLength() const;
 
-  void AllocateLong() {
-    mOverlapData.longStr.data = static_cast<char*>(malloc(GetLongLength()));
-  }
+  void AllocateLong();
 
-  void FreeLong() {
-    free(mOverlapData.longStr.data);
-  }
+  void FreeLong();
 
-  void CopyLong(const char* str) {
-    SetLongLength(str);
-    AllocateLong();
-    strncpy_s(mOverlapData.longStr.data, GetLongLength(), str, GetLongLength());
-    MarkShort(false);
-  }
+  void CopyLong(const char* str);
+
+  void AppendLong(const char* str, size_t offset, size_t length);
 
   // General helpers.
-  const char* GetString() const {
-    return (IsMarkedShort()) ? mOverlapData.shortStr.data : mOverlapData.longStr.data;
-  }
+  void Copy(const char* str);
+
+  const char* GetString() const;
+
+  char* GetMutableString();
+
+  size_t GetCombinedSize(const char* str);
+
+  bool FitsInSmall(size_t size);
 };
 }

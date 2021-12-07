@@ -12,11 +12,6 @@ size_t ReadLine(char** data, size_t* length, FILE* file)
     return 0;
   }
 
-  int firstByte = fgetc(file);
-  if (firstByte == EOF) {
-    return 0;
-  }
-
   bool keepReading = true;
   size_t numRead = 0;
   for (size_t i = 0; keepReading; ++i) {
@@ -33,16 +28,16 @@ size_t ReadLine(char** data, size_t* length, FILE* file)
 
     char nextChar = static_cast<char>(fgetc(file));
     if (nextChar == EOF) {
-      *data[i] = NULL;
+      (*data)[i] = NULL;
       keepReading = false;
     }
     else {
-      *data[i] = nextChar;
+      (*data)[i] = nextChar;
       numRead++;
     }
 
-    if (*data[i] == '\n') {
-      *data[i + 1] = NULL;
+    if ((*data)[i] == '\n') {
+      (*data)[i + 1] = NULL;
       keepReading = false;
     }
   }
@@ -181,6 +176,8 @@ void OBJFile::ParseRaw(FileString& objFilePath) {
     char* buffer = static_cast<char*>(malloc(bufferSize));
     for (size_t read = ReadLine(&buffer, &bufferSize, file); read > 0; read = ReadLine(&buffer, &bufferSize, file)) {
       if (read > 2) {
+        buffer[read - 1] = NULL;
+
         ParseLine(buffer);
         char* resizedBuf = static_cast<char*>(realloc(buffer, bufferSize));
         if (resizedBuf == nullptr) {
@@ -188,6 +185,7 @@ void OBJFile::ParseRaw(FileString& objFilePath) {
         }
 
         buffer = resizedBuf;
+        memset(buffer, 0, bufferSize);
       }
     }
 
@@ -261,7 +259,7 @@ void OBJFile::ParseVec3(Vec3& fillVec, String& line, float fallback) {
 
 void OBJFile::ParseVec4(Vec4& fillVec, String& line, float fallback) {
   char* nextPos = NULL;
-
+  
   for (int32_t i = 0; i < 4; ++i) {
     if (!line.IsEmpty()) {
       fillVec[i] = strtof(line.Str(), &nextPos);

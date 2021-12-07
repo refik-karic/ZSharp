@@ -66,7 +66,7 @@ const Array<OBJFace>& OBJFile::GetFaces() {
 }
 
 void OBJFile::Serialize(FileString& destPath) {
-  FILE* file = fopen(destPath.GetAbsolutePath().Str(), "w");
+  FILE* file = fopen(destPath.GetAbsolutePath().Str(), "wb");
   if (file != nullptr) {
     // Write length of vertex vector
     size_t vertSize = mVerts.Size();
@@ -111,7 +111,7 @@ void OBJFile::Serialize(FileString& destPath) {
 
 void OBJFile::Deserialize(FileString& objFilePath) {
   const char* fileName = objFilePath.GetAbsolutePath().Str();
-  FILE* file = fopen(fileName, "r");
+  FILE* file = fopen(fileName, "rb");
   if (file != nullptr) {
     // Read vert size
     size_t vertSize = 0;

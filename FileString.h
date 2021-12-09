@@ -6,7 +6,7 @@
 #include "ZString.h"
 
 namespace ZSharp {
-class FileString {
+class FileString final {
   public:
   FileString(const String& absoluteFilePath);
 
@@ -19,8 +19,6 @@ class FileString {
   const String& GetExtension() const;
 
   const String& GetAbsolutePath();
-
-  protected:
 
   private:
   String mVolume;

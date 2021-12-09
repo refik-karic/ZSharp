@@ -269,7 +269,7 @@ void OBJFile::ParseVec4(Vec4& fillVec, String& line, float fallback) {
       return;
     }
 
-    line = line.SubStr(nextPos - line.Str(), line.GetSize());
+    line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
   }
 }
 
@@ -285,7 +285,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
         line.Clear();
       }
       else {
-        line = line.SubStr(nextPos - line.Str(), line.GetSize());
+        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }
     else {
@@ -301,7 +301,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
         line.Clear();
       }
       else {
-        line = line.SubStr(nextPos - line.Str(), line.GetSize());
+        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }
     else {
@@ -317,7 +317,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
         line.Clear();
       }
       else {
-        line = line.SubStr(nextPos - line.Str(), line.GetSize());
+        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }
     else {

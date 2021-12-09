@@ -17,6 +17,12 @@ class Array final {
       return *this;
     }
 
+    Iterator operator++(int) {
+      Iterator temp(*this);
+      ++(*this);
+      return temp;
+    }
+
     bool operator==(const Iterator& rhs) {
       return mPtr == rhs.mPtr;
     }
@@ -38,7 +44,6 @@ class Array final {
   };
 
   Array() {
-
   }
 
   Array(size_t size) {
@@ -48,6 +53,7 @@ class Array final {
   ~Array() {
     if (mData != nullptr) {
       delete[] mData;
+      mData = nullptr;
     }
   }
 
@@ -62,7 +68,6 @@ class Array final {
 
   void operator=(const Array& rhs) {
     if (this != &rhs && rhs.mSize > 0) {
-      Clear();
       Resize(rhs.mSize);
       for (size_t i = 0; i < rhs.mSize; ++i) {
         mData[i] = rhs[i];
@@ -138,9 +143,8 @@ class Array final {
   size_t mSize = 0;
 
   void FreshAlloc(size_t size) {
-    mData = new T[size];
+    mData = new T[size]();
     mSize = size;
-    Clear();
   }
 };
 

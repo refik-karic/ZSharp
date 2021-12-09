@@ -19,6 +19,10 @@ class String final {
 
   String* operator=(const String& rhs) {
     if (this != &rhs) {
+      if (!IsMarkedShort()) {
+        FreeLong();
+      }
+
       Copy(rhs.Str());
     }
 
@@ -41,7 +45,7 @@ class String final {
 
   void Clear();
 
-  size_t GetSize(bool includeNull = true) const;
+  size_t GetLength() const;
 
   String SubStr(size_t start, size_t end);
 

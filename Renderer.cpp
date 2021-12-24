@@ -19,8 +19,7 @@ namespace ZSharp {
 Renderer::Renderer(size_t width, size_t height, size_t stride)
   : mBuffer(width, height, stride)
 {
-  String fileString("C:\\Users\\refik\\Desktop\\backpack.txt");
-  FileString tempModelPath(fileString);
+  FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
   mWorld.LoadModel(tempModelPath);
 
   mCamera.MoveCamera(Vec3(0.f, 0.f, 25.f));

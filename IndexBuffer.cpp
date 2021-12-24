@@ -2,6 +2,7 @@
 
 #include <malloc.h>
 #include <cassert>
+#include <cstring>
 
 #include "Constants.h"
 
@@ -17,6 +18,23 @@ IndexBuffer::~IndexBuffer() {
 
 IndexBuffer::IndexBuffer(const IndexBuffer& rhs) {
   *this = rhs;
+}
+
+void IndexBuffer::operator=(const IndexBuffer& rhs) {
+  if (this == &rhs) {
+    return;
+  }
+
+  Resize(rhs.mInputSize);
+  memcpy(mData, rhs.mData, rhs.mAllocatedSize);
+}
+
+size_t IndexBuffer::operator[](size_t index) const {
+  return mData[index];
+}
+
+size_t& IndexBuffer::operator[](size_t index) {
+  return mData[index];
 }
 
 size_t IndexBuffer::GetIndexSize() const {

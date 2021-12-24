@@ -31,6 +31,24 @@ const char* String::Str() const {
   return GetString();
 }
 
+String* String::operator=(const String& rhs) {
+  if (this != &rhs) {
+    if (!IsMarkedShort()) {
+      FreeLong();
+    }
+
+    Copy(rhs.Str());
+  }
+
+  return this;
+}
+
+String String::operator+(const char* str) {
+  String result(*this);
+  result.Append(str);
+  return result;
+}
+
 void String::Append(const String& str) {
   Append(str.Str());
 }

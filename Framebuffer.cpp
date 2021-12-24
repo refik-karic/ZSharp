@@ -2,7 +2,6 @@
 
 #include <cstdlib>
 
-#include "Common.h"
 #include "ZConfig.h"
 
 #ifdef FORCE_AVX512
@@ -47,9 +46,11 @@ void Framebuffer::SetRow(const size_t y, const size_t x1, const size_t x2, const
     (x2 >= 0 && x2 < mWidth) &&
     (x1 < x2)) {
     size_t offset = (x1 * sizeof(uint32_t)) + (y * mStride);
-    ZSharp::MemsetAny(reinterpret_cast<uint32_t*>(mPixelBuffer + offset),
-      color.Color,
-      x2 - x1);
+
+    uint32_t* pixelPtr = reinterpret_cast<uint32_t*>(mPixelBuffer + offset);
+    for (size_t i = 0; i < x2 - x1; ++i) {
+      pixelPtr[i] = color.Color;
+    }
   }
 }
 
@@ -57,9 +58,10 @@ void Framebuffer::Clear(const ZColor color) {
   const size_t numPixels = (mWidth * mHeight);
 #if FORCE_AVX512
   if ((numPixels % 64) > 0) {
-    ZSharp::MemsetAny(reinterpret_cast<uint32_t*>(mPixelBuffer),
-      color.Color,
-      numPixels);
+    uint32_t* pixelPtr = reinterpret_cast<uint32_t*>(mPixelBuffer);
+    for (size_t i = 0; i < numPixels; ++i) {
+      pixelPtr[i] = color.Color;
+    }
   }
   else {
     for (size_t i = 0; i < 16; ++i) {
@@ -70,9 +72,10 @@ void Framebuffer::Clear(const ZColor color) {
   }
 #else
   if ((numPixels % sizeof(std::uintptr_t)) > 0) {
-    ZSharp::MemsetAny(reinterpret_cast<uint32_t*>(mPixelBuffer),
-      color.Color,
-      numPixels);
+    uint32_t* pixelPtr = reinterpret_cast<uint32_t*>(mPixelBuffer);
+    for (size_t i = 0; i < numPixels; ++i) {
+      pixelPtr[i] = color.Color;
+    }
   }
   else {
     const size_t cachedSize = mTotalSize / sizeof(std::uintptr_t);

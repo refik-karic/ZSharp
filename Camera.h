@@ -31,7 +31,7 @@ class Camera final {
   float mFovHoriz;
   float mFovVert;
 
-  std::intptr_t mWidth;
-  std::intptr_t mHeight;
+  size_t mWidth;
+  size_t mHeight;
 };
 }

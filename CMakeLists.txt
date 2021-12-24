@@ -59,7 +59,7 @@ target_sources(ZSharp
         OBJFile.cpp
         Quaternion.cpp
         Renderer.cpp
-        Scanner.cpp
+#       Scanner.cpp
         Triangle.cpp
 #	    Token.cpp
         UtilMath.cpp

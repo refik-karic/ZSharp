@@ -17,23 +17,9 @@ class String final {
 
   const char* Str() const;
 
-  String* operator=(const String& rhs) {
-    if (this != &rhs) {
-      if (!IsMarkedShort()) {
-        FreeLong();
-      }
+  String* operator=(const String& rhs);
 
-      Copy(rhs.Str());
-    }
-
-    return this;
-  }
-
-  String operator+(const char* str) {
-    String result(*this);
-    result.Append(str);
-    return result;
-  }
+  String operator+(const char* str);
 
   void Append(const String& str);
 

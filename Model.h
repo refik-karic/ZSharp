@@ -5,7 +5,6 @@
 #include "Array.h"
 #include "IndexBuffer.h"
 #include "Mesh.h"
-#include "Vec4.h"
 #include "VertexBuffer.h"
 
 namespace ZSharp {

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Constants.h"
 #include "Mat4x4.h"
 
 namespace ZSharp {
@@ -14,22 +13,11 @@ class VertexBuffer final {
 
   VertexBuffer(const VertexBuffer& rhs);
 
-  void operator=(const VertexBuffer& rhs) {
-    if (this == &rhs) {
-      return;
-    }
+  void operator=(const VertexBuffer& rhs);
 
-    Resize(rhs.mInputSize, rhs.mStride, rhs.mIndexSize);
-    memcpy(mData, rhs.mData, rhs.mAllocatedSize);
-  }
+  float* operator[](size_t index) const;
 
-  float* operator[](size_t index) const {
-    return mData + (index * mStride);
-  }
-
-  float* operator[](size_t index) {
-    return mData + (index * mStride);
-  }
+  float* operator[](size_t index);
 
   const float* GetClipData(size_t index) const;
 

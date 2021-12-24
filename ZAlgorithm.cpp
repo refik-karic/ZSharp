@@ -34,12 +34,15 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     Vec3& v2 = *reinterpret_cast<Vec3*>(vertexBuffer[i2]);
     Vec3& v3 = *reinterpret_cast<Vec3*>(vertexBuffer[i3]);
     size_t numClippedVerts = 3;
-    std::array<Vec3, MAX_OUT_CLIP_VERTS> clippedVerts{ v1, v2, v3 };
+    FixedArray<Vec3, MAX_OUT_CLIP_VERTS> clippedVerts;
+    clippedVerts[0] = v1;
+    clippedVerts[1] = v2;
+    clippedVerts[2] = v3;
 
 #if DEBUG_CLIPPING
     size_t currentClipIndex = vertexBuffer.GetClipLength() / TRI_VERTS;
 
-    std::array<Vec4, MAX_OUT_CLIP_VERTS> tempClippedVerts;
+    FixedArray<Vec4, MAX_OUT_CLIP_VERTS> tempClippedVerts;
     for (size_t j = 0; j < numClippedVerts; ++j) {
       tempClippedVerts[j] = clippedVerts[j];
     }
@@ -71,12 +74,12 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     if (numClippedVerts > 0) {
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
-      std::array<Vec4, 6> tempClippedVerts;
+      FixedArray<Vec4, 6> tempClippedVerts;
       for (size_t j = 0; j < numClippedVerts; ++j) {
         tempClippedVerts[j] = clippedVerts[j];
       }
 
-      const float* clippedVertData = reinterpret_cast<const float*>(tempClippedVerts.data());
+      const float* clippedVertData = reinterpret_cast<const float*>(tempClippedVerts.GetData());
       vertexBuffer.AppendClipData(clippedVertData, numClippedVerts);
 
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
@@ -104,9 +107,9 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   }
 }
 
-size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
+size_t SutherlandHodgmanClip(FixedArray<Vec3, 6>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
   size_t numOutputVerts = 0;
-  std::array<Vec3, 6> outputVerts;
+  FixedArray<Vec3, 6> outputVerts;
 
   for (size_t i = 0; i < numInputVerts; ++i) {
     size_t nextIndex = (i + 1) % numInputVerts;

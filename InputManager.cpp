@@ -3,7 +3,7 @@
 namespace ZSharp {
 InputManager::InputManager()
   : mListenerList() {
-  mKeyboard.fill(KeyState::Clear);
+  mKeyboard.Fill(KeyState::Clear);
 }
 
 InputManager& InputManager::GetInstance() {
@@ -39,7 +39,7 @@ void InputManager::ResetMouse() {
 }
 
 void InputManager::Process() {
-  for (uint8_t i = 0; i < mKeyboard.size(); ++i) {
+  for (uint8_t i = 0; i < mKeyboard.Size(); ++i) {
     switch (mKeyboard[i]) {
       case KeyState::Clear:
         break;
@@ -68,7 +68,7 @@ void InputManager::Process() {
     }
   }
 
-  mKeyboard.fill(KeyState::Clear);
+  mKeyboard.Fill(KeyState::Clear);
 }
 
 void InputManager::Register(IInputListener* inputListener) {

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <array>
 
 #include <cstdint>
 
 #include "Array.h"
 #include "IInputListener.h"
+#include "FixedArray.h"
 
 namespace ZSharp {
 class InputManager final {
@@ -42,7 +42,7 @@ class InputManager final {
 
   Array<IInputListener*> mListenerList;
 
-  std::array<KeyState, UINT8_MAX> mKeyboard;
+  FixedArray<KeyState, UINT8_MAX> mKeyboard;
 
   bool mMousePressed = false;
   int32_t mOldMouseX = 0;

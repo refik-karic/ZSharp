@@ -2,8 +2,6 @@
 
 #include <cmath>
 
-#include <array>
-
 #include "Constants.h"
 #include "Mat2x3.h"
 #include "Triangle.h"

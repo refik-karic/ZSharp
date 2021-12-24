@@ -3,8 +3,7 @@
 #include <cstdint>
 #include <cstddef>
 
-#include <array>
-
+#include "FixedArray.h"
 #include "Framebuffer.h"
 #include "GlobalEdgeTable.h"
 #include "IndexBuffer.h"
@@ -31,9 +30,9 @@ void DrawRunSlice(Framebuffer& framebuffer,
     ZColor color);
 
 void TracePrimitive(GlobalEdgeTable& edgeTable, 
-    std::array<size_t, 2>& p1,
-    std::array<size_t, 2>& p2,
-    std::array<size_t, 2>& p3,
+    FixedArray<size_t, 2>& p1,
+    FixedArray<size_t, 2>& p2,
+    FixedArray<size_t, 2>& p3,
     ZColor color, 
     size_t primitiveIndex);
 

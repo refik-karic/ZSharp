@@ -89,7 +89,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
   }
 }
 
-void TracePrimitive(GlobalEdgeTable& edgeTable, std::array<size_t, 2>& p1, std::array<size_t, 2>& p2, std::array<size_t, 2>& p3, ZColor color, size_t primitiveIndex) {
+void TracePrimitive(GlobalEdgeTable& edgeTable, FixedArray<size_t, 2>& p1, FixedArray<size_t, 2>& p2, FixedArray<size_t, 2>& p3, ZColor color, size_t primitiveIndex) {
   TraceLine(edgeTable, (int32_t)p1[0], (int32_t)p1[1], (int32_t)p2[0], (int32_t)p2[1], color, primitiveIndex);
   TraceLine(edgeTable, (int32_t)p2[0], (int32_t)p2[1], (int32_t)p3[0], (int32_t)p3[1], color, primitiveIndex);
   TraceLine(edgeTable, (int32_t)p3[0], (int32_t)p3[1], (int32_t)p1[0], (int32_t)p1[1], color, primitiveIndex);
@@ -180,9 +180,15 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
         const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
         const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
 
-        std::array<size_t, 2> p1{ static_cast<size_t>(*v1), static_cast<size_t>(*(v1 + 1)) };
-        std::array<size_t, 2> p2{ static_cast<size_t>(*v2), static_cast<size_t>(*(v2 + 1)) };
-        std::array<size_t, 2> p3{ static_cast<size_t>(*v3), static_cast<size_t>(*(v3 + 1)) };
+        FixedArray<size_t, 2> p1;
+        p1[0] = static_cast<size_t>(*v1);
+        p1[1] = static_cast<size_t>(*(v1 + 1));
+        FixedArray<size_t, 2> p2;
+        p2[0] = static_cast<size_t>(*v2);
+        p2[1] = static_cast<size_t>(*(v2 + 1));
+        FixedArray<size_t, 2> p3;
+        p3[0] = static_cast<size_t>(*v3);
+        p3[1] = static_cast<size_t>(*(v3 + 1));
 
         TracePrimitive(edgeTable, p1, p2, p3, color, i);
     }

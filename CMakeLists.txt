@@ -8,6 +8,7 @@ target_sources(ZSharp
         Common.h
         Constants.h
 	    FileString.h
+	    FixedArray.h
 #       FileUtilities.h
         Framebuffer.h
         GlobalEdgeTable.h

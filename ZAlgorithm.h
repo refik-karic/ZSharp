@@ -1,8 +1,7 @@
 #pragma once
 
-#include <array>
-
 #include "IndexBuffer.h"
+#include "FixedArray.h"
 #include "Vec3.h"
 #include "VertexBuffer.h"
 
@@ -16,7 +15,7 @@ float ParametricLinePlaneIntersection(const Vec3& start, const Vec3& end, const 
 
 void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 
-size_t SutherlandHodgmanClip(std::array<Vec3, 6>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge);
+size_t SutherlandHodgmanClip(FixedArray<Vec3, 6>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge);
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer);
 

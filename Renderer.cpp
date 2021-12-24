@@ -186,32 +186,43 @@ void Renderer::OnKeyUp(uint8_t key) {
 }
 
 void Renderer::OnMouseMove(int32_t oldX, int32_t oldY, int32_t x, int32_t y) {
-  Vec3 V1(ProjectClick((float)x, (float)y));
-  Vec3 V2(ProjectClick((float)oldX, (float)oldY));
+  ZConfig& config = ZConfig::GetInstance();
+  int32_t width = (int32_t)config.GetViewportWidth();
+  int32_t height = (int32_t)config.GetViewportHeight();
+
+  float scale = fminf((float)width, (float)height) - 1;
+
+  float oldXPoint = ((2 * oldX) - width + 1) / scale;
+  float oldYPoint = ((2 * oldY) - height + 1) / (-scale);
+  float newXPoint = ((2 * x) - width + 1) / scale;
+  float newYPoint = ((2 * y) - height + 1) / (-scale);
+
+  Vec3 V1(oldXPoint, oldYPoint, ProjectClick((float)oldX, (float)oldY));
+  Vec3 V2(newXPoint, newYPoint, ProjectClick((float)x, (float)y));
+
+  Vec3 normal = V1.Cross(V2);
   V1.Normalize();
   V2.Normalize();
-  Vec3 N(V1.Cross(V2));
-  float theta = acosf(V1 * V2);
-  Quaternion quat(DegreesToRadians(theta), N);
+
+  float theta = acosf((V1 * V2));
+
+  Quaternion quat(DegreesToRadians(theta), normal);
   RotateTrackball(quat);
 }
 
-Vec3 Renderer::ProjectClick(float x, float y) {
-  ZConfig& config = ZConfig::GetInstance();
-  int32_t width = (int32_t)config.GetViewportWidth();
-  const float radius = (float)width / 2.f;
+float Renderer::ProjectClick(float x, float y) {
+  const float radius = 1.f;
 
-  bool insideSphere = ((x * x) + (y * y)) < ((radius * radius) / 2.f);
+  bool insideSphere = ((x * x) + (y * y)) <= ((radius * radius) / 2.f);
   float z = 0.f;
   if (insideSphere) {
-    z = sqrtf((radius * radius) - ((x * x) + (y * y)));
+    z = sqrtf((radius * radius) - ((x * x) - (y * y)));
   }
   else {
     z = (((radius * radius) / 2.f) / sqrtf(((x * x) + (y * y))));
   }
 
-  Vec3 result(x, y, z);
-  return result;
+  return z;
 }
 
 }

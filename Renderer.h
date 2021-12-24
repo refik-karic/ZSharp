@@ -56,6 +56,6 @@ class Renderer final : public IInputListener {
 
   void PauseTransforms();
 
-  Vec3 ProjectClick(float x, float y);
+  float ProjectClick(float x, float y);
 };
 }

@@ -172,7 +172,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, int32_t x1, int32_t y1, int32_t x2, i
 }
 
 void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, ZColor color) {
-    GlobalEdgeTable edgeTable;
+    GlobalEdgeTable edgeTable(framebuffer.GetHeight());
 
     size_t end = indexBuffer.GetClipLength();
     for (size_t i = 0; i < end; i += TRI_VERTS) {

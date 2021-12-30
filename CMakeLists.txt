@@ -77,6 +77,7 @@ target_sources(ZSharp
 
 set(ZSharp_Compile_Options 
   /source-charset:utf-8
+  /std:c17
   /std:c++latest
   /D_UNICODE
   /GR-

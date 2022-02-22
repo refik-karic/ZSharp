@@ -10,6 +10,10 @@ float DegreesToRadians(float degrees) {
   return degrees * PI_OVER_180;
 }
 
+float Lerp(float x1, float x2, float point) {
+  return ((1 - point) * x1) + (point * x2);
+}
+
 float NewtonRaphsonSqrt(float val) {
     const size_t iterations = 10;
 
@@ -23,8 +27,7 @@ float NewtonRaphsonSqrt(float val) {
     return x0;
 }
 
-bool IsNegativeFloat(const float a)
-{
+bool IsNegativeFloat(const float a) {
     const uint8_t* floatBits = reinterpret_cast<const uint8_t*>(&a);
     return (((floatBits[3]) & 0x01) > 0);
 }

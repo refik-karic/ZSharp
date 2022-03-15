@@ -44,7 +44,7 @@ class Renderer final : public IInputListener {
   bool mRenderMode = false;
   bool mPauseTransforms = false;
 
-  void MoveCamera(Direction direction, const float amount);
+  void MoveCamera(Direction direction);
 
   void RotateCamera(Mat4x4::Axis direction, const float angleDegrees);
 
@@ -56,6 +56,6 @@ class Renderer final : public IInputListener {
 
   void PauseTransforms();
 
-  float ProjectClick(float x, float y);
+  Vec3 ProjectClick(float x, float y);
 };
 }

@@ -15,6 +15,10 @@ class Camera final {
 
   Vec3 GetPosition() const;
 
+  Vec3 GetLook() const;
+
+  Vec3 GetUp() const;
+
   void MoveCamera(const Vec3& position);
 
   void RotateCamera(const Mat4x4& rotationMatrix);

@@ -14,8 +14,8 @@ Camera::Camera() {
   mWidth = config.GetViewportWidth();
   mHeight = config.GetViewportHeight();
 
-  mLook[2] = -1.f;
-  mUp[1] = -1.f;
+  mLook[2] = 1.f;
+  mUp[1] = 1.f;
 
   mFovHoriz = 90.f;
   mFovVert = 90.f;
@@ -26,6 +26,14 @@ Camera::Camera() {
 
 Vec3 Camera::GetPosition() const {
   return mPosition;
+}
+
+Vec3 Camera::GetLook() const {
+  return mLook;
+}
+
+Vec3 Camera::GetUp() const {
+  return mUp;
 }
 
 void Camera::MoveCamera(const Vec3& position) {
@@ -51,7 +59,7 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
 }
 
 void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
-  Vec3 w(-mLook);
+  Vec3 w(mLook);
   w.Normalize();
 
   Vec3 v(mUp - (w * (mUp * w)));

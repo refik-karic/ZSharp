@@ -1,6 +1,6 @@
 #include "ZString.h"
 
-#include <cassert>
+#include "ZAssert.h"
 #include <cstring>
 
 namespace ZSharp {
@@ -190,7 +190,7 @@ void String::AppendLong(const char* str, size_t offset, size_t length) {
 
   SetLongLength(combinedLength);
   char* resizedStr = static_cast<char*>(realloc(mOverlapData.longStr.data, combinedLength + 1));
-  assert(resizedStr != nullptr);
+  ZAssert(resizedStr != nullptr);
   mOverlapData.longStr.data = resizedStr;
 
   size_t currentPosition = strlen(GetMutableString());

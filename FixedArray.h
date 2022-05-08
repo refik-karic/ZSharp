@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cassert>
+#include "ZAssert.h"
 #include <cstdlib>
 
 namespace ZSharp {
@@ -45,12 +45,12 @@ class FixedArray final {
   };
 
   T& operator[](size_t index) {
-    assert(index < N);
+    ZAssert(index < N);
     return mData[index];
   }
 
   const T& operator[](size_t index) const {
-    assert(index < N);
+    ZAssert(index < N);
     return mData[index];
   }
 

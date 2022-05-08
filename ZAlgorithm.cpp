@@ -3,7 +3,7 @@
 #include "Constants.h"
 #include "UtilMath.h"
 
-#include <cassert>
+#include "ZAssert.h"
 
 #define DEBUG_CLIPPING 0
 
@@ -27,12 +27,12 @@ float ParametricLinePlaneIntersection(const Vec3& start, const Vec3& end, const 
 void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   Vec3 currentEdge;
   for (size_t i = 0; i < indexBuffer.GetIndexSize(); i += TRI_VERTS) {
-    size_t i1 = indexBuffer[i];
-    size_t i2 = indexBuffer[i + 1];
-    size_t i3 = indexBuffer[i + 2];
-    Vec3& v1 = *reinterpret_cast<Vec3*>(vertexBuffer[i1]);
-    Vec3& v2 = *reinterpret_cast<Vec3*>(vertexBuffer[i2]);
-    Vec3& v3 = *reinterpret_cast<Vec3*>(vertexBuffer[i3]);
+    const size_t i1 = indexBuffer[i];
+    const size_t i2 = indexBuffer[i + 1];
+    const size_t i3 = indexBuffer[i + 2];
+    const Vec3& v1 = *reinterpret_cast<const Vec3*>(vertexBuffer[i1]);
+    const Vec3& v2 = *reinterpret_cast<const Vec3*>(vertexBuffer[i2]);
+    const Vec3& v3 = *reinterpret_cast<const Vec3*>(vertexBuffer[i3]);
     size_t numClippedVerts = 3;
     FixedArray<Vec3, MAX_OUT_CLIP_VERTS> clippedVerts;
     clippedVerts[0] = v1;
@@ -112,10 +112,10 @@ size_t SutherlandHodgmanClip(FixedArray<Vec3, MAX_OUT_CLIP_VERTS>& inputVerts, c
   FixedArray<Vec3, MAX_OUT_CLIP_VERTS> outputVerts;
 
   for (size_t i = 0; i < numInputVerts; ++i) {
-    size_t nextIndex = (i + 1) % numInputVerts;
+    const size_t nextIndex = (i + 1) % numInputVerts;
 
-    bool p0Inside = InsidePlane(inputVerts[i], clipEdge);
-    bool p1Inside = InsidePlane(inputVerts[nextIndex], clipEdge);
+    const bool p0Inside = InsidePlane(inputVerts[i], clipEdge);
+    const bool p1Inside = InsidePlane(inputVerts[nextIndex], clipEdge);
 
     if (!p0Inside && !p1Inside) {
       continue;
@@ -149,7 +149,7 @@ size_t SutherlandHodgmanClip(FixedArray<Vec3, MAX_OUT_CLIP_VERTS>& inputVerts, c
 }
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer) {
-  assert((indexBuffer.GetIndexSize() % TRI_VERTS) == 0);
+  ZAssert((indexBuffer.GetIndexSize() % TRI_VERTS) == 0);
   
   for (size_t i = indexBuffer.GetIndexSize(); i >= TRI_VERTS; i -= TRI_VERTS) {
     size_t i1 = indexBuffer[i - 3];

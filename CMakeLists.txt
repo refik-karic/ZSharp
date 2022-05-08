@@ -35,6 +35,7 @@ target_sources(ZSharp
         VertexBuffer.h
         World.h
         ZAlgorithm.h
+        ZAssert.h
         ZColor.h
         ZConfig.h
         ZDrawing.h

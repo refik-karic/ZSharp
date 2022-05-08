@@ -1,7 +1,7 @@
 #include "IndexBuffer.h"
 
 #include <malloc.h>
-#include <cassert>
+#include "ZAssert.h"
 #include <cstring>
 
 #include "Constants.h"
@@ -71,7 +71,7 @@ void IndexBuffer::Reset() {
 }
 
 void IndexBuffer::RemoveTriangle(size_t index) {
-  assert(index <= mWorkingSize);
+  ZAssert(index <= mWorkingSize);
 
   size_t* srcAddr = mData + (mWorkingSize - TRI_VERTS);
   size_t* destAddr = mData + index;
@@ -84,7 +84,7 @@ void IndexBuffer::RemoveTriangle(size_t index) {
     mWorkingSize -= TRI_VERTS;
   }
 
-  assert((mWorkingSize % TRI_VERTS) == 0);
+  ZAssert((mWorkingSize % TRI_VERTS) == 0);
 }
 
 void IndexBuffer::AppendClipData(const Triangle& triangle) {

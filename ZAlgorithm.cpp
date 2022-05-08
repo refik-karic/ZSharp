@@ -7,6 +7,8 @@
 
 #define DEBUG_CLIPPING 0
 
+static const size_t MAX_OUT_CLIP_VERTS = 8;
+
 namespace ZSharp {
 bool InsidePlane(const Vec3& point, const Vec3& clipEdge) {
   return FloatLessThan(clipEdge * (point - clipEdge), 0.f);
@@ -23,9 +25,7 @@ float ParametricLinePlaneIntersection(const Vec3& start, const Vec3& end, const 
 }
 
 void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
-  static const size_t MAX_OUT_CLIP_VERTS = 6;
   Vec3 currentEdge;
-
   for (size_t i = 0; i < indexBuffer.GetIndexSize(); i += TRI_VERTS) {
     size_t i1 = indexBuffer[i];
     size_t i2 = indexBuffer[i + 1];
@@ -74,7 +74,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     if (numClippedVerts > 0) {
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
-      FixedArray<Vec4, 6> tempClippedVerts;
+      FixedArray<Vec4, MAX_OUT_CLIP_VERTS> tempClippedVerts;
       for (size_t j = 0; j < numClippedVerts; ++j) {
         tempClippedVerts[j] = clippedVerts[j];
       }
@@ -107,9 +107,9 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   }
 }
 
-size_t SutherlandHodgmanClip(FixedArray<Vec3, 6>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
+size_t SutherlandHodgmanClip(FixedArray<Vec3, MAX_OUT_CLIP_VERTS>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
   size_t numOutputVerts = 0;
-  FixedArray<Vec3, 6> outputVerts;
+  FixedArray<Vec3, MAX_OUT_CLIP_VERTS> outputVerts;
 
   for (size_t i = 0; i < numInputVerts; ++i) {
     size_t nextIndex = (i + 1) % numInputVerts;

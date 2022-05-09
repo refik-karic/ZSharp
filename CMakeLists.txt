@@ -76,7 +76,7 @@ target_sources(ZSharp
         ZString.cpp
 )
 
-set(ZSharp_Compile_Options 
+set(ZSharp_Compile_Options_Debug 
   /source-charset:utf-8
   /std:c17
   /std:c++latest
@@ -88,11 +88,30 @@ set(ZSharp_Compile_Options
   /WX
 )
 
+set(ZSharp_Compile_Options_Release 
+  /source-charset:utf-8
+  /std:c17
+  /std:c++latest
+  /D_UNICODE
+  /GR-
+  /MP
+  /U_MBCS
+  /W4
+  /WX
+  /sdl-
+  /GL
+  /GS-
+)
+
 target_compile_definitions(ZSharp PRIVATE 
   FORCE_AVX512
   FORCE_SSE
 )
 
 target_compile_options(ZSharp PRIVATE 
-	${ZSharp_Compile_Options}
+	"$<$<CONFIG:DEBUG>:${ZSharp_Compile_Options_Debug}>"
+)
+
+target_compile_options(ZSharp PRIVATE 
+	"$<$<CONFIG:RELEASE>:${ZSharp_Compile_Options_Release}>"
 )

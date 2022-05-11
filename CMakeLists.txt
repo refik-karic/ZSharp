@@ -36,6 +36,7 @@ target_sources(ZSharp
         World.h
         ZAlgorithm.h
         ZAssert.h
+        ZBaseTypes.h
         ZColor.h
         ZConfig.h
         ZDrawing.h

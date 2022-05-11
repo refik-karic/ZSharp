@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdlib>
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 class String final {

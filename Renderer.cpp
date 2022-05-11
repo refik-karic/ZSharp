@@ -1,6 +1,6 @@
 ﻿#include "Renderer.h"
 
-#include <cstddef>
+#include "ZBaseTypes.h"
 
 #include "Constants.h"
 #include "IndexBuffer.h"
@@ -28,7 +28,7 @@ Renderer::Renderer(size_t width, size_t height, size_t stride)
   inputManager.Register(this);
 }
 
-uint8_t* Renderer::RenderNextFrame() {
+uint8* Renderer::RenderNextFrame() {
   ZConfig& config = ZConfig::GetInstance();
 
   if (config.SizeChanged(mBuffer.GetWidth(), mBuffer.GetHeight())) {
@@ -130,7 +130,7 @@ void Renderer::RotateTrackball(Quaternion quat) {
   mCamera.RotateCamera(rotation);
 }
 
-void Renderer::ChangeSpeed(int64_t amount) {
+void Renderer::ChangeSpeed(int64 amount) {
   if (mRotationSpeed + amount > 10) {
     mRotationSpeed = 10;
   }
@@ -150,7 +150,7 @@ void Renderer::PauseTransforms() {
   mPauseTransforms = !mPauseTransforms;
 }
 
-void Renderer::OnKeyDown(uint8_t key) {
+void Renderer::OnKeyDown(uint8 key) {
   switch (key) {
   case 'P':
     PauseTransforms();
@@ -188,11 +188,11 @@ void Renderer::OnKeyDown(uint8_t key) {
   }
 }
 
-void Renderer::OnKeyUp(uint8_t key) {
+void Renderer::OnKeyUp(uint8 key) {
   (void)key;
 }
 
-void Renderer::OnMouseMove(int32_t oldX, int32_t oldY, int32_t x, int32_t y) {
+void Renderer::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
   Vec3 V1(ProjectClick((float)oldX, (float)oldY));
   Vec3 V2(ProjectClick((float)x, (float)y));
 
@@ -210,8 +210,8 @@ Vec3 Renderer::ProjectClick(float x, float y) {
   const float radius = 1.f;
 
   ZConfig& config = ZConfig::GetInstance();
-  int32_t width = (int32_t)config.GetViewportWidth();
-  int32_t height = (int32_t)config.GetViewportHeight();
+  int32 width = (int32)config.GetViewportWidth();
+  int32 height = (int32)config.GetViewportHeight();
 
   float scale = fminf((float)width, (float)height) - 1;
 

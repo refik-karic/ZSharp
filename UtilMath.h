@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include <cstddef>
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 

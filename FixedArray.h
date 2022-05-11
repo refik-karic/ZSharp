@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ZAssert.h"
-#include <cstdlib>
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 

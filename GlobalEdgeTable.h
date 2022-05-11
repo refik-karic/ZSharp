@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include "ZBaseTypes.h"
 
 #include "Array.h"
 #include "Framebuffer.h"

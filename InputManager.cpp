@@ -11,11 +11,11 @@ InputManager& InputManager::GetInstance() {
   return inputManager;
 }
 
-void InputManager::Update(uint8_t key, InputManager::KeyState state) {
+void InputManager::Update(uint8 key, InputManager::KeyState state) {
   mKeyboard[key] = state;
 }
 
-void InputManager::UpdateMousePosition(int32_t x, int32_t y) {
+void InputManager::UpdateMousePosition(int32 x, int32 y) {
   if (mMousePressed) {
     mCurrentMouseX = x;
     mCurrentMouseY = y;
@@ -39,7 +39,7 @@ void InputManager::ResetMouse() {
 }
 
 void InputManager::Process() {
-  for (uint8_t i = 0; i < mKeyboard.Size(); ++i) {
+  for (uint8 i = 0; i < mKeyboard.Size(); ++i) {
     switch (mKeyboard[i]) {
       case KeyState::Clear:
         break;

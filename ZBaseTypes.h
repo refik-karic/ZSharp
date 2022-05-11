@@ -18,4 +18,6 @@ namespace ZSharp {
   typedef uint32 size_t;
   typedef int32 ssize_t;
 #endif
+
+#define Z_UINT8_MAX 255
 }

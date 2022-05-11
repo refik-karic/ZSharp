@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include "ZBaseTypes.h"
 
 #include "Constants.h"
 

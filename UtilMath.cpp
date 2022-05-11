@@ -28,7 +28,7 @@ float NewtonRaphsonSqrt(float val) {
 }
 
 bool IsNegativeFloat(const float a) {
-    const uint8_t* floatBits = reinterpret_cast<const uint8_t*>(&a);
+    const uint8* floatBits = reinterpret_cast<const uint8*>(&a);
     return (((floatBits[3]) & 0x01) > 0);
 }
 

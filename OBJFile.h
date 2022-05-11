@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "ZBaseTypes.h"
 
 #include "Array.h"
 #include "FileString.h"
@@ -11,9 +11,9 @@
 
 namespace ZSharp {
 struct alignas(8) OBJFaceElement {
-  uint64_t vertexIndex = 0;
-  uint64_t uvIndex = 0;
-  uint64_t normalIndex = 0;
+  uint64 vertexIndex = 0;
+  uint64 uvIndex = 0;
+  uint64 normalIndex = 0;
 };
 
 struct OBJFace {

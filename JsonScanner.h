@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "ZBaseTypes.h"
 
 #include <string>
 #include <vector>
@@ -27,7 +27,7 @@ class JsonScanner : public Scanner {
 
   bool IsDigit(char letter);
 
-  int64_t TokenToInt(Token token);
+  int64 TokenToInt(Token token);
 
   double TokenToFloat(Token token);
 

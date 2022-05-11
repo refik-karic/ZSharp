@@ -25,13 +25,13 @@ class Renderer final : public IInputListener {
   Renderer(const Renderer&) = delete;
   void operator=(const Renderer&) = delete;
 
-  uint8_t* RenderNextFrame();
+  uint8* RenderNextFrame();
 
-  void OnKeyDown(uint8_t key) override;
+  void OnKeyDown(uint8 key) override;
 
-  void OnKeyUp(uint8_t key) override;
+  void OnKeyUp(uint8 key) override;
 
-  void OnMouseMove(int32_t oldX, int32_t oldY, int32_t x, int32_t y) override;
+  void OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) override;
 
   private:
 
@@ -39,8 +39,8 @@ class Renderer final : public IInputListener {
   Framebuffer mBuffer;
   World mWorld;
 
-  int64_t mFrameCount = 0;
-  int64_t mRotationSpeed = 4;
+  int64 mFrameCount = 0;
+  int64 mRotationSpeed = 4;
   bool mRenderMode = false;
   bool mPauseTransforms = false;
 
@@ -50,7 +50,7 @@ class Renderer final : public IInputListener {
 
   void RotateTrackball(Quaternion quat);
 
-  void ChangeSpeed(int64_t amount);
+  void ChangeSpeed(int64 amount);
 
   void FlipRenderMode();
 

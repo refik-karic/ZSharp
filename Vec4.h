@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-#include <cstddef>
-
+#include "ZBaseTypes.h"
 #include "Vec3.h"
 
 namespace ZSharp {

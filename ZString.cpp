@@ -1,6 +1,7 @@
 #include "ZString.h"
 
 #include "ZAssert.h"
+#include <cstdlib>
 #include <cstring>
 
 namespace ZSharp {

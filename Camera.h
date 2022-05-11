@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-#include <cstdint>
-
+#include "ZBaseTypes.h"
 #include "IndexBuffer.h"
 #include "Mat4x4.h"
 #include "Vec3.h"

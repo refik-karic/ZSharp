@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZBaseTypes.h"
+#include "ZAssert.h"
 
 namespace ZSharp {
 
@@ -75,18 +76,22 @@ class Array final {
   void operator=(const Array&&) = delete;
 
   T& operator[](size_t index) {
+    ZAssert(index < mSize);
     return mData[index];
   }
 
   const T& operator[](size_t index) const {
+    ZAssert(index < mSize);
     return mData[index];
   }
 
   T* GetData() {
+    ZAssert(mData != nullptr);
     return mData;
   }
 
   const T* GetData() const {
+    ZAssert(mData != nullptr);
     return mData;
   }
 

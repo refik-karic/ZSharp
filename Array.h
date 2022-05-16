@@ -51,10 +51,7 @@ class Array final {
   }
 
   ~Array() {
-    if (mData != nullptr) {
-      delete[] mData;
-      mData = nullptr;
-    }
+    Free();
   }
 
   Array(const Array& rhs) {
@@ -94,9 +91,7 @@ class Array final {
   }
 
   void Clear() {
-    for (size_t i = 0; i < mSize; ++i) {
-      mData[i] = T();
-    }
+    Free();
   }
 
   size_t Size() const {
@@ -143,8 +138,16 @@ class Array final {
   size_t mSize = 0;
 
   void FreshAlloc(size_t size) {
-    mData = new T[size]();
+    mData = new T[size];
     mSize = size;
+  }
+
+  void Free() {
+    if (mData != nullptr) {
+      delete[] mData;
+      mData = nullptr;
+      mSize = 0;
+    }
   }
 };
 

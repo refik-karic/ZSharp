@@ -1,8 +1,6 @@
 #pragma once
 
-#include <cstddef>
-
-#include <map>
+#include "ZBaseTypes.h"
 
 #include "Array.h"
 #include "Framebuffer.h"
@@ -13,13 +11,11 @@ namespace ZSharp {
 class GlobalEdgeTable final {
   public:
 
-  GlobalEdgeTable() = default;
-  ~GlobalEdgeTable() = default;
+  GlobalEdgeTable(size_t height);
   GlobalEdgeTable(const GlobalEdgeTable&) = delete;
   void operator=(const GlobalEdgeTable&) = delete;
 
   void AddPoint(size_t yIndex, size_t x, ZColor color, size_t primitiveIndex);
-  void Clear();
   void Draw(Framebuffer& frameBuffer);
 
   private:
@@ -33,7 +29,7 @@ class GlobalEdgeTable final {
 
   typedef Array<ScanLine> ScanLineList;
 
-  std::map<size_t, ScanLineList> mEdgeTable;
+  Array<ScanLineList> mEdgeTable;
 };
 
 }

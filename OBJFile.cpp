@@ -260,7 +260,7 @@ void OBJFile::ParseVec3(Vec3& fillVec, String& line, float fallback) {
 void OBJFile::ParseVec4(Vec4& fillVec, String& line, float fallback) {
   char* nextPos = NULL;
   
-  for (int32_t i = 0; i < 4; ++i) {
+  for (int32 i = 0; i < 4; ++i) {
     if (!line.IsEmpty()) {
       fillVec[i] = strtof(line.Str(), &nextPos);
     }
@@ -269,15 +269,15 @@ void OBJFile::ParseVec4(Vec4& fillVec, String& line, float fallback) {
       return;
     }
 
-    line = line.SubStr(nextPos - line.Str(), line.GetSize());
+    line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
   }
 }
 
 void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
   char* nextPos = NULL;
-  for (int32_t i = 0; i < 3; ++i) {
+  for (int32 i = 0; i < 3; ++i) {
     if (!line.IsEmpty()) {
-      uint64_t vertexIndex = strtoull(line.Str(), &nextPos, 10);
+      uint64 vertexIndex = strtoull(line.Str(), &nextPos, 10);
       ++nextPos;
       fillFace.triangleFace[i].vertexIndex = vertexIndex;
 
@@ -285,7 +285,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
         line.Clear();
       }
       else {
-        line = line.SubStr(nextPos - line.Str(), line.GetSize());
+        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }
     else {
@@ -293,7 +293,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
     }
 
     if (!line.IsEmpty()) {
-      uint64_t textureIndex = strtoull(line.Str(), &nextPos, 10);
+      uint64 textureIndex = strtoull(line.Str(), &nextPos, 10);
       ++nextPos;
       fillFace.triangleFace[i].uvIndex = textureIndex;
 
@@ -301,7 +301,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
         line.Clear();
       }
       else {
-        line = line.SubStr(nextPos - line.Str(), line.GetSize());
+        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }
     else {
@@ -309,7 +309,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
     }
 
     if (!line.IsEmpty()) {
-      uint64_t normalIndex = strtoull(line.Str(), &nextPos, 10);
+      uint64 normalIndex = strtoull(line.Str(), &nextPos, 10);
       ++nextPos;
       fillFace.triangleFace[i].normalIndex = normalIndex;
 
@@ -317,7 +317,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
         line.Clear();
       }
       else {
-        line = line.SubStr(nextPos - line.Str(), line.GetSize());
+        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }
     else {

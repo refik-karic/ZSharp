@@ -1,8 +1,9 @@
 #include "VertexBuffer.h"
 
 #include <malloc.h>
-#include <memory.h>
+#include <cstring>
 
+#include "Constants.h"
 #include "Vec4.h"
 
 static constexpr size_t MAX_INDICIES_AFTER_CLIP = 4;
@@ -17,6 +18,23 @@ VertexBuffer::~VertexBuffer() {
 
 VertexBuffer::VertexBuffer(const VertexBuffer& rhs) {
   *this = rhs;
+}
+
+void VertexBuffer::operator=(const VertexBuffer& rhs) {
+  if (this == &rhs) {
+    return;
+  }
+
+  Resize(rhs.mInputSize, rhs.mStride, rhs.mIndexSize);
+  memcpy(mData, rhs.mData, rhs.mAllocatedSize);
+}
+
+float* VertexBuffer::operator[](size_t index) const {
+  return mData + (index * mStride);
+}
+
+float* VertexBuffer::operator[](size_t index) {
+  return mData + (index * mStride);
 }
 
 size_t VertexBuffer::GetTotalSize() const {

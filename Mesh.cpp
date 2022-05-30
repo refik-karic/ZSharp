@@ -2,6 +2,8 @@
 
 #include "UtilMath.h"
 
+#include <cstring>
+
 namespace ZSharp {
 Mesh::Mesh() {
 

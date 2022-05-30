@@ -1,6 +1,7 @@
 #pragma once
 
-#include <cstdlib>
+#include "ZBaseTypes.h"
+#include "ZAssert.h"
 
 namespace ZSharp {
 
@@ -15,6 +16,12 @@ class Array final {
     Iterator& operator++() {
       mPtr++;
       return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator temp(*this);
+      ++(*this);
+      return temp;
     }
 
     bool operator==(const Iterator& rhs) {
@@ -38,7 +45,6 @@ class Array final {
   };
 
   Array() {
-
   }
 
   Array(size_t size) {
@@ -46,9 +52,7 @@ class Array final {
   }
 
   ~Array() {
-    if (mData != nullptr) {
-      delete[] mData;
-    }
+    Free();
   }
 
   Array(const Array& rhs) {
@@ -72,25 +76,27 @@ class Array final {
   void operator=(const Array&&) = delete;
 
   T& operator[](size_t index) {
+    ZAssert(index < mSize);
     return mData[index];
   }
 
   const T& operator[](size_t index) const {
+    ZAssert(index < mSize);
     return mData[index];
   }
 
   T* GetData() {
+    ZAssert(mData != nullptr);
     return mData;
   }
 
   const T* GetData() const {
+    ZAssert(mData != nullptr);
     return mData;
   }
 
   void Clear() {
-    for (size_t i = 0; i < mSize; ++i) {
-      mData[i] = T();
-    }
+    Free();
   }
 
   size_t Size() const {
@@ -139,6 +145,14 @@ class Array final {
   void FreshAlloc(size_t size) {
     mData = new T[size];
     mSize = size;
+  }
+
+  void Free() {
+    if (mData != nullptr) {
+      delete[] mData;
+      mData = nullptr;
+      mSize = 0;
+    }
   }
 };
 

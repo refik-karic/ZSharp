@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstddef>
+#include "ZBaseTypes.h"
 
 #include "Constants.h"
 
@@ -15,23 +15,11 @@ class Triangle final {
 
   Triangle(const Triangle& copy);
 
-  void operator=(const Triangle& rhs) {
-    if (this == &rhs) {
-      return;
-    }
+  void operator=(const Triangle& rhs);
 
-    mIndicies[0] = rhs[0];
-    mIndicies[1] = rhs[1];
-    mIndicies[2] = rhs[2];
-  }
+  size_t operator[](size_t index) const;
 
-  size_t operator[](size_t index) const {
-    return mIndicies[index];
-  }
-
-  size_t& operator[](size_t index) {
-    return mIndicies[index];
-  }
+  size_t& operator[](size_t index);
 
   const size_t* GetData();
 

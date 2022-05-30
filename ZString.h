@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdlib>
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 class String final {
@@ -17,19 +17,9 @@ class String final {
 
   const char* Str() const;
 
-  String* operator=(const String& rhs) {
-    if (this != &rhs) {
-      Copy(rhs.Str());
-    }
+  String* operator=(const String& rhs);
 
-    return this;
-  }
-
-  String operator+(const char* str) {
-    String result(*this);
-    result.Append(str);
-    return result;
-  }
+  String operator+(const char* str);
 
   void Append(const String& str);
 
@@ -41,7 +31,7 @@ class String final {
 
   void Clear();
 
-  size_t GetSize(bool includeNull = true) const;
+  size_t GetLength() const;
 
   String SubStr(size_t start, size_t end);
 

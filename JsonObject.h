@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "ZBaseTypes.h"
 
 #include <memory>
 #include <string>
@@ -26,7 +26,7 @@ class JsonObject final {
     union {
       bool dataBool;
       double dataFloat;
-      int64_t dataInt;
+      int64 dataInt;
     };
     std::shared_ptr<JsonObject> dataObject;
     std::vector<JsonValue> dataArray;

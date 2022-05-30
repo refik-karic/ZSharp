@@ -1,6 +1,6 @@
 ﻿#include "Renderer.h"
 
-#include <cstddef>
+#include "ZBaseTypes.h"
 
 #include "Constants.h"
 #include "IndexBuffer.h"
@@ -19,17 +19,16 @@ namespace ZSharp {
 Renderer::Renderer(size_t width, size_t height, size_t stride)
   : mBuffer(width, height, stride)
 {
-  // TODO: String copies correctly, cached absolute path is wrong.
   FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
   mWorld.LoadModel(tempModelPath);
 
-  mCamera.MoveCamera(Vec3(0.f, 0.f, 25.f));
+  mCamera.MoveCamera(Vec3(0.f, 3.f, 20.f));
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.Register(this);
 }
 
-uint8_t* Renderer::RenderNextFrame() {
+uint8* Renderer::RenderNextFrame() {
   ZConfig& config = ZConfig::GetInstance();
 
   if (config.SizeChanged(mBuffer.GetWidth(), mBuffer.GetHeight())) {
@@ -79,21 +78,28 @@ uint8_t* Renderer::RenderNextFrame() {
   return mBuffer.GetBuffer();
 }
 
-void Renderer::MoveCamera(Direction direction, const float amount) {
+void Renderer::MoveCamera(Direction direction) {
   Vec3 cameraPosition(mCamera.GetPosition());
-  
+  Vec3 cameraLook(mCamera.GetLook());
+
   switch (direction) {
     case Direction::FORWARD:
-      cameraPosition[2] -= amount;
+      cameraPosition = cameraPosition - cameraLook;
       break;
     case Direction::BACK:
-      cameraPosition[2] += amount;
+      cameraPosition = cameraPosition + cameraLook;
       break;
     case Direction::LEFT:
-      cameraPosition[0] += amount;
+    {
+      Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
+      cameraPosition = cameraPosition + sideVec;
+    }
       break;
     case Direction::RIGHT:
-      cameraPosition[0] -= amount;
+    {
+      Vec3 sideVec(cameraLook.Cross(mCamera.GetUp()));
+      cameraPosition = cameraPosition + sideVec;
+    }
       break;
   }
 
@@ -124,7 +130,7 @@ void Renderer::RotateTrackball(Quaternion quat) {
   mCamera.RotateCamera(rotation);
 }
 
-void Renderer::ChangeSpeed(int64_t amount) {
+void Renderer::ChangeSpeed(int64 amount) {
   if (mRotationSpeed + amount > 10) {
     mRotationSpeed = 10;
   }
@@ -144,7 +150,7 @@ void Renderer::PauseTransforms() {
   mPauseTransforms = !mPauseTransforms;
 }
 
-void Renderer::OnKeyDown(uint8_t key) {
+void Renderer::OnKeyDown(uint8 key) {
   switch (key) {
   case 'P':
     PauseTransforms();
@@ -153,16 +159,16 @@ void Renderer::OnKeyDown(uint8_t key) {
     FlipRenderMode();
     break;
   case 'W':
-    MoveCamera(ZSharp::Renderer::Direction::FORWARD, 1.0F);
+    MoveCamera(ZSharp::Renderer::Direction::FORWARD);
     break;
   case 'S':
-    MoveCamera(ZSharp::Renderer::Direction::BACK, 1.0F);
+    MoveCamera(ZSharp::Renderer::Direction::BACK);
     break;
   case 'A':
-    MoveCamera(ZSharp::Renderer::Direction::RIGHT, 1.0F);
+    MoveCamera(ZSharp::Renderer::Direction::LEFT);
     break;
   case 'D':
-    MoveCamera(ZSharp::Renderer::Direction::LEFT, 1.0F);
+    MoveCamera(ZSharp::Renderer::Direction::RIGHT);
     break;
   case 'Q':
     RotateCamera(Mat4x4::Axis::Y, 1.0F);
@@ -182,37 +188,46 @@ void Renderer::OnKeyDown(uint8_t key) {
   }
 }
 
-void Renderer::OnKeyUp(uint8_t key) {
+void Renderer::OnKeyUp(uint8 key) {
   (void)key;
 }
 
-void Renderer::OnMouseMove(int32_t oldX, int32_t oldY, int32_t x, int32_t y) {
-  Vec3 V1(ProjectClick((float)x, (float)y));
-  Vec3 V2(ProjectClick((float)oldX, (float)oldY));
+void Renderer::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
+  Vec3 V1(ProjectClick((float)oldX, (float)oldY));
+  Vec3 V2(ProjectClick((float)x, (float)y));
+
+  Vec3 normal = V1.Cross(V2);
   V1.Normalize();
   V2.Normalize();
-  Vec3 N(V1.Cross(V2));
-  float theta = acosf(V1 * V2);
-  Quaternion quat(DegreesToRadians(theta), N);
+
+  float theta = acosf((V1 * V2));
+
+  Quaternion quat(DegreesToRadians(theta), normal);
   RotateTrackball(quat);
 }
 
 Vec3 Renderer::ProjectClick(float x, float y) {
-  ZConfig& config = ZConfig::GetInstance();
-  int32_t width = (int32_t)config.GetViewportWidth();
-  const float radius = (float)width / 2.f;
+  const float radius = 1.f;
 
-  bool insideSphere = ((x * x) + (y * y)) < ((radius * radius) / 2.f);
+  ZConfig& config = ZConfig::GetInstance();
+  int32 width = (int32)config.GetViewportWidth();
+  int32 height = (int32)config.GetViewportHeight();
+
+  float scale = fminf((float)width, (float)height) - 1;
+
+  float newX = ((2 * x) - width + 1) / scale;
+  float newY = ((2 * y) - height + 1) / scale;
+
+  bool insideSphere = ((newX * newX) + (newY * newY)) <= ((radius * radius) / 2.f);
   float z = 0.f;
   if (insideSphere) {
-    z = sqrtf((radius * radius) - ((x * x) + (y * y)));
+    z = sqrtf((radius * radius) - ((newX * newX) - (newY * newY)));
   }
   else {
-    z = (((radius * radius) / 2.f) / sqrtf(((x * x) + (y * y))));
+    z = (((radius * radius) / 2.f) / sqrtf(((newX * newX) + (newY * newY))));
   }
 
-  Vec3 result(x, y, z);
-  return result;
+  return Vec3(-newX, newY, z);
 }
 
 }

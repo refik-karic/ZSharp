@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cstdint>
+#include "ZBaseTypes.h"
 #include <cstdlib>
 
 #include <vector>

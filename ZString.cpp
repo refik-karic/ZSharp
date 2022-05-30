@@ -1,27 +1,24 @@
 #include "ZString.h"
 
+#include "ZAssert.h"
+#include <cstdlib>
 #include <cstring>
 
 namespace ZSharp {
 String::String() {
-  MarkShort(true);
-  Clear();
+  Copy("");
 }
 
 String::String(const char* str) {
-  MarkShort(true);
-  Clear();
   Copy(str);
 }
 
 String::String(const char* str, size_t offset, size_t end) {
-  MarkShort(true);
-  Clear();
+  Copy("");
   Append(str, offset, end);
 }
 
 String::String(const String& rhs) {
-  MarkShort(true);
   Copy(rhs.Str());
 }
 
@@ -35,12 +32,30 @@ const char* String::Str() const {
   return GetString();
 }
 
+String* String::operator=(const String& rhs) {
+  if (this != &rhs) {
+    if (!IsMarkedShort()) {
+      FreeLong();
+    }
+
+    Copy(rhs.Str());
+  }
+
+  return this;
+}
+
+String String::operator+(const char* str) {
+  String result(*this);
+  result.Append(str);
+  return result;
+}
+
 void String::Append(const String& str) {
   Append(str.Str());
 }
 
 void String::Append(const char* str, size_t offset, size_t size) {
-  size_t totalSize = GetSize(false) + size;
+  size_t totalSize = GetLength() + size + 1;
   if (FitsInSmall(totalSize)) {
     AppendShort(str, offset, size);
   }
@@ -50,8 +65,8 @@ void String::Append(const char* str, size_t offset, size_t size) {
 }
 
 void String::Append(const char* str) {
-  size_t length = strlen(str) + 1;
-  if (FitsInSmall(GetCombinedSize(str))) {
+  size_t length = strlen(str);
+  if (FitsInSmall(GetCombinedSize(str) + 1)) {
     AppendShort(str, 0, length);
   }
   else {
@@ -60,7 +75,7 @@ void String::Append(const char* str) {
 }
 
 bool String::IsEmpty() {
-  return (GetSize(false) == 0);
+  return GetLength() == 0;
 }
 
 void String::Clear() {
@@ -68,23 +83,18 @@ void String::Clear() {
     FreeLong();
   }
 
-  SetShortLength(0);
-  MarkShort(true);
+  Copy("");
 }
 
-size_t String::GetSize(bool includeNull) const {
-  size_t length = IsMarkedShort() ? GetShortLength() : GetLongLength();
-  if (length > 0 && !includeNull) {
-    length -= 1;
-  }
-  return length;
+size_t String::GetLength() const {
+  return IsMarkedShort() ? GetShortLength() : GetLongLength();
 }
 
 String String::SubStr(size_t start, size_t end) {
   String temp(*this);
   char* subStr = temp.GetMutableString() + start;
-  if (end > (GetSize(false))) {
-    end = GetSize(false);
+  if (end > GetLength()) {
+    end = GetLength();
   }
   temp.GetMutableString()[end] = '\0';
 
@@ -113,22 +123,24 @@ unsigned char String::GetShortLength() const {
 }
 
 void String::CopyShort(const char* str) {
-  size_t length = strlen(str) + 1;
+  size_t length = strlen(str);
   SetShortLength(length);
-  strncpy_s(mOverlapData.shortStr.data, GetShortLength(), str, GetShortLength());
+  if (length > 0) {
+    memcpy(mOverlapData.shortStr.data, str, GetShortLength());
+    mOverlapData.shortStr.data[GetShortLength()] = NULL;
+  }
+  else {
+    mOverlapData.shortStr.data[0] = NULL;
+  }
   MarkShort(true);
 }
 
 void String::AppendShort(const char* str, size_t offset, size_t length) {
-  unsigned char shortLength = GetShortLength();
-
-  if (shortLength > 0) {
-    shortLength -= 1;
-  }
-
+  unsigned char shortLength = static_cast<unsigned char>(GetLength());
   const char* offsetString = str + offset;
-  strncpy_s(mOverlapData.shortStr.data + shortLength, sizeof(mOverlapData.shortStr.data), offsetString, length);
-  SetShortLength(strlen(mOverlapData.shortStr.data) + 1);
+  memcpy(mOverlapData.shortStr.data + shortLength, offsetString, length);
+  mOverlapData.shortStr.data[shortLength + length] = NULL;
+  SetShortLength(strlen(mOverlapData.shortStr.data));
   MarkShort(true);
 }
 
@@ -142,38 +154,52 @@ size_t String::GetLongLength() const {
 }
 
 void String::AllocateLong() {
-  mOverlapData.longStr.data = static_cast<char*>(malloc(GetLongLength()));
+  size_t length = GetLongLength() + 1;
+  mOverlapData.longStr.data = static_cast<char*>(malloc(length));
 }
 
 void String::FreeLong() {
-  free(mOverlapData.longStr.data);
+  if (mOverlapData.longStr.data != nullptr) {
+    free(mOverlapData.longStr.data);
+    mOverlapData.longStr.data = nullptr;
+  }
 }
 
 void String::CopyLong(const char* str) {
-  size_t length = strlen(str) + 1;
-  SetLongLength(length);
+  SetLongLength(strlen(str));
   AllocateLong();
-  strncpy_s(mOverlapData.longStr.data, GetLongLength(), str, GetLongLength());
+  memcpy(mOverlapData.longStr.data, str, GetLongLength());
+  mOverlapData.longStr.data[GetLongLength()] = NULL;
   MarkShort(false);
 }
 
 void String::AppendLong(const char* str, size_t offset, size_t length) {
-  size_t combinedLength = GetSize(false) + length;
+  size_t combinedLength = GetLength() + length;
 
   if (IsMarkedShort()) {
     char oldData[MinCapaity];
     size_t shortLength = GetShortLength();
-    strncpy_s(oldData, shortLength, GetString(), shortLength);
+    memcpy(oldData, GetString(), shortLength);
     SetLongLength(shortLength);
     AllocateLong();
     MarkShort(false);
-    strncpy_s(GetMutableString(), shortLength, oldData, shortLength);
+
+    char* mutableStr = GetMutableString();
+    memcpy(mutableStr, oldData, shortLength);
+    mutableStr[shortLength] = NULL;
   }
 
   SetLongLength(combinedLength);
-  mOverlapData.longStr.data = static_cast<char*>(realloc(GetMutableString(), combinedLength));
+  char* resizedStr = static_cast<char*>(realloc(mOverlapData.longStr.data, combinedLength + 1));
+  ZAssert(resizedStr != nullptr);
+  mOverlapData.longStr.data = resizedStr;
+
   size_t currentPosition = strlen(GetMutableString());
-  strncpy_s(GetMutableString() + currentPosition, length, str + offset, length);
+
+  char* mutableStr = GetMutableString() + currentPosition;
+  const char* strOffset = str + offset;
+  memcpy(mutableStr, strOffset, length);
+  mutableStr[length] = NULL;
   MarkShort(false);
 }
 
@@ -195,8 +221,7 @@ char* String::GetMutableString() {
 }
 
 size_t String::GetCombinedSize(const char* str) {
-  size_t inLength = strlen(str) + 1;
-  return inLength + GetSize(false);
+  return strlen(str) + GetLength();
 }
 
 bool String::FitsInSmall(size_t size) {

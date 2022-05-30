@@ -1,7 +1,6 @@
 #pragma once
 
-#include <cstddef>
-#include <cstring>
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 
@@ -13,73 +12,27 @@ public:
 
   Vec3(const Vec3& copy);
 
-  void operator=(const Vec3& vector) {
-    if (this == &vector) {
-      return;
-    }
+  void operator=(const Vec3& vector);
 
-    std::memcpy(mData, *vector, sizeof(mData));
-  }
+  bool operator==(const Vec3& vector) const;
 
-  bool operator==(const Vec3& vector) const {
-    if (this == &vector) {
-      return true;
-    }
+  float* operator*();
 
-    return std::memcmp(mData, *vector, sizeof(mData)) == 0;
-  }
+  const float* operator*() const;
 
-  float* operator*() {
-    return &mData[0];
-  }
+  float operator[](const size_t index) const;
 
-  const float* operator*() const {
-    return &mData[0];
-  }
+  float& operator[](const size_t index);
 
-  float operator[](const size_t index) const {
-    return mData[index];
-  }
+  Vec3 operator+(const Vec3& vector) const;
 
-  float& operator[](const size_t index) {
-    return mData[index];
-  }
+  Vec3 operator-(const Vec3& vector) const;
 
-  Vec3 operator+(const Vec3& vector) const {
-    Vec3 result(
-      mData[0] + vector[0],
-      mData[1] + vector[1],
-      mData[2] + vector[2]
-    );
-    return result;
-  }
+  Vec3 operator-() const;
 
-  Vec3 operator-(const Vec3& vector) const {
-    Vec3 result(
-      mData[0] - vector[0],
-      mData[1] - vector[1],
-      mData[2] - vector[2]
-    );
-    return result;
-  }
+  Vec3 operator*(float scalar) const;
 
-  Vec3 operator-() const {
-    Vec3 result(
-      -mData[0],
-      -mData[1],
-      -mData[2]
-    );
-    return result;
-  }
-
-  Vec3 operator*(float scalar) const {
-    Vec3 result(mData[0] * scalar, mData[1] * scalar, mData[2] * scalar);
-    return result;
-  }
-
-  float operator*(const Vec3& vector) const {
-    return (mData[0] * vector[0]) + (mData[1] * vector[1]) + (mData[2] * vector[2]);
-  }
+  float operator*(const Vec3& vector) const;
 
   Vec3 Cross(const Vec3& vec) const;
 

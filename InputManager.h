@@ -1,11 +1,10 @@
 #pragma once
 
-#include <array>
-
-#include <cstdint>
+#include "ZBaseTypes.h"
 
 #include "Array.h"
 #include "IInputListener.h"
+#include "FixedArray.h"
 
 namespace ZSharp {
 class InputManager final {
@@ -21,9 +20,9 @@ class InputManager final {
 
   InputManager(const InputManager&) = delete;
 
-  void Update(uint8_t key, KeyState state);
+  void Update(uint8 key, KeyState state);
 
-  void UpdateMousePosition(int32_t x, int32_t y);
+  void UpdateMousePosition(int32 x, int32 y);
 
   void UpdateMouseState(bool pressedDown);
 
@@ -42,12 +41,12 @@ class InputManager final {
 
   Array<IInputListener*> mListenerList;
 
-  std::array<KeyState, UINT8_MAX> mKeyboard;
+  FixedArray<KeyState, Z_UINT8_MAX> mKeyboard;
 
   bool mMousePressed = false;
-  int32_t mOldMouseX = 0;
-  int32_t mOldMouseY = 0;
-  int32_t mCurrentMouseX = 0;
-  int32_t mCurrentMouseY = 0;
+  int32 mOldMouseX = 0;
+  int32 mOldMouseY = 0;
+  int32 mCurrentMouseX = 0;
+  int32 mCurrentMouseY = 0;
 };
 }

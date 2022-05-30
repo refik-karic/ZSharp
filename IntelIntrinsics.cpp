@@ -1,7 +1,7 @@
 #include "IntelIntrinsics.h"
 
-#include <cstdint>
-#include <cstddef>
+#include "ZBaseTypes.h"
+#include "ZBaseTypes.h"
 #include <immintrin.h>
 
 namespace ZSharp {

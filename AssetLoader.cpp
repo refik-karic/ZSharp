@@ -1,6 +1,6 @@
 ﻿#include "AssetLoader.h"
 
-#include <cassert>
+#include "ZAssert.h"
 
 #include "Array.h"
 #include "IndexBuffer.h"
@@ -25,7 +25,7 @@ void LoadModelOBJ(FileString& fileName, Model& model) {
 
   for (size_t i = 0; i < objFile.GetVerts().Size(); ++i) {
     const Vec4& vector = objFile.GetVerts()[i];
-    assert(FloatEqual(vector[3], 1.f));
+    ZAssert(FloatEqual(vector[3], 1.f));
     mesh.SetData(reinterpret_cast<const float*>(&vector), i * 4, sizeof(Vec4));
   }
 

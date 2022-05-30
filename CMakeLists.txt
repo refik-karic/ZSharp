@@ -8,7 +8,8 @@ target_sources(ZSharp
         Common.h
         Constants.h
 	    FileString.h
-        FileUtilities.h
+	    FixedArray.h
+#       FileUtilities.h
         Framebuffer.h
         GlobalEdgeTable.h
         IInputListener.h
@@ -16,8 +17,8 @@ target_sources(ZSharp
         InputManager.h
         IntelIntrinsics.h
         ISerializable.h
-        JsonObject.h
-        JsonScanner.h
+#       JsonObject.h
+#       JsonScanner.h
         Mat2x3.h
         Mat3x3.h
         Mat4x4.h
@@ -25,8 +26,8 @@ target_sources(ZSharp
         Model.h
         Quaternion.h
         Renderer.h
-        Scanner.h
-        Token.h
+#       Scanner.h
+#       Token.h
         Triangle.h
         UtilMath.h
         Vec3.h
@@ -34,6 +35,8 @@ target_sources(ZSharp
         VertexBuffer.h
         World.h
         ZAlgorithm.h
+        ZAssert.h
+        ZBaseTypes.h
         ZColor.h
         ZConfig.h
         ZDrawing.h
@@ -43,14 +46,14 @@ target_sources(ZSharp
         AssetLoader.cpp
         Camera.cpp
 	    FileString.cpp
-        FileUtilities.cpp
+#       FileUtilities.cpp
         Framebuffer.cpp
         GlobalEdgeTable.cpp
         IndexBuffer.cpp
         InputManager.cpp
         IntelIntrinsics.cpp
-        JsonObject.cpp
-	    JsonScanner.cpp
+#       JsonObject.cpp
+#	    JsonScanner.cpp
         Mat2x3.cpp
         Mat3x3.cpp
         Mat4x4.cpp
@@ -59,9 +62,9 @@ target_sources(ZSharp
         OBJFile.cpp
         Quaternion.cpp
         Renderer.cpp
-        Scanner.cpp
+#       Scanner.cpp
         Triangle.cpp
-	    Token.cpp
+#	    Token.cpp
         UtilMath.cpp
         Vec3.cpp
         Vec4.cpp
@@ -74,8 +77,9 @@ target_sources(ZSharp
         ZString.cpp
 )
 
-set(ZSharp_Compile_Options 
+set(ZSharp_Compile_Options_Debug 
   /source-charset:utf-8
+  /std:c17
   /std:c++latest
   /D_UNICODE
   /GR-
@@ -85,11 +89,30 @@ set(ZSharp_Compile_Options
   /WX
 )
 
+set(ZSharp_Compile_Options_Release 
+  /source-charset:utf-8
+  /std:c17
+  /std:c++latest
+  /D_UNICODE
+  /GR-
+  /MP
+  /U_MBCS
+  /W4
+  /WX
+  /sdl-
+  /GL
+  /GS-
+)
+
 target_compile_definitions(ZSharp PRIVATE 
   FORCE_AVX512
   FORCE_SSE
 )
 
 target_compile_options(ZSharp PRIVATE 
-	${ZSharp_Compile_Options}
+	"$<$<CONFIG:DEBUG>:${ZSharp_Compile_Options_Debug}>"
+)
+
+target_compile_options(ZSharp PRIVATE 
+	"$<$<CONFIG:RELEASE>:${ZSharp_Compile_Options_Release}>"
 )

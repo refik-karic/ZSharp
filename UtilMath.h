@@ -1,10 +1,12 @@
 ﻿#pragma once
 
-#include <cstddef>
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 
 float DegreesToRadians(float degrees);
+
+float Lerp(float x1, float x2, float point);
 
 float NewtonRaphsonSqrt(float val);
 

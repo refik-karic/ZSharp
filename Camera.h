@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-#include <cstdint>
-
+#include "ZBaseTypes.h"
 #include "IndexBuffer.h"
 #include "Mat4x4.h"
 #include "Vec3.h"
@@ -14,6 +13,10 @@ class Camera final {
   Camera();
 
   Vec3 GetPosition() const;
+
+  Vec3 GetLook() const;
+
+  Vec3 GetUp() const;
 
   void MoveCamera(const Vec3& position);
 
@@ -31,7 +34,7 @@ class Camera final {
   float mFovHoriz;
   float mFovVert;
 
-  std::intptr_t mWidth;
-  std::intptr_t mHeight;
+  size_t mWidth;
+  size_t mHeight;
 };
 }

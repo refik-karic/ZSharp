@@ -1,5 +1,7 @@
 #include "FileString.h"
 
+#include "ZBaseTypes.h"
+
 #include <cstdio>
 #include <cstring>
 
@@ -9,7 +11,9 @@ FileString::FileString(const String& absoluteFilePath) {
   const char* volume = strchr(absoluteFilePath.Str(), ':');
 
   if (volume != nullptr) {
-    mVolume.Append(absoluteFilePath.Str(), 0, (volume - absoluteFilePath.Str()) + 1);
+    const char* str = absoluteFilePath.Str();
+    size_t length = (volume - absoluteFilePath.Str()) + 1;
+    mVolume.Append(str, 0, length);
   }
 
   for (const char* directory = strchr(absoluteFilePath.Str(), '\\'); directory != nullptr;) {
@@ -25,14 +29,18 @@ FileString::FileString(const String& absoluteFilePath) {
     }
 
     if (nextDirectory != nullptr) {
-      String parsedDirectory(absoluteFilePath.Str(), (directory - absoluteFilePath.Str()) + 1, (nextDirectory - directory) - 1);
+      const char* str = absoluteFilePath.Str();
+      size_t start = (directory - absoluteFilePath.Str()) + 1;
+      size_t length = (nextDirectory - directory) - 1;
+      String parsedDirectory(str, start, length);
       mDirectories.PushBack(parsedDirectory);
     }
     else {
       directory++;
       const char* extension = strchr(directory, '.');
       if (extension != nullptr) {
-        String parsedFilename(directory, 0, extension - directory);
+        size_t length = extension - directory;
+        String parsedFilename(directory, 0, length);
         mFilename = parsedFilename;
 
         extension++;

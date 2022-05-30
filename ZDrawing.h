@@ -1,10 +1,9 @@
 ﻿#pragma once
 
-#include <cstdint>
-#include <cstddef>
+#include "ZBaseTypes.h"
+#include "ZBaseTypes.h"
 
-#include <array>
-
+#include "FixedArray.h"
 #include "Framebuffer.h"
 #include "GlobalEdgeTable.h"
 #include "IndexBuffer.h"
@@ -24,24 +23,24 @@ void DrawTrianglesWireframe(Framebuffer& framebuffer,
     ZColor color);
 
 void DrawRunSlice(Framebuffer& framebuffer,
-    int32_t x1,
-    int32_t y1,
-    int32_t x2,
-    int32_t y2,
+    int32 x1,
+    int32 y1,
+    int32 x2,
+    int32 y2,
     ZColor color);
 
 void TracePrimitive(GlobalEdgeTable& edgeTable, 
-    std::array<size_t, 2>& p1,
-    std::array<size_t, 2>& p2,
-    std::array<size_t, 2>& p3,
+    FixedArray<size_t, 2>& p1,
+    FixedArray<size_t, 2>& p2,
+    FixedArray<size_t, 2>& p3,
     ZColor color, 
     size_t primitiveIndex);
 
 void TraceLine(GlobalEdgeTable& edgeTable,
-    int32_t x1,
-    int32_t y1,
-    int32_t x2,
-    int32_t y2,
+    int32 x1,
+    int32 y1,
+    int32 x2,
+    int32 y2,
     ZColor color,
     size_t primitiveIndex);
 

@@ -1,7 +1,8 @@
 #include "IndexBuffer.h"
 
 #include <malloc.h>
-#include <cassert>
+#include "ZAssert.h"
+#include <cstring>
 
 #include "Constants.h"
 
@@ -17,6 +18,23 @@ IndexBuffer::~IndexBuffer() {
 
 IndexBuffer::IndexBuffer(const IndexBuffer& rhs) {
   *this = rhs;
+}
+
+void IndexBuffer::operator=(const IndexBuffer& rhs) {
+  if (this == &rhs) {
+    return;
+  }
+
+  Resize(rhs.mInputSize);
+  memcpy(mData, rhs.mData, rhs.mAllocatedSize);
+}
+
+size_t IndexBuffer::operator[](size_t index) const {
+  return mData[index];
+}
+
+size_t& IndexBuffer::operator[](size_t index) {
+  return mData[index];
 }
 
 size_t IndexBuffer::GetIndexSize() const {
@@ -53,7 +71,7 @@ void IndexBuffer::Reset() {
 }
 
 void IndexBuffer::RemoveTriangle(size_t index) {
-  assert(index <= mWorkingSize);
+  ZAssert(index <= mWorkingSize);
 
   size_t* srcAddr = mData + (mWorkingSize - TRI_VERTS);
   size_t* destAddr = mData + index;
@@ -66,7 +84,7 @@ void IndexBuffer::RemoveTriangle(size_t index) {
     mWorkingSize -= TRI_VERTS;
   }
 
-  assert((mWorkingSize % TRI_VERTS) == 0);
+  ZAssert((mWorkingSize % TRI_VERTS) == 0);
 }
 
 void IndexBuffer::AppendClipData(const Triangle& triangle) {

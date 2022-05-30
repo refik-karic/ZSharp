@@ -292,6 +292,10 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
       return;
     }
 
+    if (line.Str()[0] != '/') {
+      continue;
+    }
+
     if (!line.IsEmpty()) {
       uint64 textureIndex = strtoull(line.Str(), &nextPos, 10);
       ++nextPos;
@@ -306,6 +310,10 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
     }
     else {
       return;
+    }
+
+    if (line.Str()[0] != '/') {
+      continue;
     }
 
     if (!line.IsEmpty()) {

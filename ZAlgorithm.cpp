@@ -47,7 +47,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
       tempClippedVerts[j] = clippedVerts[j];
     }
 
-    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(tempClippedVerts.data()), 3);
+    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(tempClippedVerts.GetData()), 3);
     Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
     indexBuffer.AppendClipData(nextTriangle);
 #else

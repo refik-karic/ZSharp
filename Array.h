@@ -62,7 +62,6 @@ class Array final {
 
   void operator=(const Array& rhs) {
     if (this != &rhs && rhs.mSize > 0) {
-      Clear();
       Resize(rhs.mSize);
       for (size_t i = 0; i < rhs.mSize; ++i) {
         mData[i] = rhs[i];
@@ -140,7 +139,6 @@ class Array final {
   void FreshAlloc(size_t size) {
     mData = new T[size];
     mSize = size;
-    Clear();
   }
 };
 

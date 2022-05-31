@@ -51,7 +51,7 @@ size_t VertexBuffer::GetTotalSize() const {
 }
 
 size_t VertexBuffer::GetVertSize() const {
-  return mWorkingSize;
+  return mWorkingSize / mStride;
 }
 
 size_t VertexBuffer::GetStride() const {
@@ -98,8 +98,7 @@ void VertexBuffer::Reset() {
 }
 
 void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
-  const size_t end = GetVertSize() / mStride;
-  for (size_t i = 0; i < end; ++i) {
+  for (size_t i = 0; i < GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(mData + (i * mStride)));
     vertexVector = transform.ApplyTransform(vertexVector);
   }

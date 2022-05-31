@@ -105,8 +105,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 
-  const size_t numStridedVerts = vertexBuffer.GetVertSize() / vertexBuffer.GetStride();
-  for (size_t i = 0; i < numStridedVerts; ++i) {
+  for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
     vertexVector = unhing.ApplyTransform(vertexVector);
     vertexVector.Homogenize();

@@ -292,7 +292,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
       return;
     }
 
-    if (line.Str()[0] != '/') {
+    if (line.Str()[0] == ' ') {
       continue;
     }
 
@@ -312,7 +312,7 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
       return;
     }
 
-    if (line.Str()[0] != '/') {
+    if (line.Str()[0] == ' ') {
       continue;
     }
 

@@ -25,6 +25,11 @@ void IndexBuffer::operator=(const IndexBuffer& rhs) {
     return;
   }
 
+  if ((rhs.mData == nullptr) ||
+    (rhs.mAllocatedSize == 0)) {
+    return;
+  }
+
   Resize(rhs.mInputSize);
   memcpy(mData, rhs.mData, rhs.mAllocatedSize);
 }

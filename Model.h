@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "ZAssert.h"
 #include "ZBaseTypes.h"
 
 #include "Array.h"
@@ -27,6 +28,7 @@ class Model final {
   }
 
   Mesh& operator[](size_t index) {
+    ZAssert(index < mData.Size());
     return mData[index];
   }
 

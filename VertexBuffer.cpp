@@ -3,6 +3,7 @@
 #include <malloc.h>
 #include <cstring>
 
+#include "ZAssert.h"
 #include "Constants.h"
 #include "Vec4.h"
 
@@ -25,15 +26,23 @@ void VertexBuffer::operator=(const VertexBuffer& rhs) {
     return;
   }
 
+  if ((rhs.mData == nullptr) ||
+    (rhs.mAllocatedSize == 0) ||
+    (rhs.mInputSize == 0)) {
+    return;
+  }
+
   Resize(rhs.mInputSize, rhs.mStride, rhs.mIndexSize);
   memcpy(mData, rhs.mData, rhs.mAllocatedSize);
 }
 
 float* VertexBuffer::operator[](size_t index) const {
+  ZAssert((index * mStride) < mAllocatedSize);
   return mData + (index * mStride);
 }
 
 float* VertexBuffer::operator[](size_t index) {
+  ZAssert((index * mStride) < mAllocatedSize);
   return mData + (index * mStride);
 }
 
@@ -89,7 +98,8 @@ void VertexBuffer::Reset() {
 }
 
 void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
-  for (size_t i = 0; i < GetVertSize(); ++i) {
+  const size_t end = GetVertSize() / mStride;
+  for (size_t i = 0; i < end; ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(mData + (i * mStride)));
     vertexVector = transform.ApplyTransform(vertexVector);
   }

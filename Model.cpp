@@ -30,6 +30,10 @@ const Array<Mesh>& Model::GetMeshData() const {
 
 void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const {
   for (const Mesh& mesh : mData) {
+    if (mesh.GetTriangleFaceTable().Size() == 0 || mesh.GetVertTable().Size() == 0) {
+      continue;
+    }
+
 #if FAST_LOAD
     indexBuffer.CopyInputData(reinterpret_cast<const size_t*>(mesh.GetTriangleFaceTable().GetData()), 0, mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
     vertexBuffer.CopyInputData(mesh.GetVertTable().GetData(), 0, mesh.GetVertTable().Size());

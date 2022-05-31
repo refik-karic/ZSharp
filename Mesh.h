@@ -4,7 +4,6 @@
 
 #include "Array.h"
 #include "Triangle.h"
-#include "Vec4.h"
 
 namespace ZSharp {
 

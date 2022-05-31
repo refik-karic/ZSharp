@@ -15,14 +15,25 @@
 #include "ZConfig.h"
 #include "ZDrawing.h"
 
+#include <cmath>
+
 namespace ZSharp {
 Renderer::Renderer(size_t width, size_t height, size_t stride)
   : mBuffer(width, height, stride)
 {
-  FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
+  //FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
+  FileString tempModelPath("C:\\Users\\refik\\Desktop\\triangle.txt");
   mWorld.LoadModel(tempModelPath);
+#if 0
+  {
+    Vec4 v1(-5.f, 0.f, 0.f, 1.f);
+    Vec4 v2(0.f, 5.f, 0.f, 1.f);
+    Vec4 v3(5.f, 0.f, 0.f, 1.f);
+    mWorld.DebugLoadTriangle(v1, v2 ,v3);
+  }
+#endif
 
-  mCamera.MoveCamera(Vec3(0.f, 3.f, 20.f));
+  mCamera.MoveCamera(Vec3(0.f, 0.f, 20.f));
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.Register(this);

@@ -18,6 +18,8 @@ class Quaternion {
 
   Mat4x4 GetRotationMatrix() const;
 
+  const Vec4& Vector();
+
   private:
   Vec4 mAngles;
 };

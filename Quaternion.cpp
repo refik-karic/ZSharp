@@ -24,4 +24,8 @@ Mat4x4 Quaternion::GetRotationMatrix() const {
   result[3][3] = 1.f;
   return result;
 }
+
+const Vec4& Quaternion::Vector() {
+  return mAngles;
+}
 }

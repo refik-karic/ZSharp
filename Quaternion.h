@@ -33,6 +33,10 @@ class Quaternion final {
 
   Quaternion operator+(const Quaternion& rhs) const;
 
+  Quaternion operator-(const Quaternion& rhs) const;
+
+  Quaternion operator*(const Quaternion& rhs) const;
+
   Mat4x4 GetRotationMatrix() const;
 
   const Vec4& Vector();

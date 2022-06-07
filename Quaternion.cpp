@@ -33,12 +33,38 @@ float Quaternion::operator[](size_t index) const {
 }
 
 Quaternion Quaternion::operator+(const Quaternion& rhs) const {
-  const float realPart = mAngles[QuatAxis::W] + rhs[QuatAxis::W];
-  const float xVec = mAngles[QuatAxis::X] + rhs[QuatAxis::X];
-  const float yVec = mAngles[QuatAxis::Y] + rhs[QuatAxis::Y];
-  const float zVec = mAngles[QuatAxis::Z] + rhs[QuatAxis::Z];
+  Quaternion result(mAngles + rhs.mAngles);
+  return result;
+}
+
+Quaternion Quaternion::operator-(const Quaternion& rhs) const {
+  Quaternion result(mAngles - rhs.mAngles);
+  return result;
+}
+
+Quaternion Quaternion::operator*(const Quaternion& rhs) const {
+  const float W = (mAngles[QuatAxis::W] * rhs.mAngles[QuatAxis::W])
+    - (mAngles[QuatAxis::X] * rhs.mAngles[QuatAxis::X])
+    - (mAngles[QuatAxis::Y] * rhs.mAngles[QuatAxis::Y])
+    - (mAngles[QuatAxis::Z] * rhs.mAngles[QuatAxis::Z]);
   
-  Quaternion result(Vec4(realPart, xVec, yVec, zVec));
+  const float X = (mAngles[QuatAxis::W] * rhs.mAngles[QuatAxis::X])
+    + (mAngles[QuatAxis::X] * rhs.mAngles[QuatAxis::W])
+    + (mAngles[QuatAxis::Y] * rhs.mAngles[QuatAxis::Z])
+    - (mAngles[QuatAxis::Z] * rhs.mAngles[QuatAxis::Y]);
+
+  const float Y = (mAngles[QuatAxis::W] * rhs.mAngles[QuatAxis::Y])
+    - (mAngles[QuatAxis::X] * rhs.mAngles[QuatAxis::Z])
+    + (mAngles[QuatAxis::Y] * rhs.mAngles[QuatAxis::W])
+    + (mAngles[QuatAxis::Z] * rhs.mAngles[QuatAxis::X]);
+
+  const float Z = (mAngles[QuatAxis::W] * rhs.mAngles[QuatAxis::Z])
+    + (mAngles[QuatAxis::X] * rhs.mAngles[QuatAxis::Y])
+    - (mAngles[QuatAxis::Y] * rhs.mAngles[QuatAxis::X])
+    + (mAngles[QuatAxis::Z] * rhs.mAngles[QuatAxis::W]);
+
+  Vec4 multiplyResult(W, X, Y, Z);
+  Quaternion result(multiplyResult);
   return result;
 }
 

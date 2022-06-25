@@ -278,13 +278,16 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
   for (int32 i = 0; i < 3; ++i) {
     if (!line.IsEmpty()) {
       uint64 vertexIndex = strtoull(line.Str(), &nextPos, 10);
-      ++nextPos;
       fillFace.triangleFace[i].vertexIndex = vertexIndex;
 
       if (nextPos == NULL) {
         line.Clear();
       }
       else {
+        if ((*nextPos) == '/') {
+          ++nextPos;
+        }
+
         line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }
@@ -298,13 +301,16 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
 
     if (!line.IsEmpty()) {
       uint64 textureIndex = strtoull(line.Str(), &nextPos, 10);
-      ++nextPos;
       fillFace.triangleFace[i].uvIndex = textureIndex;
 
       if (nextPos == NULL) {
         line.Clear();
       }
       else {
+        if ((*nextPos) == '/') {
+          ++nextPos;
+        }
+
         line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }
@@ -318,13 +324,16 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
 
     if (!line.IsEmpty()) {
       uint64 normalIndex = strtoull(line.Str(), &nextPos, 10);
-      ++nextPos;
       fillFace.triangleFace[i].normalIndex = normalIndex;
 
       if (nextPos == NULL) {
         line.Clear();
       }
       else {
+        if ((*nextPos) == '/') {
+          ++nextPos;
+        }
+
         line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
       }
     }

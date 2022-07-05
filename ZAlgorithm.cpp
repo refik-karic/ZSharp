@@ -151,22 +151,26 @@ size_t SutherlandHodgmanClip(FixedArray<Vec3, MAX_OUT_CLIP_VERTS>& inputVerts, c
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer) {
   ZAssert((indexBuffer.GetIndexSize() % TRI_VERTS) == 0);
   
+  if (indexBuffer.GetIndexSize() < TRI_VERTS) {
+    return;
+  }
+
   for (size_t i = indexBuffer.GetIndexSize(); i >= TRI_VERTS; i -= TRI_VERTS) {
     size_t i1 = indexBuffer[i - 3];
     size_t i2 = indexBuffer[i - 2];
     size_t i3 = indexBuffer[i - 1];
-    const float* v1 = vertexBuffer[indexBuffer[i1]];
-    const float* v2 = vertexBuffer[indexBuffer[i2]];
-    const float* v3 = vertexBuffer[indexBuffer[i3]];
+    const float* v1 = vertexBuffer[i1];
+    const float* v2 = vertexBuffer[i2];
+    const float* v3 = vertexBuffer[i3];
     const Vec3& firstEdge = *(reinterpret_cast<const Vec3*>(v1));
     const Vec3& secondEdge = *(reinterpret_cast<const Vec3*>(v2));
     const Vec3& thirdEdge = *(reinterpret_cast<const Vec3*>(v3));
     const Vec3 p1p0(secondEdge - firstEdge);
-    const Vec3 p2p1(thirdEdge - secondEdge);
-    const Vec3 triangleNormal(p1p0.Cross(p2p1));
-    float dotResult = (viewer - secondEdge) * triangleNormal;
+    const Vec3 p2p0(thirdEdge - firstEdge);
+    const Vec3 triangleNormal(p1p0.Cross(p2p0));
+    float dotResult = (viewer - firstEdge) * triangleNormal;
     if (FloatLessThanEqual(dotResult, 0.f)) {
-      indexBuffer.RemoveTriangle(i);
+      indexBuffer.RemoveTriangle(i - 3);
     }
   }
 }

@@ -22,7 +22,7 @@ Renderer::Renderer(size_t width, size_t height, size_t stride)
   : mBuffer(width, height, stride)
 {
   //FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
-  FileString tempModelPath("C:\\Users\\refik\\Desktop\\triangle.txt");
+  FileString tempModelPath("C:\\Users\\refik\\Desktop\\cube2.txt");
   mWorld.LoadModel(tempModelPath);
 #if 0
   {
@@ -33,7 +33,7 @@ Renderer::Renderer(size_t width, size_t height, size_t stride)
   }
 #endif
 
-  mCamera.MoveCamera(Vec3(0.f, 0.f, 20.f));
+  mCamera.MoveCamera(Vec3(0.f, 0.f, 30.f));
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.Register(this);

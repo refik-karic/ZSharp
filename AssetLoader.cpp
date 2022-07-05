@@ -18,6 +18,8 @@ void LoadModelOBJ(FileString& fileName, Model& model) {
   model = Model(1);
   Mesh& mesh = model[0];
 
+  // TODO: Need to make sure the faces are in a deterministic order.
+  // Blender generates a correct mesh but the faces do not line up properly.
   size_t vertSize = objFile.GetVerts().Size() * (sizeof(Vec4) / sizeof(float));
   size_t indexSize = objFile.GetFaces().Size();
   // TODO: Set the correct stride here.

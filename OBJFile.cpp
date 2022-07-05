@@ -197,6 +197,9 @@ void OBJFile::ParseRaw(FileString& objFilePath) {
 void OBJFile::ParseLine(const char* currentLine) {
   const char* rawLine = currentLine;
 
+  // All lines in the input file must be terminated with a newline.
+  // The parser will fail to read the last line properly if this is the case.
+
   switch (rawLine[0]) {
   case 'v':
     if (rawLine[1] == 'n') {

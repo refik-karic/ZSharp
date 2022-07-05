@@ -9,7 +9,6 @@ target_sources(ZSharp
         Constants.h
 	    FileString.h
 	    FixedArray.h
-#       FileUtilities.h
         Framebuffer.h
         GlobalEdgeTable.h
         IInputListener.h
@@ -17,8 +16,6 @@ target_sources(ZSharp
         InputManager.h
         IntelIntrinsics.h
         ISerializable.h
-#       JsonObject.h
-#       JsonScanner.h
         Mat2x3.h
         Mat3x3.h
         Mat4x4.h
@@ -26,8 +23,6 @@ target_sources(ZSharp
         Model.h
         Quaternion.h
         Renderer.h
-#       Scanner.h
-#       Token.h
         Triangle.h
         UtilMath.h
         Vec3.h
@@ -46,14 +41,11 @@ target_sources(ZSharp
         AssetLoader.cpp
         Camera.cpp
 	    FileString.cpp
-#       FileUtilities.cpp
         Framebuffer.cpp
         GlobalEdgeTable.cpp
         IndexBuffer.cpp
         InputManager.cpp
         IntelIntrinsics.cpp
-#       JsonObject.cpp
-#	    JsonScanner.cpp
         Mat2x3.cpp
         Mat3x3.cpp
         Mat4x4.cpp
@@ -62,9 +54,7 @@ target_sources(ZSharp
         OBJFile.cpp
         Quaternion.cpp
         Renderer.cpp
-#       Scanner.cpp
         Triangle.cpp
-#	    Token.cpp
         UtilMath.cpp
         Vec3.cpp
         Vec4.cpp

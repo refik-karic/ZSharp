@@ -21,6 +21,8 @@ class String final {
 
   String operator+(const char* str);
 
+  const char& operator[](const size_t index);
+
   void Append(const String& str);
 
   void Append(const char* str, size_t offset, size_t size);
@@ -34,6 +36,8 @@ class String final {
   size_t GetLength() const;
 
   String SubStr(size_t start, size_t end);
+
+  const char* FindLast(const char value);
 
   private:
   struct LongString {

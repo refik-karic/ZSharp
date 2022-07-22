@@ -50,6 +50,11 @@ String String::operator+(const char* str) {
   return result;
 }
 
+const char& String::operator[](const size_t index) {
+  ZAssert(index < GetLength());
+  return GetString()[index];
+}
+
 void String::Append(const String& str) {
   Append(str.Str());
 }
@@ -100,6 +105,10 @@ String String::SubStr(size_t start, size_t end) {
 
   String result(subStr);
   return result;
+}
+
+const char* String::FindLast(const char value) {
+  return strchr(GetString(), value);
 }
 
 bool String::IsShort(const char* str) const {

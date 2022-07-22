@@ -13,6 +13,7 @@ target_sources(ZSharp
         GlobalEdgeTable.h
         IInputListener.h
         IndexBuffer.h
+        IniFile.h
         InputManager.h
         IntelIntrinsics.h
         ISerializable.h
@@ -21,6 +22,7 @@ target_sources(ZSharp
         Mat4x4.h
         Mesh.h
         Model.h
+        Pair.h
         Quaternion.h
         Renderer.h
         Triangle.h
@@ -35,6 +37,7 @@ target_sources(ZSharp
         ZColor.h
         ZConfig.h
         ZDrawing.h
+        ZFile.h
         ZString.h
         OBJFile.h
 	
@@ -44,6 +47,7 @@ target_sources(ZSharp
         Framebuffer.cpp
         GlobalEdgeTable.cpp
         IndexBuffer.cpp
+        IniFile.cpp
         InputManager.cpp
         IntelIntrinsics.cpp
         Mat2x3.cpp
@@ -64,6 +68,7 @@ target_sources(ZSharp
         ZColor.cpp
         ZConfig.cpp
         ZDrawing.cpp
+        ZFile.cpp
         ZString.cpp
 )
 

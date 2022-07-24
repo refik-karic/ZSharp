@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZBaseTypes.h"
+#include "Array.h"
 
 namespace ZSharp {
 class String final {
@@ -33,11 +34,17 @@ class String final {
 
   void Clear();
 
+  void Trim(char value);
+
+  void Trim(const Array<char>& values);
+
   size_t GetLength() const;
 
   String SubStr(size_t start, size_t end);
 
-  const char* FindLast(const char value);
+  const char* FindFirst(char value);
+
+  const char* FindLast(char value);
 
   private:
   struct LongString {

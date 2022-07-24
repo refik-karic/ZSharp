@@ -91,6 +91,25 @@ void String::Clear() {
   Copy("");
 }
 
+void String::Trim(char value) {
+  const char* lastLocation = FindLast(value);
+  while ((lastLocation != nullptr) && (*lastLocation == value) && (lastLocation - GetString() > 0)) {
+    --lastLocation;
+  }
+
+  if (lastLocation != nullptr) {
+    size_t length = (lastLocation + 1) - GetString();
+    String temp(GetString(), 0, length);
+    *this = temp;
+  }
+}
+
+void String::Trim(const Array<char>& values) {
+  for (char& value : values) {
+    Trim(value);
+  }
+}
+
 size_t String::GetLength() const {
   return IsMarkedShort() ? GetShortLength() : GetLongLength();
 }
@@ -107,8 +126,12 @@ String String::SubStr(size_t start, size_t end) {
   return result;
 }
 
-const char* String::FindLast(const char value) {
+const char* String::FindFirst(const char value) {
   return strchr(GetString(), value);
+}
+
+const char* String::FindLast(const char value) {
+  return strrchr(GetString(), value);
 }
 
 bool String::IsShort(const char* str) const {

@@ -5,8 +5,15 @@ namespace ZSharp {
 template<typename TKey, typename TValue>
 class Pair final {
   public:
-  TKey Key;
-  TValue Value;
+  Pair() = default;
+
+  Pair(TKey key, TValue value)
+  : mKey(key), mValue(value) {
+
+  }
+
+  TKey mKey;
+  TValue mValue;
 };
 
 }

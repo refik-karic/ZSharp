@@ -9,16 +9,26 @@ namespace ZSharp {
 
 class IniFile final {
   public:
-  IniFile(const FileString& fileName);
-
-  private:
-  FileString mFileName;
-
   typedef Pair<String, String> StringPair;
 
   struct IniSection {
+    IniSection() = default;
+
+    IniSection(const String& sectionName)
+      : mSectionName(sectionName) {
+
+    }
+
+    String mSectionName;
     Array<StringPair> mPairs;
   };
+
+  IniFile(const FileString& fileName);
+
+  const Array<IniFile::IniSection>& GetSections() const;
+
+  private:
+  FileString mFileName;
 
   Array<IniSection> mSections;
 

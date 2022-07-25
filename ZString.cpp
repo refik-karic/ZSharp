@@ -134,6 +134,42 @@ const char* String::FindLast(const char value) {
   return strrchr(GetString(), value);
 }
 
+uint8 String::ToUint8() const {
+  return static_cast<uint8>(strtoul(GetString(), NULL, 10));
+}
+
+uint16 String::ToUint16() const {
+  return static_cast<uint16>(strtoul(GetString(), NULL, 10));
+}
+
+uint32 String::ToUint32() const {
+  return static_cast<uint32>(strtoul(GetString(), NULL, 10));
+}
+
+uint64 String::ToUint64() const {
+  return static_cast<uint64>(strtoull(GetString(), NULL, 10));
+}
+
+int8 String::ToInt8() const {
+  return static_cast<int8>(strtol(GetString(), NULL, 10));
+}
+
+int16 String::ToInt16() const {
+  return static_cast<int16>(strtol(GetString(), NULL, 10));
+}
+
+int32 String::ToInt32() const {
+  return static_cast<int32>(strtol(GetString(), NULL, 10));
+}
+
+int64 String::ToInt64() const {
+  return static_cast<int64>(strtoll(GetString(), NULL, 10));
+}
+
+float String::ToFloat() const {
+  return static_cast<float>(strtof(GetString(), NULL));
+}
+
 bool String::IsShort(const char* str) const {
   return (strlen(str) + 1) < MinCapaity;
 }

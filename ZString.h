@@ -46,6 +46,24 @@ class String final {
 
   const char* FindLast(char value);
 
+  uint8 ToUint8() const;
+  
+  uint16 ToUint16() const;
+
+  uint32 ToUint32() const;
+
+  uint64 ToUint64() const;
+
+  int8 ToInt8() const;
+
+  int16 ToInt16() const;
+
+  int32 ToInt32() const;
+
+  int64 ToInt64() const;
+
+  float ToFloat() const;
+
   private:
   struct LongString {
     size_t size;

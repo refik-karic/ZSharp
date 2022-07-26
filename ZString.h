@@ -20,6 +20,8 @@ class String final {
 
   String* operator=(const String& rhs);
 
+  bool operator==(const String& rhs) const;
+
   String operator+(const char* str);
 
   const char& operator[](const size_t index);
@@ -30,7 +32,7 @@ class String final {
 
   void Append(const char* str);
 
-  bool IsEmpty();
+  bool IsEmpty() const;
 
   void Clear();
 

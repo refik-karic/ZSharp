@@ -19,11 +19,9 @@
 
 namespace ZSharp {
 Renderer::Renderer(size_t width, size_t height, size_t stride)
-  : mBuffer(width, height, stride)
-{
-  //FileString tempModelPath("C:\\Users\\refik\\Desktop\\backpack.txt");
-  FileString tempModelPath("C:\\Users\\refik\\Desktop\\cube2.txt");
-  mWorld.LoadModel(tempModelPath);
+  : mBuffer(width, height, stride) {
+  LoadAssets();
+
 #if 0
   {
     Vec4 v1(-5.f, 0.f, 0.f, 1.f);
@@ -87,6 +85,20 @@ uint8* Renderer::RenderNextFrame() {
   }
 
   return mBuffer.GetBuffer();
+}
+
+void Renderer::LoadAssets() {
+  ZConfig& config = ZConfig::GetInstance();
+  if (!config.GetAssetPath().GetAbsolutePath().IsEmpty()) {
+    for (const String& asset : config.GetAssets()) {
+      String absoluteStringPath(config.GetAssetPath().GetAbsolutePath());
+      absoluteStringPath.Append("\\");
+      absoluteStringPath.Append(asset);
+
+      FileString filePath(absoluteStringPath);
+      mWorld.LoadModel(filePath);
+    }
+  }
 }
 
 void Renderer::MoveCamera(Direction direction) {

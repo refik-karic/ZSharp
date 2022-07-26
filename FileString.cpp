@@ -8,6 +8,39 @@
 // Exampe: C:\Users\kr\Desktop\ZSharp-Tools\src\Debug
 namespace ZSharp {
 FileString::FileString(const String& absoluteFilePath) {
+  Initialize(absoluteFilePath);
+}
+
+void FileString::operator=(const String& rhs) {
+  Reset();
+  Initialize(rhs);
+}
+
+const String& FileString::GetVolume() const {
+  return mVolume;
+}
+
+const Array<String>& FileString::GetDirectories() const {
+  return mDirectories;
+}
+
+const String& FileString::GetFilename() const {
+  return mFilename;
+}
+
+const String& FileString::GetExtension() const {
+  return mExtension;
+}
+
+const String& FileString::GetAbsolutePath() {
+  if (mDirty) {
+    CacheAbsolutePath();
+  }
+
+  return mAbsolutePath;
+}
+
+void FileString::Initialize(const String& absoluteFilePath) {
   const char* volume = strchr(absoluteFilePath.Str(), ':');
 
   if (volume != nullptr) {
@@ -52,35 +85,20 @@ FileString::FileString(const String& absoluteFilePath) {
         mDirectories.PushBack(parsedDirectory);
       }
     }
-    
+
     directory = nextDirectory;
   }
 
   CacheAbsolutePath();
 }
 
-const String& FileString::GetVolume() const {
-  return mVolume;
-}
-
-const Array<String>& FileString::GetDirectories() const {
-  return mDirectories;
-}
-
-const String& FileString::GetFilename() const {
-  return mFilename;
-}
-
-const String& FileString::GetExtension() const {
-  return mExtension;
-}
-
-const String& FileString::GetAbsolutePath() {
-  if (mDirty) {
-    CacheAbsolutePath();
-  }
-
-  return mAbsolutePath;
+void FileString::Reset() {
+  mVolume.Clear();
+  mDirectories.Clear();
+  mFilename.Clear();
+  mExtension.Clear();
+  mAbsolutePath.Clear();
+  mDirty = false;
 }
 
 void FileString::CacheAbsolutePath() {

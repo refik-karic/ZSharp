@@ -27,6 +27,10 @@ class IniFile final {
 
   const Array<IniFile::IniSection>& GetSections() const;
 
+  void GetAllValuesForSection(const String& section, Array<String>& outValues) const;
+
+  String FindValue(const String& section, const String& key) const;
+
   private:
   FileString mFileName;
 

@@ -13,6 +13,37 @@ const Array<IniFile::IniSection>& IniFile::GetSections() const {
   return mSections;
 }
 
+void IniFile::GetAllValuesForSection(const String& section, Array<String>& outValues) const {
+  for (const IniSection& currentSection : mSections) {
+    if (currentSection.mSectionName == section) {
+      for (const StringPair& pair : currentSection.mPairs) {
+        outValues.PushBack(pair.mValue);
+      }
+    }
+  }
+}
+
+String IniFile::FindValue(const String& section, const String& key) const {
+  String foundValue;
+
+  for (const IniSection& currentSection : mSections) {
+    if (!foundValue.IsEmpty()) {
+      break;
+    }
+
+    if (currentSection.mSectionName == section) {
+      for (const StringPair& stringPair : currentSection.mPairs) {
+        if (stringPair.mKey == key) {
+          foundValue = stringPair.mValue;
+          break;
+        }
+      }
+    }
+  }
+
+  return foundValue;
+}
+
 void IniFile::ParseFile() {
   BufferedFileReader fileReader(mFileName);
   if (!fileReader.IsOpen()) {

@@ -125,7 +125,7 @@ class Array final {
     }
   }
 
-  void PushBack(T& data) {
+  void PushBack(const T& data) {
     Resize(mSize + 1);
     mData[mSize - 1] = data;
   }

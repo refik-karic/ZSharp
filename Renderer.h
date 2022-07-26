@@ -44,6 +44,8 @@ class Renderer final : public IInputListener {
   bool mRenderMode = false;
   bool mPauseTransforms = false;
 
+  void LoadAssets();
+
   void MoveCamera(Direction direction);
 
   void RotateCamera(Mat4x4::Axis direction, const float angleDegrees);

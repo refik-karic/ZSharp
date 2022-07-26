@@ -1,5 +1,7 @@
 #include "ZConfig.h"
 
+#include "IniFile.h"
+
 namespace ZSharp {
 
 ZConfig& ZConfig::GetInstance() {
@@ -23,6 +25,14 @@ size_t ZConfig::GetBytesPerPixel() const {
   return mBytesPerPixel;
 }
 
+FileString ZConfig::GetAssetPath() const {
+  return mAssetPath;
+}
+
+Array<String> ZConfig::GetAssets() const {
+  return mAssets;
+}
+
 void ZConfig::SetViewportWidth(size_t width) {
   mViewportWidth = width;
   mViewportStride = mBytesPerPixel * width;
@@ -41,10 +51,46 @@ bool ZConfig::SizeChanged(size_t width, size_t height) {
   return ((width != mViewportWidth) || (height != mViewportHeight));
 }
 
-ZConfig::ZConfig() {
-  SetViewportWidth(1920);
-  SetViewportHeight(1080);
-  SetBytesPerPixel(4);
+ZConfig::ZConfig()
+  : mAssetPath("") {
+  FileString iniFilePath("C:\\Users\\refik\\Desktop\\models\\ZSharpSettings.txt");
+  IniFile userConfig(iniFilePath);
+  
+  {
+    String viewportWidth(userConfig.FindValue("GlobalSettings", "ViewportWidth"));
+    if (!viewportWidth.IsEmpty()) {
+      SetViewportWidth(viewportWidth.ToUint32());
+    }
+  }
+  
+  {
+    String viewportHeight(userConfig.FindValue("GlobalSettings", "ViewportHeight"));
+    if (!viewportHeight.IsEmpty()) {
+      SetViewportHeight(viewportHeight.ToUint32());
+    }
+  }
+
+  {
+    String bytesPerPixel(userConfig.FindValue("GlobalSettings", "BytesPerPixel"));
+    if (!bytesPerPixel.IsEmpty()) {
+      SetBytesPerPixel(bytesPerPixel.ToUint32());
+    }
+  }
+
+  {
+    String assetPath(userConfig.FindValue("GlobalSettings", "AssetPath"));
+    if (!assetPath.IsEmpty()) {
+      SetAssetPath(assetPath);
+    }
+  }
+
+  {
+    userConfig.GetAllValuesForSection("SerializedAssets", mAssets);
+  }
+}
+
+void ZConfig::SetAssetPath(const String& path) {
+  mAssetPath = path;
 }
 
 }

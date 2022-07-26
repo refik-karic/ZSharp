@@ -1,6 +1,9 @@
 ﻿#pragma once
 
+#include "Array.h"
 #include "ZBaseTypes.h"
+#include "FileString.h"
+#include "ZString.h"
 
 namespace ZSharp{
 
@@ -20,6 +23,10 @@ class ZConfig final {
 
   size_t GetBytesPerPixel() const;
 
+  FileString GetAssetPath() const;
+
+  Array<String> GetAssets() const;
+
   void SetViewportWidth(size_t width);
 
   void SetViewportHeight(size_t height);
@@ -32,9 +39,15 @@ class ZConfig final {
 
   ZConfig();
 
+  void SetAssetPath(const String& path);
+
   size_t mViewportWidth = 0;
   size_t mViewportHeight = 0;
   size_t mBytesPerPixel = 0;
   size_t mViewportStride = 0;
+
+  FileString mAssetPath;
+
+  Array<String> mAssets;
 };
 }

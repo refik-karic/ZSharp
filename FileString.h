@@ -8,6 +8,8 @@ class FileString final {
   public:
   FileString(const String& absoluteFilePath);
 
+  void operator=(const String& rhs);
+
   const String& GetVolume() const;
 
   const Array<String>& GetDirectories() const;
@@ -29,6 +31,10 @@ class FileString final {
   String mDirectorySeparator = "\\";
   String mExtensionSeparator = ".";
   String mAbsolutePath;
+
+  void Initialize(const String& absoluteFilePath);
+
+  void Reset();
 
   void CacheAbsolutePath();
 };

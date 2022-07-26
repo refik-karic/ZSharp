@@ -44,6 +44,10 @@ String* String::operator=(const String& rhs) {
   return this;
 }
 
+bool String::operator==(const String& rhs) const {
+  return strcmp(Str(), rhs.Str()) == 0;
+}
+
 String String::operator+(const char* str) {
   String result(*this);
   result.Append(str);
@@ -79,7 +83,7 @@ void String::Append(const char* str) {
   }
 }
 
-bool String::IsEmpty() {
+bool String::IsEmpty() const {
   return GetLength() == 0;
 }
 

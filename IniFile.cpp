@@ -19,6 +19,7 @@ void IniFile::GetAllValuesForSection(const String& section, Array<String>& outVa
       for (const StringPair& pair : currentSection.mPairs) {
         outValues.PushBack(pair.mValue);
       }
+      break;
     }
   }
 }

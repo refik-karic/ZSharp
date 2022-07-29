@@ -34,6 +34,8 @@ class BufferedFileReader final : public BaseFile {
 
   ~BufferedFileReader();
 
+  size_t Read(void* buffer, size_t length);
+
   size_t ReadLine();
 
   const char* GetBuffer() const;
@@ -42,6 +44,8 @@ class BufferedFileReader final : public BaseFile {
   const size_t mDefaultBufferSize = 4096;
   size_t mBufferSize = mDefaultBufferSize;
   char* mBuffer = nullptr;
+
+  bool ResetBuffer(size_t size);
 };
 
 class BufferedFileWriter final : public BaseFile {

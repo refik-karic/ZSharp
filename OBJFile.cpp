@@ -1,49 +1,11 @@
 #include "OBJFile.h"
 
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
+#include <cstdio>
+
+#include "ZFile.h"
 
 #pragma warning(disable : 4996)
-
-size_t ReadLine(char** data, size_t* length, FILE* file)
-{
-  if (data == nullptr || *data == nullptr || length == nullptr || file == nullptr) {
-    return 0;
-  }
-
-  bool keepReading = true;
-  size_t numRead = 0;
-  for (size_t i = 0; keepReading; ++i) {
-    if (i == (*length - 1)) {
-      size_t newLength = *length + 512;
-      char* resizedBuf = static_cast<char*>(realloc(*data, newLength));
-      if (resizedBuf == nullptr) {
-        return 0;
-      }
-
-      *data = resizedBuf;
-      *length = newLength;
-    }
-
-    char nextChar = static_cast<char>(fgetc(file));
-    if (nextChar == EOF) {
-      (*data)[i] = NULL;
-      keepReading = false;
-    }
-    else {
-      (*data)[i] = nextChar;
-      numRead++;
-    }
-
-    if ((*data)[i] == '\n') {
-      (*data)[i + 1] = NULL;
-      keepReading = false;
-    }
-  }
-
-  return numRead;
-}
 
 namespace ZSharp {
 OBJFile::OBJFile(FileString& objFilePath, AssetFormat format) {
@@ -66,102 +28,100 @@ const Array<OBJFace>& OBJFile::GetFaces() {
 }
 
 void OBJFile::Serialize(FileString& destPath) {
-  FILE* file = fopen(destPath.GetAbsolutePath().Str(), "wb");
-  if (file != nullptr) {
-    // Write length of vertex vector
-    size_t vertSize = mVerts.Size();
-    fwrite(reinterpret_cast<char*>(&vertSize), sizeof(size_t), 1, file);
+  BufferedFileWriter fileWriter(destPath);
+  if (!fileWriter.IsOpen()) {
+    return;
+  }
 
-    // Write vertex vector
-    for (Vec4& vector : mVerts) {
-      fwrite(reinterpret_cast<char*>(&vector), sizeof(Vec4), 1, file);
-    }
+  // Write length of vertex vector
+  size_t vertSize = mVerts.Size();
+  fileWriter.Write(reinterpret_cast<char*>(&vertSize), sizeof(size_t));
 
-    // Write length of the normal vector
-    size_t normalSize = mNormals.Size();
-    fwrite(reinterpret_cast<char*>(&normalSize), sizeof(size_t), 1, file);
+  // Write vertex vector
+  for (Vec4& vector : mVerts) {
+    fileWriter.Write(reinterpret_cast<char*>(&vector), sizeof(Vec4));
+  }
 
-    // Write normal vector
-    for (Vec3& normal : mNormals) {
-      fwrite(reinterpret_cast<char*>(&normal), sizeof(Vec3), 1, file);
-    }
+  // Write length of the normal vector
+  size_t normalSize = mNormals.Size();
+  fileWriter.Write(reinterpret_cast<char*>(&normalSize), sizeof(size_t));
 
-    // Write length of the uv vector
-    size_t uvSize = mUVCoords.Size();
-    fwrite(reinterpret_cast<char*>(&uvSize), sizeof(size_t), 1, file);
+  // Write normal vector
+  for (Vec3& normal : mNormals) {
+    fileWriter.Write(reinterpret_cast<char*>(&normal), sizeof(Vec3));
+  }
 
-    // Write uv vector
-    for (Vec3& uv : mUVCoords) {
-      fwrite(reinterpret_cast<char*>(&uv), sizeof(Vec3), 1, file);
-    }
+  // Write length of the uv vector
+  size_t uvSize = mUVCoords.Size();
+  fileWriter.Write(reinterpret_cast<char*>(&uvSize), sizeof(size_t));
 
-    // Write size of face vector
-    size_t faceSize = mFaces.Size();
-    fwrite(reinterpret_cast<char*>(&faceSize), sizeof(size_t), 1, file);
+  // Write uv vector
+  for (Vec3& uv : mUVCoords) {
+    fileWriter.Write(reinterpret_cast<char*>(&uv), sizeof(Vec3));
+  }
 
-    // Write face vector
-    for (OBJFace& face : mFaces) {
-      fwrite(reinterpret_cast<char*>(&face), sizeof(OBJFace), 1, file);
-    }
+  // Write size of face vector
+  size_t faceSize = mFaces.Size();
+  fileWriter.Write(reinterpret_cast<char*>(&faceSize), sizeof(size_t));
 
-    fflush(file);
-    fclose(file);
+  // Write face vector
+  for (OBJFace& face : mFaces) {
+    fileWriter.Write(reinterpret_cast<char*>(&face), sizeof(OBJFace));
   }
 }
 
 void OBJFile::Deserialize(FileString& objFilePath) {
-  const char* fileName = objFilePath.GetAbsolutePath().Str();
-  FILE* file = fopen(fileName, "rb");
-  if (file != nullptr) {
-    // Read vert size
-    size_t vertSize = 0;
-    fread(reinterpret_cast<char*>(&vertSize), sizeof(size_t), 1, file);
-    mVerts.Resize(vertSize);
+  BufferedFileReader fileReader(objFilePath);
+  if (!fileReader.IsOpen()) {
+    return;
+  }
 
-    // Read verticies
-    for (size_t i = 0; i < vertSize; ++i) {
-      Vec4 vector;
-      fread(reinterpret_cast<char*>(&vector), sizeof(Vec4), 1, file);
-      mVerts[i] = vector;
-    }
+  // Read vert size
+  size_t vertSize = 0;
+  fileReader.Read(reinterpret_cast<void*>(&vertSize), sizeof(size_t));
+  mVerts.Resize(vertSize);
 
-    // Read normal size
-    size_t normalSize = 0;
-    fread(reinterpret_cast<char*>(&normalSize), sizeof(size_t), 1, file);
-    mNormals.Resize(normalSize);
+  // Read verticies
+  for (size_t i = 0; i < vertSize; ++i) {
+    Vec4 vector;
+    fileReader.Read(reinterpret_cast<char*>(&vector), sizeof(Vec4));
+    mVerts[i] = vector;
+  }
 
-    // Read normals
-    for (size_t i = 0; i < normalSize; ++i) {
-      Vec3 normal;
-      fread(reinterpret_cast<char*>(&normal), sizeof(Vec3), 1, file);
-      mNormals[i] = normal;
-    }
+  // Read normal size
+  size_t normalSize = 0;
+  fileReader.Read(reinterpret_cast<char*>(&normalSize), sizeof(size_t));
+  mNormals.Resize(normalSize);
 
-    // Read uv size
-    size_t uvSize = 0;
-    fread(reinterpret_cast<char*>(&uvSize), sizeof(size_t), 1, file);
-    mUVCoords.Resize(uvSize);
+  // Read normals
+  for (size_t i = 0; i < normalSize; ++i) {
+    Vec3 normal;
+    fileReader.Read(reinterpret_cast<char*>(&normal), sizeof(Vec3));
+    mNormals[i] = normal;
+  }
 
-    // Read uvs
-    for (size_t i = 0; i < uvSize; ++i) {
-      Vec3 uv;
-      fread(reinterpret_cast<char*>(&uv), sizeof(Vec3), 1, file);
-      mUVCoords[i] = uv;
-    }
+  // Read uv size
+  size_t uvSize = 0;
+  fileReader.Read(reinterpret_cast<char*>(&uvSize), sizeof(size_t));
+  mUVCoords.Resize(uvSize);
 
-    // Read face size
-    size_t faceSize = 0;
-    fread(reinterpret_cast<char*>(&faceSize), sizeof(size_t), 1, file);
-    mFaces.Resize(faceSize);
+  // Read uvs
+  for (size_t i = 0; i < uvSize; ++i) {
+    Vec3 uv;
+    fileReader.Read(reinterpret_cast<char*>(&uv), sizeof(Vec3));
+    mUVCoords[i] = uv;
+  }
 
-    // Read face vector
-    for (size_t i = 0; i < faceSize; ++i) {
-      OBJFace face;
-      fread(reinterpret_cast<char*>(&face), sizeof(OBJFace), 1, file);
-      mFaces[i] = face;
-    }
+  // Read face size
+  size_t faceSize = 0;
+  fileReader.Read(reinterpret_cast<char*>(&faceSize), sizeof(size_t));
+  mFaces.Resize(faceSize);
 
-    fclose(file);
+  // Read face vector
+  for (size_t i = 0; i < faceSize; ++i) {
+    OBJFace face;
+    fileReader.Read(reinterpret_cast<char*>(&face), sizeof(OBJFace));
+    mFaces[i] = face;
   }
 }
 
@@ -170,27 +130,15 @@ void OBJFile::SetVerboseParse(bool state) {
 }
 
 void OBJFile::ParseRaw(FileString& objFilePath) {
-  FILE* file = fopen(objFilePath.GetAbsolutePath().Str(), "r");
-  if (file != nullptr) {
-    size_t bufferSize = 512;
-    char* buffer = static_cast<char*>(malloc(bufferSize));
-    for (size_t read = ReadLine(&buffer, &bufferSize, file); read > 0; read = ReadLine(&buffer, &bufferSize, file)) {
-      if (read > 2) {
-        buffer[read - 1] = NULL;
+  BufferedFileReader reader(objFilePath);
+  if (!reader.IsOpen()) {
+    return;
+  }
 
-        ParseLine(buffer);
-        char* resizedBuf = static_cast<char*>(realloc(buffer, bufferSize));
-        if (resizedBuf == nullptr) {
-          break;
-        }
-
-        buffer = resizedBuf;
-        memset(buffer, 0, bufferSize);
-      }
+  for (size_t bytesRead = reader.ReadLine(); bytesRead > 0; bytesRead = reader.ReadLine()) {
+    if (bytesRead > 2) {
+      ParseLine(reader.GetBuffer());
     }
-
-    free(buffer);
-    fclose(file);
   }
 }
 
@@ -261,87 +209,83 @@ void OBJFile::ParseVec3(Vec3& fillVec, String& line, float fallback) {
 }
 
 void OBJFile::ParseVec4(Vec4& fillVec, String& line, float fallback) {
-  char* nextPos = NULL;
-  
   for (int32 i = 0; i < 4; ++i) {
     if (!line.IsEmpty()) {
-      fillVec[i] = strtof(line.Str(), &nextPos);
+      fillVec[i] = line.ToFloat();
     }
     else {
       fillVec[i] = fallback;
       return;
     }
 
-    line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
+    const char* delimiter = line.FindFirst(' ');
+    if (delimiter == nullptr) {
+      line.Clear();
+    }
+    else {
+      line = String(delimiter + 1);
+    }
   }
 }
 
 void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
-  char* nextPos = NULL;
   for (int32 i = 0; i < 3; ++i) {
     if (!line.IsEmpty()) {
-      uint64 vertexIndex = strtoull(line.Str(), &nextPos, 10);
+      uint64 vertexIndex = line.ToUint64();
       fillFace.triangleFace[i].vertexIndex = vertexIndex;
-
-      if (nextPos == NULL) {
-        line.Clear();
-      }
-      else {
-        if ((*nextPos) == '/') {
-          ++nextPos;
-        }
-
-        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
-      }
     }
     else {
       return;
     }
 
-    if (line.Str()[0] == ' ') {
+    const char* indexDelimiter = line.FindFirst('/');
+
+    if (indexDelimiter == nullptr) {
+      const char* faceDelimiter = line.FindFirst(' ');
+      if (faceDelimiter != nullptr) {
+        line = String(faceDelimiter + 1);
+      }
+      
       continue;
     }
 
+    line = String(indexDelimiter + 1);
+
     if (!line.IsEmpty()) {
-      uint64 textureIndex = strtoull(line.Str(), &nextPos, 10);
+      uint64 textureIndex = line.ToUint64();
       fillFace.triangleFace[i].uvIndex = textureIndex;
-
-      if (nextPos == NULL) {
-        line.Clear();
-      }
-      else {
-        if ((*nextPos) == '/') {
-          ++nextPos;
-        }
-
-        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
-      }
     }
     else {
       return;
     }
 
-    if (line.Str()[0] == ' ') {
+    indexDelimiter = line.FindFirst('/');
+
+    if (indexDelimiter == nullptr) {
+      const char* faceDelimiter = line.FindFirst(' ');
+      if (faceDelimiter != nullptr) {
+        line = String(faceDelimiter + 1);
+      }
+
       continue;
     }
 
+    line = String(indexDelimiter + 1);
+
     if (!line.IsEmpty()) {
-      uint64 normalIndex = strtoull(line.Str(), &nextPos, 10);
+      uint64 normalIndex = line.ToUint64();
       fillFace.triangleFace[i].normalIndex = normalIndex;
-
-      if (nextPos == NULL) {
-        line.Clear();
-      }
-      else {
-        if ((*nextPos) == '/') {
-          ++nextPos;
-        }
-
-        line = line.SubStr(nextPos - line.Str(), line.GetLength() + 1);
-      }
     }
     else {
       return;
+    }
+
+    const char* faceDelimiter = line.FindFirst(' ');
+    if (faceDelimiter != nullptr) {
+      line = String(faceDelimiter + 1);
+    }
+    else {
+      break;
     }
   }
 }

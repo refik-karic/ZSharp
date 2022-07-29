@@ -37,20 +37,21 @@ BufferedFileReader::~BufferedFileReader() {
   }
 }
 
+size_t BufferedFileReader::Read(void* buffer, size_t length) {
+  if (!IsOpen() || buffer == nullptr) {
+    return 0;
+  }
+
+  return fread(buffer, 1, length, mFileHandle);
+}
+
 size_t BufferedFileReader::ReadLine() {
   if (!IsOpen() || mBuffer == nullptr) {
     return 0;
   }
 
   if (mBufferSize != mDefaultBufferSize) {
-    char* resizedBuf = static_cast<char*>(realloc(mBuffer, mDefaultBufferSize));
-    if (resizedBuf == nullptr) {
-      return 0;
-    }
-
-    mBuffer = resizedBuf;
-    mBufferSize = mDefaultBufferSize;
-    memset(mBuffer, 0, mBufferSize);
+    ResetBuffer(mDefaultBufferSize);
   }
 
   bool keepReading = true;
@@ -88,6 +89,18 @@ size_t BufferedFileReader::ReadLine() {
 
 const char* BufferedFileReader::GetBuffer() const {
   return mBuffer;
+}
+
+bool BufferedFileReader::ResetBuffer(size_t size) {
+  char* resizedBuf = static_cast<char*>(realloc(mBuffer, size));
+  if (resizedBuf == nullptr) {
+    return false;
+  }
+
+  mBuffer = resizedBuf;
+  mBufferSize = size;
+  memset(mBuffer, 0, mBufferSize);
+  return true;
 }
 
 BufferedFileWriter::BufferedFileWriter(const FileString& fileName) 

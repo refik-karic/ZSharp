@@ -2,13 +2,11 @@
 
 #include "FileString.h"
 
-#include <cstdio>
-
 namespace ZSharp {
 
 class BaseFile {
   public:
-  BaseFile(const FileString& fileName, const char* mode);
+  BaseFile(const FileString& fileName, size_t flags);
 
   BaseFile(const BaseFile& rhs) = delete;
 
@@ -18,7 +16,7 @@ class BaseFile {
 
   protected:
   FileString mFile;
-  FILE* mFileHandle = nullptr;
+  void* mFileHandle = nullptr;
   bool mOpen = false;
 
   ~BaseFile();

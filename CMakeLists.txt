@@ -23,6 +23,7 @@ target_sources(ZSharp
         Mesh.h
         Model.h
         Pair.h
+        PlatformFile.h
         Quaternion.h
         Renderer.h
         Triangle.h
@@ -63,6 +64,7 @@ target_sources(ZSharp
         Vec3.cpp
         Vec4.cpp
         VertexBuffer.cpp
+        Win32PlatformFile.cpp
         World.cpp
         ZAlgorithm.cpp
         ZColor.cpp

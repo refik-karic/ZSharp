@@ -3,19 +3,19 @@
 #include <cstdlib>
 #include <cstring>
 
-#pragma warning(disable : 4996)
+#include "PlatformFile.h"
 
 namespace ZSharp {
 
-BaseFile::BaseFile(const FileString& fileName, const char* mode)
+BaseFile::BaseFile(const FileString& fileName, size_t flags)
 : mFile(fileName) {
-  mFileHandle = fopen(mFile.GetAbsolutePath().Str(), mode);
+  mFileHandle = PlatformOpenFile(mFile, flags);
   mOpen = (mFileHandle != nullptr);
 }
 
 BaseFile::~BaseFile() {
   if (IsOpen()) {
-    fclose(mFileHandle);
+    PlatformCloseFile(mFileHandle);
   }
 }
 
@@ -24,7 +24,7 @@ bool BaseFile::IsOpen() const {
 }
 
 BufferedFileReader::BufferedFileReader(const FileString& fileName) 
-  : BaseFile(fileName, "rb") {
+  : BaseFile(fileName, static_cast<size_t>(FileFlags::READ)) {
   mBuffer = static_cast<char*>(malloc(mBufferSize));
   if (mBuffer != nullptr) {
     memset(mBuffer, 0, mBufferSize);
@@ -42,7 +42,7 @@ size_t BufferedFileReader::Read(void* buffer, size_t length) {
     return 0;
   }
 
-  return fread(buffer, 1, length, mFileHandle);
+  return PlatformReadFile(mFileHandle, buffer, length);
 }
 
 size_t BufferedFileReader::ReadLine() {
@@ -68,14 +68,14 @@ size_t BufferedFileReader::ReadLine() {
       mBufferSize = newLength;
     }
 
-    char nextChar = static_cast<char>(fgetc(mFileHandle));
-    if (nextChar == EOF) {
-      mBuffer[i] = NULL;
-      keepReading = false;
+    char nextChar[1];
+    if (PlatformReadFile(mFileHandle, nextChar, 1) > 0) {
+      mBuffer[i] = nextChar[0];
+      numRead++;
     }
     else {
-      mBuffer[i] = nextChar;
-      numRead++;
+      mBuffer[i] = NULL;
+      keepReading = false;
     }
 
     if (mBuffer[i] == '\n') {
@@ -104,7 +104,7 @@ bool BufferedFileReader::ResetBuffer(size_t size) {
 }
 
 BufferedFileWriter::BufferedFileWriter(const FileString& fileName) 
-  : BaseFile(fileName, "wb") {
+  : BaseFile(fileName, static_cast<size_t>(FileFlags::WRITE)) {
   mBuffer = static_cast<char*>(malloc(mBufferSize));
   if (mBuffer != nullptr) {
     memset(mBuffer, 0, mBufferSize);
@@ -129,7 +129,7 @@ bool BufferedFileWriter::Write(const void* data, size_t length) {
   if ((length > mBufferSize) || (mBufferedDataSize + length > mBufferSize)) {
     // Write any buffered data.
     if (mBufferedDataSize > 0) {
-      bool success = fwrite(mBuffer, sizeof(char), mBufferedDataSize, mFileHandle) == mBufferedDataSize;
+      bool success = PlatformWriteFile(mFileHandle, mBuffer, mBufferedDataSize) == mBufferedDataSize;
       if (!success) {
         return false;
       }
@@ -139,7 +139,7 @@ bool BufferedFileWriter::Write(const void* data, size_t length) {
     }
 
     // Write out the rest.
-    bool success = fwrite(data, sizeof(char), length, mFileHandle) == mBufferedDataSize;
+    bool success = PlatformWriteFile(mFileHandle, data, length) == mBufferedDataSize;
     if (!success) {
       return false;
     }
@@ -160,7 +160,7 @@ bool BufferedFileWriter::Flush() {
 
   // Write any buffered data.
   if (mBufferedDataSize > 0) {
-    bool success = fwrite(mBuffer, sizeof(char), mBufferedDataSize, mFileHandle) == mBufferedDataSize;
+    bool success = PlatformWriteFile(mFileHandle, mBuffer, mBufferedDataSize) == mBufferedDataSize;
     if (!success) {
       return false;
     }
@@ -169,9 +169,7 @@ bool BufferedFileWriter::Flush() {
     memset(mBuffer, 0, mBufferSize);
   }
 
-  return fflush(mFileHandle) == 0;
+  return PlatformFileFlush(mFileHandle);
 }
 
 }
-
-#pragma warning(default : 4996)

@@ -58,7 +58,7 @@ class BufferedFileWriter final : public BaseFile {
 
   ~BufferedFileWriter();
 
-  bool Write(const char* data, size_t length);
+  bool Write(const void* data, size_t length);
 
   bool Flush();
 

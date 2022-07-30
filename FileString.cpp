@@ -40,12 +40,27 @@ const String& FileString::GetAbsolutePath() {
   return mAbsolutePath;
 }
 
+void FileString::SetFilename(const String& filename) {
+  const char* extension = filename.FindFirst('.');
+  if (extension != nullptr) {
+    size_t length = extension - filename.Str();
+    String parsedFilename(filename.Str(), 0, length);
+    mFilename = parsedFilename;
+
+    extension++;
+    String parsedExtension(extension);
+    mExtension = parsedExtension;
+
+    mDirty = true;
+  }
+}
+
 void FileString::Initialize(const String& absoluteFilePath) {
-  const char* volume = strchr(absoluteFilePath.Str(), ':');
+  const char* volume = absoluteFilePath.FindFirst(':');
 
   if (volume != nullptr) {
     const char* str = absoluteFilePath.Str();
-    size_t length = (volume - absoluteFilePath.Str()) + 1;
+    size_t length = (volume - str) + 1;
     mVolume.Append(str, 0, length);
   }
 
@@ -63,7 +78,7 @@ void FileString::Initialize(const String& absoluteFilePath) {
 
     if (nextDirectory != nullptr) {
       const char* str = absoluteFilePath.Str();
-      size_t start = (directory - absoluteFilePath.Str()) + 1;
+      size_t start = (directory - str) + 1;
       size_t length = (nextDirectory - directory) - 1;
       String parsedDirectory(str, start, length);
       mDirectories.PushBack(parsedDirectory);

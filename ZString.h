@@ -44,9 +44,9 @@ class String final {
 
   String SubStr(size_t start, size_t end);
 
-  const char* FindFirst(char value);
+  const char* FindFirst(char value) const;
 
-  const char* FindLast(char value);
+  const char* FindLast(char value) const;
 
   uint8 ToUint8() const;
   

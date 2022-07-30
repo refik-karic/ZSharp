@@ -119,7 +119,7 @@ BufferedFileWriter::~BufferedFileWriter() {
   }
 }
 
-bool BufferedFileWriter::Write(const char* data, size_t length) {
+bool BufferedFileWriter::Write(const void* data, size_t length) {
   if (!IsOpen() || mBuffer == nullptr) {
     return false;
   }

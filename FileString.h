@@ -20,6 +20,8 @@ class FileString final {
 
   const String& GetAbsolutePath();
 
+  void SetFilename(const String& filename);
+
   private:
   String mVolume;
   Array<String> mDirectories;

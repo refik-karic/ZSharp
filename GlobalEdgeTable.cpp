@@ -6,6 +6,10 @@ GlobalEdgeTable::GlobalEdgeTable(size_t height)
 }
 
 void GlobalEdgeTable::AddPoint(size_t yIndex, size_t x, ZColor color, size_t primitiveIndex) {
+  if (yIndex >= mEdgeTable.Size()) {
+    return;
+  }
+
   ScanLineList& list = mEdgeTable[yIndex];
 
   if (list.IsEmpty()) {

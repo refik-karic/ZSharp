@@ -5,8 +5,6 @@
 
 #include "ZFile.h"
 
-#pragma warning(disable : 4996)
-
 namespace ZSharp {
 OBJFile::OBJFile(FileString& objFilePath, AssetFormat format) {
   switch (format) {
@@ -35,38 +33,38 @@ void OBJFile::Serialize(FileString& destPath) {
 
   // Write length of vertex vector
   size_t vertSize = mVerts.Size();
-  fileWriter.Write(reinterpret_cast<char*>(&vertSize), sizeof(size_t));
+  fileWriter.Write(reinterpret_cast<void*>(&vertSize), sizeof(size_t));
 
   // Write vertex vector
   for (Vec4& vector : mVerts) {
-    fileWriter.Write(reinterpret_cast<char*>(&vector), sizeof(Vec4));
+    fileWriter.Write(reinterpret_cast<void*>(&vector), sizeof(Vec4));
   }
 
   // Write length of the normal vector
   size_t normalSize = mNormals.Size();
-  fileWriter.Write(reinterpret_cast<char*>(&normalSize), sizeof(size_t));
+  fileWriter.Write(reinterpret_cast<void*>(&normalSize), sizeof(size_t));
 
   // Write normal vector
   for (Vec3& normal : mNormals) {
-    fileWriter.Write(reinterpret_cast<char*>(&normal), sizeof(Vec3));
+    fileWriter.Write(reinterpret_cast<void*>(&normal), sizeof(Vec3));
   }
 
   // Write length of the uv vector
   size_t uvSize = mUVCoords.Size();
-  fileWriter.Write(reinterpret_cast<char*>(&uvSize), sizeof(size_t));
+  fileWriter.Write(reinterpret_cast<void*>(&uvSize), sizeof(size_t));
 
   // Write uv vector
   for (Vec3& uv : mUVCoords) {
-    fileWriter.Write(reinterpret_cast<char*>(&uv), sizeof(Vec3));
+    fileWriter.Write(reinterpret_cast<void*>(&uv), sizeof(Vec3));
   }
 
   // Write size of face vector
   size_t faceSize = mFaces.Size();
-  fileWriter.Write(reinterpret_cast<char*>(&faceSize), sizeof(size_t));
+  fileWriter.Write(reinterpret_cast<void*>(&faceSize), sizeof(size_t));
 
   // Write face vector
   for (OBJFace& face : mFaces) {
-    fileWriter.Write(reinterpret_cast<char*>(&face), sizeof(OBJFace));
+    fileWriter.Write(reinterpret_cast<void*>(&face), sizeof(OBJFace));
   }
 }
 
@@ -84,43 +82,43 @@ void OBJFile::Deserialize(FileString& objFilePath) {
   // Read verticies
   for (size_t i = 0; i < vertSize; ++i) {
     Vec4 vector;
-    fileReader.Read(reinterpret_cast<char*>(&vector), sizeof(Vec4));
+    fileReader.Read(reinterpret_cast<void*>(&vector), sizeof(Vec4));
     mVerts[i] = vector;
   }
 
   // Read normal size
   size_t normalSize = 0;
-  fileReader.Read(reinterpret_cast<char*>(&normalSize), sizeof(size_t));
+  fileReader.Read(reinterpret_cast<void*>(&normalSize), sizeof(size_t));
   mNormals.Resize(normalSize);
 
   // Read normals
   for (size_t i = 0; i < normalSize; ++i) {
     Vec3 normal;
-    fileReader.Read(reinterpret_cast<char*>(&normal), sizeof(Vec3));
+    fileReader.Read(reinterpret_cast<void*>(&normal), sizeof(Vec3));
     mNormals[i] = normal;
   }
 
   // Read uv size
   size_t uvSize = 0;
-  fileReader.Read(reinterpret_cast<char*>(&uvSize), sizeof(size_t));
+  fileReader.Read(reinterpret_cast<void*>(&uvSize), sizeof(size_t));
   mUVCoords.Resize(uvSize);
 
   // Read uvs
   for (size_t i = 0; i < uvSize; ++i) {
     Vec3 uv;
-    fileReader.Read(reinterpret_cast<char*>(&uv), sizeof(Vec3));
+    fileReader.Read(reinterpret_cast<void*>(&uv), sizeof(Vec3));
     mUVCoords[i] = uv;
   }
 
   // Read face size
   size_t faceSize = 0;
-  fileReader.Read(reinterpret_cast<char*>(&faceSize), sizeof(size_t));
+  fileReader.Read(reinterpret_cast<void*>(&faceSize), sizeof(size_t));
   mFaces.Resize(faceSize);
 
   // Read face vector
   for (size_t i = 0; i < faceSize; ++i) {
     OBJFace face;
-    fileReader.Read(reinterpret_cast<char*>(&face), sizeof(OBJFace));
+    fileReader.Read(reinterpret_cast<void*>(&face), sizeof(OBJFace));
     mFaces[i] = face;
   }
 }
@@ -290,5 +288,3 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
   }
 }
 }
-
-#pragma warning(default : 4996)

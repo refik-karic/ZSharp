@@ -91,11 +91,8 @@ void Renderer::LoadAssets() {
   ZConfig& config = ZConfig::GetInstance();
   if (!config.GetAssetPath().GetAbsolutePath().IsEmpty()) {
     for (const String& asset : config.GetAssets()) {
-      String absoluteStringPath(config.GetAssetPath().GetAbsolutePath());
-      absoluteStringPath.Append("\\");
-      absoluteStringPath.Append(asset);
-
-      FileString filePath(absoluteStringPath);
+      FileString filePath(config.GetAssetPath().GetAbsolutePath());
+      filePath.SetFilename(asset);
       mWorld.LoadModel(filePath);
     }
   }

@@ -130,11 +130,11 @@ String String::SubStr(size_t start, size_t end) {
   return result;
 }
 
-const char* String::FindFirst(const char value) {
+const char* String::FindFirst(const char value) const {
   return strchr(GetString(), value);
 }
 
-const char* String::FindLast(const char value) {
+const char* String::FindLast(const char value) const {
   return strrchr(GetString(), value);
 }
 

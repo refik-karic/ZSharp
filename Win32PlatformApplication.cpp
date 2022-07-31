@@ -3,7 +3,6 @@
 #include "Win32PlatformApplication.h"
 
 #include "InputManager.h"
-#include "Renderer.h"
 #include "ZConfig.h"
 
 static wchar_t WINDOW_CLASS_NAME[] = L"SoftwareRendererWindowClass";
@@ -70,6 +69,8 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
       HRESULT result = HRESULT_FROM_WIN32(error);
       return result;
     }
+
+    mGameInstance.Initialize();
 
     ShowWindow(mWindowHandle, SW_SHOW);
     for (MSG msg; GetMessageW(&msg, mWindowHandle, 0, 0) > 0;) {
@@ -154,17 +155,18 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
 }
 
 void Win32PlatformApplication::OnTimer() {
+  mGameInstance.Tick();
+
   RECT activeWindowSize;
   GetClientRect(mWindowHandle, &activeWindowSize);
   InvalidateRect(mWindowHandle, &activeWindowSize, false);
 }
 
 void Win32PlatformApplication::OnPaint() {
-  ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
-  static ZSharp::Renderer renderer(config.GetViewportWidth(), config.GetViewportHeight(), config.GetViewportStride());
-
   RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
+    ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
+
     if (activeWindowSize.right != config.GetViewportWidth()) {
       config.SetViewportWidth(activeWindowSize.right);
     }
@@ -177,7 +179,7 @@ void Win32PlatformApplication::OnPaint() {
     mBitmapInfo.bmiHeader.biHeight = activeWindowSize.bottom;
   }
 
-  UpdateFrame(renderer.RenderNextFrame());
+  UpdateFrame(mGameInstance.GetCurrentFrame());
 }
 
 void Win32PlatformApplication::OnLButtonDown(ZSharp::int32 x, ZSharp::int32 y) {

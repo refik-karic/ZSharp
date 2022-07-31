@@ -1,10 +1,11 @@
 #include "VertexBuffer.h"
 
-#include <malloc.h>
+
 #include <cstring>
 
 #include "ZAssert.h"
 #include "Constants.h"
+#include "PlatformMemory.h"
 #include "Vec4.h"
 
 static constexpr size_t MAX_INDICIES_AFTER_CLIP = 4;
@@ -13,7 +14,7 @@ namespace ZSharp {
 
 VertexBuffer::~VertexBuffer() {
   if (mData != nullptr) {
-    _aligned_free(mData);
+    PlatformAlignedFree(mData);
   }
 }
 
@@ -73,14 +74,14 @@ const float* VertexBuffer::GetClipData(size_t index) const {
 
 void VertexBuffer::Resize(size_t vertexSize, size_t stride, size_t indexSize) {
   if (mData != nullptr) {
-    _aligned_free(mData);
+    PlatformAlignedFree(mData);
   }
 
   mInputSize = vertexSize;
   mIndexSize = indexSize;
   mAllocatedSize = ((vertexSize * sizeof(float)) + (indexSize * MAX_INDICIES_AFTER_CLIP * sizeof(float)));
   mStride = stride;
-  mData = static_cast<float*>(_aligned_malloc(mAllocatedSize, 16));
+  mData = static_cast<float*>(PlatformAlignedMalloc(mAllocatedSize, 16));
   mClipData = mData + mInputSize;
   mWorkingSize = 0;
   mClipLength = 0;

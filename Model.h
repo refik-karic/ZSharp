@@ -5,7 +5,9 @@
 
 #include "Array.h"
 #include "IndexBuffer.h"
+#include "Mat4x4.h"
 #include "Mesh.h"
+#include "Vec4.h"
 #include "VertexBuffer.h"
 
 namespace ZSharp {
@@ -40,8 +42,16 @@ class Model final {
 
   void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const;
 
+  void SetRotation(const Mat4x4& rotation);
+
+  const Mat4x4& GetRotation() const;
+
   private:
   Array<Mesh> mData;
+
+  Vec4 mScale;
+  Mat4x4 mRotation;
+  Vec4 mTranslation;
 };
 
 }

@@ -1,6 +1,6 @@
 #include "IndexBuffer.h"
 
-#include <malloc.h>
+#include "PlatformMemory.h"
 #include "ZAssert.h"
 #include <cstring>
 
@@ -12,7 +12,7 @@ namespace ZSharp {
 
 IndexBuffer::~IndexBuffer() {
   if (mData != nullptr) {
-    _aligned_free(mData);
+    PlatformAlignedFree(mData);
   }
 }
 
@@ -53,12 +53,12 @@ void IndexBuffer::CopyInputData(const size_t* data, size_t index, size_t length)
 
 void IndexBuffer::Resize(size_t size) {
   if (mData != nullptr) {
-    _aligned_free(mData);
+    PlatformAlignedFree(mData);
   }
 
   mInputSize = size;
   mAllocatedSize = size * MAX_INDICIES_AFTER_CLIP * sizeof(size_t);
-  mData = static_cast<size_t*>(_aligned_malloc(mAllocatedSize, 16));
+  mData = static_cast<size_t*>(PlatformAlignedMalloc(mAllocatedSize, 16));
   mClipData = mData + mInputSize;
   mClipLength = 0;
   mWorkingSize = 0;

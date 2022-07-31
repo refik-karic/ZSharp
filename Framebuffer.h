@@ -6,11 +6,13 @@
 namespace ZSharp {
 class Framebuffer final {
   public:
-  Framebuffer(size_t width, size_t height, size_t stride);
+  Framebuffer();
   ~Framebuffer();
 
   Framebuffer(const Framebuffer&) = delete;
   void operator=(const Framebuffer&) = delete;
+
+  void Initialize(size_t width, size_t height, size_t stride);
 
   void SetPixel(const size_t x, const size_t y, const ZColor color);
   void SetRow(const size_t y, const size_t x1, const size_t x2, const ZColor color);
@@ -24,9 +26,11 @@ class Framebuffer final {
   private:
   uint8* mPixelBuffer = nullptr;
   uint8* mScratchBuffer = nullptr;
-  size_t mWidth;
-  size_t mHeight;
-  size_t mStride;
-  size_t mTotalSize;
+  size_t mWidth = 0;
+  size_t mHeight = 0;
+  size_t mStride = 0;
+  size_t mTotalSize = 0;
+
+  void Reset();
 };
 }

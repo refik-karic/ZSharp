@@ -7,9 +7,10 @@ target_sources(ZSharp
         Camera.h
         Common.h
         Constants.h
-	  FileString.h
-	  FixedArray.h
+        FileString.h
+        FixedArray.h
         Framebuffer.h
+        GameInstance.h
         GlobalEdgeTable.h
         IInputListener.h
         IndexBuffer.h
@@ -24,6 +25,7 @@ target_sources(ZSharp
         Model.h
         Pair.h
         PlatformFile.h
+        PlatformMemory.h
         Quaternion.h
         Renderer.h
         Triangle.h
@@ -32,7 +34,7 @@ target_sources(ZSharp
         Vec4.h
         VertexBuffer.h
         Win32PlatformHeaders.h
-	  Win32PlatformApplication.h
+        Win32PlatformApplication.h
         World.h
         ZAlgorithm.h
         ZAssert.h
@@ -46,8 +48,9 @@ target_sources(ZSharp
 	
         AssetLoader.cpp
         Camera.cpp
-	  FileString.cpp
+        FileString.cpp
         Framebuffer.cpp
+        GameInstance.cpp
         GlobalEdgeTable.cpp
         IndexBuffer.cpp
         IniFile.cpp
@@ -67,7 +70,8 @@ target_sources(ZSharp
         Vec4.cpp
         VertexBuffer.cpp
         Win32PlatformFile.cpp
-	  Win32PlatformApplication.cpp
+        Win32PlatformMemory.cpp
+        Win32PlatformApplication.cpp
         World.cpp
         ZAlgorithm.cpp
         ZColor.cpp

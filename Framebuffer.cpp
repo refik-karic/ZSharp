@@ -2,6 +2,8 @@
 
 #include <cstdlib>
 
+#include "ZAssert.h"
+#include "PlatformMemory.h"
 #include "ZConfig.h"
 
 #ifdef FORCE_AVX512
@@ -9,28 +11,28 @@
 #endif
 
 namespace ZSharp {
-Framebuffer::Framebuffer(size_t width, size_t height, size_t stride) : 
-  mWidth(width),
-  mHeight(height),
-  mStride(stride)
-{
+
+void Framebuffer::Initialize(size_t width, size_t height, size_t stride) {
+  ZAssert(mPixelBuffer == nullptr);
+  if (mPixelBuffer != nullptr) {
+    Reset();
+  }
+
+  mWidth = width;
+  mHeight = height;
+  mStride = stride;
   mTotalSize = stride * height;
-  mPixelBuffer = static_cast<uint8*>(_aligned_malloc(mTotalSize, 64));
+  mPixelBuffer = static_cast<uint8*>(PlatformAlignedMalloc(mTotalSize, 64));
 #ifdef FORCE_AVX512
-  mScratchBuffer = static_cast<uint8*>(_aligned_malloc(64, 64));
+  mScratchBuffer = static_cast<uint8*>(PlatformAlignedMalloc(64, 64));
 #endif
 }
 
-Framebuffer::~Framebuffer(){
-  if (mPixelBuffer != nullptr) {
-    _aligned_free(mPixelBuffer);
-  }
+Framebuffer::Framebuffer() {
+}
 
-#ifdef FORCE_AVX512
-  if (mScratchBuffer != nullptr) {
-    _aligned_free(mScratchBuffer);
-  }
-#endif
+Framebuffer::~Framebuffer() {
+  Reset();
 }
 
 void Framebuffer::SetPixel(const size_t x, const size_t y, const ZColor color) {
@@ -107,14 +109,26 @@ size_t Framebuffer::GetSize() const {
 
 void Framebuffer::Resize() {
   if (mPixelBuffer != nullptr) {
-    _aligned_free(mPixelBuffer);
+    PlatformAlignedFree(mPixelBuffer);
   }
 
   mWidth = ZConfig::GetInstance().GetViewportWidth();
   mHeight = ZConfig::GetInstance().GetViewportHeight();
   mStride = mWidth * 4;
   mTotalSize = mStride * mHeight;
-  mPixelBuffer = static_cast<uint8*>(_aligned_malloc(mTotalSize, 64));
+  mPixelBuffer = static_cast<uint8*>(PlatformAlignedMalloc(mTotalSize, 64));
+}
+
+void Framebuffer::Reset() {
+  if (mPixelBuffer != nullptr) {
+    PlatformAlignedFree(mPixelBuffer);
+  }
+
+#ifdef FORCE_AVX512
+  if (mScratchBuffer != nullptr) {
+    PlatformAlignedFree(mScratchBuffer);
+  }
+#endif
 }
 
 }

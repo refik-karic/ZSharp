@@ -4,6 +4,7 @@
 
 #include "Win32PlatformHeaders.h"
 
+#include "GameInstance.h"
 #include "ZBaseTypes.h"
 
 class Win32PlatformApplication {
@@ -19,8 +20,9 @@ class Win32PlatformApplication {
   HINSTANCE mInstance = nullptr;
   HWND mWindowHandle = nullptr;
   UINT_PTR mWindowsFrameTimer = 0;
-
   BITMAPINFO mBitmapInfo;
+
+  ZSharp::GameInstance mGameInstance;
 
   Win32PlatformApplication();
 

@@ -2,8 +2,31 @@
 
 #include "PlatformMemory.h"
 
+#include "ZAssert.h"
 #include "Win32PlatformHeaders.h"
 #include <malloc.h>
+
+void* operator new(size_t size) noexcept(false) {
+  void* memory = ZSharp::PlatformMalloc(size);
+  ZAssert(memory != nullptr);
+  return memory;
+}
+
+void* operator new[](size_t size) noexcept(false) {
+  void* memory = ZSharp::PlatformMalloc(size);
+  ZAssert(memory != nullptr);
+  return memory;
+}
+
+void operator delete(void* memory) noexcept {
+  ZAssert(memory != nullptr);
+  ZSharp::PlatformFree(memory);
+}
+
+void operator delete[](void* memory) noexcept {
+  ZAssert(memory != nullptr);
+  ZSharp::PlatformFree(memory);
+}
 
 namespace ZSharp {
 

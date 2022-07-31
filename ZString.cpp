@@ -1,6 +1,8 @@
 #include "ZString.h"
 
 #include "ZAssert.h"
+#include "PlatformMemory.h"
+
 #include <cstdlib>
 #include <cstring>
 
@@ -227,12 +229,12 @@ size_t String::GetLongLength() const {
 
 void String::AllocateLong() {
   size_t length = GetLongLength() + 1;
-  mOverlapData.longStr.data = static_cast<char*>(malloc(length));
+  mOverlapData.longStr.data = static_cast<char*>(PlatformMalloc(length));
 }
 
 void String::FreeLong() {
   if (mOverlapData.longStr.data != nullptr) {
-    free(mOverlapData.longStr.data);
+    PlatformFree(mOverlapData.longStr.data);
     mOverlapData.longStr.data = nullptr;
   }
 }
@@ -262,7 +264,7 @@ void String::AppendLong(const char* str, size_t offset, size_t length) {
   }
 
   SetLongLength(combinedLength);
-  char* resizedStr = static_cast<char*>(realloc(mOverlapData.longStr.data, combinedLength + 1));
+  char* resizedStr = static_cast<char*>(PlatformReAlloc(mOverlapData.longStr.data, combinedLength + 1));
   ZAssert(resizedStr != nullptr);
   mOverlapData.longStr.data = resizedStr;
 

@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "PlatformFile.h"
+#include "PlatformMemory.h"
 
 namespace ZSharp {
 
@@ -25,7 +26,7 @@ bool BaseFile::IsOpen() const {
 
 BufferedFileReader::BufferedFileReader(const FileString& fileName) 
   : BaseFile(fileName, static_cast<size_t>(FileFlags::READ)) {
-  mBuffer = static_cast<char*>(malloc(mBufferSize));
+  mBuffer = static_cast<char*>(PlatformMalloc(mBufferSize));
   if (mBuffer != nullptr) {
     memset(mBuffer, 0, mBufferSize);
   }
@@ -33,7 +34,7 @@ BufferedFileReader::BufferedFileReader(const FileString& fileName)
 
 BufferedFileReader::~BufferedFileReader() {
   if (mBuffer != nullptr) {
-    free(mBuffer);
+    PlatformFree(mBuffer);
   }
 }
 
@@ -59,7 +60,7 @@ size_t BufferedFileReader::ReadLine() {
   for (size_t i = 0; keepReading; ++i) {
     if (i == (mBufferSize - 1)) {
       size_t newLength = mBufferSize + mDefaultBufferSize;
-      char* resizedBuf = static_cast<char*>(realloc(mBuffer, newLength));
+      char* resizedBuf = static_cast<char*>(PlatformReAlloc(mBuffer, newLength));
       if (resizedBuf == nullptr) {
         return 0;
       }
@@ -92,7 +93,7 @@ const char* BufferedFileReader::GetBuffer() const {
 }
 
 bool BufferedFileReader::ResetBuffer(size_t size) {
-  char* resizedBuf = static_cast<char*>(realloc(mBuffer, size));
+  char* resizedBuf = static_cast<char*>(PlatformReAlloc(mBuffer, size));
   if (resizedBuf == nullptr) {
     return false;
   }
@@ -105,7 +106,7 @@ bool BufferedFileReader::ResetBuffer(size_t size) {
 
 BufferedFileWriter::BufferedFileWriter(const FileString& fileName) 
   : BaseFile(fileName, static_cast<size_t>(FileFlags::WRITE)) {
-  mBuffer = static_cast<char*>(malloc(mBufferSize));
+  mBuffer = static_cast<char*>(PlatformMalloc(mBufferSize));
   if (mBuffer != nullptr) {
     memset(mBuffer, 0, mBufferSize);
   }
@@ -115,7 +116,7 @@ BufferedFileWriter::~BufferedFileWriter() {
   Flush();
 
   if (mBuffer != nullptr) {
-    free(mBuffer);
+    PlatformFree(mBuffer);
   }
 }
 

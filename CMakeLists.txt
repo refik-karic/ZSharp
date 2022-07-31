@@ -7,8 +7,8 @@ target_sources(ZSharp
         Camera.h
         Common.h
         Constants.h
-	    FileString.h
-	    FixedArray.h
+	  FileString.h
+	  FixedArray.h
         Framebuffer.h
         GlobalEdgeTable.h
         IInputListener.h
@@ -31,6 +31,8 @@ target_sources(ZSharp
         Vec3.h
         Vec4.h
         VertexBuffer.h
+        Win32PlatformHeaders.h
+	  Win32PlatformApplication.h
         World.h
         ZAlgorithm.h
         ZAssert.h
@@ -44,7 +46,7 @@ target_sources(ZSharp
 	
         AssetLoader.cpp
         Camera.cpp
-	    FileString.cpp
+	  FileString.cpp
         Framebuffer.cpp
         GlobalEdgeTable.cpp
         IndexBuffer.cpp
@@ -65,6 +67,7 @@ target_sources(ZSharp
         Vec4.cpp
         VertexBuffer.cpp
         Win32PlatformFile.cpp
+	  Win32PlatformApplication.cpp
         World.cpp
         ZAlgorithm.cpp
         ZColor.cpp

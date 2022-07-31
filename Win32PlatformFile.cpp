@@ -1,6 +1,6 @@
-#include "PlatformFile.h"
-
 #if defined(_WIN64)
+
+#include "PlatformFile.h"
 
 #define WIN32_LEAN_AND_MEAN
 #define _AMD64_

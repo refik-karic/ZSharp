@@ -55,6 +55,11 @@ void FileString::SetFilename(const String& filename) {
   }
 }
 
+void FileString::AddDirectory(const String& directory) {
+  mDirectories.PushBack(directory);
+  mDirty = true;
+}
+
 void FileString::Initialize(const String& absoluteFilePath) {
   const char* volume = absoluteFilePath.FindFirst(':');
 

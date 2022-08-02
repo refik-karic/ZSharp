@@ -1,6 +1,7 @@
 #include "ZConfig.h"
 
 #include "IniFile.h"
+#include "PlatformFile.h"
 
 namespace ZSharp {
 
@@ -53,7 +54,10 @@ bool ZConfig::SizeChanged(size_t width, size_t height) {
 
 ZConfig::ZConfig()
   : mAssetPath("") {
-  FileString iniFilePath("C:\\Users\\refik\\Desktop\\models\\ZSharpSettings.txt");
+  FileString iniFilePath(PlatformGetUserDesktopPath());
+  iniFilePath.AddDirectory("models");
+  iniFilePath.SetFilename("ZSharpSettings.txt");
+
   IniFile userConfig(iniFilePath);
   
   {

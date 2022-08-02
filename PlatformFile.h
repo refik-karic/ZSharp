@@ -19,4 +19,6 @@ size_t PlatformWriteFile(void* handle, const void* buffer, size_t length);
 
 bool PlatformFileFlush(void* handle);
 
+FileString PlatformGetUserDesktopPath();
+
 }

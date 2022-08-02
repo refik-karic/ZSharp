@@ -1,5 +1,7 @@
 #if defined(_WIN64)
 
+#define _CRT_SECURE_NO_WARNINGS 1
+
 #include "PlatformFile.h"
 
 #define WIN32_LEAN_AND_MEAN
@@ -7,6 +9,9 @@
 
 #include <fileapi.h>
 #include <handleapi.h>
+#include <ShlObj_core.h>
+
+#include <stdlib.h>
 
 namespace ZSharp { 
 
@@ -77,6 +82,20 @@ size_t PlatformWriteFile(void* handle, const void* buffer, size_t length) {
 
 bool PlatformFileFlush(void* handle) {
   return FlushFileBuffers(handle);
+}
+
+FileString PlatformGetUserDesktopPath() {
+  wchar_t* pathResult = nullptr;
+  HRESULT result = SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &pathResult);
+  if (result == S_OK) {
+    char convertedPath[_MAX_PATH];
+    convertedPath[0] = NULL;
+    wcstombs(convertedPath, pathResult, sizeof(convertedPath));
+    return FileString(convertedPath);
+  }
+  else {
+    return FileString("");
+  }
 }
 
 }

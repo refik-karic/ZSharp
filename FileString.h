@@ -22,6 +22,8 @@ class FileString final {
 
   void SetFilename(const String& filename);
 
+  void AddDirectory(const String& directory);
+
   private:
   String mVolume;
   Array<String> mDirectories;

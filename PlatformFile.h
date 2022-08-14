@@ -21,4 +21,6 @@ bool PlatformFileFlush(void* handle);
 
 FileString PlatformGetUserDesktopPath();
 
+FileString PlatformGetExecutableDirectory();
+
 }

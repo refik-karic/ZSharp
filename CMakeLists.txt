@@ -18,6 +18,7 @@ target_sources(ZSharp
         InputManager.h
         IntelIntrinsics.h
         ISerializable.h
+        List.h
         Mat2x3.h
         Mat3x3.h
         Mat4x4.h

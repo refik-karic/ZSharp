@@ -53,6 +53,11 @@ void FileString::SetFilename(const String& filename) {
 
     mDirty = true;
   }
+  else {
+    mFilename = "";
+    mExtension = "";
+    mDirty = true;
+  }
 }
 
 void FileString::AddDirectory(const String& directory) {

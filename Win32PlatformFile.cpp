@@ -98,6 +98,18 @@ FileString PlatformGetUserDesktopPath() {
   }
 }
 
+FileString PlatformGetExecutableDirectory() {
+  char path[_MAX_PATH];
+  if (GetModuleFileNameA(NULL, path, _MAX_PATH)) {
+    FileString receivedPath(path);
+    receivedPath.SetFilename("");
+    return receivedPath;
+  }
+  else {
+    return FileString("");
+  }
+}
+
 }
 
 #endif

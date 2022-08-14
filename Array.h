@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
+#include "PlatformMemory.h"
 
 namespace ZSharp {
 
@@ -56,9 +57,9 @@ class Array final {
   }
 
   Array(const Array& rhs) {
-    FreshAlloc(rhs.mSize);
-    for (size_t i = 0; i < rhs.mSize; ++i) {
-      mData[i] = rhs[i];
+    FreshAllocNoInit(rhs.mSize);
+    for (size_t i = 0; i < mSize; ++i) {
+      new(mData + i) T(rhs[i]);
     }
   }
 
@@ -112,15 +113,28 @@ class Array final {
       FreshAlloc(size);
     }
     else if (mSize != size) {
-      T* newAlloc = new T[size];
-      size_t copyLength = (size > mSize) ? mSize : size;
+      if (mSize < size) {
+        mData = static_cast<T*>(PlatformReAlloc(mData, size * sizeof(T)));
+        for (size_t i = mSize; i < size; ++i) {
+          new(mData + i) T();
+        }
+      }
+      else {
+        const size_t totalSize = sizeof(T) * size;
+        T* newAlloc = static_cast<T*>(PlatformMalloc(totalSize));
 
-      for (size_t i = 0; i < copyLength; ++i) {
-        newAlloc[i] = mData[i];
+        for (size_t i = 0; i < size; ++i) {
+          new(newAlloc + i) T(mData[i]);
+        }
+
+        for (size_t i = size; i < mSize; ++i) {
+          (mData + i)->~T();
+        }
+
+        PlatformFree(mData);
+        mData = newAlloc;
       }
 
-      delete[] mData;
-      mData = newAlloc;
       mSize = size;
     }
   }
@@ -143,13 +157,28 @@ class Array final {
   size_t mSize = 0;
 
   void FreshAlloc(size_t size) {
-    mData = new T[size];
+    const size_t totalSize = sizeof(T) * size;
+    mData = static_cast<T*>(PlatformMalloc(totalSize));
+    mSize = size;
+
+    for (size_t i = 0; i < mSize; ++i) {
+      new(mData + i) T();
+    }
+  }
+
+  void FreshAllocNoInit(size_t size) {
+    const size_t totalSize = sizeof(T) * size;
+    mData = static_cast<T*>(PlatformMalloc(totalSize));
     mSize = size;
   }
 
   void Free() {
     if (mData != nullptr) {
-      delete[] mData;
+      for (size_t i = 0; i < mSize; ++i) {
+        (mData + i)->~T();
+      }
+
+      PlatformFree(mData);
       mData = nullptr;
       mSize = 0;
     }

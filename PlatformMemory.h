@@ -2,6 +2,9 @@
 
 #include "ZBaseTypes.h"
 
+// TODO: See if there is a portable way to not have to include this header for placement new.
+#include <new>
+
 namespace ZSharp {
 
 void* PlatformMalloc(size_t length);

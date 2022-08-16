@@ -86,22 +86,20 @@ class List final {
 
   void operator=(const List& rhs) {
     if (this != &rhs) {
-      for (Node& node : rhs) {
-        Add(*(node->mValue));
+      for (T& item : rhs) {
+        Add(item);
       }
     }
   }
 
   void Add(const T& item) {
     if (mTail == nullptr) {
-      mHead = ConstructNode(mHead);
+      mHead = ConstructNode(mHead, item);
       mTail = mHead;
     }
     else {
-      mTail = ConstructNode(mTail);
+      mTail = ConstructNode(mTail, item);
     }
-
-    *(mTail->mValue) = item;
   }
 
   void Remove(const T& item) {
@@ -178,9 +176,9 @@ class List final {
   Node* mTail = nullptr;
   size_t mSize = 0;
 
-  Node* ConstructNode(Node* prev) {
+  Node* ConstructNode(Node* prev, const T& value) {
     Node* node = new Node;
-    node->mValue = new T;
+    node->mValue = new T(value);
     node->mPrev = prev;
     if (prev != nullptr) {
       prev->mNext = node;

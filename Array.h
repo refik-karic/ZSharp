@@ -120,19 +120,11 @@ class Array final {
         }
       }
       else {
-        const size_t totalSize = sizeof(T) * size;
-        T* newAlloc = static_cast<T*>(PlatformMalloc(totalSize));
-
-        for (size_t i = 0; i < size; ++i) {
-          new(newAlloc + i) T(mData[i]);
-        }
-
         for (size_t i = size; i < mSize; ++i) {
           (mData + i)->~T();
         }
 
-        PlatformFree(mData);
-        mData = newAlloc;
+        mData = static_cast<T*>(PlatformReAlloc(mData, size * sizeof(T)));
       }
 
       mSize = size;

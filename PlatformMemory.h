@@ -2,7 +2,7 @@
 
 #include "ZBaseTypes.h"
 
-// TODO: See if there is a portable way to not have to include this header for placement new.
+// Required for placement new.
 #include <new>
 
 namespace ZSharp {

@@ -67,9 +67,10 @@ class Array final {
 
   void operator=(const Array& rhs) {
     if (this != &rhs && rhs.mSize > 0) {
-      Resize(rhs.mSize);
-      for (size_t i = 0; i < rhs.mSize; ++i) {
-        mData[i] = rhs[i];
+      Free();
+      FreshAllocNoInit(rhs.mSize);
+      for (size_t i = 0; i < mSize; ++i) {
+        new(mData + i) T(rhs[i]);
       }
     }
   }

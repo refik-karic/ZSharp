@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FileString.h"
+#include "PlatformFile.h"
 
 namespace ZSharp {
 
@@ -14,9 +15,11 @@ class BaseFile {
 
   bool IsOpen() const;
 
+  size_t GetSize();
+
   protected:
   FileString mFile;
-  void* mFileHandle = nullptr;
+  PlatformFileHandle* mFileHandle;
   bool mOpen = false;
 
   ~BaseFile();
@@ -64,6 +67,44 @@ class BufferedFileWriter final : public BaseFile {
   const size_t mBufferSize = 4096;
   size_t mBufferedDataSize = 0;
   char* mBuffer = nullptr;
+};
+
+class MemoryMappedFileReader final : public BaseFile {
+public:
+  MemoryMappedFileReader(const FileString& fileName);
+
+  MemoryMappedFileReader(const MemoryMappedFileReader& rhs) = delete;
+
+  void operator=(const MemoryMappedFileReader& rhs) = delete;
+
+  ~MemoryMappedFileReader();
+
+  const char* GetBuffer() const;
+
+private:
+  size_t mFileSize = 0;
+  PlatformMemoryMappedFileHandle* mMappedFileHandle = nullptr;
+  void* mFileData = nullptr;
+};
+
+class MemoryMappedFileWriter final : public BaseFile {
+public:
+  MemoryMappedFileWriter(const FileString& fileName, size_t maxSize);
+
+  MemoryMappedFileWriter(const MemoryMappedFileWriter& rhs) = delete;
+
+  void operator=(const MemoryMappedFileWriter& rhs) = delete;
+
+  ~MemoryMappedFileWriter();
+
+  char* GetBuffer();
+
+  bool Flush();
+
+private:
+  size_t mFileSize = 0;
+  PlatformMemoryMappedFileHandle* mMappedFileHandle = nullptr;
+  void* mFileData = nullptr;
 };
 
 }

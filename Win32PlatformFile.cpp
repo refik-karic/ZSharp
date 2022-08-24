@@ -15,22 +15,83 @@
 
 namespace ZSharp { 
 
+struct PlatformFileHandle {
+  HANDLE fileHandle = nullptr;
+};
+
+struct PlatformMemoryMappedFileHandle {
+  PlatformFileHandle* genericFileHandle;
+  HANDLE memoryMappedHandle = nullptr;
+  void* mappedData = nullptr;
+};
+
+void WinDebugLog() {
+#ifndef NDEBUG
+  DWORD lastError = GetLastError();
+  LPCTSTR errorString = NULL;
+  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+    FORMAT_MESSAGE_IGNORE_INSERTS |
+    FORMAT_MESSAGE_ARGUMENT_ARRAY |
+    FORMAT_MESSAGE_ALLOCATE_BUFFER,
+    NULL,
+    lastError,
+    0,
+    (LPWSTR)&errorString,
+    0,
+    NULL
+  );
+
+  OutputDebugStringW(errorString);
+#endif
+}
+
 DWORD SetFlags(size_t inFlags) {
   DWORD winFlags = 0;
   
   if (inFlags & static_cast<size_t>(FileFlags::READ)) {
     winFlags |= GENERIC_READ;
   }
-  else if (inFlags & static_cast<size_t>(FileFlags::WRITE)) {
+  
+  if (inFlags & static_cast<size_t>(FileFlags::WRITE)) {
     winFlags |= GENERIC_WRITE;
   }
 
   return winFlags;
 }
 
-void* PlatformOpenFile(FileString& filename, size_t flags) {
+DWORD SetMemoryMappedPageFlags(size_t inFlags) {
+  DWORD winFlags = 0;
+
+  if ((inFlags & static_cast<size_t>(FileFlags::READ)) 
+    && (inFlags & static_cast<size_t>(FileFlags::WRITE))) {
+    winFlags |= PAGE_READWRITE;
+  }
+  else if (inFlags & static_cast<size_t>(FileFlags::READ)) {
+    winFlags |= PAGE_READONLY;
+  }
+
+  return winFlags;
+}
+
+DWORD SetMemoryMappedFlags(size_t inFlags) {
+  DWORD winFlags = 0;
+
+  if (inFlags & static_cast<size_t>(FileFlags::WRITE)) {
+    winFlags |= FILE_MAP_WRITE;
+  }
+  else if (inFlags & static_cast<size_t>(FileFlags::READ)) {
+    winFlags |= FILE_MAP_READ;
+  }
+
+  return winFlags;
+}
+
+PlatformFileHandle* PlatformOpenFile(const FileString& filename, size_t flags) {
   DWORD winFlags = SetFlags(flags);
   DWORD shareFlags = (flags & static_cast<size_t>(FileFlags::READ)) ? FILE_SHARE_READ : 0;
+  if (flags & static_cast<size_t>(FileFlags::WRITE)) {
+    shareFlags = 0;
+  }
 
   HANDLE fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
     winFlags,
@@ -41,7 +102,7 @@ void* PlatformOpenFile(FileString& filename, size_t flags) {
     NULL
   );
 
-  bool isWriting = (flags && static_cast<size_t>(FileFlags::WRITE));
+  bool isWriting = (flags & static_cast<size_t>(FileFlags::WRITE));
   if (fileHandle == NULL && isWriting) {
     fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
       winFlags,
@@ -53,16 +114,24 @@ void* PlatformOpenFile(FileString& filename, size_t flags) {
     );
   }
 
-  return fileHandle;
+  if (fileHandle != nullptr) {
+    PlatformFileHandle* outHandle = new PlatformFileHandle;
+    outHandle->fileHandle = fileHandle;
+    return outHandle;
+  }
+  else {
+    return nullptr;
+  }
 }
 
-void PlatformCloseFile(void* handle) {
-  CloseHandle(handle);
+void PlatformCloseFile(PlatformFileHandle* handle) {
+  CloseHandle(handle->fileHandle);
+  delete handle;
 }
 
-size_t PlatformReadFile(void* handle, void* buffer, size_t length) {
+size_t PlatformReadFile(PlatformFileHandle* handle, void* buffer, size_t length) {
   DWORD bytesRead = 0;
-  if (ReadFile(handle, buffer, (DWORD)length, &bytesRead, NULL)) {
+  if (ReadFile(handle->fileHandle, buffer, (DWORD)length, &bytesRead, NULL)) {
     return static_cast<size_t>(bytesRead);
   }
   else {
@@ -70,9 +139,9 @@ size_t PlatformReadFile(void* handle, void* buffer, size_t length) {
   }
 }
 
-size_t PlatformWriteFile(void* handle, const void* buffer, size_t length) {
+size_t PlatformWriteFile(PlatformFileHandle* handle, const void* buffer, size_t length) {
   DWORD bytesWritten = 0;
-  if (WriteFile(handle, buffer, (DWORD)length, &bytesWritten, NULL)) {
+  if (WriteFile(handle->fileHandle, buffer, (DWORD)length, &bytesWritten, NULL)) {
     return bytesWritten;
   }
   else {
@@ -80,8 +149,82 @@ size_t PlatformWriteFile(void* handle, const void* buffer, size_t length) {
   }
 }
 
-bool PlatformFileFlush(void* handle) {
-  return FlushFileBuffers(handle);
+bool PlatformFileFlush(PlatformFileHandle* handle) {
+  return FlushFileBuffers(handle->fileHandle);
+}
+
+void* PlatformOpenMemoryMapFile(PlatformFileHandle* handle, size_t flags, PlatformMemoryMappedFileHandle*& outMemoryMappedFileHandle, size_t size) {
+  if (handle == nullptr) {
+    return nullptr;
+  }
+
+  DWORD pageFlags = SetMemoryMappedPageFlags(flags);
+  DWORD fileSize = static_cast<DWORD>(size);
+  HANDLE memoryMappedHandle = CreateFileMappingA(handle->fileHandle, NULL, pageFlags, HIWORD(fileSize), LOWORD(fileSize), NULL);
+  if (memoryMappedHandle == nullptr) {
+    WinDebugLog();
+    PlatformCloseFile(handle);
+    return nullptr;
+  }
+
+  DWORD mappedFlags = SetMemoryMappedFlags(flags);
+  void* fileBuffer = MapViewOfFile(memoryMappedHandle, mappedFlags, 0, 0, size);
+  if (fileBuffer == nullptr) {
+    WinDebugLog();
+    CloseHandle(memoryMappedHandle);
+    PlatformCloseFile(handle);
+    return nullptr;
+  }
+
+  outMemoryMappedFileHandle = new PlatformMemoryMappedFileHandle;
+  outMemoryMappedFileHandle->genericFileHandle = handle;
+  outMemoryMappedFileHandle->memoryMappedHandle = memoryMappedHandle;
+  outMemoryMappedFileHandle->mappedData = fileBuffer;
+
+  return fileBuffer;
+}
+
+void PlatformCloseMemoryMapFile(PlatformMemoryMappedFileHandle* memoryMappedFileHandle) {
+  UnmapViewOfFile(memoryMappedFileHandle->mappedData);
+  CloseHandle(memoryMappedFileHandle->memoryMappedHandle);
+  delete memoryMappedFileHandle;
+}
+
+bool PlatformFlushMemoryMapFile(PlatformMemoryMappedFileHandle* memoryMappedFileHandle) {
+  return FlushViewOfFile(memoryMappedFileHandle->mappedData, 0);
+}
+
+size_t PlatformGetFileSize(PlatformFileHandle* handle) {
+  LARGE_INTEGER largeInt;
+  largeInt.QuadPart = 0;
+  if (GetFileSizeEx(handle->fileHandle, &largeInt)) {
+    return static_cast<size_t>(largeInt.QuadPart);
+  }
+  else {
+    return 0;
+  }
+}
+
+bool PlatformUpdateFileAccessTime(PlatformFileHandle* handle) {
+  FILETIME systemTime;
+  GetSystemTimeAsFileTime(&systemTime);
+  FILETIME fileTime;
+  if (!FileTimeToLocalFileTime(&systemTime, &fileTime)) {
+    return false;
+  }
+
+  return SetFileTime(handle->fileHandle, NULL, &fileTime, NULL);
+}
+
+bool PlatformUpdateFileModificationTime(PlatformFileHandle* handle) {
+  FILETIME systemTime;
+  GetSystemTimeAsFileTime(&systemTime);
+  FILETIME fileTime;
+  if (!FileTimeToLocalFileTime(&systemTime, &fileTime)) {
+    return false;
+  }
+
+  return SetFileTime(handle->fileHandle, NULL, NULL, &fileTime);
 }
 
 FileString PlatformGetUserDesktopPath() {

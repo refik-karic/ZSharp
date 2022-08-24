@@ -18,7 +18,7 @@ class FileString final {
 
   const String& GetExtension() const;
 
-  const String& GetAbsolutePath();
+  const String& GetAbsolutePath() const;
 
   void SetFilename(const String& filename);
 
@@ -30,8 +30,6 @@ class FileString final {
   String mFilename;
   String mExtension;
 
-  // Cache the last absolute path string.
-  bool mDirty = false;
   String mDirectorySeparator = "\\";
   String mExtensionSeparator = ".";
   String mAbsolutePath;
@@ -40,6 +38,6 @@ class FileString final {
 
   void Reset();
 
-  void CacheAbsolutePath();
+  void UpdateAbsolutePath();
 };
 }

@@ -86,6 +86,7 @@ class List final {
 
   void operator=(const List& rhs) {
     if (this != &rhs) {
+      Clear();
       for (T& item : rhs) {
         Add(item);
       }

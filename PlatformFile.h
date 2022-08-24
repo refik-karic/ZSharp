@@ -9,15 +9,34 @@ enum class FileFlags : size_t {
   WRITE = 1 << 1
 };
 
-void* PlatformOpenFile(FileString& filename, size_t flags);
+struct PlatformFileHandle;
 
-void PlatformCloseFile(void* handle);
+struct PlatformMemoryMappedFileHandle;
 
-size_t PlatformReadFile(void* handle, void* buffer, size_t length);
+// General File I/O.
+PlatformFileHandle* PlatformOpenFile(const FileString& filename, size_t flags);
 
-size_t PlatformWriteFile(void* handle, const void* buffer, size_t length);
+void PlatformCloseFile(PlatformFileHandle* handle);
 
-bool PlatformFileFlush(void* handle);
+size_t PlatformReadFile(PlatformFileHandle* handle, void* buffer, size_t length);
+
+size_t PlatformWriteFile(PlatformFileHandle* handle, const void* buffer, size_t length);
+
+bool PlatformFileFlush(PlatformFileHandle* handle);
+
+// Memory mapped I/O.
+void* PlatformOpenMemoryMapFile(PlatformFileHandle* handle, size_t flags, PlatformMemoryMappedFileHandle*& outMemoryMappedFileHandle, size_t size);
+
+void PlatformCloseMemoryMapFile(PlatformMemoryMappedFileHandle* memoryMappedFileHandle);
+
+bool PlatformFlushMemoryMapFile(PlatformMemoryMappedFileHandle* memoryMappedFileHandle);
+
+// OS file info.
+size_t PlatformGetFileSize(PlatformFileHandle* handle);
+
+bool PlatformUpdateFileAccessTime(PlatformFileHandle* handle);
+
+bool PlatformUpdateFileModificationTime(PlatformFileHandle* handle);
 
 FileString PlatformGetUserDesktopPath();
 

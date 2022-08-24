@@ -24,6 +24,10 @@ bool BaseFile::IsOpen() const {
   return mOpen;
 }
 
+size_t BaseFile::GetSize() {
+  return PlatformGetFileSize(mFileHandle);
+}
+
 BufferedFileReader::BufferedFileReader(const FileString& fileName) 
   : BaseFile(fileName, static_cast<size_t>(FileFlags::READ)) {
   mBuffer = static_cast<char*>(PlatformMalloc(mBufferSize));
@@ -171,6 +175,62 @@ bool BufferedFileWriter::Flush() {
   }
 
   return PlatformFileFlush(mFileHandle);
+}
+
+MemoryMappedFileReader::MemoryMappedFileReader(const FileString& fileName) 
+  : BaseFile(fileName, static_cast<size_t>(FileFlags::READ)) {
+  if (IsOpen()) {
+    mFileData = PlatformOpenMemoryMapFile(mFileHandle, static_cast<size_t>(FileFlags::READ), mMappedFileHandle, GetSize());
+    mOpen = (mFileData != nullptr);
+
+    if (mOpen) {
+      PlatformUpdateFileAccessTime(mFileHandle);
+    }
+  }
+}
+
+MemoryMappedFileReader::~MemoryMappedFileReader() {
+  if (IsOpen()) {
+    PlatformCloseMemoryMapFile(mMappedFileHandle);
+  }
+}
+
+const char* MemoryMappedFileReader::GetBuffer() const {
+  return static_cast<char*>(mFileData);
+}
+
+MemoryMappedFileWriter::MemoryMappedFileWriter(const FileString& fileName, size_t maxSize)
+  : BaseFile(fileName, static_cast<size_t>(FileFlags::READ) | static_cast<size_t>(FileFlags::WRITE)) {
+  if (IsOpen()) {
+    mFileData = PlatformOpenMemoryMapFile(mFileHandle, static_cast<size_t>(FileFlags::READ) | static_cast<size_t>(FileFlags::WRITE), mMappedFileHandle, maxSize);
+    mOpen = (mFileData != nullptr);
+
+    if (mOpen) {
+      // TODO: File access time for memory mapped files is inconsistent.
+      // Why does this not update properly?
+      PlatformUpdateFileAccessTime(mFileHandle);
+    }
+  }
+}
+
+MemoryMappedFileWriter::~MemoryMappedFileWriter() {
+  if (IsOpen()) {
+    Flush();
+    PlatformCloseMemoryMapFile(mMappedFileHandle);
+    PlatformUpdateFileModificationTime(mFileHandle);
+  }
+}
+
+char* MemoryMappedFileWriter::GetBuffer() {
+  return static_cast<char*>(mFileData);
+}
+
+bool MemoryMappedFileWriter::Flush() {
+  if (!IsOpen()) {
+    return false;
+  }
+  
+  return PlatformFlushMemoryMapFile(mMappedFileHandle);
 }
 
 }

@@ -32,11 +32,7 @@ const String& FileString::GetExtension() const {
   return mExtension;
 }
 
-const String& FileString::GetAbsolutePath() {
-  if (mDirty) {
-    CacheAbsolutePath();
-  }
-
+const String& FileString::GetAbsolutePath() const {
   return mAbsolutePath;
 }
 
@@ -51,18 +47,18 @@ void FileString::SetFilename(const String& filename) {
     String parsedExtension(extension);
     mExtension = parsedExtension;
 
-    mDirty = true;
+    UpdateAbsolutePath();
   }
   else {
     mFilename = "";
     mExtension = "";
-    mDirty = true;
+    UpdateAbsolutePath();
   }
 }
 
 void FileString::AddDirectory(const String& directory) {
   mDirectories.PushBack(directory);
-  mDirty = true;
+  UpdateAbsolutePath();
 }
 
 void FileString::Initialize(const String& absoluteFilePath) {
@@ -114,7 +110,7 @@ void FileString::Initialize(const String& absoluteFilePath) {
     directory = nextDirectory;
   }
 
-  CacheAbsolutePath();
+  UpdateAbsolutePath();
 }
 
 void FileString::Reset() {
@@ -123,10 +119,10 @@ void FileString::Reset() {
   mFilename.Clear();
   mExtension.Clear();
   mAbsolutePath.Clear();
-  mDirty = false;
+  UpdateAbsolutePath();
 }
 
-void FileString::CacheAbsolutePath() {
+void FileString::UpdateAbsolutePath() {
   mAbsolutePath.Clear();
 
   mAbsolutePath.Append(mVolume);
@@ -150,7 +146,5 @@ void FileString::CacheAbsolutePath() {
       mAbsolutePath.Append(mExtension);
     }
   }
-
-  mDirty = false;
 }
 }

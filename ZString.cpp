@@ -1,8 +1,12 @@
+#define _CRT_SECURE_NO_WARNINGS 1
+
 #include "ZString.h"
 
 #include "ZAssert.h"
 #include "PlatformMemory.h"
 
+#include <cfloat>
+#include <cstdarg>
 #include <cstdlib>
 #include <cstring>
 
@@ -83,6 +87,57 @@ void String::Append(const char* str) {
   else {
     AppendLong(str, 0, length);
   }
+}
+
+void String::Appendf(const char* formatStr, ...) {
+  ZAssert(formatStr != nullptr);
+
+  va_list arglist;
+  va_start(arglist, formatStr);
+
+  const char* lastPosition = formatStr;
+  for (const char* str = formatStr; *str != '\0'; ++str) {
+    char currentChar = *str;
+    if (currentChar == '%') {
+      char nextChar = *(str + 1);
+      size_t jumpAhead = 0;
+      switch (nextChar) {
+        case '\0':
+          continue;
+        case 'd':
+        {
+          const size_t bufferSize = 64;
+          char buffer[bufferSize];
+          buffer[0] = '\0';
+          const int32 vaValue = va_arg(arglist, int32);
+          Append(lastPosition, 0, str - lastPosition);
+          Append(_itoa(vaValue, buffer, 10));
+          jumpAhead = 2;
+        }
+          break;
+        case 'f':
+        {
+          const size_t bufferSize = 64;
+          char buffer[bufferSize];
+          buffer[0] = '\0';
+          const int32 digits = FLT_DECIMAL_DIG;
+          const float vaValue = static_cast<float>(va_arg(arglist, double));
+          Append(lastPosition, 0, str - lastPosition);
+          Append(_gcvt(vaValue, digits, buffer));
+          jumpAhead = 2;
+        }
+          break;
+        default:
+          break;
+      }
+
+      if (*(str + jumpAhead) != '\0') {
+        lastPosition = str + jumpAhead;
+      }
+    }
+  }
+
+  va_end(arglist);
 }
 
 bool String::IsEmpty() const {

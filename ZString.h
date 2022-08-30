@@ -32,6 +32,8 @@ class String final {
 
   void Append(const char* str);
 
+  void Appendf(const char* formatStr, ...);
+
   bool IsEmpty() const;
 
   void Clear();

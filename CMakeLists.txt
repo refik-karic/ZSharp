@@ -29,6 +29,7 @@ target_sources(ZSharp
         PlatformMemory.h
         Quaternion.h
         Renderer.h
+        Tree.h
         Triangle.h
         UtilMath.h
         Vec3.h

@@ -10,14 +10,23 @@ template<typename T>
 class Tree {
   private:
   struct TreeNode {
-    T* value = nullptr;
-    TreeNode* parent = nullptr;
-    TreeNode* left = nullptr;
-    TreeNode* right = nullptr;
+    T* value;
+    TreeNode* parent;
+    TreeNode* left;
+    TreeNode* right;
     enum class NodeColor {
       RED,
       BLACK
-    } color = NodeColor::RED;
+    } color;
+
+    TreeNode(T* insertionValue, TreeNode* nodeParent)
+      : value(insertionValue),
+        parent(nodeParent),
+        left(nullptr),
+        right(nullptr),
+        color(NodeColor::RED) {
+
+    }
 
     TreeNode* GetSibling() const {
       if (parent == nullptr) {
@@ -138,10 +147,7 @@ class Tree {
   size_t mSize = 0;
 
   TreeNode* ConstructNode(TreeNode* parent, const T& item) {
-    TreeNode* node = new TreeNode;
-    node->value = new T(item);
-    node->parent = parent;
-    return node;
+    return new TreeNode(new T(item), parent);
   }
 
   void DeleteNode(TreeNode* node) {
@@ -231,7 +237,6 @@ class Tree {
           isDoubleBlack = true;
         }
 
-        DeleteNode(matchedNode);
         if (matchedNode->IsLeftNode()) {
           parent->left = nullptr;
         }
@@ -239,6 +244,7 @@ class Tree {
           parent->right = nullptr;
         }
 
+        DeleteNode(matchedNode);
         matchedNode = parent;
       }
     }

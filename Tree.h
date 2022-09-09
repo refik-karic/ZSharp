@@ -6,11 +6,12 @@
 
 namespace ZSharp {
 
-template<typename T>
+template<typename Key, typename Value>
 class Tree {
   private:
   struct TreeNode {
-    T* value;
+    Key* key;
+    Value* value;
     TreeNode* parent;
     TreeNode* left;
     TreeNode* right;
@@ -19,8 +20,9 @@ class Tree {
       BLACK
     } color;
 
-    TreeNode(T* insertionValue, TreeNode* nodeParent)
-      : value(insertionValue),
+    TreeNode(Key* insertionKey, Value* insertionValue, TreeNode* nodeParent)
+      : key(insertionKey),
+        value(insertionValue),
         parent(nodeParent),
         left(nullptr),
         right(nullptr),
@@ -64,8 +66,17 @@ class Tree {
       return (parent != nullptr) ? this == parent->left : false;
     }
 
-    void SwapValues(TreeNode* node) {
-      T* oldValue = value;
+    void SwapKeyValue(TreeNode* node) {
+      Key* oldKey = key;
+      Value* oldValue = value;
+      key = node->key;
+      value = node->value;
+      node->key = oldKey;
+      node->value = oldValue;
+    }
+
+    void SwapValue(TreeNode* node) {
+      Key* oldValue = value;
       value = node->value;
       node->value = oldValue;
     }
@@ -88,13 +99,12 @@ class Tree {
     DeleteTree(mRoot);
   }
 
-  bool HasItem(const T& item) {
-    return SearchNode(mRoot, item) != nullptr;
+  bool HasItem(const Key& key) const {
+    return SearchNode(mRoot, key) != nullptr;
   }
 
-  bool Add(const T& item) {
-    // Perform normal binary tree insertion.
-    TreeNode* node = InsertNode(item);
+  bool Add(const Key& key, const Value& value) {
+    TreeNode* node = InsertNode(key, value);
     if (node == nullptr) {
       return false;
     }
@@ -104,16 +114,14 @@ class Tree {
     return true;
   }
 
-  bool Remove(const T& item) {
+  bool Remove(const Key& key) {
     bool isDoubleBlack = false;
-    TreeNode* replacedNode = RemoveNode(item, mRoot, isDoubleBlack);
-
+    TreeNode* replacedNode = RemoveNode(key, mRoot, isDoubleBlack);
     if (replacedNode == nullptr) {
       return false;
     }
 
     --mSize;
-
     if (isDoubleBlack && mSize > 0) {
       // Root can never be a double black.
       if (replacedNode->left == nullptr) {
@@ -125,6 +133,18 @@ class Tree {
     }
 
     return true;
+  }
+
+  Value& operator[](const Key& key) {
+    TreeNode* node = SearchNode(mRoot, key);
+    ZAssert(node != nullptr);
+    return *(node->value);
+  }
+
+  const Value& operator[](const Key& key) const {
+    TreeNode* node = SearchNode(mRoot, key);
+    ZAssert(node != nullptr);
+    return *(node->value);
   }
 
   size_t Size() const {
@@ -146,11 +166,15 @@ class Tree {
   TreeNode* mRoot = nullptr;
   size_t mSize = 0;
 
-  TreeNode* ConstructNode(TreeNode* parent, const T& item) {
-    return new TreeNode(new T(item), parent);
+  TreeNode* ConstructNode(TreeNode* parent, const Key& key, const Value& value) {
+    return new TreeNode(new Key(key), new Value(value), parent);
   }
 
   void DeleteNode(TreeNode* node) {
+    if (node->key != nullptr) {
+      delete node->key;
+    }
+
     if (node->value != nullptr) {
       delete node->value;
     }
@@ -175,28 +199,26 @@ class Tree {
     }
   }
 
-  TreeNode* InsertNode(const T& item) {
+  TreeNode* InsertNode(const Key& key, const Value& value) {
     if (mRoot == nullptr) {
-      mRoot = ConstructNode(mRoot, item);
+      mRoot = ConstructNode(mRoot, key, value);
       return mRoot;
     }
     else {
       for (TreeNode* insertionNode = mRoot; insertionNode != nullptr;) {
-        const T& matchedValue = *(insertionNode->value);
-        if (matchedValue > item) {
-          // Larger values on the right
+        const Key& matchedKey = *(insertionNode->key);
+        if (matchedKey > key) {
           if (insertionNode->left == nullptr) {
-            insertionNode->left = ConstructNode(insertionNode, item);
+            insertionNode->left = ConstructNode(insertionNode, key, value);
             return insertionNode->left;
           }
           else {
             insertionNode = insertionNode->left;
           }
         }
-        else if (matchedValue < item) {
-          // Smaller values on the left
+        else if (matchedKey < key) {
           if (insertionNode->right == nullptr) {
-            insertionNode->right = ConstructNode(insertionNode, item);
+            insertionNode->right = ConstructNode(insertionNode, key, value);
             return insertionNode->right;
           }
           else {
@@ -212,12 +234,12 @@ class Tree {
     return nullptr;
   }
 
-  TreeNode* RemoveNode(const T& item, TreeNode* node, bool& isDoubleBlack) {
+  TreeNode* RemoveNode(const Key& key, TreeNode* node, bool& isDoubleBlack) {
     if (node == nullptr) {
       return node;
     }
 
-    TreeNode* matchedNode = SearchNode(node, item);
+    TreeNode* matchedNode = SearchNode(node, key);
     if (matchedNode == nullptr) {
       return nullptr;
     }
@@ -249,21 +271,22 @@ class Tree {
       }
     }
     else if (leftChild == nullptr) {
-      rightChild->SwapValues(matchedNode);
+      rightChild->SwapKeyValue(matchedNode);
       matchedNode->color = TreeNode::NodeColor::BLACK;
       DeleteNode(matchedNode->right);
       matchedNode->right = nullptr;
     }
     else if (rightChild == nullptr) {
-      leftChild->SwapValues(matchedNode);
+      leftChild->SwapKeyValue(matchedNode);
       matchedNode->color = TreeNode::NodeColor::BLACK;
       DeleteNode(matchedNode->left);
       matchedNode->left = nullptr;
     }
     else {
       TreeNode* minRight = MinSuccessor(matchedNode->right);
-      *(matchedNode->value) = *(minRight->value);
-      return RemoveNode(*(minRight->value), matchedNode->right, isDoubleBlack);
+      *(matchedNode->key) = *(minRight->key);
+      matchedNode->SwapValue(minRight);
+      return RemoveNode(*(minRight->key), matchedNode->right, isDoubleBlack);
     }
 
     return matchedNode;
@@ -273,7 +296,7 @@ class Tree {
     TreeNode* minNode = node;
 
     for (TreeNode* currentNode = node; currentNode != nullptr;) {
-      if (*(currentNode->value) < *(minNode->value)) {
+      if (*(currentNode->key) < *(minNode->key)) {
         minNode = currentNode;
       }
 
@@ -283,13 +306,13 @@ class Tree {
     return minNode;
   }
 
-  TreeNode* SearchNode(TreeNode* startingNode, const T& item) const {
+  TreeNode* SearchNode(TreeNode* startingNode, const Key& key) const {
     for (TreeNode* matchingNode = startingNode; matchingNode != nullptr;) {
-      const T& matchingNodeValue = *(matchingNode->value);
-      if (matchingNodeValue == item) {
+      const Key& matchingKey = *(matchingNode->key);
+      if (matchingKey == key) {
         return matchingNode;
       }
-      else if (matchingNodeValue > item) {
+      else if (matchingKey > key) {
         if (matchingNode->left == nullptr) {
           return nullptr;
         }
@@ -317,19 +340,13 @@ class Tree {
     }
 
     TreeNode* parent = node->parent;
-    ZAssert(parent != nullptr);
-
     if (parent->color == TreeNode::NodeColor::BLACK) {
-      return;
-    }
-
-    TreeNode* grandparent = parent->parent;
-    if (grandparent == nullptr) {
       return;
     }
 
     TreeNode* uncle = node->GetUncle();
     if ((uncle != nullptr) && (uncle->color == TreeNode::NodeColor::RED)) {
+      TreeNode* grandparent = parent->parent;
       parent->color = TreeNode::NodeColor::BLACK;
       uncle->color = TreeNode::NodeColor::BLACK;
       grandparent->color = TreeNode::NodeColor::RED;
@@ -341,22 +358,23 @@ class Tree {
   }
 
   void InsertionRebalance(TreeNode* node) {
-    if (node->parent->IsLeftNode()) {
+    TreeNode* parent = node->parent;
+    if (parent->IsLeftNode()) {
       if (node->IsLeftNode()) {
-        LLRotation(node->parent);
+        LLRotation(parent);
       }
       else {
-        LRRotation(node->parent);
-        LLRotation(node->parent);
+        LRRotation(parent);
+        LLRotation(parent);
       }
     }
     else {
       if (!node->IsLeftNode()) {
-        RRRotation(node->parent);
+        RRRotation(parent);
       }
       else {
-        RLRotation(node->parent);
-        RRRotation(node->parent);
+        RLRotation(parent);
+        RRRotation(parent);
       }
     }
   }
@@ -368,14 +386,11 @@ class Tree {
 
     if (node->color == TreeNode::NodeColor::BLACK) {
       if (node->HasRedChild()) {
-        // Left cases.
         if (node->IsLeftNode()) {
           if (leftSibling == nullptr || leftSibling->color == TreeNode::NodeColor::BLACK) {
-            // LR case
             LRRotation(node);
           }
 
-          // LL case
           LLRotation(node);
           node->color = TreeNode::NodeColor::BLACK;
           parent->left->color = TreeNode::NodeColor::BLACK;
@@ -385,11 +400,9 @@ class Tree {
         }
         else {
           if (rightSibling == nullptr || rightSibling->color == TreeNode::NodeColor::BLACK) {
-            // RL case.
             RLRotation(node);
           }
 
-          // RR case
           RRRotation(node);
           node->color = TreeNode::NodeColor::BLACK;
           parent->right->color = TreeNode::NodeColor::BLACK;
@@ -445,7 +458,7 @@ class Tree {
 
     node->left = node->right;
     node->right = oldRight;
-    node->SwapValues(parent);
+    node->SwapKeyValue(parent);
     parent->left = oldLeft;
     parent->right = node;
   }
@@ -465,13 +478,13 @@ class Tree {
 
     node->right = node->left;
     node->left = oldLeft;
-    node->SwapValues(parent);
+    node->SwapKeyValue(parent);
     parent->left = node;
     parent->right = oldRight;
   }
 
   void LRRotation(TreeNode* node) {
-    node->right->SwapValues(node);
+    node->right->SwapKeyValue(node);
     TreeNode* oldRight = node->right;
     TreeNode* oldLeft = node->left;
     if (oldRight->right != nullptr) {
@@ -489,7 +502,7 @@ class Tree {
   }
 
   void RLRotation(TreeNode* node) {
-    node->left->SwapValues(node);
+    node->left->SwapKeyValue(node);
     TreeNode* oldRight = node->right;
     TreeNode* oldLeft = node->left;
     if (oldLeft->left != nullptr) {
@@ -506,11 +519,11 @@ class Tree {
     oldLeft->right = oldRight;
   }
 
-  bool IsRoot(TreeNode* node) const {
+  bool IsRoot(const TreeNode* node) const {
     return node == mRoot;
   }
 
-  bool ValidBlackHeight(TreeNode* node, size_t expectedHeight) const {
+  bool ValidBlackHeight(const TreeNode* node, size_t expectedHeight) const {
     if (node != nullptr && !IsRoot(node)) {
       bool isLeftNode = node->parent->left == node;
       bool isRightNode = node->parent->right == node;

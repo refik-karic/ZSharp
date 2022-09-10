@@ -3,13 +3,14 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "PlatformFile.h"
+#include "PlatformLogging.h"
 
-#define WIN32_LEAN_AND_MEAN
-#define _AMD64_
+#include <ShlObj_core.h>
+
+#include "Win32PlatformHeaders.h"
 
 #include <fileapi.h>
 #include <handleapi.h>
-#include <ShlObj_core.h>
 
 #include <stdlib.h>
 
@@ -20,30 +21,10 @@ struct PlatformFileHandle {
 };
 
 struct PlatformMemoryMappedFileHandle {
-  PlatformFileHandle* genericFileHandle;
+  PlatformFileHandle* genericFileHandle = nullptr;
   HANDLE memoryMappedHandle = nullptr;
   void* mappedData = nullptr;
 };
-
-void WinDebugLog() {
-#ifndef NDEBUG
-  DWORD lastError = GetLastError();
-  LPCTSTR errorString = NULL;
-  FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-    FORMAT_MESSAGE_IGNORE_INSERTS |
-    FORMAT_MESSAGE_ARGUMENT_ARRAY |
-    FORMAT_MESSAGE_ALLOCATE_BUFFER,
-    NULL,
-    lastError,
-    0,
-    (LPWSTR)&errorString,
-    0,
-    NULL
-  );
-
-  OutputDebugStringW(errorString);
-#endif
-}
 
 DWORD SetFlags(size_t inFlags) {
   DWORD winFlags = 0;
@@ -162,7 +143,7 @@ void* PlatformOpenMemoryMapFile(PlatformFileHandle* handle, size_t flags, Platfo
   DWORD fileSize = static_cast<DWORD>(size);
   HANDLE memoryMappedHandle = CreateFileMappingA(handle->fileHandle, NULL, pageFlags, HIWORD(fileSize), LOWORD(fileSize), NULL);
   if (memoryMappedHandle == nullptr) {
-    WinDebugLog();
+    PlatformDebugPrintLastError();
     PlatformCloseFile(handle);
     return nullptr;
   }
@@ -170,7 +151,7 @@ void* PlatformOpenMemoryMapFile(PlatformFileHandle* handle, size_t flags, Platfo
   DWORD mappedFlags = SetMemoryMappedFlags(flags);
   void* fileBuffer = MapViewOfFile(memoryMappedHandle, mappedFlags, 0, 0, size);
   if (fileBuffer == nullptr) {
-    WinDebugLog();
+    PlatformDebugPrintLastError();
     CloseHandle(memoryMappedHandle);
     PlatformCloseFile(handle);
     return nullptr;

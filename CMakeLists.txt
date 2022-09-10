@@ -26,6 +26,7 @@ target_sources(ZSharp
         Model.h
         Pair.h
         PlatformFile.h
+        PlatformLogging.h
         PlatformMemory.h
         Quaternion.h
         Renderer.h
@@ -72,6 +73,7 @@ target_sources(ZSharp
         Vec4.cpp
         VertexBuffer.cpp
         Win32PlatformFile.cpp
+        Win32PlatformLogging.cpp
         Win32PlatformMemory.cpp
         Win32PlatformApplication.cpp
         World.cpp

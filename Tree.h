@@ -62,8 +62,11 @@ class Tree {
     }
 
     bool IsLeftNode() const {
-      ZAssert(parent != nullptr);
       return (parent != nullptr) ? this == parent->left : false;
+    }
+
+    bool IsRightNode() const {
+      return (parent != nullptr) ? this == parent->right : false;
     }
 
     void SwapKeyValue(TreeNode* node) {
@@ -89,6 +92,53 @@ class Tree {
   };
 
   public:
+
+  class Iterator {
+  public:
+    Iterator(TreeNode* node) : mNode(node) {}
+
+    Iterator& operator++() {
+      TreeNode* successor = MinSuccessor(mNode->right);
+      if (successor != nullptr) {
+        mNode = successor;
+      }
+      else {
+        while (mNode->IsRightNode()) {
+          mNode = mNode->parent;
+        }
+
+        mNode = mNode->parent;
+      }
+
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator temp(*this);
+      ++(*this);
+      return temp;
+    }
+
+    bool operator==(const Iterator& rhs) {
+      return mNode == rhs.mNode;
+    }
+
+    bool operator!=(const Iterator& rhs) {
+      return mNode != rhs.mNode;
+    }
+
+    Value& operator*() const {
+      return *(mNode->value);
+    }
+
+    Value* operator->() {
+      return mNode->value;
+    }
+
+  private:
+    TreeNode* mNode;
+  };
+
   Tree() = default;
 
   Tree(const Tree& rhs) = delete;
@@ -160,6 +210,14 @@ class Tree {
     }
 
     return ValidBlackHeight(mRoot, expectedHeight);
+  }
+
+  Iterator begin() const {
+    return Iterator(MinSuccessor(mRoot));
+  }
+
+  Iterator end() const {
+    return Iterator(nullptr);
   }
 
   private:
@@ -292,7 +350,7 @@ class Tree {
     return matchedNode;
   }
 
-  TreeNode* MinSuccessor(TreeNode* node) const {
+  static TreeNode* MinSuccessor(TreeNode* node) {
     TreeNode* minNode = node;
 
     for (TreeNode* currentNode = node; currentNode != nullptr;) {

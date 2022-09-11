@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
+#include "Pair.h"
 #include "PlatformMemory.h"
 
 namespace ZSharp {
@@ -137,11 +138,19 @@ class Tree {
 
   private:
     TreeNode* mNode;
+
+    friend class Tree;
   };
 
   Tree() = default;
 
-  Tree(const Tree& rhs) = delete;
+  Tree(const Tree& rhs) {
+    for (Iterator iter = rhs.begin(); iter != rhs.end(); ++iter) {
+      Key& key = *(iter.mNode->key);
+      Value& value = *(iter.mNode->value);
+      Add(key, value);
+    }
+  }
 
   Tree(const Tree&&) = delete;
 
@@ -149,7 +158,7 @@ class Tree {
     DeleteTree(mRoot);
   }
 
-  bool HasItem(const Key& key) const {
+  bool HasKey(const Key& key) const {
     return SearchNode(mRoot, key) != nullptr;
   }
 

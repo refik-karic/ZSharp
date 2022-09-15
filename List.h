@@ -23,19 +23,12 @@ class List final {
     public:
     Iterator(Node* data) : mPtr(data) {}
 
-    T& operator++() {
-      if (mPtr->mNext == nullptr) {
-        Iterator temp(mPtr);
-        mPtr = mPtr->mNext;
-        return *temp;
-      }
-      else {
-        mPtr = mPtr->mNext;
-        return *(*this);
-      }
+    Iterator& operator++() {
+      mPtr = mPtr->mNext;
+      return *this;
     }
 
-    T& operator++(int) {
+    Iterator operator++(int) {
       Iterator temp(mPtr);
       ++(*this);
       return *temp;
@@ -181,12 +174,7 @@ class List final {
   }
 
   Iterator end() const {
-    if (mTail != nullptr) {
-      return Iterator(mTail->mNext);
-    }
-    else {
-      return Iterator(mTail);
-    }
+    return Iterator(nullptr);
   }
 
   private:

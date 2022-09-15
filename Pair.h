@@ -7,6 +7,11 @@ class Pair {
   public:
   Pair() = default;
 
+  Pair(const TKey& key) 
+    : mKey(key) {
+
+  }
+
   Pair(const TKey& key, const TValue& value)
   : mKey(key), mValue(value) {
 

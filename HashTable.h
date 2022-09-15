@@ -51,14 +51,16 @@ class HashTable final {
   HashTable(const HashTable&& rhs) = delete;
 
   Value& operator[](const Key& key) {
-    List<HashPair>& bucket = mStorage[HashedIndex(key)];
     {
+      List<HashPair>& bucket = mStorage[HashedIndex(key)];
       HashPair pair(key);
       if (!bucket.Contains(pair)) {
         bucket.Add(pair);
       }
     }
 
+    // Must recompute hash in case of resizing.
+    List<HashPair>& bucket = mStorage[HashedIndex(key)];
     Value& matchedValue = (*(bucket.begin())).mValue;
     for (HashPair& pair : bucket) {
       if (pair.mKey == key) {

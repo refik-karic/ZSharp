@@ -61,7 +61,7 @@ String String::operator+(const char* str) {
 }
 
 const char& String::operator[](const size_t index) {
-  ZAssert(index < GetLength());
+  ZAssert(index < Length());
   return GetString()[index];
 }
 
@@ -70,7 +70,7 @@ void String::Append(const String& str) {
 }
 
 void String::Append(const char* str, size_t offset, size_t size) {
-  size_t totalSize = GetLength() + size + 1;
+  size_t totalSize = Length() + size + 1;
   if (FitsInSmall(totalSize)) {
     AppendShort(str, offset, size);
   }
@@ -141,7 +141,7 @@ void String::Appendf(const char* formatStr, ...) {
 }
 
 bool String::IsEmpty() const {
-  return GetLength() == 0;
+  return Length() == 0;
 }
 
 void String::Clear() {
@@ -171,15 +171,15 @@ void String::Trim(const Array<char>& values) {
   }
 }
 
-size_t String::GetLength() const {
+size_t String::Length() const {
   return IsMarkedShort() ? GetShortLength() : GetLongLength();
 }
 
 String String::SubStr(size_t start, size_t end) {
   String temp(*this);
   char* subStr = temp.GetMutableString() + start;
-  if (end > GetLength()) {
-    end = GetLength();
+  if (end > Length()) {
+    end = Length();
   }
   temp.GetMutableString()[end] = '\0';
 
@@ -265,7 +265,7 @@ void String::CopyShort(const char* str) {
 }
 
 void String::AppendShort(const char* str, size_t offset, size_t length) {
-  unsigned char shortLength = static_cast<unsigned char>(GetLength());
+  unsigned char shortLength = static_cast<unsigned char>(Length());
   const char* offsetString = str + offset;
   memcpy(mOverlapData.shortStr.data + shortLength, offsetString, length);
   mOverlapData.shortStr.data[shortLength + length] = NULL;
@@ -303,7 +303,7 @@ void String::CopyLong(const char* str) {
 }
 
 void String::AppendLong(const char* str, size_t offset, size_t length) {
-  size_t combinedLength = GetLength() + length;
+  size_t combinedLength = Length() + length;
 
   if (IsMarkedShort()) {
     char oldData[MinCapaity];
@@ -350,7 +350,7 @@ char* String::GetMutableString() {
 }
 
 size_t String::GetCombinedSize(const char* str) {
-  return strlen(str) + GetLength();
+  return strlen(str) + Length();
 }
 
 bool String::FitsInSmall(size_t size) {

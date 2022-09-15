@@ -42,7 +42,7 @@ class String final {
 
   void Trim(const Array<char>& values);
 
-  size_t GetLength() const;
+  size_t Length() const;
 
   String SubStr(size_t start, size_t end);
 

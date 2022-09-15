@@ -3,13 +3,17 @@
 namespace ZSharp {
 
 template<typename TKey, typename TValue>
-class Pair final {
+class Pair {
   public:
   Pair() = default;
 
-  Pair(TKey key, TValue value)
+  Pair(const TKey& key, const TValue& value)
   : mKey(key), mValue(value) {
 
+  }
+
+  bool operator==(const Pair& rhs) const {
+    return (mKey == rhs.mKey) && (mValue == rhs.mValue);
   }
 
   TKey mKey;

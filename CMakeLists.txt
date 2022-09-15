@@ -12,6 +12,8 @@ target_sources(ZSharp
         Framebuffer.h
         GameInstance.h
         GlobalEdgeTable.h
+        HashFunctions.h
+        HashTable.h
         IInputListener.h
         IndexBuffer.h
         IniFile.h
@@ -55,6 +57,7 @@ target_sources(ZSharp
         Framebuffer.cpp
         GameInstance.cpp
         GlobalEdgeTable.cpp
+        HashFunctions.cpp
         IndexBuffer.cpp
         IniFile.cpp
         InputManager.cpp

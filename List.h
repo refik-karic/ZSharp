@@ -79,7 +79,7 @@ class List final {
   }
 
   List(const List& rhs) {
-    for (T& item : rhs) {
+    for (const T& item : rhs) {
       Add(item);
     }
   }
@@ -103,10 +103,12 @@ class List final {
     }
   }
 
-  void Remove(const T& item) {
+  bool Remove(const T& item) {
     if (mHead == nullptr) {
-      return;
+      return false;
     }
+
+    bool wasRemoved = false;
 
     for (Node* node = mTail; (node != mHead) && (node != nullptr); node = node->mPrev) {
       if (*(node->mValue) == item) {
@@ -123,20 +125,35 @@ class List final {
         }
 
         DeleteNode(node);
+        wasRemoved = true;
       }
     }
 
     if (*(mHead->mValue) == item) {
       if (mHead->mNext == nullptr) {
         DeleteNode(mHead);
+        wasRemoved = true;
         mHead = nullptr;
       }
       else {
         Node* nextNode = mHead->mNext;
         DeleteNode(mHead);
+        wasRemoved = true;
         mHead = nextNode;
       }
     }
+
+    return wasRemoved;
+  }
+
+  bool Contains(const T& item) const {
+    for (const T& storedItem : *this) {
+      if (storedItem == item) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   size_t Size() const {

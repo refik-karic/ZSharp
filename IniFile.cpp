@@ -80,7 +80,7 @@ void IniFile::ParseFile() {
         size_t keyLength = delimLocation - currentLine.Str();
 
         String key(currentLine.SubStr(0, keyLength));
-        String value(currentLine.SubStr(keyLength + 1, currentLine.GetLength()));
+        String value(currentLine.SubStr(keyLength + 1, currentLine.Length()));
 
         if (activeSection != nullptr) {
           StringPair kvp(key, value);

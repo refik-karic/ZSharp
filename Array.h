@@ -105,6 +105,10 @@ class Array final {
     return mSize;
   }
 
+  size_t Capacity() const {
+    return mCapacity;
+  }
+
   bool IsEmpty() const {
     return mSize == 0;
   }
@@ -114,8 +118,10 @@ class Array final {
       FreshAlloc(size);
     }
     else if (mSize != size) {
+      mCapacity = size * 2;
+
       if (mSize < size) {
-        mData = static_cast<T*>(PlatformReAlloc(mData, size * sizeof(T)));
+        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
         for (size_t i = mSize; i < size; ++i) {
           new(mData + i) T();
         }
@@ -125,7 +131,7 @@ class Array final {
           (mData + i)->~T();
         }
 
-        mData = static_cast<T*>(PlatformReAlloc(mData, size * sizeof(T)));
+        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
       }
 
       mSize = size;
@@ -133,8 +139,14 @@ class Array final {
   }
 
   void PushBack(const T& data) {
-    Resize(mSize + 1);
-    mData[mSize - 1] = data;
+    if (mCapacity <= mSize) {
+      Resize(mSize + 1);
+      mData[mSize - 1] = data;
+    }
+    else {
+      new(mData + mSize) T(data);
+      ++mSize;
+    }
   }
 
   Iterator begin() const {
@@ -148,11 +160,16 @@ class Array final {
   private:
   T* mData = nullptr;
   size_t mSize = 0;
+  size_t mCapacity = 0;
+  size_t mPadding = 0; // TODO: Makes sure this can align on a 16 byte boundary.
 
   void FreshAlloc(size_t size) {
-    const size_t totalSize = sizeof(T) * size;
+    const size_t slack = size * 2;
+    const size_t totalSize = sizeof(T) * slack;
+
     mData = static_cast<T*>(PlatformMalloc(totalSize));
     mSize = size;
+    mCapacity = slack;
 
     for (size_t i = 0; i < mSize; ++i) {
       new(mData + i) T();
@@ -160,9 +177,11 @@ class Array final {
   }
 
   void FreshAllocNoInit(size_t size) {
-    const size_t totalSize = sizeof(T) * size;
+    const size_t slack = size * 2;
+    const size_t totalSize = sizeof(T) * slack;
     mData = static_cast<T*>(PlatformMalloc(totalSize));
     mSize = size;
+    mCapacity = slack;
   }
 
   void Free() {

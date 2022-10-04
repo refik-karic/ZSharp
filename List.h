@@ -15,6 +15,19 @@ class List final {
     T* mValue = nullptr;
     Node* mNext = nullptr;
     Node* mPrev = nullptr;
+
+    Node(const T& value, Node* prev) 
+      : mValue(new T(value)), mPrev(prev) {
+      if (prev != nullptr) {
+        prev->mNext = this;
+      }
+    }
+
+    ~Node() {
+      if (mValue != nullptr) {
+        delete mValue;
+      }
+    }
   };
 
   public:
@@ -58,17 +71,7 @@ class List final {
   }
 
   ~List() {
-    if (mHead == nullptr) {
-      return;
-    }
-
-    while (mTail != mHead) {
-      Node* prev = mTail->mPrev;
-      DeleteNode(mTail);
-      mTail = prev;
-    }
-
-    DeleteNode(mHead);
+    Clear();
   }
 
   List(const List& rhs) {
@@ -104,7 +107,7 @@ class List final {
     bool wasRemoved = false;
 
     for (Node* node = mTail; (node != mHead) && (node != nullptr); node = node->mPrev) {
-      if (*(node->mValue) == item) {
+      if (item == (*(node->mValue))) {
         Node* prevNode = node->mPrev;
         Node* nextNode = node->mNext;
 
@@ -122,7 +125,7 @@ class List final {
       }
     }
 
-    if (*(mHead->mValue) == item) {
+    if (item == (*(mHead->mValue))) {
       if (mHead->mNext == nullptr) {
         DeleteNode(mHead);
         wasRemoved = true;
@@ -141,7 +144,7 @@ class List final {
 
   bool Contains(const T& item) const {
     for (const T& storedItem : *this) {
-      if (storedItem == item) {
+      if (item == storedItem) {
         return true;
       }
     }
@@ -183,25 +186,13 @@ class List final {
   size_t mSize = 0;
 
   Node* ConstructNode(Node* prev, const T& value) {
-    Node* node = new Node;
-    node->mValue = new T(value);
-    node->mPrev = prev;
-    if (prev != nullptr) {
-      prev->mNext = node;
-    }
-
+    Node* node = new Node(value, prev);
     mSize++;
-
     return node;
   }
 
   void DeleteNode(Node* node) {
-    if (node->mValue != nullptr) {
-      delete node->mValue;
-    }
-
     delete node;
-
     --mSize;
   }
 };

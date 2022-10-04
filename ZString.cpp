@@ -195,6 +195,60 @@ const char* String::FindLast(const char value) const {
   return strrchr(GetString(), value);
 }
 
+const char* String::FindString(const char* pattern) const {
+  size_t inLength = strlen(pattern);
+  const char* str = Str();
+  const size_t length = Length();
+  if (inLength > length) {
+    return nullptr;
+  }
+
+  // Boyer-Moore string search.
+  // Only implements the "bad character rule", does not do "good suffix".
+  
+  // Create a LUT big enough for the alphabet and size each letter row to the pattern length.
+  Array<Array<size_t>> lut(256);
+  for (size_t i = 0; i < lut.Size(); ++i) {
+    lut[i].Resize(inLength);
+  }
+
+  // Save each unique character index for each index of the pattern starting from the end.
+  // Any characters that don't exist will be 0.
+  for (size_t i = inLength; i > 0; --i) {
+    for (size_t j = i - 1; j > 0; --j) {
+      size_t currentChar = static_cast<size_t>(pattern[j - 1]);
+      Array<size_t>& charRow = lut[currentChar];
+      // Only save the last index.
+      if (charRow[i - 1] == 0) {
+        charRow[i - 1] = j;
+      }
+    }
+  }
+
+  const char* match = nullptr;
+  for (size_t position = inLength, skipAhead = inLength; (position <= length) && (match == nullptr); position += skipAhead) {
+    bool matched = true;
+    for (size_t i = 0; (i < inLength) && matched; ++i) {
+      // Check each character of the pattern starting from the end.
+      // If any character doesn't match, skip ahead and try again.
+      const size_t inPosition = inLength - i - 1;
+      const char patternChar = pattern[inPosition];
+      const char matchChar = str[position - i - 1];
+      if (patternChar != matchChar) {
+        // Check the LUT and skip ahead by the known amount.
+        skipAhead = (inLength - i) - (lut[static_cast<size_t>(matchChar)][inPosition]);
+        matched = false;
+      }
+    }
+
+    if (matched) {
+      match = str + position - inLength;
+    }
+  }
+
+  return match;
+}
+
 uint8 String::ToUint8() const {
   return static_cast<uint8>(strtoul(GetString(), NULL, 10));
 }

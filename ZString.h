@@ -50,6 +50,8 @@ class String final {
 
   const char* FindLast(char value) const;
 
+  const char* FindString(const char* pattern) const;
+
   uint8 ToUint8() const;
   
   uint16 ToUint16() const;

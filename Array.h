@@ -4,6 +4,8 @@
 #include "ZAssert.h"
 #include "PlatformMemory.h"
 
+#include <initializer_list>
+
 namespace ZSharp {
 
 template<typename T>
@@ -50,6 +52,16 @@ class Array final {
 
   Array(size_t size) {
     FreshAlloc(size);
+  }
+
+  Array(std::initializer_list<T> initList) {
+    const size_t size = initList.size();
+    FreshAllocNoInit(size);
+    size_t i = 0;
+    for (const T& item : initList) {
+      new(mData + i) T(item);
+      ++i;
+    }
   }
 
   ~Array() {

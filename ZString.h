@@ -5,6 +5,39 @@
 
 namespace ZSharp {
 class String final {
+  private:
+  class VariableArg {
+    private:
+    enum Type {
+      INT32,
+      UINT32,
+      INT64,
+      UINT64,
+      FLOAT,
+      DOUBLE
+    };
+
+    Type mType;
+
+    union {
+      int32 int32_value;
+      uint32 uint32_value;
+      int64 int64_value;
+      uint64 uint64_value;
+      float float_value;
+      double double_value;
+    } mData;
+
+    public:
+    VariableArg() = delete; // Explicit type construction only.
+
+    VariableArg(const int32 arg);
+
+    VariableArg(const float arg);
+
+    String ToString() const;
+  };
+
   public:
   String();
 
@@ -32,7 +65,15 @@ class String final {
 
   void Append(const char* str);
 
+#if 0
   void Appendf(const char* formatStr, ...);
+#endif
+
+  template<typename... Args>
+  void VariadicAppend(const char* formatStr, const Args&... args) {
+    VariableArg inArgs[] = {args...};
+    VariadicArgsAppend(formatStr, inArgs, sizeof...(args));
+  }
 
   bool IsEmpty() const;
 
@@ -130,5 +171,7 @@ class String final {
   size_t GetCombinedSize(const char* str);
 
   bool FitsInSmall(size_t size);
+
+  void VariadicArgsAppend(const char* format, const VariableArg* args, size_t numArgs);
 };
 }

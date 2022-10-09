@@ -89,6 +89,7 @@ void String::Append(const char* str) {
   }
 }
 
+#if 0 // Leaving here as an example of how C-style va_args work.
 void String::Appendf(const char* formatStr, ...) {
   ZAssert(formatStr != nullptr);
 
@@ -139,6 +140,7 @@ void String::Appendf(const char* formatStr, ...) {
 
   va_end(arglist);
 }
+#endif
 
 bool String::IsEmpty() const {
   return Length() == 0;
@@ -410,4 +412,112 @@ size_t String::GetCombinedSize(const char* str) {
 bool String::FitsInSmall(size_t size) {
   return size < MinCapaity;
 }
+
+void String::VariadicArgsAppend(const char* format, const VariableArg* args, size_t numArgs) {
+  ZAssert(format != nullptr);
+
+  const char* lastPosition = format;
+  const char* lastChar = nullptr;
+  for (const char* str = format; *str != '\0'; ++str) {
+    char currentChar = *str;
+    bool isEscaped = (lastChar != nullptr) ? ((*lastChar) == '\\') : false;
+
+    if (!isEscaped && (currentChar == '{')) {
+      size_t jumpAhead = 0;
+
+      for (const char* endFormat = str + 1; *endFormat != '\0'; ++endFormat) {
+        if (*endFormat == '}') {
+          jumpAhead = (endFormat - str) + 1;
+          break;
+        }
+      }
+
+      if (jumpAhead == 0) {
+        ZAssert(false); // Invalid format.
+        break;
+      }
+
+      // Get the index specified by the argument.
+      int32 argIndex = atoi(str + 1);
+      ZAssert(argIndex >= 0);
+
+      if (argIndex >= numArgs) {
+        ZAssert(false); // OOB
+        continue;
+      }
+
+      // Append format str up until the current position.
+      Append(lastPosition, 0, str - lastPosition);
+
+      // Append the VariableArg based on its type.
+      const VariableArg& arg = args[argIndex];
+      Append(arg.ToString().Str());
+
+      str += jumpAhead;
+      lastPosition = str;
+    }
+
+    lastChar = str;
+  }
+}
+
+String::VariableArg::VariableArg(const int32 arg)
+  : mType(Type::INT32) {
+  mData.int32_value = arg;
+}
+
+String::VariableArg::VariableArg(const float arg)
+  : mType(Type::FLOAT) {
+  mData.float_value = arg;
+}
+
+String String::VariableArg::ToString() const {
+  String result;
+
+  switch (mType) {
+    case Type::INT32:
+    {
+      const size_t bufferSize = 64;
+      char buffer[bufferSize];
+      buffer[0] = '\0';
+      const char* str = _itoa(mData.int32_value, buffer, 10);
+      result.Append(str);
+    }
+      break;
+    case Type::UINT32:
+    {
+      ZAssert(false); // Not implemented.
+    }
+      break;
+    case Type::INT64:
+    {
+      ZAssert(false); // Not implemented.
+    }
+      break;
+    case Type::UINT64:
+    {
+      ZAssert(false); // Not implemented.
+    }
+      break;
+    case Type::FLOAT:
+    {
+      const size_t bufferSize = 64;
+      char buffer[bufferSize];
+      buffer[0] = '\0';
+      const int32 digits = FLT_DECIMAL_DIG;
+      const float val = mData.float_value;
+      const char* str = _gcvt(val, digits, buffer);
+      result.Append(str);
+    }
+      break;
+    case Type::DOUBLE:
+    {
+      ZAssert(false); // Not implemented.
+    }
+      break;
+  }
+
+  return result;
+}
+
 }

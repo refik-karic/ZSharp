@@ -69,8 +69,14 @@ class String final {
   void Appendf(const char* formatStr, ...);
 #endif
 
+  /*
+  Follows similar format to C#'s String::Format.
+  i.e. "My format with {0}, {2}, and {1} args."
+  Args do not have to be in consecutive order.
+  Type is deduced during compile time, no type specifier is required.
+  */
   template<typename... Args>
-  void VariadicAppend(const char* formatStr, const Args&... args) {
+  void Appendf(const char* formatStr, const Args&... args) {
     VariableArg inArgs[] = {args...};
     VariadicArgsAppend(formatStr, inArgs, sizeof...(args));
   }

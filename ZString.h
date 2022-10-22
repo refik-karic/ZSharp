@@ -55,6 +55,10 @@ class String final {
 
   bool operator==(const String& rhs) const;
 
+  bool operator>(const String& rhs) const;
+
+  bool operator<(const String& rhs) const;
+
   String operator+(const char* str);
 
   const char& operator[](const size_t index);

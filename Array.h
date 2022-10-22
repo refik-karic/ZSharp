@@ -161,6 +161,23 @@ class Array final {
     }
   }
 
+  /*
+  Sort using in-place Quick Sort.
+  Order is not guaranteed.
+  */
+  void Sort() {
+    if (IsEmpty()) {
+      return;
+    }
+
+    Quicksort(mData, mData + (mSize - 1));
+  }
+
+  template<typename Compare>
+  void Sort(const Compare& comp) {
+    Quicksort(mData, mData + (mSize - 1), comp);
+  }
+
   Iterator begin() const {
     return Iterator(mData);
   }
@@ -205,6 +222,73 @@ class Array final {
       PlatformFree(mData);
       mData = nullptr;
       mSize = 0;
+    }
+  }
+
+  static void Swap(T* lhs, T* rhs) {
+    const T temp(*rhs);
+    *rhs = *lhs;
+    *lhs = temp;
+  };
+
+  void Quicksort(T* start, T* end) {
+    T* pivot = end;
+    T* secondPivot = nullptr;
+
+    if (start == end) {
+      return;
+    }
+
+    for (T* i = start; i != pivot; ++i) {
+      const T& pivotValue = (*pivot);
+      if (((*i) > pivotValue) && (secondPivot == nullptr)) {
+        secondPivot = i;
+      }
+      else if (((*i) < pivotValue) && (secondPivot != nullptr)) {
+        Swap(secondPivot, i);
+        secondPivot++;
+      }
+    }
+
+    if (secondPivot != nullptr) {
+      Swap(secondPivot, pivot);
+      Quicksort(start, secondPivot);
+      Quicksort(secondPivot + 1, end);
+    }
+    else {
+      Quicksort(start, pivot - 1);
+      Quicksort(pivot, end);
+    }
+  }
+
+  template<typename Compare>
+  void Quicksort(T* start, T* end, const Compare& comp) {
+    T* pivot = end;
+    T* secondPivot = nullptr;
+
+    if (start == end) {
+      return;
+    }
+
+    for (T* i = start; i != pivot; ++i) {
+      const T& pivotValue = (*pivot);
+      if (comp(pivotValue, (*i)) && (secondPivot == nullptr)) {
+        secondPivot = i;
+      }
+      else if (comp((*i), pivotValue) && (secondPivot != nullptr)) {
+        Swap(secondPivot, i);
+        secondPivot++;
+      }
+    }
+
+    if (secondPivot != nullptr) {
+      Swap(secondPivot, pivot);
+      Quicksort(start, secondPivot, comp);
+      Quicksort(secondPivot + 1, end, comp);
+    }
+    else {
+      Quicksort(start, pivot - 1, comp);
+      Quicksort(pivot, end, comp);
     }
   }
 };

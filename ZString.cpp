@@ -54,6 +54,14 @@ bool String::operator==(const String& rhs) const {
   return strcmp(Str(), rhs.Str()) == 0;
 }
 
+bool String::operator>(const String& rhs) const {
+  return strcmp(Str(), rhs.Str()) > 0;
+}
+
+bool String::operator<(const String& rhs) const {
+  return strcmp(Str(), rhs.Str()) < 0;
+}
+
 String String::operator+(const char* str) {
   String result(*this);
   result.Append(str);

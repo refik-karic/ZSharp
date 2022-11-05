@@ -47,6 +47,17 @@ class List final {
       return *temp;
     }
 
+    Iterator& operator--() {
+      mPtr = mPtr->mPrev;
+      return *this;
+    }
+
+    Iterator operator--(int) {
+      Iterator temp(mPtr);
+      --(*this);
+      return *temp;
+    }
+
     bool operator==(const Iterator& rhs) {
       return mPtr == rhs.mPtr;
     }
@@ -142,6 +153,28 @@ class List final {
     return wasRemoved;
   }
 
+  void RemoveFront() {
+    if (mHead == nullptr) {
+      return;
+    }
+
+    Node* nextNode = mHead->mNext;
+    DeleteNode(mHead);
+    mHead = nextNode;
+    mHead->mPrev = nullptr;
+  }
+
+  void RemoveBack() {
+    if (mTail == nullptr) {
+      return;
+    }
+
+    Node* prevNode = mTail->mPrev;
+    DeleteNode(mTail);
+    mTail = prevNode;
+    mTail->mNext = nullptr;
+  }
+
   bool Contains(const T& item) const {
     for (const T& storedItem : *this) {
       if (item == storedItem) {
@@ -177,6 +210,14 @@ class List final {
   }
 
   Iterator end() const {
+    return Iterator(nullptr);
+  }
+
+  Iterator rbegin() const {
+    return Iterator(mTail);
+  }
+
+  Iterator rend() const {
     return Iterator(nullptr);
   }
 

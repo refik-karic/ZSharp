@@ -3,17 +3,14 @@
 #include <cmath>
 
 #include "Constants.h"
-#include "Mat2x3.h"
 #include "Triangle.h"
 #include "ZAlgorithm.h"
 #include "ZConfig.h"
 
+#define ASSERT_CHECK 0
+
 namespace ZSharp {
 Camera::Camera() {
-  ZConfig& config = ZConfig::GetInstance();
-  mWidth = config.GetViewportWidth();
-  mHeight = config.GetViewportHeight();
-
   mLook[2] = 1.f;
   mUp[1] = 1.f;
 
@@ -24,20 +21,12 @@ Camera::Camera() {
   mFarPlane = 100.f;
 }
 
-Vec3 Camera::GetPosition() const {
-  return mPosition;
-}
-
 Vec3 Camera::GetLook() const {
   return mLook;
 }
 
 Vec3 Camera::GetUp() const {
   return mUp;
-}
-
-void Camera::MoveCamera(const Vec3& position) {
-  mPosition = position;
 }
 
 void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
@@ -93,16 +82,6 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   unhing = unhing * (scale * (uToE * translation));
 
-  mWidth = ZConfig::GetInstance().GetViewportWidth();
-  mHeight = ZConfig::GetInstance().GetViewportHeight();
-
-  Mat2x3 windowTransform;
-  windowTransform[0][0] = static_cast<float>(mWidth);
-  windowTransform[0][2] = static_cast<float>(mWidth);
-  windowTransform[1][1] = -static_cast<float>(mHeight);
-  windowTransform[1][2] = static_cast<float>(mHeight);
-  windowTransform = windowTransform * (1.f / 2.f);
-
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 
   for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
@@ -117,7 +96,31 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     float* vertexData = vertexBuffer.GetClipData(i);
     Vec3& vertexVector = *(reinterpret_cast<Vec3*>(vertexData));
     vertexVector.Homogenize();
-    vertexVector = windowTransform.ApplyTransform(vertexVector);
+    vertexVector = mWindowTransform.ApplyTransform(vertexVector);
+
+#if ASSERT_CHECK
+    const float width = (float)ZConfig::GetInstance().GetViewportWidth();
+    const float height = (float)ZConfig::GetInstance().GetViewportHeight();
+
+    // TODO: Window transform is not transforming point to correct screen space bounds.
+    // Investigate if there's a bug here...
+    ZAssert(vertexVector[0] >= 0.f);
+    ZAssert(vertexVector[0] <= width);
+    ZAssert(vertexVector[1] >= 0.f);
+    ZAssert(vertexVector[1] <= height);
+#endif
   }
 }
+
+void Camera::Resize() {
+  float width = (float)ZConfig::GetInstance().GetViewportWidth();
+  float height = (float)ZConfig::GetInstance().GetViewportHeight();
+
+  mWindowTransform[0][0] = width;
+  mWindowTransform[0][2] = width;
+  mWindowTransform[1][1] = -height;
+  mWindowTransform[1][2] = height;
+  mWindowTransform = mWindowTransform * (1.f / 2.f);
+}
+  
 }

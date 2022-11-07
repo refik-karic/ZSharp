@@ -41,6 +41,7 @@ target_sources(ZSharp
         Win32PlatformHeaders.h
         Win32PlatformApplication.h
         World.h
+        WorldObject.h
         ZAlgorithm.h
         ZAssert.h
         ZBaseTypes.h

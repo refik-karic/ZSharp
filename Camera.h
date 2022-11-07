@@ -2,30 +2,29 @@
 
 #include "ZBaseTypes.h"
 #include "IndexBuffer.h"
+#include "Mat2x3.h"
 #include "Mat4x4.h"
 #include "Vec3.h"
 #include "VertexBuffer.h"
+#include "WorldObject.h"
 
 namespace ZSharp {
 
-class Camera final {
+class Camera final : public WorldObject {
   public:
   Camera();
-
-  Vec3 GetPosition() const;
 
   Vec3 GetLook() const;
 
   Vec3 GetUp() const;
 
-  void MoveCamera(const Vec3& position);
-
   void RotateCamera(const Mat4x4& rotationMatrix);
 
   void PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 
+  void Resize();
+
   private:
-  Vec3 mPosition;
   Vec3 mLook;
   Vec3 mUp;
 
@@ -34,7 +33,6 @@ class Camera final {
   float mFovHoriz;
   float mFovVert;
 
-  size_t mWidth;
-  size_t mHeight;
+  Mat2x3 mWindowTransform;
 };
 }

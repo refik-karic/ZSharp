@@ -27,6 +27,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
   if (config.SizeChanged(mBuffer.GetWidth(), mBuffer.GetHeight())) {
     mBuffer.Resize();
+    camera.Resize();
   }
 
   const ZColor colorRed{ZColors::RED};

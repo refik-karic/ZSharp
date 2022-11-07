@@ -7,7 +7,7 @@
 
 #define DEBUG_CLIPPING 0
 
-static const size_t MAX_OUT_CLIP_VERTS = 8;
+#define ASSERT_CHECK 0
 
 namespace ZSharp {
 bool InsidePlane(const Vec3& point, const Vec3& clipEdge) {
@@ -34,20 +34,20 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     const Vec3& v2 = *reinterpret_cast<const Vec3*>(vertexBuffer[i2]);
     const Vec3& v3 = *reinterpret_cast<const Vec3*>(vertexBuffer[i3]);
     size_t numClippedVerts = 3;
-    FixedArray<Vec3, MAX_OUT_CLIP_VERTS> clippedVerts;
+    ClipBuffer clippedVerts;
     clippedVerts[0] = v1;
     clippedVerts[1] = v2;
     clippedVerts[2] = v3;
 
 #if DEBUG_CLIPPING
-    size_t currentClipIndex = vertexBuffer.GetClipLength() / TRI_VERTS;
+    size_t currentClipIndex = vertexBuffer.GetClipLength();
 
-    FixedArray<Vec4, MAX_OUT_CLIP_VERTS> tempClippedVerts;
+    FixedArray<Vec4, MaxOutVerts> tempClippedVerts;
     for (size_t j = 0; j < numClippedVerts; ++j) {
       tempClippedVerts[j] = clippedVerts[j];
     }
 
-    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(tempClippedVerts.GetData()), 3);
+    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(tempClippedVerts.GetData()), numClippedVerts);
     Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
     indexBuffer.AppendClipData(nextTriangle);
 #else
@@ -71,10 +71,22 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
     currentEdge.Clear();
 
+#if ASSERT_CHECK
+    for (size_t clippedIndex = 0; clippedIndex < numClippedVerts; ++clippedIndex) {
+      Vec3& vert = clippedVerts[clippedIndex];
+      ZAssert(vert[0] >= -1.f);
+      ZAssert(vert[0] <= 1.f);
+      ZAssert(vert[1] >= -1.f);
+      ZAssert(vert[1] <= 1.f);
+      ZAssert(vert[2] >= -1.f);
+      ZAssert(vert[2] <= 1.f);
+    }
+#endif
+
     if (numClippedVerts > 0) {
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
-      FixedArray<Vec4, MAX_OUT_CLIP_VERTS> tempClippedVerts;
+      FixedArray<Vec4, MaxOutVerts> tempClippedVerts;
       for (size_t j = 0; j < numClippedVerts; ++j) {
         tempClippedVerts[j] = clippedVerts[j];
       }
@@ -107,9 +119,9 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   }
 }
 
-size_t SutherlandHodgmanClip(FixedArray<Vec3, MAX_OUT_CLIP_VERTS>& inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
+size_t SutherlandHodgmanClip(ClipBuffer& inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
   size_t numOutputVerts = 0;
-  FixedArray<Vec3, MAX_OUT_CLIP_VERTS> outputVerts;
+  ClipBuffer outputVerts;
 
   for (size_t i = 0; i < numInputVerts; ++i) {
     const size_t nextIndex = (i + 1) % numInputVerts;

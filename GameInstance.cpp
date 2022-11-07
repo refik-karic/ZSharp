@@ -10,11 +10,9 @@
 namespace ZSharp {
 
 GameInstance::GameInstance() {
-
 }
 
 GameInstance::~GameInstance() {
-
 }
 
 void GameInstance::LoadAssets() {
@@ -29,31 +27,28 @@ void GameInstance::LoadAssets() {
 }
 
 void GameInstance::MoveCamera(Direction direction) {
-  Vec3 cameraPosition(mCamera.GetPosition());
   Vec3 cameraLook(mCamera.GetLook());
 
   switch (direction) {
   case Direction::FORWARD:
-    cameraPosition = cameraPosition - cameraLook;
+    mCamera.Position() = mCamera.Position() - cameraLook;
     break;
   case Direction::BACK:
-    cameraPosition = cameraPosition + cameraLook;
+    mCamera.Position() = mCamera.Position() + cameraLook;
     break;
   case Direction::LEFT:
   {
     Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
-    cameraPosition = cameraPosition + sideVec;
+    mCamera.Position() = mCamera.Position() + sideVec;
   }
   break;
   case Direction::RIGHT:
   {
     Vec3 sideVec(cameraLook.Cross(mCamera.GetUp()));
-    cameraPosition = cameraPosition + sideVec;
+    mCamera.Position() = mCamera.Position() + sideVec;
   }
   break;
   }
-
-  mCamera.MoveCamera(cameraPosition);
 }
 
 void GameInstance::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {
@@ -110,7 +105,8 @@ void GameInstance::Initialize() {
   }
 #endif
 
-  mCamera.MoveCamera(Vec3(0.f, 0.f, 30.f));
+  mCamera.Position() = Vec3(0.f, 0.f, 30.f);
+  mCamera.Resize();
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.Register(this);

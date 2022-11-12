@@ -14,6 +14,10 @@ GameInstance::GameInstance() {
 }
 
 GameInstance::~GameInstance() {
+  InputManager& inputManager = InputManager::GetInstance();
+  inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
+  inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
+  inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
 void GameInstance::LoadAssets() {
@@ -107,7 +111,6 @@ void GameInstance::Initialize() {
 #endif
 
   mCamera.Position() = Vec3(0.f, 0.f, 30.f);
-  mCamera.Resize();
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));

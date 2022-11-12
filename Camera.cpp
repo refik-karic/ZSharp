@@ -4,6 +4,7 @@
 
 #include "Constants.h"
 #include "Triangle.h"
+#include "Win32PlatformApplication.h"
 #include "ZAlgorithm.h"
 #include "ZConfig.h"
 
@@ -19,6 +20,15 @@ Camera::Camera() {
 
   mNearPlane = 10.f;
   mFarPlane = 100.f;
+
+  const ZConfig& config = ZConfig::GetInstance();
+  OnResize(config.GetViewportWidth(), config.GetViewportHeight());
+
+  Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<Camera, &Camera::OnResize>(this));
+}
+
+Camera::~Camera() {
+  Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<Camera, &Camera::OnResize>(this));
 }
 
 Vec3 Camera::GetLook() const {
@@ -112,14 +122,11 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   }
 }
 
-void Camera::Resize() {
-  float width = (float)ZConfig::GetInstance().GetViewportWidth();
-  float height = (float)ZConfig::GetInstance().GetViewportHeight();
-
-  mWindowTransform[0][0] = width;
-  mWindowTransform[0][2] = width;
-  mWindowTransform[1][1] = -height;
-  mWindowTransform[1][2] = height;
+void Camera::OnResize(size_t width, size_t height) {
+  mWindowTransform[0][0] = (float)width;
+  mWindowTransform[0][2] = (float)width;
+  mWindowTransform[1][1] = -((float)height);
+  mWindowTransform[1][2] = (float)height;
   mWindowTransform = mWindowTransform * (1.f / 2.f);
 }
   

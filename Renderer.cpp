@@ -7,7 +7,6 @@
 #include "Model.h"
 #include "VertexBuffer.h"
 #include "ZColor.h"
-#include "ZConfig.h"
 #include "ZDrawing.h"
 
 namespace ZSharp {
@@ -15,21 +14,11 @@ Renderer::Renderer() {
 }
 
 void Renderer::Initialize() {
-  ZConfig& config = ZConfig::GetInstance();
-  mBuffer.Initialize(config.GetViewportWidth(), config.GetViewportHeight(), config.GetViewportStride());
-
   const ZColor colorGreen{ ZColors::GREEN };
   mBuffer.Clear(colorGreen);
 }
 
 void Renderer::RenderNextFrame(World& world, Camera& camera) {
-  ZConfig& config = ZConfig::GetInstance();
-
-  if (config.SizeChanged(mBuffer.GetWidth(), mBuffer.GetHeight())) {
-    mBuffer.Resize();
-    camera.Resize();
-  }
-
   const ZColor colorRed{ZColors::RED};
   const ZColor colorBlue{ZColors::BLUE};
 

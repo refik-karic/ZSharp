@@ -14,6 +14,8 @@ class Camera final : public WorldObject {
   public:
   Camera();
 
+  ~Camera();
+
   Vec3 GetLook() const;
 
   Vec3 GetUp() const;
@@ -21,8 +23,6 @@ class Camera final : public WorldObject {
   void RotateCamera(const Mat4x4& rotationMatrix);
 
   void PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
-
-  void Resize();
 
   private:
   Vec3 mLook;
@@ -34,5 +34,7 @@ class Camera final : public WorldObject {
   float mFovVert;
 
   Mat2x3 mWindowTransform;
+
+  void OnResize(size_t width, size_t height);
 };
 }

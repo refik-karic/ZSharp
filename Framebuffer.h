@@ -12,8 +12,6 @@ class Framebuffer final {
   Framebuffer(const Framebuffer&) = delete;
   void operator=(const Framebuffer&) = delete;
 
-  void Initialize(size_t width, size_t height, size_t stride);
-
   void SetPixel(const size_t x, const size_t y, const ZColor color);
   void SetRow(const size_t y, const size_t x1, const size_t x2, const ZColor color);
   void Clear(const ZColor color);
@@ -21,7 +19,6 @@ class Framebuffer final {
   size_t GetWidth() const;
   size_t GetHeight() const;
   size_t GetSize() const;
-  void Resize();
 
   private:
   uint8* mPixelBuffer = nullptr;
@@ -31,6 +28,6 @@ class Framebuffer final {
   size_t mStride = 0;
   size_t mTotalSize = 0;
 
-  void Reset();
+  void OnResize(size_t width, size_t height);
 };
 }

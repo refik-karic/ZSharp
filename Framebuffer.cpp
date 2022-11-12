@@ -2,8 +2,9 @@
 
 #include <cstdlib>
 
-#include "ZAssert.h"
 #include "PlatformMemory.h"
+#include "Win32PlatformApplication.h"
+#include "ZAssert.h"
 #include "ZConfig.h"
 
 #ifdef FORCE_AVX512
@@ -14,27 +15,15 @@
 
 namespace ZSharp {
 
-void Framebuffer::Initialize(size_t width, size_t height, size_t stride) {
-  ZAssert(mPixelBuffer == nullptr);
-  if (mPixelBuffer != nullptr) {
-    Reset();
-  }
-
-  mWidth = width;
-  mHeight = height;
-  mStride = stride;
-  mTotalSize = stride * height;
-  mPixelBuffer = static_cast<uint8*>(PlatformAlignedMalloc(mTotalSize, 64));
-#ifdef FORCE_AVX512
-  mScratchBuffer = static_cast<uint8*>(PlatformAlignedMalloc(64, 64));
-#endif
-}
-
 Framebuffer::Framebuffer() {
+  const ZConfig& config = ZConfig::GetInstance();
+  OnResize(config.GetViewportWidth(), config.GetViewportHeight());
+
+  Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
 }
 
 Framebuffer::~Framebuffer() {
-  Reset();
+  Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
 }
 
 void Framebuffer::SetPixel(const size_t x, const size_t y, const ZColor color) {
@@ -136,28 +125,22 @@ size_t Framebuffer::GetSize() const {
   return mTotalSize;
 }
 
-void Framebuffer::Resize() {
-  if (mPixelBuffer != nullptr) {
-    PlatformAlignedFree(mPixelBuffer);
-  }
-
-  mWidth = ZConfig::GetInstance().GetViewportWidth();
-  mHeight = ZConfig::GetInstance().GetViewportHeight();
-  mStride = mWidth * 4;
-  mTotalSize = mStride * mHeight;
-  mPixelBuffer = static_cast<uint8*>(PlatformAlignedMalloc(mTotalSize, 64));
-}
-
-void Framebuffer::Reset() {
+void Framebuffer::OnResize(size_t width, size_t height) {
   if (mPixelBuffer != nullptr) {
     PlatformAlignedFree(mPixelBuffer);
   }
 
 #ifdef FORCE_AVX512
-  if (mScratchBuffer != nullptr) {
-    PlatformAlignedFree(mScratchBuffer);
+  if (mScratchBuffer == nullptr) {
+    mScratchBuffer = static_cast<uint8*>(PlatformAlignedMalloc(64, 64));
   }
 #endif
+
+  mWidth = width;
+  mHeight = height;
+  mStride = mWidth * 4;
+  mTotalSize = mStride * mHeight;
+  mPixelBuffer = static_cast<uint8*>(PlatformAlignedMalloc(mTotalSize, 64));
 }
 
 }

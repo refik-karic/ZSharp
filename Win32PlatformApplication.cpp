@@ -9,6 +9,8 @@ static wchar_t WINDOW_CLASS_NAME[] = L"SoftwareRendererWindowClass";
 static wchar_t WINDOW_TITLE[] = L"Software Renderer";
 static constexpr UINT FRAMERATE_60_HZ_MS = 1000 / 60;
 
+ZSharp::BroadcastDelegate<size_t, size_t> Win32PlatformApplication::OnWindowSizeChangedDelegate;
+
 Win32PlatformApplication& Win32PlatformApplication::GetInstance() {
   static Win32PlatformApplication ZSharpApp;
   return ZSharpApp;
@@ -167,16 +169,24 @@ void Win32PlatformApplication::OnPaint() {
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
     ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
 
+    bool dirtySize = false;
+
     if (activeWindowSize.right != config.GetViewportWidth()) {
       config.SetViewportWidth(activeWindowSize.right);
+      dirtySize = true;
     }
 
     if (activeWindowSize.bottom != config.GetViewportHeight()) {
       config.SetViewportHeight(activeWindowSize.bottom);
+      dirtySize = true;
     }
 
     mBitmapInfo.bmiHeader.biWidth = activeWindowSize.right;
     mBitmapInfo.bmiHeader.biHeight = activeWindowSize.bottom;
+
+    if (dirtySize) {
+      OnWindowSizeChangedDelegate.Broadcast(activeWindowSize.right, activeWindowSize.bottom);
+    }
   }
 
   UpdateFrame(mGameInstance.GetCurrentFrame());

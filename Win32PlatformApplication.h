@@ -4,6 +4,7 @@
 
 #include "Win32PlatformHeaders.h"
 
+#include "Delegate.h"
 #include "GameInstance.h"
 #include "ZBaseTypes.h"
 
@@ -15,6 +16,8 @@ class Win32PlatformApplication {
   static LRESULT CALLBACK MessageLoop(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
   int Run(HINSTANCE instance);
+
+  static ZSharp::BroadcastDelegate<size_t, size_t> OnWindowSizeChangedDelegate;
 
   private:
   HINSTANCE mInstance = nullptr;

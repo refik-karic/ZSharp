@@ -9,10 +9,11 @@
 #include "Mesh.h"
 #include "Vec4.h"
 #include "VertexBuffer.h"
+#include "WorldObject.h"
 
 namespace ZSharp {
 
-class Model final {
+class Model final : WorldObject {
   public:
 
   Model();

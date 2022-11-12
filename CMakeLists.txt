@@ -7,6 +7,7 @@ target_sources(ZSharp
         Camera.h
         Common.h
         Constants.h
+        Delegate.h
         FileString.h
         FixedArray.h
         Framebuffer.h

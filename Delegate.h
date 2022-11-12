@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZAssert.h"
+#include "List.h"
 
 namespace ZSharp {
 
@@ -8,6 +9,12 @@ template<class... Signature>
 class Delegate final {
   public:
   Delegate() : mObjPtr(nullptr), mClassSignature(nullptr), mFreeFunctionSignature(nullptr) {}
+
+  bool operator==(const Delegate& rhs) const {
+    return (mObjPtr == rhs.mObjPtr) && 
+      (mFreeFunctionSignature == rhs.mFreeFunctionSignature) && 
+      (mClassSignature == rhs.mClassSignature);
+  }
 
   static Delegate FromFreeFunction(void (*funcPtr)(Signature...)) {
     Delegate delegate(funcPtr);
@@ -51,8 +58,35 @@ class Delegate final {
   }
 };
 
-// TODO: Create two more delegate derivatives:
-// 1) Typed return delegate.
-// 1) Broadcast delegate.
+template<class... Signature>
+class BroadcastDelegate final {
+  public:
+  BroadcastDelegate() {}
+
+  // TODO: It might make this cleaner to have similar delegate creation helpers like above.
+  void Add(const Delegate<Signature...>& delegate) {
+    if (mCallList.Contains(delegate)) {
+      ZAssert(false);
+    }
+    else {
+      mCallList.Add(delegate);
+    }
+  }
+
+  void Remove(const Delegate<Signature...>& delegate) {
+    mCallList.Remove(delegate);
+  }
+
+  void Broadcast(Signature... args) {
+    for (Delegate<Signature...>& delegate : mCallList) {
+      delegate(args...);
+    }
+  }
+
+  private:
+  List<Delegate<Signature...>> mCallList;
+};
+
+// TODO: Create typed return delegate.
 
 }

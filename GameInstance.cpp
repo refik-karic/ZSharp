@@ -10,6 +10,7 @@
 namespace ZSharp {
 
 GameInstance::GameInstance() {
+
 }
 
 GameInstance::~GameInstance() {
@@ -109,7 +110,9 @@ void GameInstance::Initialize() {
   mCamera.Resize();
 
   InputManager& inputManager = InputManager::GetInstance();
-  inputManager.Register(this);
+  inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
+  inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
+  inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
 void GameInstance::Tick() {

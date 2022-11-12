@@ -1,8 +1,7 @@
 #include "InputManager.h"
 
 namespace ZSharp {
-InputManager::InputManager()
-  : mListenerList() {
+InputManager::InputManager() {
   mKeyboard.Fill(KeyState::Clear);
 }
 
@@ -44,46 +43,19 @@ void InputManager::Process() {
       case KeyState::Clear:
         break;
       case KeyState::Down:
-        for (IInputListener* listener : mListenerList) {
-          if (listener != nullptr) {
-            listener->OnKeyDown(i);
-          }
-        }
+        OnKeyDownDelegate.Broadcast(i);
         break;
       case KeyState::Up:
-        for (IInputListener* listener : mListenerList) {
-          if (listener != nullptr) {
-            listener->OnKeyUp(i);
-          }
-        }
+        OnKeyUpDelegate.Broadcast(i);
         break;
     }
   }
 
   if (mMousePressed) {
-    for (IInputListener* listener : mListenerList) {
-      if (listener != nullptr) {
-        listener->OnMouseMove(mOldMouseX, mOldMouseY, mCurrentMouseX, mCurrentMouseY);
-      }
-    }
+    OnMouseMoveDelegate.Broadcast(mOldMouseX, mOldMouseY, mCurrentMouseX, mCurrentMouseY);
   }
 
   mKeyboard.Fill(KeyState::Clear);
-}
-
-void InputManager::Register(IInputListener* inputListener) {
-  mListenerList.PushBack(inputListener);
-}
-
-void InputManager::Unregister(IInputListener* inputListener) {
-  for (size_t i = 0; i < mListenerList.Size(); ++i) {
-    IInputListener* listener = mListenerList[i];
-    
-    if (listener == inputListener) {
-      mListenerList[i] = nullptr;
-      break;
-    }
-  }
 }
 
 bool InputManager::IsMousePressed() const {

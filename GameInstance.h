@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Camera.h"
-#include "IInputListener.h"
 #include "Mat4x4.h"
 #include "Quaternion.h"
 #include "Renderer.h"
@@ -11,7 +10,7 @@
 
 namespace ZSharp {
 
-class GameInstance final : public IInputListener {
+class GameInstance final {
   public:
 
   enum class Direction {
@@ -33,12 +32,6 @@ class GameInstance final : public IInputListener {
   void Tick();
 
   uint8* GetCurrentFrame();
-
-  void OnKeyDown(uint8 key) override;
-
-  void OnKeyUp(uint8 key) override;
-
-  void OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) override;
 
   private:
   Camera mCamera;
@@ -63,6 +56,12 @@ class GameInstance final : public IInputListener {
   Vec3 ProjectClick(float x, float y);
 
   void ChangeSpeed(int64 amount);
+
+  void OnKeyDown(uint8 key);
+
+  void OnKeyUp(uint8 key);
+
+  void OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y);
 
 };
 

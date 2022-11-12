@@ -3,12 +3,18 @@
 #include "ZBaseTypes.h"
 
 #include "Array.h"
-#include "IInputListener.h"
+#include "Delegate.h"
 #include "FixedArray.h"
 
 namespace ZSharp {
 class InputManager final {
   public:
+
+  BroadcastDelegate<uint8> OnKeyDownDelegate;
+
+  BroadcastDelegate<uint8> OnKeyUpDelegate;
+
+  BroadcastDelegate<int32, int32, int32, int32> OnMouseMoveDelegate;
 
   enum class KeyState {
     Clear,
@@ -30,16 +36,10 @@ class InputManager final {
 
   void Process();
 
-  void Register(IInputListener* inputListener);
-
-  void Unregister(IInputListener* inputListener);
-
   bool IsMousePressed() const;
 
   private:
   InputManager();
-
-  Array<IInputListener*> mListenerList;
 
   FixedArray<KeyState, Z_UINT8_MAX> mKeyboard;
 

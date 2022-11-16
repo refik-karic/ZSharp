@@ -1,8 +1,8 @@
 #include "ZDrawing.h"
 
-#include <algorithm>
 #include <cmath>
 
+#include "Common.h"
 #include "Constants.h"
 #include "Triangle.h"
 
@@ -16,7 +16,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
                   ZColor color) {
   if (x1 == x2) {
     if (y2 < y1) {
-      std::swap(y1, y2);
+      Swap(y1, y2);
     }
 
     for (; y1 < y2; y1++) {
@@ -25,7 +25,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
   }
   else if (y1 == y2) {
     if (x2 < x1) {
-      std::swap(x1, x2);
+      Swap(x1, x2);
     }
 
     framebuffer.SetRow(y1, x1, x2, color);
@@ -37,8 +37,8 @@ void DrawRunSlice(Framebuffer& framebuffer,
     int32 delta;
 
     if (y2 < y1) {
-      std::swap(y1, y2);
-      std::swap(x1, x2);
+      Swap(y1, y2);
+      Swap(x1, x2);
     }
 
     if (abs(x2 - x1) >= abs(y2 - y1)) {
@@ -98,7 +98,7 @@ void TracePrimitive(GlobalEdgeTable& edgeTable, FixedArray<size_t, 2>& p1, Fixed
 void TraceLine(GlobalEdgeTable& edgeTable, int32 x1, int32 y1, int32 x2, int32 y2, ZColor color, size_t primitiveIndex) {
   if (x1 == x2) {
     if (y2 < y1) {
-      std::swap(y1, y2);
+      Swap(y1, y2);
     }
 
     while (y1 < y2) {
@@ -108,7 +108,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, int32 x1, int32 y1, int32 x2, int32 y
   }
   else if (y1 == y2) {
     if (x2 < x1) {
-      std::swap(x1, x2);
+      Swap(x1, x2);
     }
 
     edgeTable.AddPoint(y1, x1, color, primitiveIndex);
@@ -121,8 +121,8 @@ void TraceLine(GlobalEdgeTable& edgeTable, int32 x1, int32 y1, int32 x2, int32 y
     int32 delta;
 
     if (y2 < y1) {
-      std::swap(y1, y2);
-      std::swap(x1, x2);
+      Swap(y1, y2);
+      Swap(x1, x2);
     }
 
     if (abs(x2 - x1) >= abs(y2 - y1)) {

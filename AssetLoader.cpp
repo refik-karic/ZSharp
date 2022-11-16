@@ -5,7 +5,7 @@
 #include "Array.h"
 #include "IndexBuffer.h"
 #include "OBJFile.h"
-#include "UtilMath.h"
+#include "CommonMath.h"
 #include "VertexBuffer.h"
 
 namespace ZSharp {

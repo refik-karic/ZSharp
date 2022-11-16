@@ -6,6 +6,7 @@ target_sources(ZSharp
         AssetLoader.h
         Camera.h
         Common.h
+        CommonMath.h
         Constants.h
         Delegate.h
         FileString.h
@@ -35,7 +36,6 @@ target_sources(ZSharp
         Stack.h
         Tree.h
         Triangle.h
-        UtilMath.h
         Vec3.h
         Vec4.h
         VertexBuffer.h
@@ -55,6 +55,7 @@ target_sources(ZSharp
 	
         AssetLoader.cpp
         Camera.cpp
+        CommonMath.cpp
         FileString.cpp
         Framebuffer.cpp
         GameInstance.cpp
@@ -73,7 +74,6 @@ target_sources(ZSharp
         Quaternion.cpp
         Renderer.cpp
         Triangle.cpp
-        UtilMath.cpp
         Vec3.cpp
         Vec4.cpp
         VertexBuffer.cpp

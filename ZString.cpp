@@ -9,6 +9,7 @@
 #include <cstdarg>
 #include <cstdlib>
 #include <cstring>
+#include <cwchar>
 
 namespace ZSharp {
 String::String() {
@@ -523,6 +524,526 @@ String String::VariableArg::ToString() const {
       ZAssert(false); // Not implemented.
     }
       break;
+  }
+
+  return result;
+}
+
+WideString::WideString() {
+  Copy(L"");
+}
+
+WideString::WideString(const wchar_t* str) {
+  Copy(str);
+}
+
+WideString::WideString(const wchar_t* str, size_t offset, size_t end) {
+  Copy(L"");
+  Append(str, offset, end);
+}
+
+WideString::WideString(const WideString& rhs) {
+  Copy(rhs.Str());
+}
+
+WideString::~WideString() {
+  if (!IsMarkedShort()) {
+    FreeLong();
+  }
+}
+
+const wchar_t* WideString::Str() const {
+  return GetString();
+}
+
+WideString* WideString::operator=(const WideString& rhs) {
+  if (this != &rhs) {
+    if (!IsMarkedShort()) {
+      FreeLong();
+    }
+
+    Copy(rhs.Str());
+  }
+
+  return this;
+}
+
+bool WideString::operator==(const WideString& rhs) const {
+  return wcscmp(Str(), rhs.Str()) == 0;
+}
+
+bool WideString::operator>(const WideString& rhs) const {
+  return wcscmp(Str(), rhs.Str()) > 0;
+}
+
+bool WideString::operator<(const WideString& rhs) const {
+  return wcscmp(Str(), rhs.Str()) < 0;
+}
+
+WideString WideString::operator+(const wchar_t* str) {
+  WideString result(*this);
+  result.Append(str);
+  return result;
+}
+
+const wchar_t& WideString::operator[](const size_t index) {
+  ZAssert(index < Length());
+  return GetString()[index];
+}
+
+void WideString::Append(const WideString& str) {
+  Append(str.Str());
+}
+
+void WideString::Append(const wchar_t* str, size_t offset, size_t size) {
+  size_t totalSize = Length() + size + 1;
+  if (FitsInSmall(totalSize)) {
+    AppendShort(str, offset, size);
+  }
+  else {
+    AppendLong(str, offset, size);
+  }
+}
+
+void WideString::Append(const wchar_t* str) {
+  size_t length = wcslen(str);
+  if (FitsInSmall(GetCombinedSize(str) + 1)) {
+    AppendShort(str, 0, length);
+  }
+  else {
+    AppendLong(str, 0, length);
+  }
+}
+
+#if 0 // Leaving here as an example of how C-style va_args work.
+void WideString::Appendf(const wchar_t* formatStr, ...) {
+  ZAssert(formatStr != nullptr);
+
+  va_list arglist;
+  va_start(arglist, formatStr);
+
+  const wchar_t* lastPosition = formatStr;
+  for (const wchar_t* str = formatStr; *str != '\0'; ++str) {
+    wchar_t currentChar = *str;
+    if (currentChar == '%') {
+      wchar_t nextChar = *(str + 1);
+      size_t jumpAhead = 0;
+      switch (nextChar) {
+      case '\0':
+        continue;
+      case 'd':
+      {
+        const size_t bufferSize = 64;
+        wchar_t buffer[bufferSize];
+        buffer[0] = '\0';
+        const int32 vaValue = va_arg(arglist, int32);
+        Append(lastPosition, 0, str - lastPosition);
+        Append(_itoa(vaValue, buffer, 10));
+        jumpAhead = 2;
+      }
+      break;
+      case 'f':
+      {
+        const size_t bufferSize = 64;
+        wchar_t buffer[bufferSize];
+        buffer[0] = '\0';
+        const int32 digits = FLT_DECIMAL_DIG;
+        const float vaValue = static_cast<float>(va_arg(arglist, double));
+        Append(lastPosition, 0, str - lastPosition);
+        Append(_gcvt(vaValue, digits, buffer));
+        jumpAhead = 2;
+      }
+      break;
+      default:
+        break;
+      }
+
+      if (*(str + jumpAhead) != '\0') {
+        lastPosition = str + jumpAhead;
+      }
+    }
+  }
+
+  va_end(arglist);
+}
+#endif
+
+bool WideString::IsEmpty() const {
+  return Length() == 0;
+}
+
+void WideString::Clear() {
+  if (!IsMarkedShort()) {
+    FreeLong();
+  }
+
+  Copy(L"");
+}
+
+void WideString::Trim(wchar_t value) {
+  const wchar_t* lastLocation = FindLast(value);
+  while ((lastLocation != nullptr) && (*lastLocation == value) && (lastLocation - GetString() > 0)) {
+    --lastLocation;
+  }
+
+  if (lastLocation != nullptr) {
+    size_t length = (lastLocation + 1) - GetString();
+    WideString temp(GetString(), 0, length);
+    *this = temp;
+  }
+}
+
+void WideString::Trim(const Array<wchar_t>& values) {
+  for (wchar_t& value : values) {
+    Trim(value);
+  }
+}
+
+size_t WideString::Length() const {
+  return IsMarkedShort() ? GetShortLength() : GetLongLength();
+}
+
+WideString WideString::SubStr(size_t start, size_t end) {
+  WideString temp(*this);
+  wchar_t* subStr = temp.GetMutableString() + start;
+  if (end > Length()) {
+    end = Length();
+  }
+  temp.GetMutableString()[end] = '\0';
+
+  WideString result(subStr);
+  return result;
+}
+
+const wchar_t* WideString::FindFirst(const wchar_t value) const {
+  return wcschr(GetString(), value);
+}
+
+const wchar_t* WideString::FindLast(const wchar_t value) const {
+  return wcschr(GetString(), value);
+}
+
+const wchar_t* WideString::FindString(const wchar_t* pattern) const {
+  size_t inLength = wcslen(pattern);
+  const wchar_t* str = Str();
+  const size_t length = Length();
+  if (inLength > length) {
+    return nullptr;
+  }
+
+  // Boyer-Moore string search.
+  // Only implements the "bad character rule", does not do "good suffix".
+
+  // Create a LUT big enough for the alphabet and size each letter row to the pattern length.
+  Array<Array<size_t>> lut(WCHAR_MAX);
+  for (size_t i = 0; i < lut.Size(); ++i) {
+    lut[i].Resize(inLength);
+  }
+
+  // Save each unique character index for each index of the pattern starting from the end.
+  // Any characters that don't exist will be 0.
+  for (size_t i = inLength; i > 0; --i) {
+    for (size_t j = i - 1; j > 0; --j) {
+      size_t currentChar = static_cast<size_t>(pattern[j - 1]);
+      Array<size_t>& charRow = lut[currentChar];
+      // Only save the last index.
+      if (charRow[i - 1] == 0) {
+        charRow[i - 1] = j;
+      }
+    }
+  }
+
+  const wchar_t* match = nullptr;
+  for (size_t position = inLength, skipAhead = inLength; (position <= length) && (match == nullptr); position += skipAhead) {
+    bool matched = true;
+    for (size_t i = 0; (i < inLength) && matched; ++i) {
+      // Check each character of the pattern starting from the end.
+      // If any character doesn't match, skip ahead and try again.
+      const size_t inPosition = inLength - i - 1;
+      const wchar_t patternChar = pattern[inPosition];
+      const wchar_t matchChar = str[position - i - 1];
+      if (patternChar != matchChar) {
+        // Check the LUT and skip ahead by the known amount.
+        skipAhead = (inLength - i) - (lut[static_cast<size_t>(matchChar)][inPosition]);
+        matched = false;
+      }
+    }
+
+    if (matched) {
+      match = str + position - inLength;
+    }
+  }
+
+  return match;
+}
+
+uint8 WideString::ToUint8() const {
+  return static_cast<uint8>(wcstoul(GetString(), NULL, 10));
+}
+
+uint16 WideString::ToUint16() const {
+  return static_cast<uint16>(wcstoul(GetString(), NULL, 10));
+}
+
+uint32 WideString::ToUint32() const {
+  return static_cast<uint32>(wcstoul(GetString(), NULL, 10));
+}
+
+uint64 WideString::ToUint64() const {
+  return static_cast<uint64>(wcstoul(GetString(), NULL, 10));
+}
+
+int8 WideString::ToInt8() const {
+  return static_cast<int8>(wcstoul(GetString(), NULL, 10));
+}
+
+int16 WideString::ToInt16() const {
+  return static_cast<int16>(wcstoul(GetString(), NULL, 10));
+}
+
+int32 WideString::ToInt32() const {
+  return static_cast<int32>(wcstoul(GetString(), NULL, 10));
+}
+
+int64 WideString::ToInt64() const {
+  return static_cast<int64>(wcstoul(GetString(), NULL, 10));
+}
+
+float WideString::ToFloat() const {
+  return static_cast<float>(wcstof(GetString(), NULL));
+}
+
+bool WideString::IsShort(const wchar_t* str) const {
+  return (wcslen(str) + 1) < MinCapaity;
+}
+
+bool WideString::IsMarkedShort() const {
+  return (mOverlapData.shortStr.size & 0x8000) > 0;
+}
+
+void WideString::MarkShort(bool isShort) {
+  mOverlapData.shortStr.size = (isShort) ? ((mOverlapData.shortStr.size & 0x7FFF) | 0x8000) : (mOverlapData.shortStr.size & 0x7FFF);
+}
+
+void WideString::SetShortLength(size_t length) {
+  mOverlapData.shortStr.size = (static_cast<wchar_t>(length) & 0x7FFF);
+}
+
+wchar_t WideString::GetShortLength() const {
+  return mOverlapData.shortStr.size & 0x7FFF;
+}
+
+void WideString::CopyShort(const wchar_t* str) {
+  size_t length = wcslen(str);
+  SetShortLength(length);
+  if (length > 0) {
+    memcpy(mOverlapData.shortStr.data, str, GetShortLength() * sizeof(wchar_t));
+    mOverlapData.shortStr.data[GetShortLength()] = L'\0';
+  }
+  else {
+    mOverlapData.shortStr.data[0] = L'\0';
+  }
+  MarkShort(true);
+}
+
+void WideString::AppendShort(const wchar_t* str, size_t offset, size_t length) {
+  wchar_t shortLength = static_cast<wchar_t>(Length());
+  const wchar_t* offsetString = str + offset;
+  memcpy(mOverlapData.shortStr.data + shortLength, offsetString, length * sizeof(wchar_t));
+  mOverlapData.shortStr.data[shortLength + length] = L'\0';
+  SetShortLength(wcslen(mOverlapData.shortStr.data));
+  MarkShort(true);
+}
+
+void WideString::SetLongLength(size_t length) {
+  mOverlapData.longStr.size = (length & 0x7FFFFFFFFFFFFFFF);
+  mOverlapData.longStr.capacity = length;
+}
+
+size_t WideString::GetLongLength() const {
+  return mOverlapData.longStr.size & 0x7FFFFFFFFFFFFFFF;
+}
+
+void WideString::AllocateLong() {
+  size_t length = GetLongLength() + 1;
+  mOverlapData.longStr.data = static_cast<wchar_t*>(PlatformMalloc(length * sizeof(wchar_t)));
+}
+
+void WideString::FreeLong() {
+  if (mOverlapData.longStr.data != nullptr) {
+    PlatformFree(mOverlapData.longStr.data);
+    mOverlapData.longStr.data = nullptr;
+  }
+}
+
+void WideString::CopyLong(const wchar_t* str) {
+  SetLongLength(wcslen(str));
+  AllocateLong();
+  memcpy(mOverlapData.longStr.data, str, GetLongLength() * sizeof(wchar_t));
+  mOverlapData.longStr.data[GetLongLength()] = L'\0';
+  MarkShort(false);
+}
+
+void WideString::AppendLong(const wchar_t* str, size_t offset, size_t length) {
+  size_t combinedLength = Length() + length;
+
+  if (IsMarkedShort()) {
+    wchar_t oldData[MinCapaity];
+    size_t shortLength = GetShortLength();
+    memcpy(oldData, GetString(), shortLength * sizeof(wchar_t));
+    SetLongLength(shortLength);
+    AllocateLong();
+    MarkShort(false);
+
+    wchar_t* mutableStr = GetMutableString();
+    memcpy(mutableStr, oldData, shortLength * sizeof(wchar_t));
+    mutableStr[shortLength] = L'\0';
+  }
+
+  SetLongLength(combinedLength);
+  wchar_t* resizedStr = static_cast<wchar_t*>(PlatformReAlloc(mOverlapData.longStr.data, (combinedLength + 1) * sizeof(wchar_t)));
+  ZAssert(resizedStr != nullptr);
+  mOverlapData.longStr.data = resizedStr;
+
+  size_t currentPosition = wcslen(GetMutableString());
+
+  wchar_t* mutableStr = GetMutableString() + currentPosition;
+  const wchar_t* strOffset = str + offset;
+  memcpy(mutableStr, strOffset, length * sizeof(wchar_t));
+  mutableStr[length] = L'\0';
+  MarkShort(false);
+}
+
+void WideString::Copy(const wchar_t* str) {
+  if (IsShort(str)) {
+    CopyShort(str);
+  }
+  else {
+    CopyLong(str);
+  }
+}
+
+const wchar_t* WideString::GetString() const {
+  return (IsMarkedShort()) ? mOverlapData.shortStr.data : mOverlapData.longStr.data;
+}
+
+wchar_t* WideString::GetMutableString() {
+  return (IsMarkedShort()) ? mOverlapData.shortStr.data : mOverlapData.longStr.data;
+}
+
+size_t WideString::GetCombinedSize(const wchar_t* str) {
+  return wcslen(str) + Length();
+}
+
+bool WideString::FitsInSmall(size_t size) {
+  return size < MinCapaity;
+}
+
+void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* args, size_t numArgs) {
+  ZAssert(format != nullptr);
+
+  const wchar_t* lastPosition = format;
+  const wchar_t* lastChar = nullptr;
+  for (const wchar_t* str = format; *str != '\0'; ++str) {
+    wchar_t currentChar = *str;
+    bool isEscaped = (lastChar != nullptr) ? ((*lastChar) == '\\') : false;
+
+    if (!isEscaped && (currentChar == '{')) {
+      size_t jumpAhead = 0;
+
+      for (const wchar_t* endFormat = str + 1; *endFormat != '\0'; ++endFormat) {
+        if (*endFormat == '}') {
+          jumpAhead = (endFormat - str) + 1;
+          break;
+        }
+      }
+
+      if (jumpAhead == 0) {
+        ZAssert(false); // Invalid format.
+        break;
+      }
+
+      // Get the index specified by the argument.
+      int32 argIndex = static_cast<int32>(wcstol(str + 1, NULL, 10));
+      ZAssert(argIndex >= 0);
+
+      if (argIndex >= numArgs) {
+        ZAssert(false); // OOB
+        continue;
+      }
+
+      // Append format str up until the current position.
+      Append(lastPosition, 0, str - lastPosition);
+
+      // Append the VariableArg based on its type.
+      const VariableArg& arg = args[argIndex];
+      Append(arg.ToString().Str());
+
+      str += jumpAhead;
+      lastPosition = str;
+    }
+
+    lastChar = str;
+  }
+}
+
+WideString::VariableArg::VariableArg(const int32 arg)
+  : mType(Type::INT32) {
+  mData.int32_value = arg;
+}
+
+WideString::VariableArg::VariableArg(const float arg)
+  : mType(Type::FLOAT) {
+  mData.float_value = arg;
+}
+
+WideString WideString::VariableArg::ToString() const {
+  WideString result;
+
+  switch (mType) {
+  case Type::INT32:
+  {
+    const size_t bufferSize = 64;
+    wchar_t buffer[bufferSize];
+    buffer[0] = '\0';
+    const wchar_t* str = _itow(mData.int32_value, buffer, 10);
+    result.Append(str);
+  }
+  break;
+  case Type::UINT32:
+  {
+    ZAssert(false); // Not implemented.
+  }
+  break;
+  case Type::INT64:
+  {
+    ZAssert(false); // Not implemented.
+  }
+  break;
+  case Type::UINT64:
+  {
+    ZAssert(false); // Not implemented.
+  }
+  break;
+  case Type::FLOAT:
+  {
+#if 0
+    const size_t bufferSize = 64;
+    wchar_t buffer[bufferSize];
+    buffer[0] = '\0';
+    const int32 digits = FLT_DECIMAL_DIG;
+    const float val = mData.float_value;
+    const wchar_t* str = _gcvt(val, digits, buffer);
+    result.Append(str);
+#endif
+    ZAssert(false); // TODO: Is this even necessary?
+  }
+  break;
+  case Type::DOUBLE:
+  {
+    ZAssert(false); // Not implemented.
+  }
+  break;
   }
 
   return result;

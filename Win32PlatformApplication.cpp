@@ -4,9 +4,10 @@
 
 #include "InputManager.h"
 #include "ZConfig.h"
+#include "ZString.h"
 
-static wchar_t WINDOW_CLASS_NAME[] = L"SoftwareRendererWindowClass";
-static wchar_t WINDOW_TITLE[] = L"Software Renderer";
+static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
+static ZSharp::WideString WindowTitle(L"Software Renderer");
 static constexpr UINT FRAMERATE_60_HZ_MS = 1000 / 60;
 
 ZSharp::BroadcastDelegate<size_t, size_t> Win32PlatformApplication::OnWindowSizeChangedDelegate;
@@ -80,7 +81,7 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
       DispatchMessageW(&msg);
     }
 
-    UnregisterClassW(WINDOW_CLASS_NAME, mInstance);
+    UnregisterClassW(WindowClassName.Str(), mInstance);
     return 0;
   }
   else {
@@ -118,7 +119,7 @@ HWND Win32PlatformApplication::SetupWindow() {
     nullptr,
     nullptr,
     nullptr,
-    WINDOW_CLASS_NAME,
+    WindowClassName.Str(),
     nullptr
   };
 
@@ -134,8 +135,8 @@ HWND Win32PlatformApplication::SetupWindow() {
 
   return CreateWindowExW(
     WS_EX_OVERLAPPEDWINDOW,
-    WINDOW_CLASS_NAME,
-    WINDOW_TITLE,
+    WindowClassName.Str(),
+    WindowTitle.Str(),
     WS_OVERLAPPEDWINDOW | WS_VISIBLE,
     CW_USEDEFAULT,
     CW_USEDEFAULT,

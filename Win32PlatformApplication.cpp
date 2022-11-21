@@ -159,6 +159,8 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
 void Win32PlatformApplication::OnTimer() {
   mGameInstance.Tick();
 
+  // TODO: Move OnPaint() broadcast call here to avoid flickering.
+
   RECT activeWindowSize;
   GetClientRect(mWindowHandle, &activeWindowSize);
   InvalidateRect(mWindowHandle, &activeWindowSize, false);

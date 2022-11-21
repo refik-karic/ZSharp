@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Common.h"
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
 #include "PlatformMemory.h"
@@ -224,12 +225,6 @@ class Array final {
       mSize = 0;
     }
   }
-
-  static void Swap(T* lhs, T* rhs) {
-    const T temp(*rhs);
-    *rhs = *lhs;
-    *lhs = temp;
-  };
 
   void Quicksort(T* start, T* end) {
     T* pivot = end;

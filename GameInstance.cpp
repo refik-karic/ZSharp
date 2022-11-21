@@ -2,7 +2,7 @@
 
 #include "Constants.h"
 #include "InputManager.h"
-#include "UtilMath.h"
+#include "CommonMath.h"
 #include "ZConfig.h"
 
 #include <cmath>

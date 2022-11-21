@@ -1,7 +1,7 @@
 #include "ZAlgorithm.h"
 
 #include "Constants.h"
-#include "UtilMath.h"
+#include "CommonMath.h"
 
 #include "ZAssert.h"
 

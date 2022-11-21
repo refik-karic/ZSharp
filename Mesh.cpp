@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-#include "UtilMath.h"
+#include "CommonMath.h"
 
 #include <cstring>
 

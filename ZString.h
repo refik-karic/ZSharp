@@ -4,6 +4,9 @@
 #include "Array.h"
 
 namespace ZSharp {
+
+class WideString;
+
 class String final {
   private:
   class VariableArg {
@@ -120,6 +123,8 @@ class String final {
   int64 ToInt64() const;
 
   float ToFloat() const;
+
+  WideString ToWide() const;
 
   private:
   struct LongString {
@@ -301,6 +306,8 @@ public:
   int64 ToInt64() const;
 
   float ToFloat() const;
+
+  String ToNarrow() const;
 
 private:
   struct LongString {

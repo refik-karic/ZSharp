@@ -296,6 +296,19 @@ float String::ToFloat() const {
   return static_cast<float>(strtof(GetString(), NULL));
 }
 
+WideString String::ToWide() const {
+  if (IsEmpty()) {
+    WideString result;
+    return result;
+  }
+  
+  const size_t maxLength = Length() + 1;
+  Array<wchar_t> dest(maxLength);
+  mbstowcs(dest.GetData(), Str(), maxLength);
+  WideString result(dest.GetData());
+  return result;
+}
+
 bool String::IsShort(const char* str) const {
   return (strlen(str) + 1) < MinCapaity;
 }
@@ -811,6 +824,18 @@ int64 WideString::ToInt64() const {
 
 float WideString::ToFloat() const {
   return static_cast<float>(wcstof(GetString(), NULL));
+}
+
+String WideString::ToNarrow() const {
+  if (IsEmpty()) {
+    String result;
+    return result;
+  }
+
+  Array<char> dest(Length() + 1);
+  wcstombs(dest.GetData(), Str(), Length() + 1);
+  String result(dest.GetData());
+  return result;
 }
 
 bool WideString::IsShort(const wchar_t* str) const {

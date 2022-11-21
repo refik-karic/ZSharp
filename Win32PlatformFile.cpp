@@ -8,6 +8,7 @@
 #include <ShlObj_core.h>
 
 #include "Win32PlatformHeaders.h"
+#include "ZString.h"
 
 #include <fileapi.h>
 #include <handleapi.h>
@@ -212,10 +213,8 @@ FileString PlatformGetUserDesktopPath() {
   wchar_t* pathResult = nullptr;
   HRESULT result = SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &pathResult);
   if (result == S_OK) {
-    char convertedPath[_MAX_PATH];
-    convertedPath[0] = NULL;
-    wcstombs(convertedPath, pathResult, sizeof(convertedPath));
-    return FileString(convertedPath);
+    const WideString fetchedPath(pathResult);
+    return FileString(fetchedPath.ToNarrow());
   }
   else {
     return FileString("");

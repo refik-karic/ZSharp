@@ -1,4 +1,4 @@
-#if defined(_WIN64)
+#ifdef PLATFORM_WINDOWS
 
 #include "PlatformLogging.h"
 

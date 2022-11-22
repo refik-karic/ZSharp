@@ -1,4 +1,4 @@
-#if defined(_WIN64)
+#ifdef PLATFORM_WINDOWS
 
 #include "Win32PlatformApplication.h"
 
@@ -7,7 +7,6 @@
 #include "ZString.h"
 
 static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
-static ZSharp::WideString WindowTitle(L"Software Renderer");
 static constexpr UINT FRAMERATE_60_HZ_MS = 1000 / 60;
 
 ZSharp::BroadcastDelegate<size_t, size_t> Win32PlatformApplication::OnWindowSizeChangedDelegate;
@@ -136,7 +135,7 @@ HWND Win32PlatformApplication::SetupWindow() {
   return CreateWindowExW(
     WS_EX_OVERLAPPEDWINDOW,
     WindowClassName.Str(),
-    WindowTitle.Str(),
+    config.GetWindowTitle().ToWide().Str(),
     WS_OVERLAPPEDWINDOW | WS_VISIBLE,
     CW_USEDEFAULT,
     CW_USEDEFAULT,
@@ -158,16 +157,7 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
 }
 
 void Win32PlatformApplication::OnTimer() {
-  mGameInstance.Tick();
 
-  // TODO: Move OnPaint() broadcast call here to avoid flickering.
-
-  RECT activeWindowSize;
-  GetClientRect(mWindowHandle, &activeWindowSize);
-  InvalidateRect(mWindowHandle, &activeWindowSize, false);
-}
-
-void Win32PlatformApplication::OnPaint() {
   RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
     ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
@@ -192,6 +182,12 @@ void Win32PlatformApplication::OnPaint() {
     }
   }
 
+  mGameInstance.Tick();
+
+  InvalidateRect(mWindowHandle, &activeWindowSize, false);
+}
+
+void Win32PlatformApplication::OnPaint() {
   UpdateFrame(mGameInstance.GetCurrentFrame());
 }
 

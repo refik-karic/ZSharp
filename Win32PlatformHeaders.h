@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(_WIN64)
+#ifdef PLATFORM_WINDOWS
 
 #define WIN32_LEAN_AND_MEAN
 

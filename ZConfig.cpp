@@ -34,6 +34,10 @@ Array<String> ZConfig::GetAssets() const {
   return mAssets;
 }
 
+const String& ZConfig::GetWindowTitle() const {
+  return mWindowTitle;
+}
+
 void ZConfig::SetViewportWidth(size_t width) {
   mViewportWidth = width;
   mViewportStride = mBytesPerPixel * width;
@@ -89,12 +93,23 @@ ZConfig::ZConfig()
   }
 
   {
+    String windowTitle(userConfig.FindValue("GlobalSettings", "WindowTitle"));
+    if (!windowTitle.IsEmpty()) {
+      SetWindowTitle(windowTitle);
+    }
+  }
+
+  {
     userConfig.GetAllValuesForSection("SerializedAssets", mAssets);
   }
 }
 
 void ZConfig::SetAssetPath(const String& path) {
   mAssetPath = path;
+}
+
+void ZConfig::SetWindowTitle(const String& title) {
+  mWindowTitle = title;
 }
 
 }

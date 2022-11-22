@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.23)
+
 add_library(ZSharp)
 
 target_sources(ZSharp
@@ -117,9 +119,20 @@ set(ZSharp_Compile_Options_Release
   /GS-
 )
 
-target_compile_definitions(ZSharp PRIVATE 
+set(ZSharp_Preprocessor_Defines
   FORCE_AVX512
   FORCE_SSE
+)
+
+if(WIN32)
+  list(APPEND ZSharp_Preprocessor_Defines 
+    PLATFORM_WINDOWS
+    _CRT_SECURE_NO_WARNINGS
+  )
+endif(WIN32)
+
+target_compile_definitions(ZSharp PRIVATE 
+  ${ZSharp_Preprocessor_Defines}
 )
 
 target_compile_options(ZSharp PRIVATE 

@@ -27,6 +27,8 @@ class ZConfig final {
 
   Array<String> GetAssets() const;
 
+  const String& GetWindowTitle() const;
+
   void SetViewportWidth(size_t width);
 
   void SetViewportHeight(size_t height);
@@ -41,6 +43,8 @@ class ZConfig final {
 
   void SetAssetPath(const String& path);
 
+  void SetWindowTitle(const String& title);
+
   size_t mViewportWidth = 0;
   size_t mViewportHeight = 0;
   size_t mBytesPerPixel = 0;
@@ -49,5 +53,7 @@ class ZConfig final {
   FileString mAssetPath;
 
   Array<String> mAssets;
+
+  String mWindowTitle;
 };
 }

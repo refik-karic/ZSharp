@@ -1,6 +1,6 @@
 #pragma once
 
-#if defined(_WIN64)
+#ifdef PLATFORM_WINDOWS
 
 #include "Win32PlatformHeaders.h"
 

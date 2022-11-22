@@ -1,6 +1,4 @@
-#if defined(_WIN64)
-
-#define _CRT_SECURE_NO_WARNINGS 1
+#ifdef PLATFORM_WINDOWS
 
 #include "PlatformFile.h"
 #include "PlatformLogging.h"

@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+	<Type Name="ZSharp::Array&lt;*&gt;">
+		<DisplayString>{{ Size={mSize} }}</DisplayString>
+		<Expand>
+			<Item Name="Size">mSize</Item>
+			<Item Name="Capacity">mCapacity</Item>
+			<Synthetic Name="Array View">
+				<DisplayString> [0 -> {mSize}] </DisplayString>
+				<Expand>
+					<ArrayItems>
+						<Size>mSize</Size>
+						<ValuePointer>mData</ValuePointer>
+					</ArrayItems>
+				</Expand>
+			</Synthetic>
+		</Expand>
+	</Type>
+	
 	<Type Name="ZSharp::String">
 		<DisplayString Condition="(mOverlapData.longStr.size &amp; 0x80) == 0">
 			{{ Str={mOverlapData.longStr.data,s}, size={mOverlapData.longStr.size &amp; 0x7FFFFFFFFFFFFFFF} }}
@@ -15,7 +32,8 @@
 	</Type>
 
 	<Type Name="ZSharp::Vec3">
-		<DisplayString>{{ X={mData[0]}, Y={mData[1]}, Z={mData[2]} }}</DisplayString>
+		<DisplayString ExcludeView="Compact">{{ X={mData[0]}, Y={mData[1]}, Z={mData[2]} }}</DisplayString>
+		<DisplayString IncludeView="Compact">{{ {mData[0]}, {mData[1]}, {mData[2]} }}</DisplayString>
 		<Expand>
 			<Item Name="X">mData[0]</Item>
 			<Item Name="Y">mData[1]</Item>
@@ -24,7 +42,8 @@
 	</Type>
 
 	<Type Name="ZSharp::Vec4">
-		<DisplayString>{{ X={mData[0]}, Y={mData[1]}, Z={mData[2]}, W={mData[3]} }}</DisplayString>
+		<DisplayString ExcludeView="Compact">{{ X={mData[0]}, Y={mData[1]}, Z={mData[2]}, W={mData[3]} }}</DisplayString>
+		<DisplayString IncludeView="Compact">{{ {mData[0]}, {mData[1]}, {mData[2]}, {mData[3]} }}</DisplayString>
 		<Expand>
 			<Item Name="X">mData[0]</Item>
 			<Item Name="Y">mData[1]</Item>
@@ -32,4 +51,32 @@
 			<Item Name="W">mData[3]</Item>
 		</Expand>
 	</Type>
+
+	<Type Name="ZSharp::Mat2x3">
+		<DisplayString>{{ {mData[0],view(Compact)}, {mData[1],view(Compact)} }}</DisplayString>
+		<Expand>
+			<Item Name="R0">mData[0],view(Compact)</Item>
+			<Item Name="R1">mData[1],view(Compact)</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="ZSharp::Mat3x3">
+		<DisplayString>{{ {mData[0],view(Compact)}, {mData[1],view(Compact)}, {mData[2],view(Compact)} }}</DisplayString>
+		<Expand>
+			<Item Name="R0">mData[0],view(Compact)</Item>
+			<Item Name="R1">mData[1],view(Compact)</Item>
+			<Item Name="R2">mData[2],view(Compact)</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="ZSharp::Mat4x4">
+		<DisplayString>{{ {mData[0],view(Compact)}, {mData[1],view(Compact)}, {mData[2],view(Compact)}, {mData[3],view(Compact)} }}</DisplayString>
+		<Expand>
+			<Item Name="R0">mData[0],view(Compact)</Item>
+			<Item Name="R1">mData[1],view(Compact)</Item>
+			<Item Name="R2">mData[2],view(Compact)</Item>
+			<Item Name="R3">mData[3],view(Compact)</Item>
+		</Expand>
+	</Type>
+
 </AutoVisualizer>

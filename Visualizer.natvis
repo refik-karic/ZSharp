@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+	<Type Name="ZSharp::String">
+		<DisplayString Condition="(mOverlapData.longStr.size &amp; 0x80) == 0">
+			{{ Str={mOverlapData.longStr.data,s}, size={mOverlapData.longStr.size &amp; 0x7FFFFFFFFFFFFFFF} }}
+		</DisplayString>
+		<DisplayString Condition="(mOverlapData.shortStr.size &amp; 0x80) &gt; 0">
+			{{ Str={mOverlapData.shortStr.data,s}, size={mOverlapData.shortStr.size &amp; 0x7F} }}
+		</DisplayString>
+		<Expand>
+			<Item Name="Short Str">mOverlapData.shortStr.data</Item>
+			<Item Name="Long Str">mOverlapData.longStr.data</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="ZSharp::Vec3">
+		<DisplayString>{{ X={mData[0]}, Y={mData[1]}, Z={mData[2]} }}</DisplayString>
+		<Expand>
+			<Item Name="X">mData[0]</Item>
+			<Item Name="Y">mData[1]</Item>
+			<Item Name="Z">mData[2]</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="ZSharp::Vec4">
+		<DisplayString>{{ X={mData[0]}, Y={mData[1]}, Z={mData[2]}, W={mData[3]} }}</DisplayString>
+		<Expand>
+			<Item Name="X">mData[0]</Item>
+			<Item Name="Y">mData[1]</Item>
+			<Item Name="Z">mData[2]</Item>
+			<Item Name="W">mData[3]</Item>
+		</Expand>
+	</Type>
+</AutoVisualizer>

@@ -4,6 +4,8 @@ add_library(ZSharp)
 
 target_sources(ZSharp
     PRIVATE
+        Visualizer.natvis
+
         Array.h
         AssetLoader.h
         Camera.h

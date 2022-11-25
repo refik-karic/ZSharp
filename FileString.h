@@ -30,8 +30,8 @@ class FileString final {
   String mFilename;
   String mExtension;
 
-  String mDirectorySeparator = "\\";
-  String mExtensionSeparator = ".";
+  static String mDirectorySeparator;
+  static String mExtensionSeparator;
   String mAbsolutePath;
 
   void Initialize(const String& absoluteFilePath);

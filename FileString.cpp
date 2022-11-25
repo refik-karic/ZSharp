@@ -7,6 +7,9 @@
 
 // Exampe: C:\Users\kr\Desktop\ZSharp-Tools\src\Debug
 namespace ZSharp {
+String FileString::mDirectorySeparator = "\\";
+String FileString::mExtensionSeparator = ".";
+
 FileString::FileString(const String& absoluteFilePath) {
   Initialize(absoluteFilePath);
 }

@@ -14,15 +14,15 @@ Renderer::Renderer() {
 }
 
 void Renderer::Initialize() {
-  const ZColor colorGreen{ ZColors::GREEN };
+  const ZColor colorGreen(ZColors::GREEN);
   mBuffer.Clear(colorGreen);
 }
 
 void Renderer::RenderNextFrame(World& world, Camera& camera) {
-  const ZColor colorRed{ZColors::RED};
-  const ZColor colorBlue{ZColors::BLUE};
+  const ZColor colorRed(ZColors::RED);
+  const ZColor clearColor(ZColors::ORANGE);
 
-  mBuffer.Clear(colorBlue);
+  mBuffer.Clear(clearColor);
 
   for (size_t i = 0; i < world.GetTotalModels(); ++i) {
     Model& model = world.GetModels()[i];
@@ -40,7 +40,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
       DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer, colorRed);
     }
     else {
-      DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer, colorRed);
+      DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer);
     }
   }
 }

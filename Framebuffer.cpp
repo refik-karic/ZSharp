@@ -38,7 +38,7 @@ void Framebuffer::SetPixel(const size_t x, const size_t y, const ZColor color) {
 #else
   if ((x >= 0 && x < mWidth) && (y >= 0 && y < mHeight)) {
     size_t offset = (x * sizeof(uint32)) + (y * mStride);
-    *(reinterpret_cast<uint32*>(mPixelBuffer + offset)) = color.Color;
+    *(reinterpret_cast<uint32*>(mPixelBuffer + offset)) = color.Color();
   }
 #endif
 }
@@ -68,7 +68,7 @@ void Framebuffer::SetRow(const size_t y, const size_t x1, const size_t x2, const
 
     uint32* pixelPtr = reinterpret_cast<uint32*>(mPixelBuffer + offset);
     for (size_t i = 0; i < x2 - x1; ++i) {
-      pixelPtr[i] = color.Color;
+      pixelPtr[i] = color.Color();
     }
   }
 #endif
@@ -80,12 +80,12 @@ void Framebuffer::Clear(const ZColor color) {
   if ((numPixels % 64) > 0) {
     uint32* pixelPtr = reinterpret_cast<uint32*>(mPixelBuffer);
     for (size_t i = 0; i < numPixels; ++i) {
-      pixelPtr[i] = color.Color;
+      pixelPtr[i] = color.Color();
     }
   }
   else {
     for (size_t i = 0; i < 16; ++i) {
-      *(reinterpret_cast<uint32*>(mScratchBuffer) + i) = color.Color;
+      *(reinterpret_cast<uint32*>(mScratchBuffer) + i) = color.Color();
     }
 
     aligned_avx512memset(mPixelBuffer, mScratchBuffer, mTotalSize);

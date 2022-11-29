@@ -41,29 +41,39 @@ void DrawRunSlice(Framebuffer& framebuffer,
   int32 x2 = static_cast<int32>(p1[0]);
   int32 y2 = static_cast<int32>(p1[1]);
 
-  // TODO: Add logic to calculate parametric T value for the vertex pairs and use PerspectiveLerp() to obtain the final color, texture, etc values.
+  bool flippedX = false;
+  bool flippedY = false;
 
-  (void)p1Attributes;
-
+  // Vertical line
   if (x1 == x2) {
     if (y2 < y1) {
       Swap(y1, y2);
+      flippedY = true;
     }
 
     for (; y1 < y2; y1++) {
-      ZColor color;
-      color.FloatToRGB(p0Attributes[0], p0Attributes[1], p0Attributes[2]);
+      float yT = (flippedY) ? ParametricSolveForT(static_cast<float>(y1), p1[1], p0[1]) : ParametricSolveForT(static_cast<float>(y1), p0[1], p1[1]);
+      float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], yT);
+      float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], yT);
+      float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], yT);
+      ZColor color(R, G, B);
       framebuffer.SetPixel(x1, y1, color);
     }
   }
-  else if (y1 == y2) {
+  else if (y1 == y2) { // Horizontal line
     if (x2 < x1) {
       Swap(x1, x2);
+      flippedX = true;
     }
 
-    ZColor color;
-    color.FloatToRGB(p0Attributes[0], p0Attributes[1], p0Attributes[2]);
-    framebuffer.SetRow(y1, x1, x2, color);
+    for (int32 i = x1; i < x2; ++i) {
+      float xT = (flippedX) ? ParametricSolveForT(static_cast<float>(i), p1[0], p0[0]) : ParametricSolveForT(static_cast<float>(i), p0[0], p1[0]);
+      float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
+      float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
+      float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
+      ZColor color(R, G, B);
+      framebuffer.SetPixel(i, y1, color);
+    }
   }
   else {
     float slope;
@@ -71,12 +81,14 @@ void DrawRunSlice(Framebuffer& framebuffer,
     int32 slopeStep;
     int32 delta;
 
-    if (y2 < y1) {
+    if (y2 < y1) { // Always draw up and to left/right
       Swap(y1, y2);
       Swap(x1, x2);
+      flippedX = true;
+      flippedY = true;
     }
 
-    if (abs(x2 - x1) >= abs(y2 - y1)) {
+    if (abs(x2 - x1) >= abs(y2 - y1)) { // Horizontal slope
       delta = abs(y2 - y1);
       slope = fabs(static_cast<float>((x2 - x1)) / (y2 - y1));
 
@@ -88,24 +100,35 @@ void DrawRunSlice(Framebuffer& framebuffer,
           error = fmax(error - 1.f, 0.f);
         }
 
-        if (x2 <= x1) {
-          // TODO: Calculate perspective correct UV's here using ParametricSolveForT() and PerspectiveLerp().
-          ZColor color;
-          color.FloatToRGB(p0Attributes[0], p0Attributes[1], p0Attributes[2]);
-          framebuffer.SetRow(y1, x1 - slopeStep, x1, color);
+        if (x2 <= x1) { // Drawing right to left, writing pixels left to right for cache coherency.
+          for (int32 j = x1 - slopeStep; j < x1; ++j) {
+            float xT = (flippedX) ? ParametricSolveForT(static_cast<float>(j), p1[0], p0[0]) : ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
+            float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
+            float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
+            float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
+            ZColor color(R, G, B);
+            framebuffer.SetPixel(j, y1, color);
+          }
+
           x1 -= slopeStep;
         }
-        else {
-          ZColor color;
-          color.FloatToRGB(p0Attributes[0], p0Attributes[1], p0Attributes[2]);
-          framebuffer.SetRow(y1, x1, x1 + slopeStep, color);
+        else { // Drawing left to right
+          for (int32 j = x1; j < x1 + slopeStep; ++j) {
+            float xT = (flippedX) ? ParametricSolveForT(static_cast<float>(j), p1[0], p0[0]) : ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
+            float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
+            float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
+            float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
+            ZColor color(R, G, B);
+            framebuffer.SetPixel(j, y1, color);
+          }
+
           x1 += slopeStep;
         }
 
-        y1++;
+        y1++; // Move vertical in either direction
       }
     }
-    else {
+    else { // Vertical slope
       delta = abs(x2 - x1);
       int32 minorStep = (x2 - x1) / delta;
       slope = fabs(static_cast<float>((y2 - y1)) / (x2 - x1));
@@ -118,9 +141,13 @@ void DrawRunSlice(Framebuffer& framebuffer,
           error = fmax(error - 1.f, 0.f);
         }
 
+        // Draw a vertical span for the current X
         for (int32 j = y1; j < y1 + slopeStep; j++) {
-          ZColor color;
-          color.FloatToRGB(p0Attributes[0], p0Attributes[1], p0Attributes[2]);
+          float yT = (flippedY) ? ParametricSolveForT(static_cast<float>(j), p1[1], p0[1]) : ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
+          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], yT);
+          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], yT);
+          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], yT);
+          ZColor color(R, G, B);
           framebuffer.SetPixel(x1, j, color);
         }
 
@@ -245,13 +272,10 @@ void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertex
         const Vec3& v2 = *reinterpret_cast<const Vec3*>(vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1)));
         const Vec3& v3 = *reinterpret_cast<const Vec3*>(vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2)));
 
-        Vec4 v1Vec(v1);
-        Vec4 v2Vec(v2);
-        Vec4 v3Vec(v3);
         // W axis is inverse perspective Z for each vertex.
-        v1Vec[3] = 1 / v1Vec[2];
-        v2Vec[3] = 1 / v2Vec[2];
-        v3Vec[3] = 1 / v3Vec[2];
+        const Vec4 v1Vec(v1, 1 / v1[2]);
+        const Vec4 v2Vec(v2, 1 / v2[2]);
+        const Vec4 v3Vec(v3, 1 / v3[2]);
 
         const float red[] = { 1.f, 0.f, 0.f };
         const float green[] = { 0.f, 1.f, 0.f };

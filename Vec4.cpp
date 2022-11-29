@@ -25,6 +25,10 @@ Vec4::Vec4(const Vec3& copy) {
   *this = copy;
 }
 
+Vec4::Vec4(const Vec3& copy, float w) 
+  : mData{copy[0], copy[1], copy[2], w} {
+}
+
 void Vec4::operator=(const Vec3& vector) {
   memcpy(mData, *vector, sizeof(mData));
   mData[3] = 1.f;

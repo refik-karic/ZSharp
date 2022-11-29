@@ -15,6 +15,8 @@ class alignas(16) Vec4 final {
 
   Vec4(const Vec3& copy);
 
+  Vec4(const Vec3& copy, float w);
+
   void operator=(const Vec3& vector);
 
   void operator=(const Vec4& vector);

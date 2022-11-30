@@ -105,14 +105,14 @@ void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
   }
 }
 
-void VertexBuffer::AppendClipData(const float* data, size_t length) {
+void VertexBuffer::AppendClipData(const float* data, size_t lengthBytes, size_t numVertices) {
   size_t usedBytes = (mInputSize + (mClipLength * mStride)) * sizeof(float);
-  if (usedBytes + (length * sizeof(Vec4)) > mAllocatedSize) {
+  if ((usedBytes + lengthBytes) > mAllocatedSize) {
     return;
   }
 
-  memcpy(mClipData + (mClipLength * mStride), data, length * sizeof(Vec4));
-  mClipLength += length;
+  memcpy(mClipData + (mClipLength * mStride), data, lengthBytes);
+  mClipLength += numVertices;
 }
 
 size_t VertexBuffer::GetClipLength() const {

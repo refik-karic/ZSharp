@@ -30,13 +30,15 @@ void World::LoadModel(FileString& path) {
 
   size_t indexBufSize = 0;
   size_t vertBufSize = 0;
+  size_t vertStride = 0;
   for (Mesh& mesh : cachedModel.GetMeshData()) {
     indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
     vertBufSize += mesh.GetVertTable().Size();
+    vertStride = mesh.GetStride();
   }
 
   cachedIndexBuffer.Resize(indexBufSize);
-  cachedVertBuffer.Resize(vertBufSize, 4, indexBufSize);
+  cachedVertBuffer.Resize(vertBufSize, vertStride, indexBufSize);
 }
 
 void World::DebugLoadTriangle(const Vec4& v1, const Vec4& v2, const Vec4& v3)

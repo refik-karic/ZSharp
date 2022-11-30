@@ -27,13 +27,15 @@ class Mesh final {
 
   void Resize(size_t vertexLength, size_t stride, size_t faceTableLength);
 
-  void SetData(const float* vertData, size_t index, size_t numVerts);
+  void SetData(const float* vertData, size_t index, size_t numBytes);
 
   void SetTriangle(const Triangle& triangle, size_t index);
 
   Array<float>& GetVertTable();
 
   const Array<float>& GetVertTable() const;
+
+  size_t GetStride() const;
 
   Array<Triangle>& GetTriangleFaceTable();
 

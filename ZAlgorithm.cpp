@@ -5,7 +5,9 @@
 
 #include "ZAssert.h"
 
-#define DEBUG_CLIPPING 0
+#include <cstring>
+
+#define DEBUG_CLIPPING 1
 
 #define ASSERT_CHECK 0
 
@@ -42,12 +44,16 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 #if DEBUG_CLIPPING
     size_t currentClipIndex = vertexBuffer.GetClipLength();
 
-    FixedArray<Vec4, MaxOutVerts> tempClippedVerts;
-    for (size_t j = 0; j < numClippedVerts; ++j) {
-      tempClippedVerts[j] = clippedVerts[j];
-    }
+    // (XYZ, RGB) for 3 vertices.
+    float clipData[7 * 3];
+    memcpy(clipData, vertexBuffer[i1], sizeof(Vec4));
+    memcpy(clipData + 4, vertexBuffer[i1] + 4, 3 * sizeof(float));
+    memcpy(clipData + 7, vertexBuffer[i2], sizeof(Vec4));
+    memcpy(clipData + 11, vertexBuffer[i2] + 4, 3 * sizeof(float));
+    memcpy(clipData + 14, vertexBuffer[i3], sizeof(Vec4));
+    memcpy(clipData + 18, vertexBuffer[i3] + 4, 3 * sizeof(float));
 
-    vertexBuffer.AppendClipData(reinterpret_cast<const float*>(tempClippedVerts.GetData()), numClippedVerts);
+    vertexBuffer.AppendClipData(clipData, sizeof(clipData), numClippedVerts);
     Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
     indexBuffer.AppendClipData(nextTriangle);
 #else

@@ -39,7 +39,7 @@ class VertexBuffer final {
 
   void ApplyTransform(const Mat4x4& transform);
 
-  void AppendClipData(const float* data, size_t length);
+  void AppendClipData(const float* data, size_t lengthBytes, size_t numVertices);
 
   size_t GetClipLength() const;
 

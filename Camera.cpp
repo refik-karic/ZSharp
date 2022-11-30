@@ -97,7 +97,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
     vertexVector = unhing.ApplyTransform(vertexVector);
-    vertexVector.Homogenize(); // TODO: The W term here may also be the perspective term in case the other approach fails...
+    vertexVector.Homogenize();
   }
 
   ClipTriangles(vertexBuffer, indexBuffer);

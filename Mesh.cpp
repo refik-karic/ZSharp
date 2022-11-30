@@ -25,8 +25,8 @@ void Mesh::Resize(size_t vertexLength, size_t stride, size_t faceTableLength) {
   mStride = stride;
 }
 
-void Mesh::SetData(const float* vertData, size_t index, size_t numVerts) {
-  memcpy(mVertTable.GetData() + index, vertData, numVerts);
+void Mesh::SetData(const float* vertData, size_t index, size_t numBytes) {
+  memcpy(mVertTable.GetData() + index, vertData, numBytes);
 }
 
 void Mesh::SetTriangle(const Triangle& triangle, size_t index) {
@@ -39,6 +39,10 @@ Array<float>& Mesh::GetVertTable() {
 
 const Array<float>& Mesh::GetVertTable() const {
   return mVertTable;
+}
+
+size_t Mesh::GetStride() const {
+  return mStride;
 }
 
 Array<Triangle>& Mesh::GetTriangleFaceTable() {

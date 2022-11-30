@@ -41,18 +41,14 @@ void DrawRunSlice(Framebuffer& framebuffer,
   int32 x2 = static_cast<int32>(p1[0]);
   int32 y2 = static_cast<int32>(p1[1]);
 
-  bool flippedX = false;
-  bool flippedY = false;
-
   // Vertical line
   if (x1 == x2) {
     if (y2 < y1) {
       Swap(y1, y2);
-      flippedY = true;
     }
 
     for (; y1 < y2; y1++) {
-      float yT = (flippedY) ? ParametricSolveForT(static_cast<float>(y1), p1[1], p0[1]) : ParametricSolveForT(static_cast<float>(y1), p0[1], p1[1]);
+      float yT = ParametricSolveForT(static_cast<float>(y1), p0[1], p1[1]);
       float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], yT);
       float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], yT);
       float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], yT);
@@ -63,11 +59,10 @@ void DrawRunSlice(Framebuffer& framebuffer,
   else if (y1 == y2) { // Horizontal line
     if (x2 < x1) {
       Swap(x1, x2);
-      flippedX = true;
     }
 
     for (int32 i = x1; i < x2; ++i) {
-      float xT = (flippedX) ? ParametricSolveForT(static_cast<float>(i), p1[0], p0[0]) : ParametricSolveForT(static_cast<float>(i), p0[0], p1[0]);
+      float xT = ParametricSolveForT(static_cast<float>(i), p0[0], p1[0]);
       float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
       float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
       float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
@@ -84,8 +79,6 @@ void DrawRunSlice(Framebuffer& framebuffer,
     if (y2 < y1) { // Always draw up and to left/right
       Swap(y1, y2);
       Swap(x1, x2);
-      flippedX = true;
-      flippedY = true;
     }
 
     if (abs(x2 - x1) >= abs(y2 - y1)) { // Horizontal slope
@@ -102,7 +95,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
         if (x2 <= x1) { // Drawing right to left, writing pixels left to right for cache coherency.
           for (int32 j = x1 - slopeStep; j < x1; ++j) {
-            float xT = (flippedX) ? ParametricSolveForT(static_cast<float>(j), p1[0], p0[0]) : ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
+            float xT = ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
             float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
             float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
             float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
@@ -114,7 +107,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
         }
         else { // Drawing left to right
           for (int32 j = x1; j < x1 + slopeStep; ++j) {
-            float xT = (flippedX) ? ParametricSolveForT(static_cast<float>(j), p1[0], p0[0]) : ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
+            float xT = ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
             float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
             float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
             float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
@@ -143,7 +136,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
         // Draw a vertical span for the current X
         for (int32 j = y1; j < y1 + slopeStep; j++) {
-          float yT = (flippedY) ? ParametricSolveForT(static_cast<float>(j), p1[1], p0[1]) : ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
+          float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
           float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], yT);
           float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], yT);
           float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], yT);
@@ -277,27 +270,27 @@ void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertex
         const Vec4 v2Vec(v2, 1 / v2[2]);
         const Vec4 v3Vec(v3, 1 / v3[2]);
 
-        const float red[] = { 1.f, 0.f, 0.f };
-        const float green[] = { 0.f, 1.f, 0.f };
-        const float blue[] = { 0.f, 0.f, 1.f };
+        const float* v1Attributes = vertexBuffer.GetClipData(indexBuffer.GetClipData(i)) + 3;
+        const float* v2Attributes = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1)) + 3;
+        const float* v3Attributes = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2)) + 3;
 
         DrawRunSlice(framebuffer,
             v1Vec,
             v2Vec,
-            red,
-            green);
+            v1Attributes,
+            v2Attributes);
 
         DrawRunSlice(framebuffer,
             v2Vec,
             v3Vec,
-            green,
-            blue);
+            v2Attributes,
+            v3Attributes);
 
         DrawRunSlice(framebuffer,
             v3Vec,
             v1Vec,
-            blue,
-            red);
+            v3Attributes,
+            v1Attributes);
     }
 }
 

@@ -32,14 +32,15 @@ float PerspectiveLerp(const float p0, const float p1, const float p0Z, const flo
 }
 
 void DrawRunSlice(Framebuffer& framebuffer, 
-                  const Vec4& p0,
-                  const Vec4& p1,
-                  const float* p0Attributes,
-                  const float* p1Attributes) {
+                  const float* p0,
+                  const float* p1) {
   int32 x1 = static_cast<int32>(p0[0]);
   int32 y1 = static_cast<int32>(p0[1]);
   int32 x2 = static_cast<int32>(p1[0]);
   int32 y2 = static_cast<int32>(p1[1]);
+
+  const float* p0Attributes = p0 + 4;
+  const float* p1Attributes = p1 + 4;
 
   // Vertical line
   if (x1 == x2) {
@@ -261,36 +262,12 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
 void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {
     size_t end = indexBuffer.GetClipLength();
     for (size_t i = 0; i < end; i += TRI_VERTS) {
-        const Vec3& v1 = *reinterpret_cast<const Vec3*>(vertexBuffer.GetClipData(indexBuffer.GetClipData(i)));
-        const Vec3& v2 = *reinterpret_cast<const Vec3*>(vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1)));
-        const Vec3& v3 = *reinterpret_cast<const Vec3*>(vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2)));
-
-        // W axis is inverse perspective Z for each vertex.
-        const Vec4 v1Vec(v1, 1 / v1[2]);
-        const Vec4 v2Vec(v2, 1 / v2[2]);
-        const Vec4 v3Vec(v3, 1 / v3[2]);
-
-        const float* v1Attributes = vertexBuffer.GetClipData(indexBuffer.GetClipData(i)) + 3;
-        const float* v2Attributes = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1)) + 3;
-        const float* v3Attributes = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2)) + 3;
-
-        DrawRunSlice(framebuffer,
-            v1Vec,
-            v2Vec,
-            v1Attributes,
-            v2Attributes);
-
-        DrawRunSlice(framebuffer,
-            v2Vec,
-            v3Vec,
-            v2Attributes,
-            v3Attributes);
-
-        DrawRunSlice(framebuffer,
-            v3Vec,
-            v1Vec,
-            v3Attributes,
-            v1Attributes);
+        const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
+        const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
+        const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
+        DrawRunSlice(framebuffer, v1, v2);
+        DrawRunSlice(framebuffer, v2, v3);
+        DrawRunSlice(framebuffer, v3, v1);
     }
 }
 

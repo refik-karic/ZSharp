@@ -109,7 +109,10 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     const float perspectiveZ = vertexData[2];
     vertexVector.Homogenize();
     vertexVector = mWindowTransform.ApplyTransform(vertexVector);
+    // Store perspective Z and inverse Z for each vertex in the clip buffer.
+    // Prevents us from having to calculate this at a later point in the drawing code.
     vertexData[2] = perspectiveZ;
+    vertexData[3] = 1 / perspectiveZ;
 
 #if ASSERT_CHECK
     const float width = (float)ZConfig::GetInstance().GetViewportWidth();

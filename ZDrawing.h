@@ -26,10 +26,8 @@ void DrawTrianglesWireframe(Framebuffer& framebuffer,
     const IndexBuffer& indexBuffer);
 
 void DrawRunSlice(Framebuffer& framebuffer,
-    const Vec4& p0,
-    const Vec4& p1,
-    const float* p0Attributes,
-    const float* p1Attributes);
+    const float* p0,
+    const float* p1);
 
 void TracePrimitive(GlobalEdgeTable& edgeTable, 
     FixedArray<size_t, 2>& p1,

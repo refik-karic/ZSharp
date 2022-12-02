@@ -45,13 +45,13 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     size_t currentClipIndex = vertexBuffer.GetClipLength();
 
     // (XYZ, RGB) for 3 vertices.
-    float clipData[7 * 3];
-    memcpy(clipData, vertexBuffer[i1], sizeof(Vec4));
-    memcpy(clipData + 4, vertexBuffer[i1] + 4, 3 * sizeof(float));
-    memcpy(clipData + 7, vertexBuffer[i2], sizeof(Vec4));
-    memcpy(clipData + 11, vertexBuffer[i2] + 4, 3 * sizeof(float));
-    memcpy(clipData + 14, vertexBuffer[i3], sizeof(Vec4));
-    memcpy(clipData + 18, vertexBuffer[i3] + 4, 3 * sizeof(float));
+    const size_t stride = 7;
+    ZAssert(stride == vertexBuffer.GetStride());
+    float clipData[stride * 3];
+    const size_t vertByteSize = 7 * sizeof(float);
+    memcpy(clipData, vertexBuffer[i1], vertByteSize);
+    memcpy(clipData + stride, vertexBuffer[i2], vertByteSize);
+    memcpy(clipData + (stride * 2), vertexBuffer[i3], vertByteSize);
 
     vertexBuffer.AppendClipData(clipData, sizeof(clipData), numClippedVerts);
     Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);

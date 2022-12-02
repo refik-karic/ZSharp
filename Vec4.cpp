@@ -155,7 +155,9 @@ void Vec4::Normalize() {
 void Vec4::Homogenize() {
   const float invDivisor = 1.f / mData[3];
 #ifdef FORCE_SSE
-  aligned_sse128mulfloat(mData, invDivisor, mData);
+  // TODO: Figure out why the aligned version fails in release builds.
+  // This class and the vertex buffer are both aligned to 16-bytes.
+  unaligned_sse128mulfloat(mData, invDivisor, mData);
 #else
   mData[0] *= invDivisor;
   mData[1] *= invDivisor;

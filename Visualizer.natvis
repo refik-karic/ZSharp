@@ -1,6 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+	<Type Name="ZSharp::VertexBuffer">
+		<DisplayString>{{ Total Size={mAllocatedSize} }}</DisplayString>
+		<Expand>
+			<Item Name="Stride">mStride</Item>
+			<Item Name="Input Verts">mInputSize / mStride</Item>
+			<Item Name="Input Size">mInputSize</Item>
+			<Item Name="Index Size">mIndexSize</Item>
+			<Item Name="Total Size">mAllocatedSize</Item>
+			<Item Name="Working Size">mWorkingSize</Item>
+			<Item Name="Clip Verts">mClipLength</Item>
+			<Item Name="Clip Size">mClipLength * mStride</Item>
+			<Synthetic Name="Input View">
+				<DisplayString> [0 -> {mInputSize}] </DisplayString>
+				<Expand>
+					<ArrayItems>
+						<Size>mInputSize</Size>
+						<ValuePointer>mData</ValuePointer>
+					</ArrayItems>
+				</Expand>
+			</Synthetic>
+			<Synthetic Name="Clip View">
+				<DisplayString> [0 -> {mClipLength * mStride}] </DisplayString>
+				<Expand>
+					<ArrayItems>
+						<Size>mClipLength * mStride</Size>
+						<ValuePointer>mClipData</ValuePointer>
+					</ArrayItems>
+				</Expand>
+			</Synthetic>
+		</Expand>
+	</Type>
+
 	<Type Name="ZSharp::Array&lt;*&gt;">
 		<DisplayString>{{ Size={mSize} }}</DisplayString>
 		<Expand>

@@ -14,15 +14,21 @@ float ParametricSolveForT(const float step, const float p0, const float p1) {
   return numerator / denominator;
 }
 
-float PerspectiveLerp(const float p0, const float p1, const float p0Z, const float p1Z, const float t) {
+float PerspectiveLerp(const float p0,
+  const float p1,
+  const float p0Z,
+  const float invP0z,
+  const float p1Z,
+  const float invP1z,
+  const float t) {
   // Assuming projection onto -1 Z plane.
   float numeratorP0 = (p0 / -p0Z) * (t);
   float numeratorP1 = (p1 / -p1Z) * (1 - t);
 
   const float finalNumerator = numeratorP0 + numeratorP1;
 
-  const float denominatorP0 = (1 / -p0Z) * t;
-  const float denominatorP1 = (1 / -p1Z) * (1 - t);
+  const float denominatorP0 = invP0z * t;
+  const float denominatorP1 = invP1z * (1 - t);
 
   const float finalDenominator = denominatorP0 + denominatorP1;
 
@@ -50,9 +56,9 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
     for (; y1 < y2; y1++) {
       float yT = ParametricSolveForT(static_cast<float>(y1), p0[1], p1[1]);
-      float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], yT);
-      float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], yT);
-      float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], yT);
+      float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
+      float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);
+      float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], yT);
       ZColor color(R, G, B);
       framebuffer.SetPixel(x1, y1, color);
     }
@@ -64,9 +70,9 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
     for (int32 i = x1; i < x2; ++i) {
       float xT = ParametricSolveForT(static_cast<float>(i), p0[0], p1[0]);
-      float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
-      float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
-      float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
+      float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
+      float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
+      float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
       ZColor color(R, G, B);
       framebuffer.SetPixel(i, y1, color);
     }
@@ -97,9 +103,9 @@ void DrawRunSlice(Framebuffer& framebuffer,
         if (x2 <= x1) { // Drawing right to left, writing pixels left to right for cache coherency.
           for (int32 j = x1 - slopeStep; j < x1; ++j) {
             float xT = ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
-            float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
-            float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
-            float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
+            float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
+            float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
+            float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
             ZColor color(R, G, B);
             framebuffer.SetPixel(j, y1, color);
           }
@@ -109,9 +115,9 @@ void DrawRunSlice(Framebuffer& framebuffer,
         else { // Drawing left to right
           for (int32 j = x1; j < x1 + slopeStep; ++j) {
             float xT = ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
-            float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], xT);
-            float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], xT);
-            float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], xT);
+            float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
+            float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
+            float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
             ZColor color(R, G, B);
             framebuffer.SetPixel(j, y1, color);
           }
@@ -138,9 +144,9 @@ void DrawRunSlice(Framebuffer& framebuffer,
         // Draw a vertical span for the current X
         for (int32 j = y1; j < y1 + slopeStep; j++) {
           float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
-          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p1[2], yT);
-          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p1[2], yT);
-          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p1[2], yT);
+          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
+          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);
+          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], yT);
           ZColor color(R, G, B);
           framebuffer.SetPixel(x1, j, color);
         }

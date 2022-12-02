@@ -1,9 +1,9 @@
 #include "VertexBuffer.h"
 
-
 #include <cstring>
 
 #include "ZAssert.h"
+#include "CommonMath.h"
 #include "Constants.h"
 #include "PlatformMemory.h"
 #include "Vec4.h"
@@ -81,6 +81,7 @@ void VertexBuffer::Resize(size_t vertexSize, size_t stride, size_t indexSize) {
   mIndexSize = indexSize;
   mAllocatedSize = ((vertexSize * sizeof(float)) + (indexSize * MAX_INDICIES_AFTER_CLIP * sizeof(float)));
   mStride = stride;
+  mAllocatedSize = RoundUpNearestMultiple(mAllocatedSize, 16);
   mData = static_cast<float*>(PlatformAlignedMalloc(mAllocatedSize, 16));
   mClipData = mData + mInputSize;
   mWorkingSize = 0;
@@ -110,7 +111,6 @@ void VertexBuffer::AppendClipData(const float* data, size_t lengthBytes, size_t 
   if ((usedBytes + lengthBytes) > mAllocatedSize) {
     return;
   }
-
   memcpy(mClipData + (mClipLength * mStride), data, lengthBytes);
   mClipLength += numVertices;
 }

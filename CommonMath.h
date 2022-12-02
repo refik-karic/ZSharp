@@ -4,6 +4,8 @@
 
 namespace ZSharp {
 
+size_t RoundUpNearestMultiple(size_t val, size_t multiple);
+
 float DegreesToRadians(float degrees);
 
 float Lerp(float x1, float x2, float point);

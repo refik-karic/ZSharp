@@ -14,7 +14,13 @@ namespace ZSharp {
 
 float ParametricSolveForT(const float step, const float p0, const float p1);
 
-float PerspectiveLerp(const float p0, const float p1, const float p0Z, const float p1Z,  const float t);
+float PerspectiveLerp(const float p0, 
+  const float p1, 
+  const float p0Z, 
+  const float invP0z,
+  const float p1Z, 
+  const float invP1z,
+  const float t);
 
 void DrawTrianglesFlat(Framebuffer& framebuffer,
     const VertexBuffer& vertexBuffer,

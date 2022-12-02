@@ -3,8 +3,22 @@
 #include <cmath>
 
 #include "Constants.h"
+#include "ZAssert.h"
 
 namespace ZSharp {
+size_t RoundUpNearestMultiple(size_t val, size_t multiple) {
+  if (val == 0 || multiple == 0) {
+    ZAssert(false);
+    return 0;
+  }
+
+  if ((val % multiple) > 0) {
+    return (static_cast<size_t>(ceil((double)val / (double)multiple)) * multiple);
+  }
+  else {
+    return val;
+  }
+}
 
 float DegreesToRadians(float degrees) {
   return degrees * PI_OVER_180;

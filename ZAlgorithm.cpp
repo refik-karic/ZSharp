@@ -7,9 +7,15 @@
 
 #include <cstring>
 
-#define DEBUG_CLIPPING 1
+#define DEBUG_CLIPPING 0
 
 #define ASSERT_CHECK 0
+
+static const size_t MaxOutVerts = 2;
+static const size_t NumInVerts = 3;
+static const size_t NumAttributes = 3;
+static const size_t Stride = 7;
+static const size_t VertByteSize = 7 * sizeof(float);
 
 namespace ZSharp {
 bool InsidePlane(const Vec3& point, const Vec3& clipEdge) {
@@ -32,14 +38,17 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     const size_t i1 = indexBuffer[i];
     const size_t i2 = indexBuffer[i + 1];
     const size_t i3 = indexBuffer[i + 2];
-    const Vec3& v1 = *reinterpret_cast<const Vec3*>(vertexBuffer[i1]);
-    const Vec3& v2 = *reinterpret_cast<const Vec3*>(vertexBuffer[i2]);
-    const Vec3& v3 = *reinterpret_cast<const Vec3*>(vertexBuffer[i3]);
+    const float* v1 = vertexBuffer[i1];
+    const float* v2 = vertexBuffer[i2];
+    const float* v3 = vertexBuffer[i3];
+
+    float clipBuffer[(NumInVerts * Stride) * 2];
+    memset(clipBuffer, 0, sizeof(clipBuffer));
+    memcpy(clipBuffer, v1, VertByteSize);
+    memcpy(clipBuffer + Stride, v2, VertByteSize);
+    memcpy(clipBuffer + (Stride * 2), v3, VertByteSize);
+
     size_t numClippedVerts = 3;
-    ClipBuffer clippedVerts;
-    clippedVerts[0] = v1;
-    clippedVerts[1] = v2;
-    clippedVerts[2] = v3;
 
 #if DEBUG_CLIPPING
     size_t currentClipIndex = vertexBuffer.GetClipLength();
@@ -58,23 +67,23 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     indexBuffer.AppendClipData(nextTriangle);
 #else
     currentEdge[0] = 1.f;
-    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge);
 
     currentEdge[0] = 0.f;
     currentEdge[1] = 1.f;
-    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge);
 
     currentEdge[0] = -1.f;
     currentEdge[1] = 0.f;
-    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge);
 
     currentEdge[0] = 0.f;
     currentEdge[1] = -1.f;
-    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge);
 
     currentEdge[1] = 0.f;
     currentEdge[2] = -1.f;
-    numClippedVerts = SutherlandHodgmanClip(clippedVerts, numClippedVerts, currentEdge);
+    numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge);
     currentEdge.Clear();
 
 #if ASSERT_CHECK
@@ -92,13 +101,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     if (numClippedVerts > 0) {
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
-      FixedArray<Vec4, MaxOutVerts> tempClippedVerts;
-      for (size_t j = 0; j < numClippedVerts; ++j) {
-        tempClippedVerts[j] = clippedVerts[j];
-      }
-
-      const float* clippedVertData = reinterpret_cast<const float*>(tempClippedVerts.GetData());
-      vertexBuffer.AppendClipData(clippedVertData, numClippedVerts);
+      vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * Stride * sizeof(float), numClippedVerts);
 
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
       indexBuffer.AppendClipData(nextTriangle);
@@ -125,43 +128,80 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   }
 }
 
-size_t SutherlandHodgmanClip(ClipBuffer& inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
+size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, const Vec3& clipEdge) {
   size_t numOutputVerts = 0;
-  ClipBuffer outputVerts;
+
+  float clipBuffer[(NumInVerts * Stride) * 2];
+  memset(clipBuffer, 0, sizeof(clipBuffer));
 
   for (size_t i = 0; i < numInputVerts; ++i) {
     const size_t nextIndex = (i + 1) % numInputVerts;
 
-    const bool p0Inside = InsidePlane(inputVerts[i], clipEdge);
-    const bool p1Inside = InsidePlane(inputVerts[nextIndex], clipEdge);
+    float* currentOffset = inputVerts + (i * Stride);
+    float* nextOffset = inputVerts + (nextIndex * Stride);
+
+    Vec3& currentVert = *reinterpret_cast<Vec3*>(inputVerts + (i * Stride));
+    Vec3& nextVert = *reinterpret_cast<Vec3*>(inputVerts + (nextIndex * Stride));
+
+    const bool p0Inside = InsidePlane(currentVert, clipEdge);
+    const bool p1Inside = InsidePlane(nextVert, clipEdge);
 
     if (!p0Inside && !p1Inside) {
       continue;
     }
     else if (p0Inside && p1Inside) {
-      outputVerts[numOutputVerts] = inputVerts[nextIndex];
+      // Unchanged input vertex.
+      memcpy(clipBuffer + (numOutputVerts * Stride), 
+        nextOffset,
+        VertByteSize);
       ++numOutputVerts;
     }
     else {
-      const float parametricValue = ParametricLinePlaneIntersection(inputVerts[i], inputVerts[nextIndex], clipEdge, clipEdge);
-      const Vec3 clipPoint(GetParametricVector(parametricValue, inputVerts[i], inputVerts[nextIndex]));
+      const float parametricValue = ParametricLinePlaneIntersection(currentVert, nextVert, clipEdge, clipEdge);
+      const Vec3 clipPoint(GetParametricVector(parametricValue, currentVert, nextVert));
+
+      const float* currentAttributes = currentOffset + 4;
+      const float* nextAttributes = nextOffset + 4;
+
+      float clippedAttributes[NumAttributes];
+      memset(clippedAttributes, 0, sizeof(clippedAttributes));
+
+      for (size_t j = 0; j < NumAttributes; ++j) {
+        clippedAttributes[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
+      }
 
       if (!p0Inside) {
-        outputVerts[numOutputVerts] = clipPoint;
+        // Clipped vertex.
+        memcpy(clipBuffer + (numOutputVerts * Stride), 
+          reinterpret_cast<const float*>(&clipPoint), 
+          sizeof(Vec3));
+        // Clipped attributes.
+        memcpy(clipBuffer + (numOutputVerts * Stride) + 4,
+          clippedAttributes,
+          sizeof(clippedAttributes));
         ++numOutputVerts;
-        outputVerts[numOutputVerts] = inputVerts[nextIndex];
+
+        // Unchanged input vertex.
+        memcpy(clipBuffer + (numOutputVerts * Stride), 
+          nextOffset,
+          VertByteSize);
         ++numOutputVerts;
       }
       else {
-        outputVerts[numOutputVerts] = clipPoint;
+        // Clipped vertex.
+        memcpy(clipBuffer + (numOutputVerts * Stride), 
+          reinterpret_cast<const float*>(&clipPoint), 
+          sizeof(Vec3));
+        // Clipped attributes.
+        memcpy(clipBuffer + (numOutputVerts * Stride) + 4,
+          clippedAttributes,
+          sizeof(clippedAttributes));
         ++numOutputVerts;
       }
     }
   }
 
-  for (size_t i = 0; i < numOutputVerts; ++i) {
-    inputVerts[i] = outputVerts[i];
-  }
+  memcpy(inputVerts, clipBuffer, sizeof(clipBuffer));
 
   return numOutputVerts;
 }

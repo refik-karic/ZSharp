@@ -25,6 +25,11 @@ class ZColor {
   }
 
   void FloatToRGB(const float R, const float G, const float B);
+  
+  uint8 A() const;
+  uint8 R() const;
+  uint8 G() const;
+  uint8 B() const;
 
   private:
   uint32 mColor = 0x0U;

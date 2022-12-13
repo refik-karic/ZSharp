@@ -79,7 +79,7 @@ void VertexBuffer::Resize(size_t vertexSize, size_t stride, size_t indexSize) {
 
   mInputSize = vertexSize;
   mIndexSize = indexSize;
-  mAllocatedSize = ((vertexSize * sizeof(float)) + (indexSize * MAX_INDICIES_AFTER_CLIP * sizeof(float)));
+  mAllocatedSize = ((vertexSize * sizeof(float)) + (vertexSize * MAX_INDICIES_AFTER_CLIP * sizeof(float)));
   mStride = stride;
   mAllocatedSize = RoundUpNearestMultiple(mAllocatedSize, 16);
   mData = static_cast<float*>(PlatformAlignedMalloc(mAllocatedSize, 16));
@@ -111,6 +111,7 @@ void VertexBuffer::AppendClipData(const float* data, size_t lengthBytes, size_t 
   if ((usedBytes + lengthBytes) > mAllocatedSize) {
     return;
   }
+
   memcpy(mClipData + (mClipLength * mStride), data, lengthBytes);
   mClipLength += numVertices;
 }

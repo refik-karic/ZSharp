@@ -41,7 +41,7 @@ void World::LoadModel(FileString& path) {
   cachedVertBuffer.Resize(vertBufSize, vertStride, indexBufSize);
 }
 
-void World::DebugLoadTriangle(const Vec4& v1, const Vec4& v2, const Vec4& v3)
+void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3)
 {
   {
     Model model;
@@ -60,14 +60,17 @@ void World::DebugLoadTriangle(const Vec4& v1, const Vec4& v2, const Vec4& v3)
 
   Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
   cachedModel = Model(1);
+  
+  const size_t stride = 7;
   {
+    const size_t strideBytes = 7 * sizeof(float);
     Mesh& firstMesh = cachedModel[0];
-    size_t vertSize = 3 * (sizeof(Vec4) / sizeof(float));
+    size_t vertSize = 3 * stride;
     size_t faceSize = 1;
-    firstMesh.Resize(vertSize, 4, faceSize);
-    firstMesh.SetData(reinterpret_cast<const float*>(&v1), 0, sizeof(Vec4));
-    firstMesh.SetData(reinterpret_cast<const float*>(&v2), 4, sizeof(Vec4));
-    firstMesh.SetData(reinterpret_cast<const float*>(&v3), 8, sizeof(Vec4));
+    firstMesh.Resize(vertSize, stride, faceSize);
+    firstMesh.SetData(v1, 0, strideBytes);
+    firstMesh.SetData(v2, stride, strideBytes);
+    firstMesh.SetData(v3, stride * 2, strideBytes);
     Triangle triangle(0, 1, 2);
     firstMesh.SetTriangle(triangle, 0);
   }
@@ -83,7 +86,7 @@ void World::DebugLoadTriangle(const Vec4& v1, const Vec4& v2, const Vec4& v3)
   }
 
   cachedIndexBuffer.Resize(indexBufSize);
-  cachedVertBuffer.Resize(vertBufSize, 4, indexBufSize);
+  cachedVertBuffer.Resize(vertBufSize, stride, indexBufSize);
 }
 
 size_t World::GetTotalModels() const {

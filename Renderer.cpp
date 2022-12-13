@@ -19,9 +19,7 @@ void Renderer::Initialize() {
 }
 
 void Renderer::RenderNextFrame(World& world, Camera& camera) {
-  const ZColor colorRed(ZColors::RED);
   const ZColor clearColor(ZColors::ORANGE);
-
   mBuffer.Clear(clearColor);
 
   for (size_t i = 0; i < world.GetTotalModels(); ++i) {
@@ -37,7 +35,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
     camera.PerspectiveProjection(vertexBuffer, indexBuffer);
 
     if (mRenderMode) {
-      DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer, colorRed);
+      DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer);
     }
     else {
       DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer);

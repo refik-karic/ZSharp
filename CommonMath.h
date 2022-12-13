@@ -10,6 +10,8 @@ float DegreesToRadians(float degrees);
 
 float Lerp(float x1, float x2, float point);
 
+float ParametricSolveForT(const float step, const float p0, const float p1);
+
 float NewtonRaphsonSqrt(float val);
 
 bool IsNegativeFloat(const float a);

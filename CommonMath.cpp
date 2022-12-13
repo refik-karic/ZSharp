@@ -28,6 +28,12 @@ float Lerp(float x1, float x2, float point) {
   return ((1 - point) * x1) + (point * x2);
 }
 
+float ParametricSolveForT(const float step, const float p0, const float p1) {
+  const float numerator = step - p0;
+  const float denominator = p1 - p0;
+  return numerator / denominator;
+}
+
 float NewtonRaphsonSqrt(float val) {
     const size_t iterations = 10;
 

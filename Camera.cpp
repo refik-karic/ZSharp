@@ -10,6 +10,8 @@
 
 #define ASSERT_CHECK 0
 
+#define DISABLE_BACKFACE_CULLING 1
+
 namespace ZSharp {
 Camera::Camera() {
   mLook[2] = 1.f;
@@ -92,7 +94,9 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   unhing = unhing * (scale * (uToE * translation));
 
+#if !DISABLE_BACKFACE_CULLING
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
+#endif
 
   for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));

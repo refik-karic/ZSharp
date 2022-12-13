@@ -2,17 +2,13 @@
 
 #include <cmath>
 
+#include "ZColor.h"
 #include "Common.h"
+#include "CommonMath.h"
 #include "Constants.h"
 #include "Triangle.h"
 
 namespace ZSharp {
-
-float ParametricSolveForT(const float step, const float p0, const float p1) {
-  const float numerator = step - p0;
-  const float denominator = p1 - p0;
-  return numerator / denominator;
-}
 
 float PerspectiveLerp(const float p0,
   const float p1,
@@ -158,30 +154,39 @@ void DrawRunSlice(Framebuffer& framebuffer,
   }
 }
 
-void TracePrimitive(GlobalEdgeTable& edgeTable, FixedArray<size_t, 2>& p1, FixedArray<size_t, 2>& p2, FixedArray<size_t, 2>& p3, ZColor color, size_t primitiveIndex) {
-  TraceLine(edgeTable, (int32)p1[0], (int32)p1[1], (int32)p2[0], (int32)p2[1], color, primitiveIndex);
-  TraceLine(edgeTable, (int32)p2[0], (int32)p2[1], (int32)p3[0], (int32)p3[1], color, primitiveIndex);
-  TraceLine(edgeTable, (int32)p3[0], (int32)p3[1], (int32)p1[0], (int32)p1[1], color, primitiveIndex);
-}
+void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, size_t primitiveIndex) {
+  int32 x1 = static_cast<int32>(p0[0]);
+  int32 y1 = static_cast<int32>(p0[1]);
+  int32 x2 = static_cast<int32>(p1[0]);
+  int32 y2 = static_cast<int32>(p1[1]);
+  
+  const float* p0Attributes = p0 + 4;
+  const float* p1Attributes = p1 + 4;
 
-void TraceLine(GlobalEdgeTable& edgeTable, int32 x1, int32 y1, int32 x2, int32 y2, ZColor color, size_t primitiveIndex) {
+  // Vertical Line
   if (x1 == x2) {
     if (y2 < y1) {
       Swap(y1, y2);
     }
 
-    while (y1 < y2) {
+    for (int32 y = y1; y < y2; y++) {
+      float yT = ParametricSolveForT(static_cast<float>(y), p0[1], p1[1]);
+      float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
+      float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);
+      float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], yT);
+      ZColor color(R, G, B);
       edgeTable.AddPoint(y1, x1, color, primitiveIndex);
-      y1++;
     }
   }
-  else if (y1 == y2) {
+  else if (y1 == y2) { // Horizontal line.
     if (x2 < x1) {
       Swap(x1, x2);
     }
 
-    edgeTable.AddPoint(y1, x1, color, primitiveIndex);
-    edgeTable.AddPoint(y1, x2, color, primitiveIndex);
+    ZColor x1Color(p0Attributes[0], p0Attributes[1], p0Attributes[2]);
+    ZColor x2Color(p1Attributes[0], p1Attributes[1], p1Attributes[2]);
+    edgeTable.AddPoint(y1, x1, x1Color, primitiveIndex);
+    edgeTable.AddPoint(y1, x2, x2Color, primitiveIndex);
   }
   else {
     float slope;
@@ -194,7 +199,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, int32 x1, int32 y1, int32 x2, int32 y
       Swap(x1, x2);
     }
 
-    if (abs(x2 - x1) >= abs(y2 - y1)) {
+    if (abs(x2 - x1) >= abs(y2 - y1)) { // Horizontal slope.
       delta = abs(y2 - y1);
       slope = fabs(static_cast<float>((x2 - x1)) / (y2 - y1));
 
@@ -206,17 +211,29 @@ void TraceLine(GlobalEdgeTable& edgeTable, int32 x1, int32 y1, int32 x2, int32 y
           error = fmax(error - 1.f, 0.f);
         }
 
-        if (x2 <= x1) {
+        if (x2 <= x1) { // Tracing right to left.
+          float xT = ParametricSolveForT(static_cast<float>(x1), p0[0], p1[0]);
+          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
+          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
+          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
+          ZColor color(R, G, B);
           edgeTable.AddPoint(y1, x1, color, primitiveIndex);
           x1 -= slopeStep;
-        } else {
+        }
+        else { // Tracing left to right.
+          float xT = ParametricSolveForT(static_cast<float>(x1), p0[0], p1[0]);
+          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
+          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
+          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
+          ZColor color(R, G, B);
           edgeTable.AddPoint(y1, x1, color, primitiveIndex);
           x1 += slopeStep;
         }
 
         y1++;
       }
-    } else {
+    }
+    else { // Vertical slope.
       delta = abs(x2 - x1);
       int32 minorStep = (x2 - x1) / delta;
       slope = fabs(static_cast<float>((y2 - y1)) / (x2 - x1));
@@ -230,6 +247,11 @@ void TraceLine(GlobalEdgeTable& edgeTable, int32 x1, int32 y1, int32 x2, int32 y
         }
 
         for (size_t j = y1; j < y1 + slopeStep; j++) {
+          float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
+          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
+          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);
+          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], yT);
+          ZColor color(R, G, B);
           edgeTable.AddPoint(j, x1, color, primitiveIndex);
         }
 
@@ -240,26 +262,17 @@ void TraceLine(GlobalEdgeTable& edgeTable, int32 x1, int32 y1, int32 x2, int32 y
   }
 }
 
-void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, ZColor color) {
+void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {
     GlobalEdgeTable edgeTable(framebuffer.GetHeight());
 
     size_t end = indexBuffer.GetClipLength();
     for (size_t i = 0; i < end; i += TRI_VERTS) {
-        const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
-        const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
-        const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
-
-        FixedArray<size_t, 2> p1;
-        p1[0] = static_cast<size_t>(*v1);
-        p1[1] = static_cast<size_t>(*(v1 + 1));
-        FixedArray<size_t, 2> p2;
-        p2[0] = static_cast<size_t>(*v2);
-        p2[1] = static_cast<size_t>(*(v2 + 1));
-        FixedArray<size_t, 2> p3;
-        p3[0] = static_cast<size_t>(*v3);
-        p3[1] = static_cast<size_t>(*(v3 + 1));
-
-        TracePrimitive(edgeTable, p1, p2, p3, color, i);
+      const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
+      const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
+      const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
+      TraceLine(edgeTable, v1, v2, i);
+      TraceLine(edgeTable, v2, v3, i);
+      TraceLine(edgeTable, v3, v1, i);
     }
 
     edgeTable.Draw(framebuffer);

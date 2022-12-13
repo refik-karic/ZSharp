@@ -14,7 +14,7 @@ class World final {
 
   void LoadModel(FileString& path);
 
-  void DebugLoadTriangle(const Vec4& v1, const Vec4& v2, const Vec4& v3);
+  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3);
 
   size_t GetTotalModels() const;
 

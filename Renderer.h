@@ -24,6 +24,6 @@ class Renderer final {
   private:
   Framebuffer mBuffer;
 
-  bool mRenderMode = false;
+  bool mRenderMode = true;
 };
 }

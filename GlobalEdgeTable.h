@@ -24,7 +24,18 @@ class GlobalEdgeTable final {
     size_t x1;
     size_t x2;
     size_t primitiveIndex;
-    ZColor color;
+    ZColor x1Color;
+    ZColor x2Color;
+
+    ScanLine() 
+      : x1(0), x2(0), primitiveIndex(0) {
+
+    }
+
+    ScanLine(size_t p1, size_t p2, size_t index, ZColor p1Color, ZColor p2Color) 
+      : x1(p1), x2(p2), primitiveIndex(index), x1Color(p1Color), x2Color(p2Color) {
+
+    }
   };
 
   typedef Array<ScanLine> ScanLineList;

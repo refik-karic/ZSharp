@@ -50,16 +50,23 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer) {
         }
         else {
           for (size_t i = line.x1; i < line.x2; ++i) {
+#if 1
             float xT = ParametricSolveForT(static_cast<float>(i),
               static_cast<float>(line.x1),
               static_cast<float>(line.x2));
 
-            float R = Lerp(line.x2Color.R(), line.x1Color.R(), xT);
-            float G = Lerp(line.x2Color.G(), line.x1Color.G(), xT);
-            float B = Lerp(line.x2Color.B(), line.x1Color.B(), xT);
+            // Must scale down the RGB values before reconstructing the color.
+            const float scalingFactor = 255.f;
+            float R = Lerp(line.x1Color.R(), line.x2Color.R(), xT) / scalingFactor;
+            float G = Lerp(line.x1Color.G(), line.x2Color.G(), xT) / scalingFactor;
+            float B = Lerp(line.x1Color.B(), line.x2Color.B(), xT) / scalingFactor;
 
             ZColor color(R, G, B);
             frameBuffer.SetPixel(i, y, color);
+#else
+            ZColor color(line.x2Color.R(), line.x2Color.G(), line.x2Color.B());
+            frameBuffer.SetPixel(i, y, color);
+#endif
           }
         }
       }

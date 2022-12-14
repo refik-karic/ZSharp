@@ -23,14 +23,14 @@ GameInstance::~GameInstance() {
 }
 
 void GameInstance::LoadAssets() {
-#ifdef DEBUG_TRIANGLE
+#if DEBUG_TRIANGLE
   const float X = 5.f;
   const float Y = 5.f;
   const float Z = 0.f;
   const float W = 1.f;
-  const float v1[]{ -X, 0.f, Z, W, 1.0f, 0.f, 0.f };
-  const float v2[]{ 0.f, Y, Z, W, 0.0f, 1.f, 0.f };
-  const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
+  const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f, 0.f };
+  const float v2[]{ 0.f, Y, Z, W, 1.0f, 0.f, 0.f };
+  const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f , 1.f };
   mWorld.DebugLoadTriangle(v1, v2, v3);
 #else
   ZConfig& config = ZConfig::GetInstance();

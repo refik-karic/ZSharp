@@ -13,9 +13,7 @@ class ZColor {
   ZColor(uint32 color) : mColor(color) {
   }
 
-  ZColor(const float R, const float G, const float B) {
-    FloatToRGB(R, G, B);
-  }
+  ZColor(const float R, const float G, const float B);
 
   ZColor(const ZColor& rhs) : mColor(rhs.mColor) {
   }

@@ -9,6 +9,8 @@
 #include "ZColor.h"
 #include "ZDrawing.h"
 
+#define DISABLE_DEBUG_TRANSFORMS 1
+
 namespace ZSharp {
 Renderer::Renderer() {
 }
@@ -31,7 +33,9 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
     indexBuffer.Reset();
     model.FillBuffers(vertexBuffer, indexBuffer);
 
+#if !DISABLE_DEBUG_TRANSFORMS
     vertexBuffer.ApplyTransform(model.GetRotation());
+#endif
     camera.PerspectiveProjection(vertexBuffer, indexBuffer);
 
     if (mRenderMode) {

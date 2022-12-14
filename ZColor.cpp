@@ -1,6 +1,12 @@
 #include "ZColor.h"
 
+#include "ZAssert.h"
+
 namespace ZSharp {
+ZColor::ZColor(const float R, const float G, const float B) {
+  FloatToRGB(R, G, B);
+}
+
 void ZColor::FloatToRGB(const float R, const float G, const float B) {
   mColor = 0xFF000000;
   mColor |= (0x00FF0000 & (static_cast<uint8>(R * (float)0xFFU) << 16));

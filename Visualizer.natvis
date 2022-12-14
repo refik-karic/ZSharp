@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+	<Type Name="ZSharp::ZColor">
+		<DisplayString>{{ Color={mColor} }}</DisplayString>
+		<Expand>
+			<Item Name="A">(mColor &gt;&gt; 24) &amp; 0xFF</Item>
+			<Item Name="R">(mColor &gt;&gt; 16) &amp; 0xFF</Item>
+			<Item Name="G">(mColor &gt;&gt; 8) &amp; 0xFF</Item>
+			<Item Name="B">(mColor) &amp; 0xFF</Item>
+		</Expand>
+	</Type>
+	
 	<Type Name="ZSharp::VertexBuffer">
 		<DisplayString>{{ Total Size={mAllocatedSize} }}</DisplayString>
 		<Expand>

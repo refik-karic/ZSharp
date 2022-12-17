@@ -10,8 +10,9 @@ class ZColor {
   ZColor() {
   }
 
-  ZColor(uint32 color) : mColor(color) {
-  }
+  ZColor(uint32 color);
+
+  ZColor(uint8 R, uint8 G, uint8 B);
 
   ZColor(const float R, const float G, const float B);
 

@@ -22,6 +22,10 @@ Framebuffer::Framebuffer() {
   Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
 }
 
+Framebuffer::Framebuffer(const ZColor clearColor) : Framebuffer() {
+  Clear(clearColor);
+}
+
 Framebuffer::~Framebuffer() {
   Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
 }

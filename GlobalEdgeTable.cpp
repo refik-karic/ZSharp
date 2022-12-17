@@ -55,11 +55,9 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer) {
               static_cast<float>(line.x1),
               static_cast<float>(line.x2));
 
-            // Must scale down the RGB values before reconstructing the color.
-            const float scalingFactor = 255.f;
-            float R = Lerp(line.x1Color.R(), line.x2Color.R(), xT) / scalingFactor;
-            float G = Lerp(line.x1Color.G(), line.x2Color.G(), xT) / scalingFactor;
-            float B = Lerp(line.x1Color.B(), line.x2Color.B(), xT) / scalingFactor;
+            uint8 R = static_cast<uint8>(Lerp(line.x1Color.R(), line.x2Color.R(), xT));
+            uint8 G = static_cast<uint8>(Lerp(line.x1Color.G(), line.x2Color.G(), xT));
+            uint8 B = static_cast<uint8>(Lerp(line.x1Color.B(), line.x2Color.B(), xT));
 
             ZColor color(R, G, B);
             frameBuffer.SetPixel(i, y, color);

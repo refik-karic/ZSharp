@@ -9,15 +9,10 @@
 #include "ZColor.h"
 #include "ZDrawing.h"
 
-#define DISABLE_DEBUG_TRANSFORMS 1
+#define DISABLE_DEBUG_TRANSFORMS 0
 
 namespace ZSharp {
 Renderer::Renderer() {
-}
-
-void Renderer::Initialize() {
-  const ZColor colorGreen(ZColors::GREEN);
-  mBuffer.Clear(colorGreen);
 }
 
 void Renderer::RenderNextFrame(World& world, Camera& camera) {
@@ -38,11 +33,13 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 #endif
     camera.PerspectiveProjection(vertexBuffer, indexBuffer);
 
-    if (mRenderMode) {
-      DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer);
-    }
-    else {
-      DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer);
+    switch (mRenderMode) {
+      case RenderMode::FLAT:
+        DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer);
+        break;
+      case RenderMode::WIREFRAME:
+        DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer);
+        break;
     }
   }
 }
@@ -51,8 +48,8 @@ uint8* Renderer::GetFrame() {
   return mBuffer.GetBuffer();
 }
 
-void Renderer::FlipRenderMode() {
-  mRenderMode = !mRenderMode;
+void Renderer::ToggleRenderMode(RenderMode mode) {
+  mRenderMode = mode;
 }
 
 }

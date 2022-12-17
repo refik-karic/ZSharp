@@ -3,6 +3,15 @@
 #include "ZAssert.h"
 
 namespace ZSharp {
+ZColor::ZColor(uint32 color) : mColor(color) { }
+
+ZColor::ZColor(uint8 R, uint8 G, uint8 B) {
+  mColor = 0xFF000000;
+  mColor |= (0x00FF0000 & (static_cast<uint32>(R) << 16));
+  mColor |= (0x0000FF00 & (static_cast<uint32>(G) << 8));
+  mColor |= (0x000000FF & (static_cast<uint32>(B)));
+}
+
 ZColor::ZColor(const float R, const float G, const float B) {
   FloatToRGB(R, G, B);
 }

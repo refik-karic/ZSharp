@@ -110,18 +110,7 @@ void GameInstance::PauseTransforms() {
 }
 
 void GameInstance::Initialize() {
-  mRenderer.Initialize();
-
   LoadAssets();
-
-#if 0
-  {
-    Vec4 v1(-5.f, 0.f, 0.f, 1.f);
-    Vec4 v2(0.f, 5.f, 0.f, 1.f);
-    Vec4 v3(5.f, 0.f, 0.f, 1.f);
-    mWorld.DebugLoadTriangle(v1, v2, v3);
-  }
-#endif
 
   mCamera.Position() = Vec3(0.f, 0.f, 30.f);
 
@@ -164,7 +153,10 @@ void GameInstance::OnKeyDown(uint8 key) {
     PauseTransforms();
     break;
   case 'R':
-    mRenderer.FlipRenderMode();
+    mRenderer.ToggleRenderMode(RenderMode::WIREFRAME);
+    break;
+  case 'F':
+    mRenderer.ToggleRenderMode(RenderMode::FLAT);
     break;
   case 'W':
     MoveCamera(ZSharp::GameInstance::Direction::FORWARD);

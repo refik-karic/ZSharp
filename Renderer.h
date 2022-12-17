@@ -5,12 +5,16 @@
 #include "World.h"
 
 namespace ZSharp {
+
+enum class RenderMode {
+  WIREFRAME,
+  FLAT
+};
+
 class Renderer final {
   public:
 
   Renderer();
-
-  void Initialize();
 
   Renderer(const Renderer&) = delete;
   void operator=(const Renderer&) = delete;
@@ -19,11 +23,10 @@ class Renderer final {
 
   uint8* GetFrame();
 
-  void FlipRenderMode();
+  void ToggleRenderMode(RenderMode mode);
 
   private:
   Framebuffer mBuffer;
-
-  bool mRenderMode = true;
+  RenderMode mRenderMode = RenderMode::FLAT;
 };
 }

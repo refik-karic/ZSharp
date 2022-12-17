@@ -7,6 +7,7 @@ namespace ZSharp {
 class Framebuffer final {
   public:
   Framebuffer();
+  Framebuffer(const ZColor clearColor);
   ~Framebuffer();
 
   Framebuffer(const Framebuffer&) = delete;

@@ -25,7 +25,7 @@ float DegreesToRadians(float degrees) {
 }
 
 float Lerp(float x1, float x2, float point) {
-  return (x1) + (point * (x2 - x1));
+  return ((1.f - point) * x1) + (point * x2);
 }
 
 float ParametricSolveForT(const float step, const float p0, const float p1) {

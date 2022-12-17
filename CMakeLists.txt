@@ -35,9 +35,11 @@ target_sources(ZSharp
         PlatformFile.h
         PlatformLogging.h
         PlatformMemory.h
+        PlatformTime.h
         Quaternion.h
         Renderer.h
         Stack.h
+        ScopedTimer.h
         Tree.h
         Triangle.h
         Vec3.h
@@ -77,14 +79,16 @@ target_sources(ZSharp
         OBJFile.cpp
         Quaternion.cpp
         Renderer.cpp
+        ScopedTimer.cpp
         Triangle.cpp
         Vec3.cpp
         Vec4.cpp
         VertexBuffer.cpp
+        Win32PlatformApplication.cpp
         Win32PlatformFile.cpp
         Win32PlatformLogging.cpp
         Win32PlatformMemory.cpp
-        Win32PlatformApplication.cpp
+        Win32PlatformTime.cpp
         World.cpp
         ZAlgorithm.cpp
         ZColor.cpp

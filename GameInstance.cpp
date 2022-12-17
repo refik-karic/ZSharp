@@ -3,7 +3,10 @@
 #include "Constants.h"
 #include "InputManager.h"
 #include "CommonMath.h"
+#include "PlatformLogging.h"
+#include "ScopedTimer.h"
 #include "ZConfig.h"
+#include "ZString.h"
 
 #include <cmath>
 
@@ -121,19 +124,25 @@ void GameInstance::Initialize() {
 }
 
 void GameInstance::Tick() {
+  NamedScopedTimer(Render);
+
+  {
+    String frame;
+    frame.Appendf("Frame: {0}\n", mFrameCount);
+    PlatformDebugPrint(frame.Str());
+  }
+
+  ++mFrameCount;
+
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.Process();
 
   Mat4x4 rotationMatrix;
   rotationMatrix.Identity();
-  rotationMatrix.SetRotation(DegreesToRadians(static_cast<float>(mFrameCount)), Mat4x4::Axis::Y);
+  rotationMatrix.SetRotation(DegreesToRadians(static_cast<float>(mRotationAmount % 360)), Mat4x4::Axis::Y);
 
   if (!mPauseTransforms) {
-    mFrameCount += mRotationSpeed;
-  }
-
-  if (mFrameCount > 360) {
-    mFrameCount = 0;
+    mRotationAmount += mRotationSpeed;
   }
 
   for (Model& model : mWorld.GetModels()) {

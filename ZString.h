@@ -12,31 +12,41 @@ class String final {
   class VariableArg {
     private:
     enum Type {
+      SIZE_T,
       INT32,
       UINT32,
       INT64,
       UINT64,
       FLOAT,
-      DOUBLE
+      DOUBLE,
+      CONST_STRING
     };
 
     Type mType;
 
     union {
+      size_t size_value;
       int32 int32_value;
       uint32 uint32_value;
       int64 int64_value;
       uint64 uint64_value;
       float float_value;
       double double_value;
+      const char* string_value;
     } mData;
 
     public:
     VariableArg() = delete; // Explicit type construction only.
 
+    VariableArg(const size_t arg);
+
     VariableArg(const int32 arg);
 
+    VariableArg(const int64 arg);
+
     VariableArg(const float arg);
+
+    VariableArg(const char* arg);
 
     String ToString() const;
   };

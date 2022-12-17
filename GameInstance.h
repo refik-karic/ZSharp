@@ -39,6 +39,7 @@ class GameInstance final {
   Renderer mRenderer;
 
   int64 mFrameCount = 0;
+  int64 mRotationAmount = 0;
   int64 mRotationSpeed = 4;
 
   bool mPauseTransforms = false;

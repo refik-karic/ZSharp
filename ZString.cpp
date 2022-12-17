@@ -438,9 +438,10 @@ bool String::FitsInSmall(size_t size) {
 void String::VariadicArgsAppend(const char* format, const VariableArg* args, size_t numArgs) {
   ZAssert(format != nullptr);
 
+  const char* str = format;
   const char* lastPosition = format;
   const char* lastChar = nullptr;
-  for (const char* str = format; *str != '\0'; ++str) {
+  for (; *str != '\0'; ++str) {
     char currentChar = *str;
     bool isEscaped = (lastChar != nullptr) ? ((*lastChar) == '\\') : false;
 
@@ -449,7 +450,7 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
 
       for (const char* endFormat = str + 1; *endFormat != '\0'; ++endFormat) {
         if (*endFormat == '}') {
-          jumpAhead = (endFormat - str) + 1;
+          jumpAhead = (endFormat - str);
           break;
         }
       }
@@ -476,11 +477,21 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
       Append(arg.ToString().Str());
 
       str += jumpAhead;
-      lastPosition = str;
+      lastPosition = str + 1;
+      lastChar = str + 1;
     }
-
-    lastChar = str;
+    else {
+      lastChar = str;
+    }
   }
+
+  // Append trailing characters that may be present after the last format specifier.
+  Append(lastPosition, 0, str - lastPosition);
+}
+
+String::VariableArg::VariableArg(const size_t arg)
+  : mType(Type::SIZE_T) {
+  mData.size_value = arg;
 }
 
 String::VariableArg::VariableArg(const int32 arg)
@@ -488,15 +499,34 @@ String::VariableArg::VariableArg(const int32 arg)
   mData.int32_value = arg;
 }
 
+String::VariableArg::VariableArg(const int64 arg) 
+  : mType(Type::INT64) {
+  mData.int64_value = arg;
+}
+
 String::VariableArg::VariableArg(const float arg)
   : mType(Type::FLOAT) {
   mData.float_value = arg;
+}
+
+String::VariableArg::VariableArg(const char* arg) 
+  : mType(Type::CONST_STRING) {
+  mData.string_value = arg;
 }
 
 String String::VariableArg::ToString() const {
   String result;
 
   switch (mType) {
+    case Type::SIZE_T:
+    {
+      const size_t bufferSize = 64;
+      char buffer[bufferSize];
+      buffer[0] = '\0';
+      const char* str = _ui64toa(mData.size_value, buffer, 10);
+      result.Append(str);
+    }
+      break;
     case Type::INT32:
     {
       const size_t bufferSize = 64;
@@ -513,7 +543,11 @@ String String::VariableArg::ToString() const {
       break;
     case Type::INT64:
     {
-      ZAssert(false); // Not implemented.
+      const size_t bufferSize = 64;
+      char buffer[bufferSize];
+      buffer[0] = '\0';
+      const char* str = _i64toa(mData.int64_value, buffer, 10);
+      result.Append(str);
     }
       break;
     case Type::UINT64:
@@ -535,6 +569,11 @@ String String::VariableArg::ToString() const {
     case Type::DOUBLE:
     {
       ZAssert(false); // Not implemented.
+    }
+      break;
+    case Type::CONST_STRING:
+    {
+      result.Append(mData.string_value);
     }
       break;
   }

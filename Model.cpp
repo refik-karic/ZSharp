@@ -51,12 +51,4 @@ void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) co
   }
 }
 
-void Model::SetRotation(const Mat4x4& rotation) {
-  mRotation = rotation;
-}
-
-const Mat4x4& Model::GetRotation() const {
-  return mRotation;
-}
-
 }

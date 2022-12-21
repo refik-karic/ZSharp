@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ZBaseTypes.h"
-#include "PlatformLogging.h"
+#include "PlatformDebug.h"
 
 namespace ZSharp {
 

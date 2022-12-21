@@ -26,7 +26,7 @@ const Array<OBJFace>& OBJFile::GetFaces() {
 }
 
 void OBJFile::Serialize(FileString& destPath) {
-  BufferedFileWriter fileWriter(destPath);
+  BufferedFileWriter fileWriter(destPath, 0);
   if (!fileWriter.IsOpen()) {
     return;
   }

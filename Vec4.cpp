@@ -13,6 +13,10 @@ Vec4::Vec4() {
   Clear();
 }
 
+Vec4::Vec4(float value)
+  : mData{value, value, value, value} {
+}
+
 Vec4::Vec4(float x, float y, float z, float w)
   : mData{x, y, z, w} {
 }

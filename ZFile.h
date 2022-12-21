@@ -51,7 +51,7 @@ class BufferedFileReader final : public BaseFile {
 
 class BufferedFileWriter final : public BaseFile {
   public:
-  BufferedFileWriter(const FileString& fileName);
+  BufferedFileWriter(const FileString& fileName, size_t flags);
 
   BufferedFileWriter(const BufferedFileReader& rhs) = delete;
 

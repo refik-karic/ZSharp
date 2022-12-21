@@ -1,7 +1,7 @@
 #ifdef PLATFORM_WINDOWS
 
 #include "PlatformFile.h"
-#include "PlatformLogging.h"
+#include "PlatformDebug.h"
 
 #include <ShlObj_core.h>
 
@@ -33,7 +33,12 @@ DWORD SetFlags(size_t inFlags) {
   }
   
   if (inFlags & static_cast<size_t>(FileFlags::WRITE)) {
-    winFlags |= GENERIC_WRITE;
+    if (inFlags & static_cast<size_t>(FileFlags::APPEND)) {
+      winFlags |= FILE_APPEND_DATA;
+    }
+    else {
+      winFlags |= GENERIC_WRITE;
+    }
   }
 
   return winFlags;
@@ -69,29 +74,50 @@ DWORD SetMemoryMappedFlags(size_t inFlags) {
 PlatformFileHandle* PlatformOpenFile(const FileString& filename, size_t flags) {
   DWORD winFlags = SetFlags(flags);
   DWORD shareFlags = (flags & static_cast<size_t>(FileFlags::READ)) ? FILE_SHARE_READ : 0;
-  if (flags & static_cast<size_t>(FileFlags::WRITE)) {
+  
+  bool isWriting = flags & static_cast<size_t>(FileFlags::WRITE);
+  bool isAppending = flags & static_cast<size_t>(FileFlags::APPEND);
+  
+  if (isAppending) {
+    isWriting = true;
+  }
+
+  if (isWriting) {
     shareFlags = 0;
   }
 
-  HANDLE fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
-    winFlags,
-    shareFlags,
-    NULL,
-    OPEN_EXISTING,
-    FILE_ATTRIBUTE_NORMAL,
-    NULL
-  );
+  HANDLE fileHandle = NULL;
 
-  bool isWriting = (flags & static_cast<size_t>(FileFlags::WRITE));
-  if (fileHandle == NULL && isWriting) {
+  if (isWriting && !isAppending) {
     fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
       winFlags,
       shareFlags,
       NULL,
-      CREATE_NEW,
+      CREATE_ALWAYS,
       FILE_ATTRIBUTE_NORMAL,
       NULL
     );
+  }
+  else {
+    fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
+      winFlags,
+      shareFlags,
+      NULL,
+      OPEN_EXISTING,
+      FILE_ATTRIBUTE_NORMAL,
+      NULL
+    );
+
+    if (fileHandle == INVALID_HANDLE_VALUE && isWriting) {
+      fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
+        winFlags,
+        shareFlags,
+        NULL,
+        CREATE_NEW,
+        FILE_ATTRIBUTE_NORMAL,
+        NULL
+      );
+    }
   }
 
   if (fileHandle != nullptr) {
@@ -181,6 +207,7 @@ size_t PlatformGetFileSize(PlatformFileHandle* handle) {
     return static_cast<size_t>(largeInt.QuadPart);
   }
   else {
+    PlatformDebugPrintLastError();
     return 0;
   }
 }
@@ -190,6 +217,7 @@ bool PlatformUpdateFileAccessTime(PlatformFileHandle* handle) {
   GetSystemTimeAsFileTime(&systemTime);
   FILETIME fileTime;
   if (!FileTimeToLocalFileTime(&systemTime, &fileTime)) {
+    PlatformDebugPrintLastError();
     return false;
   }
 
@@ -207,6 +235,18 @@ bool PlatformUpdateFileModificationTime(PlatformFileHandle* handle) {
   return SetFileTime(handle->fileHandle, NULL, NULL, &fileTime);
 }
 
+String PlatformGetExecutableName() {
+  char path[_MAX_PATH];
+  if (GetModuleFileNameA(NULL, path, _MAX_PATH)) {
+    FileString receivedPath(path);
+    return receivedPath.GetFilename();
+  }
+  else {
+    PlatformDebugPrintLastError();
+    return String("");
+  }
+}
+
 FileString PlatformGetUserDesktopPath() {
   wchar_t* pathResult = nullptr;
   HRESULT result = SHGetKnownFolderPath(FOLDERID_Desktop, 0, NULL, &pathResult);
@@ -215,6 +255,7 @@ FileString PlatformGetUserDesktopPath() {
     return FileString(fetchedPath.ToNarrow());
   }
   else {
+    PlatformDebugPrintLastError();
     return FileString("");
   }
 }
@@ -227,6 +268,20 @@ FileString PlatformGetExecutableDirectory() {
     return receivedPath;
   }
   else {
+    PlatformDebugPrintLastError();
+    return FileString("");
+  }
+}
+
+FileString PlatformGetWorkingDirectory() {
+  char path[_MAX_PATH];
+  if (GetCurrentDirectoryA(_MAX_PATH, path)) {
+    FileString receivedPath(path);
+    receivedPath.SetFilename("");
+    return receivedPath;
+  }
+  else {
+    PlatformDebugPrintLastError();
     return FileString("");
   }
 }

@@ -108,8 +108,8 @@ bool BufferedFileReader::ResetBuffer(size_t size) {
   return true;
 }
 
-BufferedFileWriter::BufferedFileWriter(const FileString& fileName) 
-  : BaseFile(fileName, static_cast<size_t>(FileFlags::WRITE)) {
+BufferedFileWriter::BufferedFileWriter(const FileString& fileName, size_t flags)
+  : BaseFile(fileName, static_cast<size_t>(FileFlags::WRITE) | flags) {
   mBuffer = static_cast<char*>(PlatformMalloc(mBufferSize));
   if (mBuffer != nullptr) {
     memset(mBuffer, 0, mBufferSize);

@@ -13,7 +13,7 @@
 
 namespace ZSharp {
 
-class Model final : WorldObject {
+class Model final : public WorldObject {
   public:
 
   Model();
@@ -43,16 +43,8 @@ class Model final : WorldObject {
 
   void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const;
 
-  void SetRotation(const Mat4x4& rotation);
-
-  const Mat4x4& GetRotation() const;
-
   private:
   Array<Mesh> mData;
-
-  Vec4 mScale;
-  Mat4x4 mRotation;
-  Vec4 mTranslation;
 };
 
 }

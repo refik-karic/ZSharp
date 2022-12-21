@@ -3,7 +3,10 @@
 #include "PlatformTime.h"
 
 #include "Win32PlatformHeaders.h"
-#include "PlatformLogging.h"
+#include "PlatformDebug.h"
+
+#include <datetimeapi.h>
+#include <WinNls.h>
 
 namespace ZSharp {
 
@@ -46,6 +49,45 @@ size_t PlatformHighResClockDelta(size_t startingTime, ClockUnits units) {
     ticks.QuadPart /= frequency.QuadPart;
     return ticks.QuadPart;
   }
+}
+
+String PlatformSystemTimeFormat() {
+  const size_t bufferSize = 64;
+  char timeString[bufferSize];
+
+  SYSTEMTIME systemTime;
+  GetLocalTime(&systemTime);
+
+  String result;
+
+  if (GetTimeFormatA(LOCALE_NAME_USER_DEFAULT,
+    0,
+    &systemTime,
+    NULL,
+    timeString,
+    bufferSize)) {
+    result.Append(timeString);
+  }
+  else {
+    return String("");
+  }
+
+  memset(timeString, 0, bufferSize);
+
+  if (GetDateFormatA(LOCALE_NAME_USER_DEFAULT,
+    DATE_SHORTDATE,
+    &systemTime,
+    NULL,
+    timeString,
+    bufferSize)) {
+    result.Append(" ");
+    result.Append(timeString);
+  }
+  else {
+    return String("");
+  }
+
+  return result;
 }
 
 }

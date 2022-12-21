@@ -6,7 +6,8 @@ namespace ZSharp {
 
 enum class FileFlags : size_t {
   READ = 1 << 0,
-  WRITE = 1 << 1
+  WRITE = 1 << 1,
+  APPEND = 1 << 2
 };
 
 struct PlatformFileHandle;
@@ -38,8 +39,12 @@ bool PlatformUpdateFileAccessTime(PlatformFileHandle* handle);
 
 bool PlatformUpdateFileModificationTime(PlatformFileHandle* handle);
 
+String PlatformGetExecutableName();
+
 FileString PlatformGetUserDesktopPath();
 
 FileString PlatformGetExecutableDirectory();
+
+FileString PlatformGetWorkingDirectory();
 
 }

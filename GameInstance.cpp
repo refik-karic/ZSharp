@@ -3,7 +3,7 @@
 #include "Constants.h"
 #include "InputManager.h"
 #include "CommonMath.h"
-#include "PlatformLogging.h"
+#include "Logger.h"
 #include "ScopedTimer.h"
 #include "ZConfig.h"
 #include "ZString.h"
@@ -11,6 +11,7 @@
 #include <cmath>
 
 #define DEBUG_TRIANGLE 1
+#define DISABLE_DEBUG_TRANSFORMS 0
 
 namespace ZSharp {
 
@@ -129,7 +130,7 @@ void GameInstance::Tick() {
   {
     String frame;
     frame.Appendf("Frame: {0}\n", mFrameCount);
-    PlatformDebugPrint(frame.Str());
+    Logger::Log(LogCategory::Info, frame);
   }
 
   ++mFrameCount;
@@ -137,17 +138,18 @@ void GameInstance::Tick() {
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.Process();
 
-  Mat4x4 rotationMatrix;
-  rotationMatrix.Identity();
-  rotationMatrix.SetRotation(DegreesToRadians(static_cast<float>(mRotationAmount % 360)), Mat4x4::Axis::Y);
+#if !DISABLE_DEBUG_TRANSFORMS
+  Vec3 rotation;
+  rotation[1] = DegreesToRadians(static_cast<float>(mRotationAmount % 360));
 
   if (!mPauseTransforms) {
     mRotationAmount += mRotationSpeed;
   }
 
   for (Model& model : mWorld.GetModels()) {
-    model.SetRotation(rotationMatrix);
+    model.Rotation() = rotation;
   }
+#endif
 
   mRenderer.RenderNextFrame(mWorld, mCamera);
 }

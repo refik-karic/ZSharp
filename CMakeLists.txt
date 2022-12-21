@@ -26,6 +26,7 @@ target_sources(ZSharp
         IntelIntrinsics.h
         ISerializable.h
         List.h
+        Logger.h
         Mat2x3.h
         Mat3x3.h
         Mat4x4.h
@@ -33,7 +34,7 @@ target_sources(ZSharp
         Model.h
         Pair.h
         PlatformFile.h
-        PlatformLogging.h
+        PlatformDebug.h
         PlatformMemory.h
         PlatformTime.h
         Quaternion.h
@@ -71,6 +72,7 @@ target_sources(ZSharp
         IniFile.cpp
         InputManager.cpp
         IntelIntrinsics.cpp
+        Logger.cpp
         Mat2x3.cpp
         Mat3x3.cpp
         Mat4x4.cpp
@@ -86,10 +88,11 @@ target_sources(ZSharp
         VertexBuffer.cpp
         Win32PlatformApplication.cpp
         Win32PlatformFile.cpp
-        Win32PlatformLogging.cpp
+        Win32PlatformDebug.cpp
         Win32PlatformMemory.cpp
         Win32PlatformTime.cpp
         World.cpp
+        WorldObject.cpp
         ZAlgorithm.cpp
         ZColor.cpp
         ZConfig.cpp

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZBaseTypes.h"
+#include "Mat4x4.h"
 #include "Vec3.h"
 
 namespace ZSharp {
@@ -8,16 +9,26 @@ namespace ZSharp {
 class WorldObject {
   public:
 
-  Vec3& Position() {
-    return mPosition;
-  }
+  WorldObject();
 
-  const Vec3& Position() const {
-    return mPosition;
-  }
+  Vec3& Position();
+
+  const Vec3& Position() const;
+
+  Vec3& Scale();
+
+  const Vec3& Scale() const;
+
+  Vec3& Rotation();
+
+  const Vec3& Rotation() const;
+
+  Mat4x4 ObjectTransform() const;
 
   protected:
   Vec3 mPosition;
+  Vec3 mScale;
+  Vec3 mRotation;
 };
 
 }

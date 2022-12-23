@@ -38,6 +38,7 @@ target_sources(ZSharp
         PlatformMemory.h
         PlatformTime.h
         Quaternion.h
+        Random.h
         Renderer.h
         Stack.h
         ScopedTimer.h
@@ -80,6 +81,7 @@ target_sources(ZSharp
         Model.cpp
         OBJFile.cpp
         Quaternion.cpp
+        Random.cpp
         Renderer.cpp
         ScopedTimer.cpp
         Triangle.cpp

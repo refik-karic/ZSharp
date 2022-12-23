@@ -240,13 +240,13 @@ class Array final {
         secondPivot = i;
       }
       else if (((*i) < pivotValue) && (secondPivot != nullptr)) {
-        Swap(secondPivot, i);
+        Swap(*secondPivot, *i);
         secondPivot++;
       }
     }
 
     if (secondPivot != nullptr) {
-      Swap(secondPivot, pivot);
+      Swap(*secondPivot, *pivot);
       Quicksort(start, secondPivot);
       Quicksort(secondPivot + 1, end);
     }
@@ -271,13 +271,13 @@ class Array final {
         secondPivot = i;
       }
       else if (comp((*i), pivotValue) && (secondPivot != nullptr)) {
-        Swap(secondPivot, i);
+        Swap(*secondPivot, *i);
         secondPivot++;
       }
     }
 
     if (secondPivot != nullptr) {
-      Swap(secondPivot, pivot);
+      Swap(*secondPivot, *pivot);
       Quicksort(start, secondPivot, comp);
       Quicksort(secondPivot + 1, end, comp);
     }

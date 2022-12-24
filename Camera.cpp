@@ -101,6 +101,11 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
     vertexVector = unhing.ApplyTransform(vertexVector);
+    
+    // TODO: Need to clip against Z = 0 plane here.
+    //  Needs to be done in XYZW space but only considering the XYZ values (maybe just Z?).
+    //  How will the output vertices be stored? Still need to perform XYZ clipping afterwards.
+    
     vertexVector.Homogenize();
   }
 

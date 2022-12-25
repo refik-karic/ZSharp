@@ -106,22 +106,17 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
       indexBuffer.AppendClipData(nextTriangle);
 
-      for (size_t j = 1; j <= numClippedVerts - TRI_VERTS; ++j) {
-        nextTriangle[0] = ((2 * j) % numClippedVerts) + currentClipIndex;
+      if (numClippedVerts > 3) {
+        ZAssert(numClippedVerts < 5);
 
-        if (j == numClippedVerts - TRI_VERTS) {
-          size_t secondPos = (((numClippedVerts - 4) >> 1) + 1);
-          size_t thirdPos = ((numClippedVerts - TRI_VERTS) + 1);
+        for (size_t j = 2; j < numClippedVerts; j += 3) {
+          const size_t clip0 = currentClipIndex + (j % numClippedVerts);
+          const size_t clip1 = currentClipIndex + ((j + 1) % numClippedVerts);
+          const size_t clip2 = currentClipIndex + ((j + 2) % numClippedVerts);
 
-          nextTriangle[1] = (((2 * j) + secondPos) % numClippedVerts) + currentClipIndex;
-          nextTriangle[2] = (((2 * j) + thirdPos) % numClippedVerts) + currentClipIndex;
+          Triangle clippedTriangle(clip0, clip1, clip2);
+          indexBuffer.AppendClipData(clippedTriangle);
         }
-        else {
-          nextTriangle[1] = (((2 * j) + 1) % numClippedVerts) + currentClipIndex;
-          nextTriangle[2] = (((2 * j) + 2) % numClippedVerts) + currentClipIndex;
-        }
-
-        indexBuffer.AppendClipData(nextTriangle);
       }
     }
 #endif

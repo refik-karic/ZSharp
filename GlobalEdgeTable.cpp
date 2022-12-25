@@ -10,7 +10,7 @@ GlobalEdgeTable::GlobalEdgeTable(size_t height)
 
 void GlobalEdgeTable::AddPoint(size_t yIndex, size_t x, ZColor color, size_t primitiveIndex) {
   if (yIndex >= mEdgeTable.Size()) {
-    ZAssert(false);
+    //ZAssert(false);
     return;
   }
 
@@ -45,6 +45,16 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer) {
     Array<ScanLine>& yList = mEdgeTable[y];
     if (!yList.IsEmpty()) {
       for (ScanLine& line : yList) {
+
+        // TODO: Is there a way we can clamp or detect these values earlier?
+        if (line.x1 >= frameBuffer.GetWidth()) {
+          line.x1 = frameBuffer.GetWidth() - 1;
+        }
+
+        if (line.x2 >= frameBuffer.GetWidth()) {
+          line.x2 = frameBuffer.GetWidth() - 1;
+        }
+
         if (line.x1 == line.x2) {
           frameBuffer.SetPixel(line.x1, y, line.x1Color);
         }

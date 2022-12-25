@@ -1,8 +1,21 @@
 ﻿#pragma once
 
+#include "ZAssert.h"
 #include "ZBaseTypes.h"
 
 namespace ZSharp {
+
+template<typename T>
+void Clamp(T& value, const T& min, const T& max) {
+  ZAssert(min < max);
+  
+  if (value < min) {
+    value = min;
+  }
+  else if (value > max) {
+    value = max;
+  }
+}
 
 size_t RoundUpNearestMultiple(size_t val, size_t multiple);
 

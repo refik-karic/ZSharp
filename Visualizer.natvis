@@ -17,9 +17,8 @@
 			<Item Name="Stride">mStride</Item>
 			<Item Name="Input Verts">mInputSize / mStride</Item>
 			<Item Name="Input Size">mInputSize</Item>
-			<Item Name="Index Size">mIndexSize</Item>
-			<Item Name="Total Size">mAllocatedSize</Item>
 			<Item Name="Working Size">mWorkingSize</Item>
+			<Item Name="Total Size">mAllocatedSize</Item>
 			<Item Name="Clip Verts">mClipLength</Item>
 			<Item Name="Clip Size">mClipLength * mStride</Item>
 			<Synthetic Name="Input View">

@@ -38,7 +38,7 @@ void World::LoadModel(FileString& path) {
   }
 
   cachedIndexBuffer.Resize(indexBufSize);
-  cachedVertBuffer.Resize(vertBufSize, vertStride, indexBufSize);
+  cachedVertBuffer.Resize(vertBufSize, vertStride);
 }
 
 void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3)
@@ -86,7 +86,7 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3)
   }
 
   cachedIndexBuffer.Resize(indexBufSize);
-  cachedVertBuffer.Resize(vertBufSize, stride, indexBufSize);
+  cachedVertBuffer.Resize(vertBufSize, stride);
 }
 
 size_t World::GetTotalModels() const {

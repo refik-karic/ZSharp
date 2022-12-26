@@ -109,4 +109,14 @@ size_t IndexBuffer::GetClipData(size_t index) const {
   return *(mClipData + index);
 }
 
+void IndexBuffer::ShuffleClippedData() {
+  const size_t offset = mClipLength;
+  const size_t totalBytes = offset * sizeof(size_t);
+  memmove(mData, mClipData, totalBytes); // Clip data and input data may overlap.
+  mClipLength = 0;
+  mClipData = mData + offset;
+  mWorkingSize = offset;
+  mInputSize = offset;
+}
+
 }

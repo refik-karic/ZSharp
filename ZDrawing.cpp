@@ -270,6 +270,7 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
       const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
       const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
       const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
+
       TraceLine(edgeTable, v1, v2, i);
       TraceLine(edgeTable, v2, v3, i);
       TraceLine(edgeTable, v3, v1, i);

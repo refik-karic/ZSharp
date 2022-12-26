@@ -17,11 +17,11 @@ Camera::Camera() {
   mLook[2] = 1.f;
   mUp[1] = 1.f;
 
-  mFovHoriz = 90.f;
-  mFovVert = 90.f;
+  mFovHoriz = 45.f;
+  mFovVert = 45.f;
 
-  mNearPlane = 10.f;
-  mFarPlane = 100.f;
+  mNearPlane = 0.02f;
+  mFarPlane = 1000.f;
 
   const ZConfig& config = ZConfig::GetInstance();
   OnResize(config.GetViewportWidth(), config.GetViewportHeight());
@@ -60,7 +60,7 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
 }
 
 void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
-  Vec3 w(mLook);
+  Vec3 w(-mLook);
   w.Normalize();
 
   Vec3 v(mUp - (w * (mUp * w)));
@@ -85,14 +85,18 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   scale[2][2] = 1.f / mFarPlane;
   scale[3][3] = 1.f;
 
-  Mat4x4 unhing;
-  unhing[0][0] = mFarPlane - mNearPlane;
-  unhing[1][1] = mFarPlane - mNearPlane;
-  unhing[2][2] = mFarPlane;
-  unhing[2][3] = mNearPlane;
-  unhing[3][2] = -(mFarPlane - mNearPlane);
+  const float standardNearPlane = -(mNearPlane / mFarPlane);
+  const float standardFarPlane = -1.f;
 
-  unhing = unhing * (scale * (uToE * translation));
+  Mat4x4 unhing;
+  unhing[0][0] = standardFarPlane - standardNearPlane;
+  unhing[1][1] = standardFarPlane - standardNearPlane;
+  unhing[2][2] = standardFarPlane;
+  unhing[2][3] = standardNearPlane;
+  unhing[3][2] = -(standardFarPlane - standardNearPlane);
+
+  Mat4x4 perspectiveTransform(scale * (uToE * translation));
+  perspectiveTransform = unhing * perspectiveTransform;
 
 #if !DISABLE_BACKFACE_CULLING
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
@@ -100,12 +104,19 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
-    vertexVector = unhing.ApplyTransform(vertexVector);
-    
-    // TODO: Need to clip against Z = 0 plane here.
-    //  Needs to be done in XYZW space but only considering the XYZ values (maybe just Z?).
-    //  How will the output vertices be stored? Still need to perform XYZ clipping afterwards.
-    
+    vertexVector = perspectiveTransform.ApplyTransform(vertexVector);
+  }
+
+  // Clip against near plane to avoid things behind camera reappearing.
+  // This clip is special because it needs to append clip data and shuffle it back to the beginning.
+  // The near clip edge must be > 0, hence we negate the plane.
+  ClipTrianglesNearPlane(vertexBuffer, indexBuffer, -standardNearPlane);
+
+  // Points at this stage must have Z > 0.
+  // If Z < 0, points will re-appear in front of the camera.
+  // If Z = 0, divide by 0 occurs and trashes the results.
+  for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
+    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
     vertexVector.Homogenize();
   }
 

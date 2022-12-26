@@ -33,7 +33,7 @@ void VertexBuffer::operator=(const VertexBuffer& rhs) {
     return;
   }
 
-  Resize(rhs.mInputSize, rhs.mStride, rhs.mIndexSize);
+  Resize(rhs.mInputSize, rhs.mStride);
   memcpy(mData, rhs.mData, rhs.mAllocatedSize);
 }
 
@@ -72,13 +72,12 @@ const float* VertexBuffer::GetClipData(size_t index) const {
   return mClipData + (index * mStride);
 }
 
-void VertexBuffer::Resize(size_t vertexSize, size_t stride, size_t indexSize) {
+void VertexBuffer::Resize(size_t vertexSize, size_t stride) {
   if (mData != nullptr) {
     PlatformAlignedFree(mData);
   }
 
   mInputSize = vertexSize;
-  mIndexSize = indexSize;
   mAllocatedSize = ((vertexSize * sizeof(float)) + (vertexSize * MAX_INDICIES_AFTER_CLIP * sizeof(float)));
   mStride = stride;
   mAllocatedSize = RoundUpNearestMultiple(mAllocatedSize, 16);
@@ -118,5 +117,15 @@ void VertexBuffer::AppendClipData(const float* data, size_t lengthBytes, size_t 
 
 size_t VertexBuffer::GetClipLength() const {
   return mClipLength;
+}
+
+void VertexBuffer::ShuffleClippedData() {
+  const size_t offset = mClipLength * mStride;
+  const size_t totalBytes = offset * sizeof(float);
+  memmove(mData, mClipData, totalBytes); // Clip data and input data may overlap.
+  mClipLength = 0;
+  mClipData = mData + offset;
+  mWorkingSize = offset;
+  mInputSize = offset;
 }
 }

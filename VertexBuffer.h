@@ -31,7 +31,7 @@ class VertexBuffer final {
 
   void CopyInputData(const float* data, size_t index, size_t length);
 
-  void Resize(size_t vertexSize, size_t stride, size_t indexSize);
+  void Resize(size_t vertexSize, size_t stride);
 
   void Clear();
 
@@ -43,11 +43,12 @@ class VertexBuffer final {
 
   size_t GetClipLength() const;
 
+  void ShuffleClippedData();
+
   private:
   float* mData = nullptr;
   float* mClipData = nullptr;
   size_t mInputSize = 0;
-  size_t mIndexSize = 0;
   size_t mAllocatedSize = 0;
   size_t mWorkingSize = 0;
   size_t mClipLength = 0;

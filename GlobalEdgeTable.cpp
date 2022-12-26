@@ -46,14 +46,9 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer) {
     if (!yList.IsEmpty()) {
       for (ScanLine& line : yList) {
 
-        // TODO: Is there a way we can clamp or detect these values earlier?
-        if (line.x1 >= frameBuffer.GetWidth()) {
-          line.x1 = frameBuffer.GetWidth() - 1;
-        }
-
-        if (line.x2 >= frameBuffer.GetWidth()) {
-          line.x2 = frameBuffer.GetWidth() - 1;
-        }
+        const size_t MaxWidth = frameBuffer.GetWidth() - 1;
+        Clamp(line.x1, 0ULL, MaxWidth);
+        Clamp(line.x2, 0ULL, MaxWidth);
 
         if (line.x1 == line.x2) {
           frameBuffer.SetPixel(line.x1, y, line.x1Color);

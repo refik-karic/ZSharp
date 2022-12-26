@@ -116,7 +116,7 @@ void GameInstance::PauseTransforms() {
 void GameInstance::Initialize() {
   LoadAssets();
 
-  mCamera.Position() = Vec3(0.f, 0.f, 30.f);
+  mCamera.Position() = Vec3(0.f, 0.f, -40.f);
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));

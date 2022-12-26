@@ -10,7 +10,7 @@
 
 #define ASSERT_CHECK 0
 
-#define DISABLE_BACKFACE_CULLING 1
+#define DISABLE_BACKFACE_CULLING 0
 
 namespace ZSharp {
 Camera::Camera() {
@@ -50,6 +50,7 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
   mLook[1] = rotatedVec[1];
   mLook[2] = rotatedVec[2];
 
+#if 0
   rotatedVec = mUp;
   rotatedVec = rotationMatrix.ApplyTransform(rotatedVec);
 
@@ -57,6 +58,7 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
   mUp[0] = rotatedVec[0];
   mUp[1] = rotatedVec[1];
   mUp[2] = rotatedVec[2];
+#endif
 }
 
 void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {

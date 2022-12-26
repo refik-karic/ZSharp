@@ -10,7 +10,7 @@
 
 #include <cmath>
 
-#define DEBUG_TRIANGLE 1
+#define DEBUG_TRIANGLE 0
 #define DISABLE_DEBUG_TRANSFORMS 0
 
 namespace ZSharp {
@@ -53,10 +53,10 @@ void GameInstance::MoveCamera(Direction direction) {
 
   switch (direction) {
   case Direction::FORWARD:
-    mCamera.Position() = mCamera.Position() - cameraLook;
+    mCamera.Position() = mCamera.Position() + cameraLook;
     break;
   case Direction::BACK:
-    mCamera.Position() = mCamera.Position() + cameraLook;
+    mCamera.Position() = mCamera.Position() - cameraLook;
     break;
   case Direction::LEFT:
   {
@@ -131,6 +131,12 @@ void GameInstance::Tick() {
     String frame;
     frame.Appendf("Frame: {0}\n", mFrameCount);
     Logger::Log(LogCategory::Info, frame);
+  }
+
+  {
+    String cameraPosition(mCamera.Position().ToString());
+    cameraPosition.Append("\n");
+    Logger::Log(LogCategory::Info, cameraPosition);
   }
 
   ++mFrameCount;
@@ -238,7 +244,7 @@ Vec3 GameInstance::ProjectClick(float x, float y) {
     z = (((radius * radius) / 2.f) / sqrtf(((newX * newX) + (newY * newY))));
   }
 
-  return Vec3(-newX, newY, z);
+  return Vec3(-newX, -newY, z);
 }
 
 }

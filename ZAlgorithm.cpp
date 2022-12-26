@@ -22,7 +22,11 @@ bool InsidePlane(const Vec3& point, const Vec3& clipEdge, const Vec3& normal) {
   return FloatLessThan((point - clipEdge) * normal, 0.f);
 }
 
-Vec4 GetParametricVector(const float point, const Vec4& start, const Vec4& end) {
+Vec3 GetParametricVector3D(const float point, const Vec3& start, const Vec3& end) {
+  return (start + ((end - start) * point));
+}
+
+Vec4 GetParametricVector4D(const float point, const Vec4& start, const Vec4& end) {
   return (start + ((end - start) * point));
 }
 
@@ -201,7 +205,7 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
     }
     else {
       const float parametricValue = ParametricLinePlaneIntersection(currentVert, nextVert, edgeNormal, clipEdge);
-      const Vec4 clipPoint(GetParametricVector(parametricValue, currentVert4D, nextVert4D));
+      const Vec4 clipPoint(GetParametricVector4D(parametricValue, currentVert4D, nextVert4D));
 
       const float* currentAttributes = currentOffset + 4;
       const float* nextAttributes = nextOffset + 4;

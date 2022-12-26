@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZBaseTypes.h"
+#include "ZString.h"
 
 namespace ZSharp {
 
@@ -45,6 +46,8 @@ public:
   void Homogenize();
 
   void Clear();
+
+  String ToString() const;
 
 private:
   static const size_t Elements = 3;

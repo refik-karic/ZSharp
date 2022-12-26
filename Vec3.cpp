@@ -120,4 +120,10 @@ void Vec3::Clear() {
   memset(mData, 0, sizeof(mData));
 }
 
+String Vec3::ToString() const {
+  String result;
+  result.Appendf("X={0}, Y={1}, Z={2}", mData[0], mData[1], mData[2]);
+  return result;
+}
+
 }

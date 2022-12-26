@@ -8,7 +8,7 @@
 #include "PlatformMemory.h"
 #include "Vec4.h"
 
-static constexpr size_t MAX_INDICIES_AFTER_CLIP = 4;
+static constexpr size_t MAX_INDICIES_AFTER_CLIP = 12;
 
 namespace ZSharp {
 

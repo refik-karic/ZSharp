@@ -10,7 +10,9 @@ namespace ZSharp {
 
 bool InsidePlane(const Vec3& point, const Vec3& clipEdge, const Vec3& normal);
 
-Vec4 GetParametricVector(const float point, const Vec4& start, const Vec4& end);
+Vec3 GetParametricVector3D(const float point, const Vec3& start, const Vec3& end);
+
+Vec4 GetParametricVector4D(const float point, const Vec4& start, const Vec4& end);
 
 float ParametricLinePlaneIntersection(const Vec3& start, const Vec3& end, const Vec3& edgeNormal, const Vec3& edgePoint);
 

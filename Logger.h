@@ -10,7 +10,8 @@ enum class LogCategory {
   Warning,
   Error,
   Info,
-  Debug
+  Debug,
+  Perf
 };
 
 class Logger {

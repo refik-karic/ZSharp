@@ -31,6 +31,9 @@ void Logger::Log(LogCategory category, const String& message) {
     case LogCategory::Debug:
       logMessage.Append("[Debug] ");
       break;
+    case LogCategory::Perf:
+      logMessage.Append("[Perf] ");
+      break;
   }
 
   logMessage.Appendf("[{0}] ", PlatformSystemTimeFormat().Str());

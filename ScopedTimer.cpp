@@ -1,7 +1,10 @@
 #include "ScopedTimer.h"
 
+#include "Logger.h"
 #include "PlatformTime.h"
 #include "ZString.h"
+
+#define LOG_SCOPED_TIMERS 1
 
 namespace ZSharp {
 
@@ -15,9 +18,12 @@ ScopedTimer::~ScopedTimer() {
 
   String log;
   log.Appendf("{0} took {1} us.\n", mFunction, deltaMicroseconds);
-  PlatformDebugPrint(log.Str());
 
-  // TODO: Log to stdout or a file perhaps?
+#if LOG_SCOPED_TIMERS
+  Logger::Log(LogCategory::Perf, log);
+#else
+  PlatformDebugPrint(log.Str());
+#endif
 }
 
 }

@@ -33,8 +33,10 @@ target_sources(ZSharp
         Mesh.h
         Model.h
         Pair.h
-        PlatformFile.h
         PlatformDebug.h
+        PlatformFile.h
+        PlatformHAL.h
+        PlatformMisc.h
         PlatformMemory.h
         PlatformTime.h
         Quaternion.h
@@ -89,8 +91,10 @@ target_sources(ZSharp
         Vec4.cpp
         VertexBuffer.cpp
         Win32PlatformApplication.cpp
-        Win32PlatformFile.cpp
         Win32PlatformDebug.cpp
+        Win32PlatformFile.cpp
+        Win32PlatformHAL.cpp
+        Win32PlatformMisc.cpp
         Win32PlatformMemory.cpp
         Win32PlatformTime.cpp
         World.cpp

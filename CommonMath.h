@@ -2,6 +2,7 @@
 
 #include "ZAssert.h"
 #include "ZBaseTypes.h"
+#include "Constants.h"
 
 namespace ZSharp {
 
@@ -29,14 +30,14 @@ float NewtonRaphsonSqrt(float val);
 
 bool IsNegativeFloat(const float a);
 
-bool FloatEqual(float a, float b, float epsilon = 1.e-5f);
+bool FloatEqual(float a, float b, float epsilon = DEFAULT_EPSILON);
 
-bool FloatLessThan(float a, float b, float epsilon = 1.e-5f);
+bool FloatLessThan(float a, float b, float epsilon = DEFAULT_EPSILON);
 
-bool FloatLessThanEqual(float a, float b, float epsilon = 1.e-5f);
+bool FloatLessThanEqual(float a, float b, float epsilon = DEFAULT_EPSILON);
 
-bool FloatGreaterThan(float a, float b, float epsilon = 1.e-5f);
+bool FloatGreaterThan(float a, float b, float epsilon = DEFAULT_EPSILON);
 
-bool FloatGreaterThanEqual(float a, float b, float epsilon = 1.e-5f);
+bool FloatGreaterThanEqual(float a, float b, float epsilon = DEFAULT_EPSILON);
 
 }

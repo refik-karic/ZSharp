@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 #include "Vec3.h"
+#include "ZString.h"
 
 namespace ZSharp {
 
@@ -50,6 +51,8 @@ class alignas(16) Vec4 final {
   void Homogenize();
 
   void Clear();
+
+  String ToString() const;
 
   private:
   static const size_t Elements = 4;

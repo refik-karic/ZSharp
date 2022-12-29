@@ -3,6 +3,7 @@
 #include "PlatformIntrinsics.h"
 
 #include "ZBaseTypes.h"
+#include "ZAssert.h"
 
 #ifdef HW_PLATFORM_X86
 
@@ -147,13 +148,28 @@ float Aligned_128MulSum(const float* a, const float* b) {
   return _mm_cvtss_f32(mulResult);
 }
 
-void Aligned_Memset(void* __restrict dest, void* const __restrict value, const size_t numBytes) {
-  size_t* nextDest = reinterpret_cast<size_t*>(dest);
-  const size_t end = numBytes / sizeof(size_t);
+void Aligned_Memset(void* __restrict dest, uint32 value, const size_t numBytes) {
+  if (PlatformSupportsSIMDMode(SIMDMode::AVX512) && ((numBytes % sizeof(__m512i)) == 0)) {
+    __m512i repData;
 
-  __m512i repData = _mm512_load_epi32(value);
-  for (size_t i = 0; i < end; i += sizeof(size_t)) {
-    _mm512_store_epi32(nextDest + i, repData);
+    for (size_t i = 0; i < sizeof(repData.m512i_u32) / sizeof(uint32); ++i) {
+      repData.m512i_u32[i] = value;
+    }
+
+    __m512i* nextDest = reinterpret_cast<__m512i*>(dest);
+    for (size_t i = 0; i < numBytes; i += sizeof(__m512i)) {
+      _mm512_store_epi32(nextDest, repData);
+      ++nextDest;
+    }
+  }
+  else if((numBytes % sizeof(uint32)) == 0) {
+    uint32* data = (uint32*)dest;
+    for (size_t i = 0; i * sizeof(uint32) < numBytes; ++i) {
+      data[i] = value;
+    }
+  }
+  else {
+    ZAssert(false); // numBytes is not a valid multiple.
   }
 }
 

@@ -135,10 +135,7 @@ set(ZSharp_Compile_Options_Release
   /GS-
 )
 
-set(ZSharp_Preprocessor_Defines
-  FORCE_AVX512
-  FORCE_SSE
-)
+set(ZSharp_Preprocessor_Defines )
 
 if(WIN32)
   list(APPEND ZSharp_Preprocessor_Defines 

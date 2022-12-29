@@ -25,6 +25,10 @@ Framebuffer::Framebuffer(const ZColor clearColor) : Framebuffer() {
 }
 
 Framebuffer::~Framebuffer() {
+  if (mPixelBuffer != nullptr) {
+    PlatformAlignedFree(mPixelBuffer);
+  }
+
   Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
 }
 
@@ -77,38 +81,7 @@ void Framebuffer::SetRow(const size_t y, const size_t x1, const size_t x2, const
 }
 
 void Framebuffer::Clear(const ZColor color) {
-  const size_t numPixels = (mWidth * mHeight);
-#if FORCE_AVX512
-  if ((numPixels % 64) > 0) {
-    uint32* pixelPtr = reinterpret_cast<uint32*>(mPixelBuffer);
-    for (size_t i = 0; i < numPixels; ++i) {
-      pixelPtr[i] = color.Color();
-    }
-  }
-  else {
-    for (size_t i = 0; i < 16; ++i) {
-      *(reinterpret_cast<uint32*>(mScratchBuffer) + i) = color.Color();
-    }
-
-    Aligned_Memset(mPixelBuffer, mScratchBuffer, mTotalSize);
-  }
-#else
-  if ((numPixels % sizeof(std::uintptr_t)) > 0) {
-    uint32* pixelPtr = reinterpret_cast<uint32*>(mPixelBuffer);
-    for (size_t i = 0; i < numPixels; ++i) {
-      pixelPtr[i] = color.Color;
-    }
-  }
-  else {
-    const size_t cachedSize = mTotalSize / sizeof(std::uintptr_t);
-    std::uintptr_t* pBuf = reinterpret_cast<std::uintptr_t*>(mPixelBuffer);
-    const std::uintptr_t convColor = (static_cast<std::uintptr_t>(color.Color) << 32) | color.Color;
-
-    for (size_t i = 0; i < cachedSize; i++) {
-      pBuf[i] = convColor;
-    }
-  }
-#endif
+  Aligned_Memset(mPixelBuffer, color.Color(), mTotalSize);
 }
 
 uint8* Framebuffer::GetBuffer() {
@@ -131,12 +104,6 @@ void Framebuffer::OnResize(size_t width, size_t height) {
   if (mPixelBuffer != nullptr) {
     PlatformAlignedFree(mPixelBuffer);
   }
-
-#ifdef FORCE_AVX512
-  if (mScratchBuffer == nullptr) {
-    mScratchBuffer = static_cast<uint8*>(PlatformAlignedMalloc(64, 64));
-  }
-#endif
 
   mWidth = width;
   mHeight = height;

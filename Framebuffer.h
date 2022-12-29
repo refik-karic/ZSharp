@@ -23,7 +23,6 @@ class Framebuffer final {
 
   private:
   uint8* mPixelBuffer = nullptr;
-  uint8* mScratchBuffer = nullptr;
   size_t mWidth = 0;
   size_t mHeight = 0;
   size_t mStride = 0;

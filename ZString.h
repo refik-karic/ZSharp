@@ -20,7 +20,8 @@ class String final {
       UINT64,
       FLOAT,
       DOUBLE,
-      CONST_STRING
+      CONST_STRING,
+      STRING_CLASS
     };
 
     Type mType;
@@ -35,6 +36,7 @@ class String final {
       float float_value;
       double double_value;
       const char* string_value;
+      const String* string_class_value;
     } mData;
 
     public:
@@ -51,6 +53,8 @@ class String final {
     VariableArg(const float arg);
 
     VariableArg(const char* arg);
+
+    VariableArg(const String& arg);
 
     String ToString() const;
   };
@@ -75,6 +79,10 @@ class String final {
   bool operator>(const String& rhs) const;
 
   bool operator<(const String& rhs) const;
+
+  bool operator<=(const String& rhs) const;
+
+  bool operator>=(const String& rhs) const;
 
   String operator+(const char* str);
 

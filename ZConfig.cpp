@@ -11,11 +11,11 @@ ZConfig& ZConfig::GetInstance() {
 }
 
 size_t ZConfig::GetViewportWidth() const {
-  return mViewportWidth;
+  return mViewportWidth.Value();
 }
 
 size_t ZConfig::GetViewportHeight() const {
-  return mViewportHeight;
+  return mViewportHeight.Value();
 }
 
 size_t ZConfig::GetViewportStride() const {
@@ -23,7 +23,7 @@ size_t ZConfig::GetViewportStride() const {
 }
 
 size_t ZConfig::GetBytesPerPixel() const {
-  return mBytesPerPixel;
+  return mBytesPerPixel.Value();
 }
 
 FileString ZConfig::GetAssetPath() const {
@@ -35,12 +35,12 @@ Array<String> ZConfig::GetAssets() const {
 }
 
 const String& ZConfig::GetWindowTitle() const {
-  return mWindowTitle;
+  return mWindowTitle.Value();
 }
 
 void ZConfig::SetViewportWidth(size_t width) {
   mViewportWidth = width;
-  mViewportStride = mBytesPerPixel * width;
+  mViewportStride = mBytesPerPixel.Value() * width;
 }
 
 void ZConfig::SetViewportHeight(size_t height) {
@@ -49,20 +49,30 @@ void ZConfig::SetViewportHeight(size_t height) {
 
 void ZConfig::SetBytesPerPixel(size_t bytesPerPixel) {
   mBytesPerPixel = bytesPerPixel;
-  mViewportStride = mViewportWidth * bytesPerPixel;
+  mViewportStride = mViewportWidth.Value() * bytesPerPixel;
 }
 
 bool ZConfig::SizeChanged(size_t width, size_t height) {
-  return ((width != mViewportWidth) || (height != mViewportHeight));
+  return ((width != mViewportWidth.Value()) || (height != mViewportHeight.Value()));
 }
 
 ZConfig::ZConfig()
-  : mAssetPath("") {
+  : mAssetPath(""), 
+  mViewportWidth(640, 3840, 1920),
+  mViewportHeight(480, 2160, 1080),
+  mBytesPerPixel(4, 4, 4),
+  mViewportStride(0),
+  mWindowTitle("Software_Renderer_V3") {
   FileString iniFilePath(PlatformGetUserDesktopPath());
   iniFilePath.AddDirectory("models");
   iniFilePath.SetFilename("ZSharpSettings.txt");
 
   IniFile userConfig(iniFilePath);
+  if (!userConfig.Loaded()) {
+    // Force viewport stride to update.
+    SetViewportWidth(mViewportWidth.Value());
+    return;
+  }
   
   {
     String viewportWidth(userConfig.FindValue("GlobalSettings", "ViewportWidth"));

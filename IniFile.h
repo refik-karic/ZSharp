@@ -31,10 +31,12 @@ class IniFile final {
 
   String FindValue(const String& section, const String& key) const;
 
+  bool Loaded() const;
+
   private:
   FileString mFileName;
-
   Array<IniSection> mSections;
+  bool mLoaded = false;
 
   void ParseFile();
 };

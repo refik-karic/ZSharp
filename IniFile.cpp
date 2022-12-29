@@ -45,11 +45,17 @@ String IniFile::FindValue(const String& section, const String& key) const {
   return foundValue;
 }
 
+bool IniFile::Loaded() const {
+  return mLoaded;
+}
+
 void IniFile::ParseFile() {
   BufferedFileReader fileReader(mFileName);
   if (!fileReader.IsOpen()) {
     return;
   }
+
+  mLoaded = true;
 
   IniSection* activeSection = nullptr;
 

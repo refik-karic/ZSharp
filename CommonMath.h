@@ -8,7 +8,7 @@ namespace ZSharp {
 
 template<typename T>
 void Clamp(T& value, const T& min, const T& max) {
-  ZAssert(min < max);
+  ZAssert(min <= max);
   
   if (value < min) {
     value = min;

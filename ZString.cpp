@@ -68,6 +68,14 @@ bool String::operator<(const String& rhs) const {
   return strcmp(Str(), rhs.Str()) < 0;
 }
 
+bool String::operator<=(const String& rhs) const {
+  return ((*this) < rhs) || ((*this) == rhs);
+}
+
+bool String::operator>=(const String& rhs) const {
+  return ((*this) > rhs) || ((*this) == rhs);
+}
+
 String String::operator+(const char* str) {
   String result(*this);
   result.Append(str);
@@ -524,6 +532,11 @@ String::VariableArg::VariableArg(const char* arg)
   mData.string_value = arg;
 }
 
+String::VariableArg::VariableArg(const String& arg)
+  : mType(Type::STRING_CLASS) {
+  mData.string_class_value = &arg;
+}
+
 String String::VariableArg::ToString() const {
   String result;
 
@@ -592,6 +605,11 @@ String String::VariableArg::ToString() const {
       result.Append(mData.string_value);
     }
       break;
+    case Type::STRING_CLASS:
+    {
+      result.Append(*(mData.string_class_value));
+    }
+    break;
   }
 
   return result;

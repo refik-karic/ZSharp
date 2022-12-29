@@ -2,10 +2,45 @@
 
 #include "Array.h"
 #include "ZBaseTypes.h"
+#include "CommonMath.h"
 #include "FileString.h"
 #include "ZString.h"
 
 namespace ZSharp{
+
+template<typename T>
+class GameSetting final {
+  public:
+
+  GameSetting(const T& defaultValue)
+    : mDefault(defaultValue), mValue(defaultValue), mShouldClamp(false) {
+
+  }
+
+  GameSetting(const T& min, const T& max, const T& defaultValue) 
+    : mMin(min), mMax(max), mDefault(defaultValue), mValue(defaultValue), mShouldClamp(true) {
+
+  }
+
+  const T& Value() const {
+    return mValue;
+  }
+
+  void operator=(const T& value) {
+    mValue = value;
+    if (mShouldClamp) {
+      Clamp(mValue, mMin, mMax);
+    }
+  }
+
+  private:
+  T mMin;
+  T mMax;
+  T mDefault;
+
+  T mValue;
+  bool mShouldClamp;
+};
 
 class ZConfig final {
   public:
@@ -45,15 +80,15 @@ class ZConfig final {
 
   void SetWindowTitle(const String& title);
 
-  size_t mViewportWidth = 0;
-  size_t mViewportHeight = 0;
-  size_t mBytesPerPixel = 0;
-  size_t mViewportStride = 0;
+  GameSetting<size_t> mViewportWidth;
+  GameSetting<size_t> mViewportHeight;
+  GameSetting<size_t> mBytesPerPixel;
+  size_t mViewportStride;
 
   FileString mAssetPath;
 
   Array<String> mAssets;
 
-  String mWindowTitle;
+  GameSetting<String> mWindowTitle;
 };
 }

@@ -120,7 +120,7 @@ PlatformFileHandle* PlatformOpenFile(const FileString& filename, size_t flags) {
     }
   }
 
-  if (fileHandle != nullptr) {
+  if (fileHandle != INVALID_HANDLE_VALUE) {
     PlatformFileHandle* outHandle = new PlatformFileHandle;
     outHandle->fileHandle = fileHandle;
     return outHandle;

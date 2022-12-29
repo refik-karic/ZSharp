@@ -76,7 +76,9 @@ Vec4 Vec4::operator+(const Vec4& vector) const {
 
 Vec4 Vec4::operator-(const Vec4& vector) const {
   Vec4 result;
-  Aligned_128Sub(mData, vector.mData, result.mData);
+  // TODO: Figure out why this crashes even though it's aligned.
+  //Aligned_128Sub(mData, vector.mData, result.mData);
+  Unaligned_128Sub(mData, vector.mData, result.mData);
   return result;
 }
 

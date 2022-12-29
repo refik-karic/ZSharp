@@ -113,7 +113,9 @@ void FileString::Initialize(const String& absoluteFilePath) {
     directory = nextDirectory;
   }
 
-  UpdateAbsolutePath();
+  if (!mVolume.IsEmpty()) {
+    UpdateAbsolutePath();
+  }
 }
 
 void FileString::Reset() {

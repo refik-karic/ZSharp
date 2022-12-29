@@ -3,19 +3,27 @@
 #include "ZAssert.h"
 #include "PlatformDebug.h"
 #include "PlatformFile.h"
+#include "PlatformHAL.h"
+#include "PlatformIntrinsics.h"
+#include "PlatformMisc.h"
 #include "PlatformTime.h"
 
 namespace ZSharp {
 
 Logger::Logger() : mLog(LogFilePath(), 0) {
+  LogPreamble();
 }
 
 Logger::~Logger() {
 }
 
+
 void Logger::Log(LogCategory category, const String& message) {
   Logger& logger = GetInstance();
+  logger.InternalLog(category, message);
+}
 
+void Logger::InternalLog(LogCategory category, const String& message) {
   String logMessage;
 
   switch (category) {
@@ -42,9 +50,9 @@ void Logger::Log(LogCategory category, const String& message) {
   PlatformDebugPrint(message.Str());
 
   const size_t logLength = logMessage.Length();
-  if (!logger.IsExcessiveSize(logLength)) {
-    logger.mLog.Write(logMessage.Str(), logLength);
-    logger.mLogSize += logLength;
+  if (!IsExcessiveSize(logLength)) {
+    mLog.Write(logMessage.Str(), logLength);
+    mLogSize += logLength;
   }
 }
 
@@ -73,6 +81,21 @@ bool Logger::IsExcessiveSize(const size_t nextMessageLength) const {
   else {
     return false;
   }
+}
+
+void Logger::LogPreamble() {
+  String preamble;
+  preamble.Append("\n==========Begin Sys Info==========\n");
+  preamble.Appendf("CPU: ID={0}, Brand={1}\n", PlatformCPUVendor().Str(), PlatformCPUBrand().Str());
+  preamble.Appendf("Cores: Physical={0}, Logical={1}\n", PlatformGetNumPhysicalCores(), PlatformGetNumLogicalCores());
+  preamble.Appendf("SIMD: SSE2={0}, SSE4={1}, AVX2={2}, AVX512={3}\n", PlatformSupportsSIMDMode(SIMDMode::SSE2),
+    PlatformSupportsSIMDMode(SIMDMode::SSE4),
+    PlatformSupportsSIMDMode(SIMDMode::AVX2),
+    PlatformSupportsSIMDMode(SIMDMode::AVX512));
+  preamble.Appendf("OS: Username={0}, Machine={1}\n", PlatformGetUsername().Str(), PlatformGetMachineName().Str());
+  preamble.Append("==========End Sys Info==========\n");
+
+  InternalLog(LogCategory::Info, preamble);
 }
 
 }

@@ -12,6 +12,11 @@
 #include <cwchar>
 
 namespace ZSharp {
+
+static const uint16 ShortMaskSet = 0x8000U;
+static const uint16 ShortMaskClear = 0x7FFFU;
+static const size_t LongMaskClear = 0x7FFFFFFFFFFFFFFFULL;
+
 String::String() {
   Copy("");
 }
@@ -310,23 +315,23 @@ WideString String::ToWide() const {
 }
 
 bool String::IsShort(const char* str) const {
-  return (strlen(str) + 1) < MinCapaity;
+  return (strlen(str) + 1) < MinCapacity;
 }
 
 bool String::IsMarkedShort() const {
-  return (mOverlapData.shortStr.size & 0x80) > 0;
+  return (mOverlapData.shortStr.size & ShortMaskSet) > 0;
 }
 
 void String::MarkShort(bool isShort) {
-  mOverlapData.shortStr.size = (isShort) ? ((mOverlapData.shortStr.size & 0x7F) | 0x80) : (mOverlapData.shortStr.size & 0x7F);
+  mOverlapData.shortStr.size = (isShort) ? ((mOverlapData.shortStr.size & ShortMaskClear) | ShortMaskSet) : (mOverlapData.shortStr.size & ShortMaskClear);
 }
 
 void String::SetShortLength(size_t length) {
-  mOverlapData.shortStr.size = (static_cast<unsigned char>(length) & 0x7F);
+  mOverlapData.shortStr.size = (static_cast<uint16>(length) & ShortMaskClear);
 }
 
-unsigned char String::GetShortLength() const {
-  return mOverlapData.shortStr.size & 0x7F;
+uint16 String::GetShortLength() const {
+  return mOverlapData.shortStr.size & ShortMaskClear;
 }
 
 void String::CopyShort(const char* str) {
@@ -352,12 +357,12 @@ void String::AppendShort(const char* str, size_t offset, size_t length) {
 }
 
 void String::SetLongLength(size_t length) {
-  mOverlapData.longStr.size = (length & 0x7FFFFFFFFFFFFFFF);
+  mOverlapData.longStr.size = (length & LongMaskClear);
   mOverlapData.longStr.capacity = length;
 }
 
 size_t String::GetLongLength() const {
-  return mOverlapData.longStr.size & 0x7FFFFFFFFFFFFFFF;
+  return mOverlapData.longStr.size & LongMaskClear;
 }
 
 void String::AllocateLong() {
@@ -384,7 +389,7 @@ void String::AppendLong(const char* str, size_t offset, size_t length) {
   size_t combinedLength = Length() + length;
 
   if (IsMarkedShort()) {
-    char oldData[MinCapaity];
+    char oldData[MinCapacity];
     size_t shortLength = GetShortLength();
     memcpy(oldData, GetString(), shortLength);
     SetLongLength(shortLength);
@@ -396,10 +401,11 @@ void String::AppendLong(const char* str, size_t offset, size_t length) {
     mutableStr[shortLength] = NULL;
   }
 
-  SetLongLength(combinedLength);
   char* resizedStr = static_cast<char*>(PlatformReAlloc(mOverlapData.longStr.data, combinedLength + 1));
   ZAssert(resizedStr != nullptr);
   mOverlapData.longStr.data = resizedStr;
+  MarkShort(false);
+  SetLongLength(combinedLength);
 
   size_t currentPosition = strlen(GetMutableString());
 
@@ -407,7 +413,6 @@ void String::AppendLong(const char* str, size_t offset, size_t length) {
   const char* strOffset = str + offset;
   memcpy(mutableStr, strOffset, length);
   mutableStr[length] = NULL;
-  MarkShort(false);
 }
 
 void String::Copy(const char* str) {
@@ -432,7 +437,7 @@ size_t String::GetCombinedSize(const char* str) {
 }
 
 bool String::FitsInSmall(size_t size) {
-  return size < MinCapaity;
+  return size < MinCapacity;
 }
 
 void String::VariadicArgsAppend(const char* format, const VariableArg* args, size_t numArgs) {
@@ -494,6 +499,11 @@ String::VariableArg::VariableArg(const size_t arg)
   mData.size_value = arg;
 }
 
+String::VariableArg::VariableArg(const bool arg)
+  : mType(Type::BOOL) {
+  mData.bool_value = arg;
+}
+
 String::VariableArg::VariableArg(const int32 arg)
   : mType(Type::INT32) {
   mData.int32_value = arg;
@@ -527,6 +537,12 @@ String String::VariableArg::ToString() const {
       result.Append(str);
     }
       break;
+    case Type::BOOL:
+    {
+      const char* str = (mData.bool_value) ? "1" : "0";
+      result.Append(str);
+    }
+    break;
     case Type::INT32:
     {
       const size_t bufferSize = 64;
@@ -878,23 +894,23 @@ String WideString::ToNarrow() const {
 }
 
 bool WideString::IsShort(const wchar_t* str) const {
-  return (wcslen(str) + 1) < MinCapaity;
+  return (wcslen(str) + 1) < MinCapacity;
 }
 
 bool WideString::IsMarkedShort() const {
-  return (mOverlapData.shortStr.size & 0x8000) > 0;
+  return (mOverlapData.shortStr.size & ShortMaskSet) > 0;
 }
 
 void WideString::MarkShort(bool isShort) {
-  mOverlapData.shortStr.size = (isShort) ? ((mOverlapData.shortStr.size & 0x7FFF) | 0x8000) : (mOverlapData.shortStr.size & 0x7FFF);
+  mOverlapData.shortStr.size = (isShort) ? ((mOverlapData.shortStr.size & ShortMaskClear) | ShortMaskSet) : (mOverlapData.shortStr.size & ShortMaskClear);
 }
 
 void WideString::SetShortLength(size_t length) {
-  mOverlapData.shortStr.size = (static_cast<wchar_t>(length) & 0x7FFF);
+  mOverlapData.shortStr.size = (static_cast<wchar_t>(length) & ShortMaskClear);
 }
 
 wchar_t WideString::GetShortLength() const {
-  return mOverlapData.shortStr.size & 0x7FFF;
+  return mOverlapData.shortStr.size & ShortMaskClear;
 }
 
 void WideString::CopyShort(const wchar_t* str) {
@@ -920,12 +936,12 @@ void WideString::AppendShort(const wchar_t* str, size_t offset, size_t length) {
 }
 
 void WideString::SetLongLength(size_t length) {
-  mOverlapData.longStr.size = (length & 0x7FFFFFFFFFFFFFFF);
+  mOverlapData.longStr.size = (length & LongMaskClear);
   mOverlapData.longStr.capacity = length;
 }
 
 size_t WideString::GetLongLength() const {
-  return mOverlapData.longStr.size & 0x7FFFFFFFFFFFFFFF;
+  return mOverlapData.longStr.size & LongMaskClear;
 }
 
 void WideString::AllocateLong() {
@@ -952,7 +968,7 @@ void WideString::AppendLong(const wchar_t* str, size_t offset, size_t length) {
   size_t combinedLength = Length() + length;
 
   if (IsMarkedShort()) {
-    wchar_t oldData[MinCapaity];
+    wchar_t oldData[MinCapacity];
     size_t shortLength = GetShortLength();
     memcpy(oldData, GetString(), shortLength * sizeof(wchar_t));
     SetLongLength(shortLength);
@@ -1000,7 +1016,7 @@ size_t WideString::GetCombinedSize(const wchar_t* str) {
 }
 
 bool WideString::FitsInSmall(size_t size) {
-  return size < MinCapaity;
+  return size < MinCapacity;
 }
 
 void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* args, size_t numArgs) {

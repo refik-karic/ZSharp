@@ -30,6 +30,10 @@ class Logger {
 
   bool IsExcessiveSize(const size_t nextMessageLength) const;
 
+  void InternalLog(LogCategory category, const String& message);
+
+  void LogPreamble();
+
   BufferedFileWriter mLog;
   size_t mLogSize = 0;
 };

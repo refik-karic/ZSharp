@@ -88,17 +88,17 @@
 	</Type>
 	
 	<Type Name="ZSharp::String">
-		<DisplayString Condition="(mOverlapData.longStr.size &amp; 0x80) == 0">
+		<DisplayString Condition="(mOverlapData.longStr.size &amp; 0x8000) == 0">
 			{{ String={mOverlapData.longStr.data,s}, Size={mOverlapData.longStr.size &amp; 0x7FFFFFFFFFFFFFFF} }}
 		</DisplayString>
-		<DisplayString Condition="(mOverlapData.shortStr.size &amp; 0x80) &gt; 0">
-			{{ String={mOverlapData.shortStr.data,s}, Size={mOverlapData.shortStr.size &amp; 0x7F} }}
+		<DisplayString Condition="(mOverlapData.shortStr.size &amp; 0x8000) &gt; 0">
+			{{ String={mOverlapData.shortStr.data,s}, Size={mOverlapData.shortStr.size &amp; 0x7FFF} }}
 		</DisplayString>
 		<Expand>
-			<Item Name="String" Condition="(mOverlapData.shortStr.size &amp; 0x80) &gt; 0">mOverlapData.shortStr.data</Item>
-			<Item Name="Size" Condition="(mOverlapData.shortStr.size &amp; 0x80) &gt; 0">mOverlapData.shortStr.size &amp; 0x7F</Item>
-			<Item Name="String" Condition="(mOverlapData.longStr.size &amp; 0x80) == 0">mOverlapData.longStr.data</Item>
-			<Item Name="Size" Condition="(mOverlapData.longStr.size &amp; 0x80) == 0">mOverlapData.longStr.size &amp; 0x7FFFFFFFFFFFFFFF</Item>
+			<Item Name="String" Condition="(mOverlapData.shortStr.size &amp; 0x8000) &gt; 0">mOverlapData.shortStr.data</Item>
+			<Item Name="Size" Condition="(mOverlapData.shortStr.size &amp; 0x8000) &gt; 0">mOverlapData.shortStr.size &amp; 0x7FFF</Item>
+			<Item Name="String" Condition="(mOverlapData.longStr.size &amp; 0x8000) == 0">mOverlapData.longStr.data</Item>
+			<Item Name="Size" Condition="(mOverlapData.longStr.size &amp; 0x8000) == 0">mOverlapData.longStr.size &amp; 0x7FFFFFFFFFFFFFFF</Item>
 		</Expand>
 	</Type>
 

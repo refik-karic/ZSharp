@@ -13,6 +13,7 @@ class String final {
     private:
     enum Type {
       SIZE_T,
+      BOOL,
       INT32,
       UINT32,
       INT64,
@@ -26,6 +27,7 @@ class String final {
 
     union {
       size_t size_value;
+      bool bool_value;
       int32 int32_value;
       uint32 uint32_value;
       int64 int64_value;
@@ -39,6 +41,8 @@ class String final {
     VariableArg() = delete; // Explicit type construction only.
 
     VariableArg(const size_t arg);
+
+    VariableArg(const bool arg);
 
     VariableArg(const int32 arg);
 
@@ -143,14 +147,11 @@ class String final {
     char* data;
   };
 
-  enum { MinCapaity = (sizeof(LongString) - 1) /  sizeof(char) > 2 ? ((sizeof(LongString) - 1) / sizeof(char)) : 2};
+  enum { MinCapacity = (sizeof(LongString) - sizeof(uint16)) /  sizeof(uint16) > 2 ? (sizeof(LongString) - sizeof(uint16)) : 2};
 
   struct ShortString {
-    union {
-      unsigned char size;
-      char value;
-    };
-    char data[MinCapaity];
+    uint16 size;
+    char data[MinCapacity];
   };
 
   union Overlap {
@@ -167,7 +168,7 @@ class String final {
   // Short String helpers.
   void SetShortLength(size_t length);
 
-  unsigned char GetShortLength() const;
+  uint16 GetShortLength() const;
 
   void CopyShort(const char* str);
 
@@ -326,14 +327,14 @@ private:
     wchar_t* data;
   };
 
-  enum { MinCapaity = (sizeof(LongString) - 1) / sizeof(wchar_t) > 2 ? ((sizeof(LongString) - 1) / sizeof(wchar_t)) : 2 };
+  enum { MinCapacity = (sizeof(LongString) - 1) / sizeof(wchar_t) > 2 ? ((sizeof(LongString) - 1) / sizeof(wchar_t)) : 2 };
 
   struct ShortString {
     union {
       wchar_t size;
       wchar_t value;
     };
-    wchar_t data[MinCapaity];
+    wchar_t data[MinCapacity];
   };
 
   union Overlap {

@@ -3,9 +3,7 @@
 #include <cmath>
 #include <cstring>
 
-#ifdef FORCE_SSE
-#include "IntelIntrinsics.h"
-#endif
+#include "PlatformIntrinsics.h"
 
 namespace ZSharp {
 
@@ -71,35 +69,15 @@ float& Vec4::operator[](const size_t index) {
 }
 
 Vec4 Vec4::operator+(const Vec4& vector) const {
-#ifdef FORCE_SSE
   Vec4 result;
-  aligned_sse128addfloats(mData, vector.mData, result.mData);
+  Aligned_128Add(mData, vector.mData, result.mData);
   return result;
-#else
-  Vec4 result(
-    mData[0] + vector[0],
-    mData[1] + vector[1],
-    mData[2] + vector[2],
-    mData[3] + vector[3]
-  );
-  return result;
-#endif
 }
 
 Vec4 Vec4::operator-(const Vec4& vector) const {
-#ifdef FORCE_SSE
   Vec4 result;
-  aligned_sse128subfloats(mData, vector.mData, result.mData);
+  Aligned_128Sub(mData, vector.mData, result.mData);
   return result;
-#else
-  Vec4 result(
-    mData[0] - vector[0],
-    mData[1] - vector[1],
-    mData[2] - vector[2],
-    mData[3] - vector[3]
-  );
-  return result;
-#endif
 }
 
 Vec4 Vec4::operator-() const {
@@ -113,31 +91,13 @@ Vec4 Vec4::operator-() const {
 }
 
 Vec4 Vec4::operator*(float scalar) const {
-#ifdef FORCE_SSE
   Vec4 result;
-  aligned_sse128mulfloat(mData, scalar, result.mData);
+  Aligned_128MulByValue(mData, scalar, result.mData);
   return result;
-#else
-  Vec4 result(
-    mData[0] * scalar,
-    mData[1] * scalar,
-    mData[2] * scalar,
-    mData[3] * scalar
-  );
-  return result;
-#endif
 }
 
 float Vec4::operator*(const Vec4& vector) const {
-#ifdef FORCE_SSE
-  return aligned_sse128mulfloatssum(mData, vector.mData);
-#else
-  float result = (mData[0] * vector[0]);
-  result += (mData[1] * vector[1]);
-  result += (mData[2] * vector[2]);
-  result += (mData[3] * vector[3]);
-  return result;
-#endif
+  return Aligned_128MulSum(mData, vector.mData);
 }
 
 float Vec4::Length() const {
@@ -146,28 +106,14 @@ float Vec4::Length() const {
 
 void Vec4::Normalize() {
   const float invSqrt = 1.f / Length();
-#ifdef FORCE_SSE
-  aligned_sse128mulfloat(mData, invSqrt, mData);
-#else
-  mData[0] *= invSqrt;
-  mData[1] *= invSqrt;
-  mData[2] *= invSqrt;
-  mData[3] *= invSqrt;
-#endif
+  Aligned_128MulByValue(mData, invSqrt, mData);
 }
 
 void Vec4::Homogenize() {
   const float invDivisor = 1.f / mData[3];
-#ifdef FORCE_SSE
   // TODO: Figure out why the aligned version fails in release builds.
   // This class and the vertex buffer are both aligned to 16-bytes.
-  unaligned_sse128mulfloat(mData, invDivisor, mData);
-#else
-  mData[0] *= invDivisor;
-  mData[1] *= invDivisor;
-  mData[2] *= invDivisor;
-  mData[3] *= invDivisor;
-#endif
+  Unaligned_128MulByValue(mData, invDivisor, mData);
 }
 
 void Vec4::Clear() {

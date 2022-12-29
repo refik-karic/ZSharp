@@ -4,6 +4,7 @@
 #include "PlatformMemory.h"
 #include "Win32PlatformHeaders.h"
 #include "ZAssert.h"
+#include "ZBaseTypes.h"
 
 #include <sysinfoapi.h>
 

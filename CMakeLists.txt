@@ -23,7 +23,6 @@ target_sources(ZSharp
         IndexBuffer.h
         IniFile.h
         InputManager.h
-        IntelIntrinsics.h
         ISerializable.h
         List.h
         Logger.h
@@ -34,8 +33,10 @@ target_sources(ZSharp
         Model.h
         Pair.h
         PlatformDebug.h
+        PlatformDefines.h
         PlatformFile.h
         PlatformHAL.h
+        PlatformIntrinsics.h
         PlatformMisc.h
         PlatformMemory.h
         PlatformTime.h
@@ -74,7 +75,6 @@ target_sources(ZSharp
         IndexBuffer.cpp
         IniFile.cpp
         InputManager.cpp
-        IntelIntrinsics.cpp
         Logger.cpp
         Mat2x3.cpp
         Mat3x3.cpp
@@ -94,6 +94,7 @@ target_sources(ZSharp
         Win32PlatformDebug.cpp
         Win32PlatformFile.cpp
         Win32PlatformHAL.cpp
+        Win32PlatformIntrinsics.cpp
         Win32PlatformMisc.cpp
         Win32PlatformMemory.cpp
         Win32PlatformTime.cpp
@@ -146,6 +147,10 @@ if(WIN32)
 	_HAS_EXCEPTIONS=0
   )
 endif(WIN32)
+
+list(APPEND ZSharp_Preprocessor_Defines 
+  HW_PLATFORM_X86
+)
 
 target_compile_definitions(ZSharp PRIVATE 
   ${ZSharp_Preprocessor_Defines}

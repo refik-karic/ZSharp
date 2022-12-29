@@ -7,9 +7,7 @@
 #include "ZAssert.h"
 #include "ZConfig.h"
 
-#ifdef FORCE_AVX512
-#include "IntelIntrinsics.h"
-#endif
+#include "PlatformIntrinsics.h"
 
 #define ASSERT_CHECK 0
 
@@ -92,7 +90,7 @@ void Framebuffer::Clear(const ZColor color) {
       *(reinterpret_cast<uint32*>(mScratchBuffer) + i) = color.Color();
     }
 
-    aligned_avx512memset(mPixelBuffer, mScratchBuffer, mTotalSize);
+    Aligned_Memset(mPixelBuffer, mScratchBuffer, mTotalSize);
   }
 #else
   if ((numPixels % sizeof(std::uintptr_t)) > 0) {

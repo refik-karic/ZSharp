@@ -7,4 +7,6 @@ namespace ZSharp {
 
 String PlatformGetUsername();
 
+String PlatformGetMachineName();
+
 }

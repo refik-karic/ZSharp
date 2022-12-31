@@ -5,6 +5,8 @@
 
 #include "PlatformMemory.h"
 
+#include <initializer_list>
+
 namespace ZSharp {
 
 template<typename T>
@@ -79,6 +81,12 @@ class List final {
   };
 
   List() {
+  }
+
+  List(std::initializer_list<T> initList) {
+    for (const T& item : initList) {
+      Add(item);
+    }
   }
 
   ~List() {

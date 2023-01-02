@@ -20,8 +20,11 @@ Camera::Camera() {
   mFovHoriz = 45.f;
   mFovVert = 45.f;
 
-  mNearPlane = 0.02f;
-  mFarPlane = 1000.f;
+  //mNearPlane = 0.02f;
+  //mFarPlane = 1000.f;
+
+  mNearPlane = 10.f;
+  mFarPlane = 100.f;
 
   const ZConfig& config = ZConfig::GetInstance();
   OnResize(config.GetViewportWidth(), config.GetViewportHeight());

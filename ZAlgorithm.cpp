@@ -65,7 +65,7 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
       indexBuffer.AppendClipData(nextTriangle);
 
       if (numClippedVerts > 3) {
-        ZAssert(numClippedVerts < 5);
+        ZAssert(numClippedVerts < 6);
 
         for (size_t j = 2; j < numClippedVerts; j += 3) {
           const size_t clip0 = currentClipIndex + (j % numClippedVerts);
@@ -199,7 +199,7 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
     else if (p0Inside && p1Inside) {
       // Unchanged input vertex.
       memcpy(clipBuffer + (numOutputVerts * Stride), 
-        nextOffset,
+        currentOffset,
         VertByteSize);
       ++numOutputVerts;
     }
@@ -235,6 +235,12 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
         ++numOutputVerts;
       }
       else {
+        // Unchanged input vertex.
+        memcpy(clipBuffer + (numOutputVerts * Stride),
+          currentOffset,
+          VertByteSize);
+        ++numOutputVerts;
+
         // Clipped vertex.
         memcpy(clipBuffer + (numOutputVerts * Stride), 
           reinterpret_cast<const float*>(&clipPoint), 

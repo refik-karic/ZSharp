@@ -51,6 +51,8 @@ class Win32PlatformApplication {
 
   void OnKeyUp(ZSharp::uint8 key);
 
+  void OnPreWindowSizeChanged(LPMINMAXINFO info);
+
   void OnClose();
 
   void OnDestroy();

@@ -15,14 +15,14 @@ class GlobalEdgeTable final {
   GlobalEdgeTable(const GlobalEdgeTable&) = delete;
   void operator=(const GlobalEdgeTable&) = delete;
 
-  void AddPoint(size_t yIndex, size_t x, ZColor color, size_t primitiveIndex);
+  void AddPoint(int32 yIndex, int32 x, ZColor color, size_t primitiveIndex);
   void Draw(Framebuffer& frameBuffer);
 
   private:
   
   struct ScanLine {
-    size_t x1;
-    size_t x2;
+    int32 x1;
+    int32 x2;
     size_t primitiveIndex;
     ZColor x1Color;
     ZColor x2Color;
@@ -32,7 +32,7 @@ class GlobalEdgeTable final {
 
     }
 
-    ScanLine(size_t p1, size_t p2, size_t index, ZColor p1Color, ZColor p2Color) 
+    ScanLine(int32 p1, int32 p2, size_t index, ZColor p1Color, ZColor p2Color)
       : x1(p1), x2(p2), primitiveIndex(index), x1Color(p1Color), x2Color(p2Color) {
 
     }

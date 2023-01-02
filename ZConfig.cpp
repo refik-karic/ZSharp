@@ -10,20 +10,20 @@ ZConfig& ZConfig::GetInstance() {
   return singleton;
 }
 
-size_t ZConfig::GetViewportWidth() const {
-  return mViewportWidth.Value();
+GameSetting<size_t> ZConfig::GetViewportWidth() const {
+  return mViewportWidth;
 }
 
-size_t ZConfig::GetViewportHeight() const {
-  return mViewportHeight.Value();
+GameSetting<size_t> ZConfig::GetViewportHeight() const {
+  return mViewportHeight;
 }
 
 size_t ZConfig::GetViewportStride() const {
   return mViewportStride;
 }
 
-size_t ZConfig::GetBytesPerPixel() const {
-  return mBytesPerPixel.Value();
+GameSetting<size_t> ZConfig::GetBytesPerPixel() const {
+  return mBytesPerPixel;
 }
 
 FileString ZConfig::GetAssetPath() const {

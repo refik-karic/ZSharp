@@ -2,6 +2,7 @@
 
 #include "Win32PlatformApplication.h"
 
+#include "Common.h"
 #include "InputManager.h"
 #include "ZConfig.h"
 #include "ZString.h"
@@ -46,6 +47,9 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
   case WM_KEYUP:
     app.OnKeyUp(static_cast<ZSharp::uint8>(wParam));
     return 0;
+  case WM_GETMINMAXINFO:
+    app.OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
+    break;
   case WM_CLOSE:
     app.OnClose();
     break;
@@ -129,7 +133,7 @@ HWND Win32PlatformApplication::SetupWindow() {
   const ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
 
   DWORD windowStyle = WS_BORDER | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
-  RECT clientRect{ 0L, 0L, static_cast<long>(config.GetViewportWidth()), static_cast<long>(config.GetViewportHeight()) };
+  RECT clientRect{ 0L, 0L, static_cast<long>(config.GetViewportWidth().Value()), static_cast<long>(config.GetViewportHeight().Value()) };
   AdjustWindowRectEx(&clientRect, windowStyle, false, WS_EX_OVERLAPPEDWINDOW);
 
   return CreateWindowExW(
@@ -164,12 +168,12 @@ void Win32PlatformApplication::OnTimer() {
 
     bool dirtySize = false;
 
-    if (activeWindowSize.right != config.GetViewportWidth()) {
+    if (activeWindowSize.right != config.GetViewportWidth().Value()) {
       config.SetViewportWidth(activeWindowSize.right);
       dirtySize = true;
     }
 
-    if (activeWindowSize.bottom != config.GetViewportHeight()) {
+    if (activeWindowSize.bottom != config.GetViewportHeight().Value()) {
       config.SetViewportHeight(activeWindowSize.bottom);
       dirtySize = true;
     }
@@ -237,6 +241,18 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
 void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
   ZSharp::InputManager& inputManager = ZSharp::InputManager::GetInstance();
   inputManager.Update(key, ZSharp::InputManager::KeyState::Up);
+}
+
+void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
+  const ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
+
+  const ZSharp::GameSetting<size_t> width = config.GetViewportWidth();
+  const ZSharp::GameSetting<size_t> height = config.GetViewportHeight();
+
+  ZSharp::Clamp(info->ptMinTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
+  ZSharp::Clamp(info->ptMaxTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
+  ZSharp::Clamp(info->ptMinTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
+  ZSharp::Clamp(info->ptMaxTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
 }
 
 void Win32PlatformApplication::OnClose() {

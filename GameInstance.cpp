@@ -239,8 +239,8 @@ Vec3 GameInstance::ProjectClick(float x, float y) {
   const float radius = 1.f;
 
   ZConfig& config = ZConfig::GetInstance();
-  int32 width = (int32)config.GetViewportWidth();
-  int32 height = (int32)config.GetViewportHeight();
+  int32 width = (int32)config.GetViewportWidth().Value();
+  int32 height = (int32)config.GetViewportHeight().Value();
 
   float scale = fminf((float)width, (float)height) - 1;
 

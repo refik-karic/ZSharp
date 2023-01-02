@@ -246,7 +246,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
           error = fmax(error - 1.f, 0.f);
         }
 
-        for (size_t j = y1; j < y1 + slopeStep; j++) {
+        for (int32 j = y1; j < y1 + slopeStep; j++) {
           float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
           float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
           float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);

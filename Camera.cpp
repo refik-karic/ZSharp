@@ -27,7 +27,7 @@ Camera::Camera() {
   mFarPlane = 100.f;
 
   const ZConfig& config = ZConfig::GetInstance();
-  OnResize(config.GetViewportWidth(), config.GetViewportHeight());
+  OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
 
   Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<Camera, &Camera::OnResize>(this));
 }

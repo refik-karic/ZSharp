@@ -33,6 +33,14 @@ class GameSetting final {
     }
   }
 
+  const T& Min() const {
+    return mMin;
+  }
+
+  const T& Max() const {
+    return mMax;
+  }
+
   private:
   T mMin;
   T mMax;
@@ -50,13 +58,13 @@ class ZConfig final {
 
   static ZConfig& GetInstance();
 
-  size_t GetViewportWidth() const;
+  GameSetting<size_t> GetViewportWidth() const;
 
-  size_t GetViewportHeight() const;
+  GameSetting<size_t> GetViewportHeight() const;
 
   size_t GetViewportStride() const;
 
-  size_t GetBytesPerPixel() const;
+  GameSetting<size_t> GetBytesPerPixel() const;
 
   FileString GetAssetPath() const;
 

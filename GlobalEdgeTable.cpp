@@ -8,7 +8,7 @@ GlobalEdgeTable::GlobalEdgeTable(size_t height)
   : mEdgeTable(height) {
 }
 
-void GlobalEdgeTable::AddPoint(size_t yIndex, size_t x, ZColor color, size_t primitiveIndex) {
+void GlobalEdgeTable::AddPoint(int32 yIndex, int32 x, ZColor color, size_t primitiveIndex) {
   if (yIndex >= mEdgeTable.Size()) {
     //ZAssert(false);
     return;
@@ -47,8 +47,8 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer) {
       for (ScanLine& line : yList) {
 
         const size_t MaxWidth = frameBuffer.GetWidth() - 1;
-        Clamp(line.x1, 0ULL, MaxWidth);
-        Clamp(line.x2, 0ULL, MaxWidth);
+        Clamp(line.x1, 0, (int32)MaxWidth);
+        Clamp(line.x2, 0, (int32)MaxWidth);
 
         if (line.x1 == line.x2) {
           frameBuffer.SetPixel(line.x1, y, line.x1Color);

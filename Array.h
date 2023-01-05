@@ -122,6 +122,16 @@ class Array final {
     return mCapacity;
   }
 
+  bool Contains(const T& item) const {
+    for (size_t i = 0; i < mSize; ++i) {
+      if (mData[i] == item) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   bool IsEmpty() const {
     return mSize == 0;
   }

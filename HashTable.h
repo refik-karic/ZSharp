@@ -12,23 +12,6 @@ namespace ZSharp {
 
 template<typename Key, typename Value, typename HashFunction = Hash<Key>>
 class HashTable final {
-  private:
-  struct HashPair : public Pair<Key, Value> {
-    HashPair(const Key& key) 
-      : Pair(key) {
-
-    }
-
-    HashPair(const Key& key, const Value& value)
-      : Pair(key, value) {
-
-    }
-
-    bool operator==(const HashPair& rhs) const {
-      return mKey == rhs.mKey;
-    }
-  };
-
   public:
   HashTable()
     : mSize(0), mStorage(mMinCapacity) {
@@ -48,21 +31,37 @@ class HashTable final {
     : mSize(rhs.mSize), mStorage(rhs.mStorage) {
   }
   
-  HashTable(const HashTable&& rhs) = delete;
+  void operator=(const HashTable& rhs) {
+    if (this == &rhs) {
+      return;
+    }
+
+    mSize = rhs.mSize;
+    mStorage = rhs.mStorage;
+  }
 
   Value& operator[](const Key& key) {
     {
-      List<HashPair>& bucket = mStorage[HashedIndex(key)];
-      HashPair pair(key);
-      if (!bucket.Contains(pair)) {
+      List<Pair<Key, Value>>& bucket = mStorage[HashedIndex(key)];
+
+      bool found = false;
+      for (Pair<Key, Value>& pair : bucket) {
+        if (pair.mKey == key) {
+          found = true;
+          break;
+        }
+      }
+      
+      if (!found) {
+        Pair<Key, Value> pair(key);
         bucket.Add(pair);
       }
     }
 
     // Must recompute hash in case of resizing.
-    List<HashPair>& bucket = mStorage[HashedIndex(key)];
+    List<Pair<Key, Value>>& bucket = mStorage[HashedIndex(key)];
     Value& matchedValue = (*(bucket.begin())).mValue;
-    for (HashPair& pair : bucket) {
+    for (Pair<Key, Value>& pair : bucket) {
       if (pair.mKey == key) {
         matchedValue = pair.mValue;
       }
@@ -99,15 +98,20 @@ class HashTable final {
   }
 
   bool HasKey(const Key& key) const {
-    const List<HashPair>& bucket = mStorage[HashedIndex(key)];
-    HashPair pair(key);
-    return bucket.Contains(pair);
+    const List<Pair<Key, Value>>& bucket = mStorage[HashedIndex(key)];
+    for (Pair<Key, Value>& pair : bucket) {
+      if (pair.mKey == key) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   void Resize(size_t size) {
     HashTable tempTable(size);
-    for (List<HashPair>& bucket : mStorage) {
-      for (HashPair& hashPair : bucket) {
+    for (List<Pair<Key, Value>>& bucket : mStorage) {
+      for (Pair<Key, Value>& hashPair : bucket) {
         tempTable.Add(hashPair.mKey, hashPair.mValue);
       }
     }
@@ -127,7 +131,7 @@ class HashTable final {
   private:
   const size_t mMinCapacity = 4096;
   size_t mSize;
-  Array<List<HashPair>> mStorage;
+  Array<List<Pair<Key, Value>>> mStorage;
 
   uint32 HashedIndex(const Key& key) const {
     HashFunction hashFunctor;
@@ -136,15 +140,15 @@ class HashTable final {
   }
 
   void InsertKeyValue(size_t index, const Key& key, const Value& value) {
-    List<HashPair>& bucket = mStorage[index];
+    List<Pair<Key, Value>>& bucket = mStorage[index];
     if (bucket.Size() == 0) {
-      HashPair pair(key, value);
+      Pair<Key, Value> pair(key, value);
       bucket.Add(pair);
       ++mSize;
     }
     else {
       bool foundMatch = false;
-      for (HashPair& pair : bucket) {
+      for (Pair<Key, Value>& pair : bucket) {
         if (pair.mKey == key) {
           pair.mValue = value;
           foundMatch = true;
@@ -153,7 +157,7 @@ class HashTable final {
       }
 
       if (!foundMatch) {
-        HashPair pair(key, value);
+        Pair<Key, Value> pair(key, value);
         bucket.Add(pair);
         ++mSize;
       }
@@ -161,9 +165,20 @@ class HashTable final {
   }
 
   bool DeleteKey(size_t index, const Key& key) {
-    List<HashPair>& bucket = mStorage[index];
-    HashPair pair(key);
-    if (bucket.Remove(pair)) {
+    List<Pair<Key, Value>>& bucket = mStorage[index];
+
+    Pair<Key, Value> pairToRemove;
+
+    bool found = false;
+    for (Pair<Key, Value>& pair : bucket) {
+      if (pair.mKey == key) {
+        found = true;
+        pairToRemove = pair;
+        break;
+      }
+    }
+
+    if (found && bucket.Remove(pairToRemove)) {
       --mSize;
       return true;
     }

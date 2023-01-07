@@ -76,8 +76,6 @@ class Array final {
     }
   }
 
-  Array(const Array&&) = delete;
-
   void operator=(const Array& rhs) {
     if (this != &rhs && rhs.mSize > 0) {
       Free();
@@ -87,8 +85,6 @@ class Array final {
       }
     }
   }
-
-  void operator=(const Array&&) = delete;
 
   T& operator[](size_t index) {
     ZAssert(index < mSize);

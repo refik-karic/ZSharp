@@ -13,6 +13,67 @@ namespace ZSharp {
 template<typename Key, typename Value, typename HashFunction = Hash<Key>>
 class HashTable final {
   public:
+
+  class Iterator {
+    public:
+    Iterator(Array<List<Pair<Key, Value>>>::Iterator begin, Array<List<Pair<Key, Value>>>::Iterator end) 
+      : mStorageIter(begin), mStorageEnd(end), mBucketIter((*begin).begin()) {
+      for (; mStorageIter != mStorageEnd; ++mStorageIter) {
+        List<Pair<Key, Value>>& list = (*mStorageIter);
+
+        if (list.Size() > 0) {
+          mBucketIter = list.begin();
+          break;
+        }
+      }
+    }
+
+    Iterator& operator++() {
+      mBucketIter++;
+
+      if (mBucketIter == (*mStorageIter).end()) {
+        mStorageIter++;
+        for (; mStorageIter != mStorageEnd; ++mStorageIter) {
+          List<Pair<Key, Value>>& list = (*mStorageIter);
+
+          if (list.Size() > 0) {
+            mBucketIter = list.begin();
+            break;
+          }
+        }
+      }
+
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator temp(*this);
+      ++(*this);
+      return temp;
+    }
+
+    bool operator==(const Iterator& rhs) {
+      return mStorageIter == rhs.mStorageIter;
+    }
+
+    bool operator!=(const Iterator& rhs) {
+      return mStorageIter != rhs.mStorageIter;
+    }
+
+    Pair<Key, Value>& operator*() const {
+      return *mBucketIter;
+    }
+
+    Pair<Key, Value>* operator->() {
+      return mBucketIter.operator->();
+    }
+
+    private:
+    Array<List<Pair<Key, Value>>>::Iterator mStorageIter;
+    Array<List<Pair<Key, Value>>>::Iterator mStorageEnd;
+    List<Pair<Key, Value>>::Iterator mBucketIter;
+  };
+
   HashTable()
     : mSize(0), mStorage(mMinCapacity) {
 
@@ -108,6 +169,17 @@ class HashTable final {
     return false;
   }
 
+  Value GetValue(const Key& key) const {
+    const List<Pair<Key, Value>>& bucket = mStorage[HashedIndex(key)];
+    for (Pair<Key, Value>& pair : bucket) {
+      if (pair.mKey == key) {
+        return pair.mValue;
+      }
+    }
+
+    return Value();
+  }
+
   void Resize(size_t size) {
     HashTable tempTable(size);
     for (List<Pair<Key, Value>>& bucket : mStorage) {
@@ -126,6 +198,14 @@ class HashTable final {
 
   size_t Capacity() const {
     return mStorage.Size();
+  }
+
+  Iterator begin() const {
+    return Iterator(mStorage.begin(), mStorage.end());
+  }
+
+  Iterator end() const {
+    return Iterator(mStorage.end(), mStorage.end());
   }
 
   private:

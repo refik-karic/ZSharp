@@ -46,7 +46,7 @@ class List final {
     Iterator operator++(int) {
       Iterator temp(mPtr);
       ++(*this);
-      return *temp;
+      return temp;
     }
 
     Iterator& operator--() {

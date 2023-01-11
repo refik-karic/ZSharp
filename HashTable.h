@@ -16,7 +16,7 @@ class HashTable final {
 
   class Iterator {
     public:
-    Iterator(Array<List<Pair<Key, Value>>>::Iterator begin, Array<List<Pair<Key, Value>>>::Iterator end) 
+    Iterator(typename Array<List<Pair<Key, Value>>>::Iterator begin, typename Array<List<Pair<Key, Value>>>::Iterator end)
       : mStorageIter(begin), mStorageEnd(end), mBucketIter((*begin).begin()) {
       for (; mStorageIter != mStorageEnd; ++mStorageIter) {
         List<Pair<Key, Value>>& list = (*mStorageIter);
@@ -69,9 +69,9 @@ class HashTable final {
     }
 
     private:
-    Array<List<Pair<Key, Value>>>::Iterator mStorageIter;
-    Array<List<Pair<Key, Value>>>::Iterator mStorageEnd;
-    List<Pair<Key, Value>>::Iterator mBucketIter;
+    typename Array<List<Pair<Key, Value>>>::Iterator mStorageIter;
+    typename Array<List<Pair<Key, Value>>>::Iterator mStorageEnd;
+    typename List<Pair<Key, Value>>::Iterator mBucketIter;
   };
 
   HashTable()

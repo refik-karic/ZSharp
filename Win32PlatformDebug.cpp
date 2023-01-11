@@ -2,13 +2,34 @@
 
 #include "PlatformDebug.h"
 
+#include "ZAssert.h"
 #include "Win32PlatformHeaders.h"
 
+#include <consoleapi.h>
+#include <consoleapi3.h>
 #include <debugapi.h>
 #include <errhandlingapi.h>
 #include <WinBase.h>
 
 namespace ZSharp {
+
+bool PlatformHasConsole() {
+  HWND handle = GetConsoleWindow();
+  return (handle != NULL) && (handle != INVALID_HANDLE_VALUE);
+}
+
+void PlatformWriteConsole(const String& msg) {
+  HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);
+  if ((handle != NULL) && (handle != INVALID_HANDLE_VALUE)) {
+    DWORD numWritten;
+    if (!WriteConsoleA(handle, msg.Str(), (DWORD)msg.Length(), &numWritten, NULL)) {
+      PlatformDebugPrintLastError();
+      return;
+    }
+
+    ZAssert(numWritten == ((DWORD)msg.Length()));
+  }
+}
 
 void PlatformDebugPrintLastError() {
 #ifndef NDEBUG

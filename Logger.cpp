@@ -46,6 +46,15 @@ void Logger::InternalLog(LogCategory category, const String& message) {
   logMessage.Appendf("[{0}] ", PlatformSystemTimeFormat());
   logMessage.Append(message);
 
+  // Log to 3 locations:
+  //  1) Console (if process contains one)
+  //  2) Debugger window
+  //  3) Log file
+
+  if (PlatformHasConsole()) {
+    PlatformWriteConsole(message);
+  }
+
   PlatformDebugPrint(message.Str());
 
   const size_t logLength = logMessage.Length();

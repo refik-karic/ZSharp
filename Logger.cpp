@@ -25,6 +25,8 @@ void Logger::Log(LogCategory category, const String& message) {
 void Logger::InternalLog(LogCategory category, const String& message) {
   String logMessage;
 
+  bool logStdOutput = true;
+
   switch (category) {
     case LogCategory::Warning:
       logMessage.Append("[Warning] ");
@@ -41,6 +43,10 @@ void Logger::InternalLog(LogCategory category, const String& message) {
     case LogCategory::Perf:
       logMessage.Append("[Perf] ");
       break;
+    case LogCategory::System:
+      logMessage.Append("[System] ");
+      logStdOutput = false;
+      break;
   }
 
   logMessage.Appendf("[{0}] ", PlatformSystemTimeFormat());
@@ -51,7 +57,7 @@ void Logger::InternalLog(LogCategory category, const String& message) {
   //  2) Debugger window
   //  3) Log file
 
-  if (PlatformHasConsole()) {
+  if (logStdOutput && PlatformHasConsole()) {
     PlatformWriteConsole(message);
   }
 
@@ -93,7 +99,7 @@ bool Logger::IsExcessiveSize(const size_t nextMessageLength) const {
 
 void Logger::LogPreamble() {
   String preamble;
-  preamble.Append("\n==========Begin Sys Info==========\n");
+  preamble.Append("\n\n==========Begin Sys Info==========\n");
   preamble.Appendf("CPU: ID={0}, Brand={1}\n", PlatformCPUVendor(), PlatformCPUBrand());
   preamble.Appendf("Cores: Physical={0}, Logical={1}\n", PlatformGetNumPhysicalCores(), PlatformGetNumLogicalCores());
   preamble.Appendf("SIMD: SSE2={0}, SSE4={1}, AVX2={2}, AVX512={3}\n", PlatformSupportsSIMDMode(SIMDMode::SSE2),
@@ -101,9 +107,9 @@ void Logger::LogPreamble() {
     PlatformSupportsSIMDMode(SIMDMode::AVX2),
     PlatformSupportsSIMDMode(SIMDMode::AVX512));
   preamble.Appendf("OS: Username={0}, Machine={1}\n", PlatformGetUsername(), PlatformGetMachineName());
-  preamble.Append("==========End Sys Info==========\n");
+  preamble.Append("==========End Sys Info==========\n\n");
 
-  InternalLog(LogCategory::Info, preamble);
+  InternalLog(LogCategory::System, preamble);
 }
 
 }

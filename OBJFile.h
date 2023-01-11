@@ -37,13 +37,9 @@ public:
 
   virtual void Deserialize(FileString& objFilePath) override;
 
-  void SetVerboseParse(bool state);
-
 protected:
 
 private:
-  bool mVerboseParse = false;
-
   Array<Vec4> mVerts;
 
   Array<Vec3> mNormals;

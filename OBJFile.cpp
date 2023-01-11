@@ -1,7 +1,7 @@
 #include "OBJFile.h"
 
 #include <cstring>
-#include <cstdio>
+#include "Logger.h"
 
 #include "ZFile.h"
 
@@ -123,10 +123,6 @@ void OBJFile::Deserialize(FileString& objFilePath) {
   }
 }
 
-void OBJFile::SetVerboseParse(bool state) {
-  mVerboseParse = state;
-}
-
 void OBJFile::ParseRaw(FileString& objFilePath) {
   BufferedFileReader reader(objFilePath);
   if (!reader.IsOpen()) {
@@ -158,9 +154,7 @@ void OBJFile::ParseLine(const char* currentLine) {
     else if (rawLine[1] == 'p') {
       // Vertex Parameters.
       // For curves and surfaces, ignoring for now.
-      if (mVerboseParse) {
-        printf("Vertex Parameters: [%s]\n", rawLine);
-      }
+      Logger::Log(LogCategory::Info, String::FromFormat("Vertex Parameters: [{0}]\n", rawLine));
     }
     else if (rawLine[1] == 't') {
       // Vertex Texture Coordinates (U, V, W).
@@ -188,14 +182,10 @@ void OBJFile::ParseLine(const char* currentLine) {
   break;
   case 'l':
     // Line.
-    if (mVerboseParse) {
-      printf("Line: [%s]\n", rawLine);
-    }
+    Logger::Log(LogCategory::Info, String::FromFormat("Line: [{0}]\n", rawLine));
     break;
   default:
-    if (mVerboseParse) {
-      printf("[%s] Unknown Line\n", rawLine);
-    }
+    Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", rawLine));
     break;
   }
 }

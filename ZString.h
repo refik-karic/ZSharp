@@ -110,6 +110,13 @@ class String final {
     VariadicArgsAppend(formatStr, inArgs, sizeof...(args));
   }
 
+  template<typename... Args>
+  static String FromFormat(const char* formatStr, const Args&... args) {
+    String str;
+    str.Appendf(formatStr, args...);
+    return str;
+  }
+
   bool IsEmpty() const;
 
   void Clear();

@@ -31,6 +31,8 @@ target_sources(ZSharp
         Mat4x4.h
         Mesh.h
         Model.h
+        OBJFile.h
+        OBJLoader.h
         Pair.h
         PlatformDebug.h
         PlatformDefines.h
@@ -43,6 +45,7 @@ target_sources(ZSharp
         Quaternion.h
         Random.h
         Renderer.h
+        Serializer.h
         Stack.h
         ScopedTimer.h
         Tree.h
@@ -62,7 +65,6 @@ target_sources(ZSharp
         ZDrawing.h
         ZFile.h
         ZString.h
-        OBJFile.h
 	
         AssetLoader.cpp
         Camera.cpp
@@ -82,9 +84,11 @@ target_sources(ZSharp
         Mesh.cpp
         Model.cpp
         OBJFile.cpp
+        OBJLoader.cpp
         Quaternion.cpp
         Random.cpp
         Renderer.cpp
+        Serializer.cpp
         ScopedTimer.cpp
         Triangle.cpp
         Vec3.cpp

@@ -3,9 +3,6 @@
 #include "ZBaseTypes.h"
 
 #include "Array.h"
-#include "FileString.h"
-#include "ISerializable.h"
-#include "ZString.h"
 #include "Vec3.h"
 #include "Vec4.h"
 
@@ -20,26 +17,19 @@ struct OBJFace {
   OBJFaceElement triangleFace[3];
 };
 
-enum class AssetFormat : size_t {
-  Raw, // Unchanged source asset, requires parsing.
-  Serialized, // Stripped asset that can be batch loaded.
-};
+class OBJFile final {
+  public:
+  OBJFile();
 
-class OBJFile : public ISerializable {
-public:
-  OBJFile(FileString& objFilePath, AssetFormat format);
+  const Array<Vec4>& GetVerts() const;
 
-  const Array<Vec4>& GetVerts();
+  const Array<Vec3>& GetNormals() const;
 
-  const Array<OBJFace>& GetFaces();
+  const Array<Vec3>& GetUVs() const;
 
-  virtual void Serialize(FileString& destPath) override;
+  const Array<OBJFace>& GetFaces() const;
 
-  virtual void Deserialize(FileString& objFilePath) override;
-
-protected:
-
-private:
+  private:
   Array<Vec4> mVerts;
 
   Array<Vec3> mNormals;
@@ -48,14 +38,6 @@ private:
 
   Array<OBJFace> mFaces;
 
-  void ParseRaw(FileString& objFilePath);
-
-  void ParseLine(const char* currentLine);
-
-  void ParseVec3(Vec3& fillVec, String& line, float fallback);
-
-  void ParseVec4(Vec4& fillVec, String& line, float fallback);
-
-  void ParseFace(OBJFace& fillFace, String& line);
+  friend class OBJLoader;
 };
 }

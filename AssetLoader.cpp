@@ -5,14 +5,19 @@
 #include "Array.h"
 #include "IndexBuffer.h"
 #include "OBJFile.h"
+#include "OBJLoader.h"
 #include "CommonMath.h"
 #include "VertexBuffer.h"
 
 #include <cstring>
 
 namespace ZSharp {
-void LoadModelOBJ(FileString& fileName, Model& model) {
-  OBJFile objFile(fileName, AssetFormat::Serialized);
+void LoadModelOBJ(const FileString& fileName, Model& model) {
+  OBJFile objFile;
+
+  {
+    OBJLoader objLoader(objFile, fileName, AssetFormat::Serialized);
+  }
 
   model = Model(1);
   Mesh& mesh = model[0];

@@ -5,5 +5,5 @@
 
 namespace ZSharp {
 
-void LoadModelOBJ(FileString& fileName, Model& model);
+void LoadModelOBJ(const FileString& fileName, Model& model);
 }

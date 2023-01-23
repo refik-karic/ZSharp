@@ -144,7 +144,7 @@ bool BufferedFileWriter::Write(const void* data, size_t length) {
     }
 
     // Write out the rest.
-    bool success = PlatformWriteFile(mFileHandle, data, length) == mBufferedDataSize;
+    bool success = PlatformWriteFile(mFileHandle, data, length) == length;
     if (!success) {
       return false;
     }
@@ -180,7 +180,7 @@ bool BufferedFileWriter::Flush() {
 MemoryMappedFileReader::MemoryMappedFileReader(const FileString& fileName) 
   : BaseFile(fileName, static_cast<size_t>(FileFlags::READ)) {
   if (IsOpen()) {
-    mFileData = PlatformOpenMemoryMapFile(mFileHandle, static_cast<size_t>(FileFlags::READ), mMappedFileHandle, GetSize());
+    mFileData = PlatformOpenMemoryMapFile(mFileHandle, static_cast<size_t>(FileFlags::READ), mMappedFileHandle, 0);
     mOpen = (mFileData != nullptr);
 
     if (mOpen) {

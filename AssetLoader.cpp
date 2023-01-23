@@ -28,8 +28,6 @@ void LoadModelOBJ(const FileString& fileName, Model& model) {
   */
   const size_t stride = 4 + 3; // TODO: Make this based off of the source asset.
 
-  // TODO: Need to make sure the faces are in a deterministic order.
-  // Blender generates a correct mesh but the faces do not line up properly.
   size_t vertSize = objFile.GetVerts().Size() * stride;
   size_t indexSize = objFile.GetFaces().Size();
 

@@ -207,7 +207,7 @@ void OBJLoader::ParseVec4(Vec4& fillVec, String& line, float fallback) {
 void OBJLoader::ParseFace(OBJFace& fillFace, String& line) {
   for (int32 i = 0; i < 3; ++i) {
     if (!line.IsEmpty()) {
-      uint64 vertexIndex = line.ToUint64();
+      uint64 vertexIndex = line.ToUint64() - 1;
       fillFace.triangleFace[i].vertexIndex = vertexIndex;
     }
     else {
@@ -228,7 +228,7 @@ void OBJLoader::ParseFace(OBJFace& fillFace, String& line) {
     line = String(indexDelimiter + 1);
 
     if (!line.IsEmpty()) {
-      uint64 textureIndex = line.ToUint64();
+      uint64 textureIndex = line.ToUint64() - 1;
       fillFace.triangleFace[i].uvIndex = textureIndex;
     }
     else {
@@ -249,7 +249,7 @@ void OBJLoader::ParseFace(OBJFace& fillFace, String& line) {
     line = String(indexDelimiter + 1);
 
     if (!line.IsEmpty()) {
-      uint64 normalIndex = line.ToUint64();
+      uint64 normalIndex = line.ToUint64() - 1;
       fillFace.triangleFace[i].normalIndex = normalIndex;
     }
     else {

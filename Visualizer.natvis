@@ -1,6 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?> 
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
+	<Type Name="ZSharp::OBJFace">
+		<DisplayString>{{ 0={triangleFace[0]}, 1={triangleFace[1]}, 2={triangleFace[2]} }}</DisplayString>
+		<Expand>
+			<Item Name="0">triangleFace[0]</Item>
+			<Item Name="1">triangleFace[1]</Item>
+			<Item Name="2">triangleFace[2]</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="ZSharp::OBJFaceElement">
+		<DisplayString>{{ V={vertexIndex}, UV={uvIndex}, N={normalIndex} }}</DisplayString>
+		<Expand>
+			<Item Name="Vertex">vertexIndex</Item>
+			<Item Name="UV">uvIndex</Item>
+			<Item Name="Normal">normalIndex</Item>
+		</Expand>
+	</Type>
+	
 	<Type Name="ZSharp::ZColor">
 		<DisplayString>{{ Color={mColor} }}</DisplayString>
 		<Expand>

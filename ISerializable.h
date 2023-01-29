@@ -13,7 +13,6 @@ class ISerializable {
   public:
   virtual void Serialize(Serializer& serializer) = 0;
 
-  protected:
   virtual void Deserialize(Deserializer& deserializer) = 0;
 };
 }

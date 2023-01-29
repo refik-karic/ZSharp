@@ -1,9 +1,11 @@
 #pragma once
 
 #include "ZBaseTypes.h"
-#include "Array.h"
 
 namespace ZSharp {
+
+template<typename T>
+class Array;
 
 class WideString;
 

@@ -17,7 +17,7 @@ class Serializer final {
 
   Serializer(const FileString& path);
 
-  bool Serialize(void* memory, size_t sizeBytes);
+  bool Serialize(const void* memory, size_t sizeBytes);
 
   private:
   size_t mOffset;

@@ -4,13 +4,15 @@
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
 #include "PlatformMemory.h"
+#include "Serializer.h"
+#include "ISerializable.h"
 
 #include <initializer_list>
 
 namespace ZSharp {
 
 template<typename T>
-class Array final {
+class Array final : public ISerializable {
   public:
 
   class Iterator {
@@ -191,6 +193,48 @@ class Array final {
 
   Iterator end() const {
     return Iterator(mData + mSize);
+  }
+
+  virtual void Serialize(Serializer& serializer) override {
+    // Must write size even if 0.
+    // This makes it so Deserialize can check for size 0 and return.
+    serializer.Serialize(&mSize, sizeof(mSize));
+
+    if (mSize == 0) {
+      return;
+    }
+
+    // Write out size of element in case something changes.
+    const size_t sizeT = sizeof(T);
+    serializer.Serialize(&sizeT, sizeof(sizeT));
+
+    const size_t sizeBytes = mSize * sizeT;
+    serializer.Serialize(mData, sizeBytes);
+  }
+
+  virtual void Deserialize(Deserializer& deserializer) override {
+    size_t savedSize = 0;
+    deserializer.Deserialize(&savedSize, sizeof(savedSize));
+
+    if (savedSize == 0) {
+      return;
+    }
+
+    size_t savedTSize = 0;
+    deserializer.Deserialize(&savedTSize, sizeof(savedTSize));
+
+    if (savedTSize != sizeof(T)) {
+      ZAssert(false);
+      return;
+    }
+
+    if (mSize != 0) {
+      Free();
+    }
+
+    FreshAllocNoInit(savedSize);
+    const size_t sizeBytes = savedSize * sizeof(T);
+    deserializer.Deserialize(mData, sizeBytes);
   }
 
   private:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZString.h"
+#include <cstdlib>
 
 namespace ZSharp {
 class FileString final {

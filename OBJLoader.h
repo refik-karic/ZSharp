@@ -9,14 +9,15 @@ namespace ZSharp {
 
 class OBJLoader final : public ISerializable {
   public:
+
   OBJLoader(OBJFile& file, const FileString& path, AssetFormat format);
 
   virtual void Serialize(Serializer& serializer) override;
 
+  virtual void Deserialize(Deserializer& deserializer) override;
+
   private:
   OBJFile& mFile;
-
-  virtual void Deserialize(Deserializer& deserializer) override;
 
   void ParseRaw(const FileString& objFilePath);
 

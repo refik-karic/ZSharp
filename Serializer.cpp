@@ -1,6 +1,7 @@
 #include "Serializer.h"
 
 #include "ZAssert.h"
+#include <cstring>
 
 namespace ZSharp {
 
@@ -8,7 +9,7 @@ Serializer::Serializer(const FileString& path)
   : mWriter(path, 0), mOffset(0) {
 }
 
-bool Serializer::Serialize(void* memory, size_t sizeBytes) {
+bool Serializer::Serialize(const void* memory, size_t sizeBytes) {
   if (!mWriter.IsOpen()) {
     return false;
   }

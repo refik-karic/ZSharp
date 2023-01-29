@@ -1,5 +1,6 @@
 #include "FileString.h"
 
+#include "ZAssert.h"
 #include "ZBaseTypes.h"
 
 #include <cstring>

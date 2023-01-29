@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include "ZString.h"
+#include "Array.h"
 
 #include "ZAssert.h"
 #include "PlatformMemory.h"

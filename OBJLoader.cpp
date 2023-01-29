@@ -24,91 +24,17 @@ OBJLoader::OBJLoader(OBJFile& file, const FileString& path, AssetFormat format)
 }
 
 void OBJLoader::Serialize(Serializer& serializer) {
-  // Write length of vertex vector
-  size_t vertSize = mFile.mVerts.Size();
-  serializer.Serialize(&vertSize, sizeof(vertSize));
-
-  // Write vertex vector
-  for (Vec4& vector : mFile.mVerts) {
-    serializer.Serialize(&vector, sizeof(Vec4));
-  }
-
-  // Write length of the normal vector
-  size_t normalSize = mFile.mNormals.Size();
-  serializer.Serialize(&normalSize, sizeof(size_t));
-
-  // Write normal vector
-  for (Vec3& normal : mFile.mNormals) {
-    serializer.Serialize(&normal, sizeof(Vec3));
-  }
-
-  // Write length of the uv vector
-  size_t uvSize = mFile.mUVCoords.Size();
-  serializer.Serialize(&uvSize, sizeof(size_t));
-
-  // Write uv vector
-  for (Vec3& uv : mFile.mUVCoords) {
-    serializer.Serialize(&uv, sizeof(Vec3));
-  }
-
-  // Write size of face vector
-  size_t faceSize = mFile.mFaces.Size();
-  serializer.Serialize(&faceSize, sizeof(size_t));
-
-  // Write face vector
-  for (OBJFace& face : mFile.mFaces) {
-    serializer.Serialize(&face, sizeof(OBJFace));
-  }
+  mFile.mVerts.Serialize(serializer);
+  mFile.mNormals.Serialize(serializer);
+  mFile.mUVCoords.Serialize(serializer);
+  mFile.mFaces.Serialize(serializer);
 }
 
 void OBJLoader::Deserialize(Deserializer& deserializer) {
-  // Read vert size
-  size_t vertSize = 0;
-  deserializer.Deserialize(&vertSize, sizeof(size_t));
-  mFile.mVerts.Resize(vertSize);
-
-  // Read verticies
-  for (size_t i = 0; i < vertSize; ++i) {
-    Vec4 vector;
-    deserializer.Deserialize(&vector, sizeof(Vec4));
-    mFile.mVerts[i] = vector;
-  }
-
-  // Read normal size
-  size_t normalSize = 0;
-  deserializer.Deserialize(&normalSize, sizeof(size_t));
-  mFile.mNormals.Resize(normalSize);
-
-  // Read normals
-  for (size_t i = 0; i < normalSize; ++i) {
-    Vec3 normal;
-    deserializer.Deserialize(&normal, sizeof(Vec3));
-    mFile.mNormals[i] = normal;
-  }
-
-  // Read uv size
-  size_t uvSize = 0;
-  deserializer.Deserialize(&uvSize, sizeof(size_t));
-  mFile.mUVCoords.Resize(uvSize);
-
-  // Read uvs
-  for (size_t i = 0; i < uvSize; ++i) {
-    Vec3 uv;
-    deserializer.Deserialize(&uv, sizeof(Vec3));
-    mFile.mUVCoords[i] = uv;
-  }
-
-  // Read face size
-  size_t faceSize = 0;
-  deserializer.Deserialize(&faceSize, sizeof(size_t));
-  mFile.mFaces.Resize(faceSize);
-
-  // Read face vector
-  for (size_t i = 0; i < faceSize; ++i) {
-    OBJFace face;
-    deserializer.Deserialize(&face, sizeof(OBJFace));
-    mFile.mFaces[i] = face;
-  }
+  mFile.mVerts.Deserialize(deserializer);
+  mFile.mNormals.Deserialize(deserializer);
+  mFile.mUVCoords.Deserialize(deserializer);
+  mFile.mFaces.Deserialize(deserializer);
 }
 
 void OBJLoader::ParseRaw(const FileString& objFilePath) {

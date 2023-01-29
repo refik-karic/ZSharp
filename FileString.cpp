@@ -2,75 +2,113 @@
 
 #include "ZBaseTypes.h"
 
-#include <cstdio>
 #include <cstring>
 
 // Exampe: C:\Users\kr\Desktop\ZSharp-Tools\src\Debug
 namespace ZSharp {
-String FileString::mDirectorySeparator = "\\";
-String FileString::mExtensionSeparator = ".";
+const char FileString::mDirectorySeparator = '\\';
+const char FileString::mExtensionSeparator = '.';
 
 FileString::FileString(const String& absoluteFilePath) {
   Initialize(absoluteFilePath);
 }
 
 void FileString::operator=(const String& rhs) {
-  Reset();
   Initialize(rhs);
 }
 
-const String& FileString::GetVolume() const {
-  return mVolume;
+String FileString::GetVolume() const {
+  return mDrive;
 }
 
-const Array<String>& FileString::GetDirectories() const {
-  return mDirectories;
-}
-
-const String& FileString::GetFilename() const {
+String FileString::GetFilename() const {
   return mFilename;
 }
 
-const String& FileString::GetExtension() const {
+String FileString::GetExtension() const {
   return mExtension;
 }
 
-const String& FileString::GetAbsolutePath() const {
+String FileString::GetAbsolutePath() const {
   return mAbsolutePath;
 }
 
 void FileString::SetFilename(const String& filename) {
+  const size_t filenameLength = strlen(mFilename);
+  const size_t extensionLength = strlen(mExtension);
+
+  size_t totalFilenameLength = filenameLength;
+  if (extensionLength != 0) {
+    totalFilenameLength += 1 + extensionLength;
+  }
+
+  if ((mPathLength - totalFilenameLength) + filename.Length() >= _MAX_PATH) {
+    ZAssert(false);
+    return;
+  }
+
   const char* extension = filename.FindFirst('.');
   if (extension != nullptr) {
     size_t length = extension - filename.Str();
-    String parsedFilename(filename.Str(), 0, length);
-    mFilename = parsedFilename;
+
+    memcpy(mFilename, filename.Str(), length);
+    mFilename[length] = NULL;
 
     extension++;
-    String parsedExtension(extension);
-    mExtension = parsedExtension;
 
-    UpdateAbsolutePath();
+    strcpy(mExtension, extension);
   }
   else {
-    mFilename = "";
-    mExtension = "";
-    UpdateAbsolutePath();
+    memset(mFilename, 0, sizeof(mFilename));
+    memset(mExtension, 0, sizeof(mExtension));
   }
+
+  UpdateAbsolutePath();
 }
 
 void FileString::AddDirectory(const String& directory) {
-  mDirectories.PushBack(directory);
+  if (mPathLength + directory.Length() >= _MAX_PATH) {
+    ZAssert(false);
+    return;
+  }
+
+  char* directoryBuffer = mDirs;
+  for (size_t i = 0; i < mNumDirectories; ++i) {
+    directoryBuffer += strlen(directoryBuffer) + 1;
+  }
+
+  const size_t directoryLength = directory.Length();
+  memcpy(directoryBuffer, directory.Str(), directoryLength);
+  directoryBuffer[directoryLength] = NULL;
+  mNumDirectories++;
+
   UpdateAbsolutePath();
 }
 
 void FileString::Initialize(const String& absoluteFilePath) {
+  Reset();
+
+  if (absoluteFilePath.Length() >= _MAX_PATH) {
+    ZAssert(false);
+    return;
+  }
+
   const char* volume = absoluteFilePath.FindFirst(':');
 
   if (volume != nullptr) {
     const char* str = absoluteFilePath.Str();
     size_t length = (volume - str) + 1;
-    mVolume.Append(str, 0, length);
+
+    if (length >= _MAX_DRIVE) {
+      ZAssert(false);
+      return;
+    }
+
+    memcpy(mDrive, str, length);
+    mDrive[length] = NULL;
+  }
+  else {
+    return;
   }
 
   for (const char* directory = strchr(absoluteFilePath.Str(), '\\'); directory != nullptr;) {
@@ -89,67 +127,103 @@ void FileString::Initialize(const String& absoluteFilePath) {
       const char* str = absoluteFilePath.Str();
       size_t start = (directory - str) + 1;
       size_t length = (nextDirectory - directory) - 1;
-      String parsedDirectory(str, start, length);
-      mDirectories.PushBack(parsedDirectory);
+      
+      char* directoryBuffer = mDirs;
+      for (size_t i = 0; i < mNumDirectories; ++i) {
+        directoryBuffer += strlen(directoryBuffer) + 1;
+      }
+
+      memcpy(directoryBuffer, str + start, length);
+      directoryBuffer[length] = NULL;
+      mNumDirectories++;
     }
     else {
       directory++;
       const char* extension = strchr(directory, '.');
       if (extension != nullptr) {
         size_t length = extension - directory;
-        String parsedFilename(directory, 0, length);
-        mFilename = parsedFilename;
+        
+        memcpy(mFilename, directory, length);
+        mFilename[length] = NULL;
 
         extension++;
-        String parsedExtension(extension);
-        mExtension = parsedExtension;
+        strcpy(mExtension, extension);
       }
       else {
-        String parsedDirectory(directory);
-        mDirectories.PushBack(parsedDirectory);
+        char* directoryBuffer = mDirs;
+        for (size_t i = 0; i < mNumDirectories; ++i) {
+          directoryBuffer += strlen(directoryBuffer) + 1;
+        }
+
+        strcpy(directoryBuffer, directory);
+        mNumDirectories++;
       }
     }
 
     directory = nextDirectory;
   }
 
-  if (!mVolume.IsEmpty()) {
-    UpdateAbsolutePath();
-  }
-}
-
-void FileString::Reset() {
-  mVolume.Clear();
-  mDirectories.Clear();
-  mFilename.Clear();
-  mExtension.Clear();
-  mAbsolutePath.Clear();
   UpdateAbsolutePath();
 }
 
+void FileString::Reset() {
+  memset(mDrive, 0, sizeof(mDrive));
+  memset(mDirs, 0, sizeof(mDirs));
+  memset(mFilename, 0, sizeof(mFilename));
+  memset(mExtension, 0, sizeof(mExtension));
+  memset(mAbsolutePath, 0, sizeof(mAbsolutePath));
+  mPathLength = 0;
+  mNumDirectories = 0;
+}
+
 void FileString::UpdateAbsolutePath() {
-  mAbsolutePath.Clear();
+  char* position = mAbsolutePath;
 
-  mAbsolutePath.Append(mVolume);
-  mAbsolutePath.Append(mDirectorySeparator);
-  for (size_t i = 0; i < mDirectories.Size(); ++i) {
-    mAbsolutePath.Append(mDirectories[i]);
-    
-    if (i != (mDirectories.Size() - 1)) {
-      mAbsolutePath.Append(mDirectorySeparator);
+  size_t driveLength = strlen(mDrive);
+  memcpy(position, mDrive, driveLength);
+
+  position += driveLength;
+
+  (*position) = mDirectorySeparator;
+  position++;
+
+  const size_t filenameLength = strlen(mFilename);
+  bool hasFilename = filenameLength != 0;
+
+  char* directoryBuffer = mDirs;
+  for (size_t i = 0; i < mNumDirectories; ++i) {
+    const size_t dirLength = strlen(directoryBuffer);
+    memcpy(position, directoryBuffer, dirLength);
+
+    if (i != (mNumDirectories - 1)) {
+      position[dirLength] = mDirectorySeparator;
+      position += dirLength + 1;
     }
-    else if(!mFilename.IsEmpty()) {
-      mAbsolutePath.Append(mDirectorySeparator);
+    else if(hasFilename) {
+      position[dirLength] = mDirectorySeparator;
+      position += dirLength + 1;
+    }
+    else {
+      position += dirLength;
+    }
+
+    directoryBuffer += dirLength + 1;
+  }
+
+  if (hasFilename) {
+    memcpy(position, mFilename, filenameLength);
+    position += filenameLength;
+
+    const size_t extensionLength = strlen(mExtension);
+
+    if (extensionLength != 0) {
+      (*position) = mExtensionSeparator;
+      position++;
+
+      strcpy(position, mExtension);
     }
   }
 
-  if (!mFilename.IsEmpty()) {
-    mAbsolutePath.Append(mFilename);
-
-    if (!mExtension.IsEmpty()) {
-      mAbsolutePath.Append(mExtensionSeparator);
-      mAbsolutePath.Append(mExtension);
-    }
-  }
+  mPathLength = position - mAbsolutePath;
 }
 }

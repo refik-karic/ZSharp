@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Array.h"
 #include "ZString.h"
 
 namespace ZSharp {
@@ -10,29 +9,29 @@ class FileString final {
 
   void operator=(const String& rhs);
 
-  const String& GetVolume() const;
+  String GetVolume() const;
 
-  const Array<String>& GetDirectories() const;
+  String GetFilename() const;
 
-  const String& GetFilename() const;
+  String GetExtension() const;
 
-  const String& GetExtension() const;
-
-  const String& GetAbsolutePath() const;
+  String GetAbsolutePath() const;
 
   void SetFilename(const String& filename);
 
   void AddDirectory(const String& directory);
 
   private:
-  String mVolume;
-  Array<String> mDirectories;
-  String mFilename;
-  String mExtension;
+  char mDrive[_MAX_DRIVE];
+  char mDirs[_MAX_DIR];
+  char mFilename[_MAX_FNAME];
+  char mExtension[_MAX_EXT];
+  char mAbsolutePath[_MAX_PATH];
+  size_t mPathLength = 0;
+  size_t mNumDirectories = 0;
 
-  static String mDirectorySeparator;
-  static String mExtensionSeparator;
-  String mAbsolutePath;
+  static const char mDirectorySeparator;
+  static const char mExtensionSeparator;
 
   void Initialize(const String& absoluteFilePath);
 

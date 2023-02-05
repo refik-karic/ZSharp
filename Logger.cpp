@@ -100,13 +100,19 @@ bool Logger::IsExcessiveSize(const size_t nextMessageLength) const {
 void Logger::LogPreamble() {
   String preamble;
   preamble.Append("\n\n==========Begin Sys Info==========\n");
-  preamble.Appendf("CPU: ID={0}, Brand={1}\n", PlatformCPUVendor(), PlatformCPUBrand());
-  preamble.Appendf("Cores: Physical={0}, Logical={1}\n", PlatformGetNumPhysicalCores(), PlatformGetNumLogicalCores());
-  preamble.Appendf("SIMD: SSE2={0}, SSE4={1}, AVX2={2}, AVX512={3}\n", PlatformSupportsSIMDMode(SIMDMode::SSE2),
-    PlatformSupportsSIMDMode(SIMDMode::SSE4),
-    PlatformSupportsSIMDMode(SIMDMode::AVX2),
-    PlatformSupportsSIMDMode(SIMDMode::AVX512));
-  preamble.Appendf("OS: Username={0}, Machine={1}\n", PlatformGetUsername(), PlatformGetMachineName());
+  preamble.Appendf("CPU: ID={0}, Brand={1}\n", 
+    PlatformCPUVendor(), 
+    PlatformCPUBrand());
+  preamble.Appendf("Cores: Physical={0}, Logical={1}\n", 
+    PlatformGetNumPhysicalCores(), 
+    PlatformGetNumLogicalCores());
+  preamble.Appendf("SIMD: 4-Wide={0}, 8-Wide={1}, 16-Wide={2}\n", 
+    PlatformSupportsSIMDLanes(SIMDLaneWidth::Four),
+    PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight),
+    PlatformSupportsSIMDLanes(SIMDLaneWidth::Sixteen));
+  preamble.Appendf("OS: Username={0}, Machine={1}\n", 
+    PlatformGetUsername(), 
+    PlatformGetMachineName());
   preamble.Append("==========End Sys Info==========\n\n");
 
   InternalLog(LogCategory::System, preamble);

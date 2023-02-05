@@ -7,10 +7,11 @@
 #include "Win32PlatformApplication.h"
 #include "ZAlgorithm.h"
 #include "ZConfig.h"
+#include "PlatformIntrinsics.h"
 
 #define ASSERT_CHECK 0
 
-#define DISABLE_BACKFACE_CULLING 1
+#define DISABLE_BACKFACE_CULLING 0
 
 namespace ZSharp {
 Camera::Camera() {
@@ -107,10 +108,8 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 #endif
 
-  for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
-    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
-    vertexVector = perspectiveTransform.ApplyTransform(vertexVector);
-  }
+  // Apply the perspective projection transform to all input vertices.
+  Aligned_Mat4x4Transform(perspectiveTransform, vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
 
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.
@@ -120,14 +119,12 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   // Points at this stage must have Z > 0.
   // If Z < 0, points will re-appear in front of the camera.
   // If Z = 0, divide by 0 occurs and trashes the results.
-  for (size_t i = 0; i < vertexBuffer.GetVertSize(); ++i) {
-    Vec4& vertexVector = *(reinterpret_cast<Vec4*>(vertexBuffer[i]));
-    vertexVector.Homogenize();
-  }
+  Aligned_Vec4Homogenize(vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
 
   ClipTriangles(vertexBuffer, indexBuffer);
 
-  for (size_t i = 0; i < vertexBuffer.GetClipLength(); ++i) {
+  const size_t clipLength = vertexBuffer.GetClipLength();
+  for (size_t i = 0; i < clipLength; ++i) {
     float* vertexData = vertexBuffer.GetClipData(i);
     Vec3& vertexVector = *(reinterpret_cast<Vec3*>(vertexData));
 

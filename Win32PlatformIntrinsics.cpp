@@ -5,6 +5,8 @@
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
 
+#include <cstring>
+
 #ifdef HW_PLATFORM_X86
 
 #include <immintrin.h>
@@ -76,27 +78,30 @@ int* CPUIDSectionBrand() {
 
 namespace ZSharp {
 
-bool PlatformSupportsSIMDMode(SIMDMode mode) {
-  switch (mode) {
-    case SIMDMode::SSE2:
+bool PlatformSupportsSIMDLanes(SIMDLaneWidth width) {
+  switch (width) {
+#if 0
+    case SIMDWidth::Four:
     {
+      // Checks for SSE2.
       int* bits = CPUIDSection01();
       return bits[3] & (1 << 26);
     }
     break;
-    case SIMDMode::SSE4:
+#endif
+    case SIMDLaneWidth::Four: // SSE4
     {
       int* bits = CPUIDSection01();
       return bits[2] & (1 << 19);
     }
     break;
-    case SIMDMode::AVX2:
+    case SIMDLaneWidth::Eight: // AVX2
     {
       int* bits = CPUIDSection07();
       return bits[1] & (1 << 5);
     }
     break;
-    case SIMDMode::AVX512:
+    case SIMDLaneWidth::Sixteen: // AVX512
     {
       int* bits = CPUIDSection07();
       return bits[1] & (1 << 16);
@@ -149,7 +154,7 @@ float Aligned_128MulSum(const float* a, const float* b) {
 }
 
 void Aligned_Memset(void* __restrict dest, uint32 value, const size_t numBytes) {
-  if (PlatformSupportsSIMDMode(SIMDMode::AVX512) && ((numBytes % sizeof(__m512i)) == 0)) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Sixteen) && ((numBytes % sizeof(__m512i)) == 0)) {
     __m512i repData;
 
     for (size_t i = 0; i < sizeof(repData.m512i_u32) / sizeof(uint32); ++i) {
@@ -190,6 +195,75 @@ float Unaligned_128MulSum(const float* a, const float* b) {
   mulResult = _mm_hadd_ps(mulResult, mulResult);
   mulResult = _mm_hadd_ps(mulResult, mulResult);
   return _mm_cvtss_f32(mulResult);
+}
+
+void Aligned_Mat4x4Transform(const Mat4x4& matrix, float* data, size_t stride, size_t length) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
+    __m128 v0 = _mm_load_ps(*(matrix[0]));
+    __m128 v1 = _mm_load_ps(*(matrix[1]));
+    __m128 v2 = _mm_load_ps(*(matrix[2]));
+    __m128 v3 = _mm_load_ps(*(matrix[3]));
+
+    for (size_t i = 0; i < length; i += stride) {
+      __m128 vec = _mm_load_ps(data + i);
+
+      __m128 x = _mm_mul_ps(vec, v0);
+      __m128 y = _mm_mul_ps(vec, v1);
+      __m128 z = _mm_mul_ps(vec, v2);
+      __m128 w = _mm_mul_ps(vec, v3);
+
+      x = _mm_hadd_ps(x, x);
+      x = _mm_hadd_ps(x, x);
+
+      y = _mm_hadd_ps(y, y);
+      y = _mm_hadd_ps(y, y);
+
+      z = _mm_hadd_ps(z, z);
+      z = _mm_hadd_ps(z, z);
+
+      w = _mm_hadd_ps(w, w);
+      w = _mm_hadd_ps(w, w);
+
+      vec.m128_f32[0] = _mm_cvtss_f32(x);
+      vec.m128_f32[1] = _mm_cvtss_f32(y);
+      vec.m128_f32[2] = _mm_cvtss_f32(z);
+      vec.m128_f32[3] = _mm_cvtss_f32(w);
+
+      _mm_store_ps(data + i, vec);
+    }
+  }
+  else {
+    for (size_t i = 0; i < length; i += stride) {
+      Vec4& vec = *(reinterpret_cast<Vec4*>(data + i));
+
+      float xyzw[4];
+      xyzw[0] = matrix[0] * vec;
+      xyzw[1] = matrix[1] * vec;
+      xyzw[2] = matrix[2] * vec;
+      xyzw[3] = matrix[3] * vec;
+
+      memcpy(data + i, xyzw, sizeof(xyzw));
+    }
+  }
+}
+
+void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
+    for (size_t i = 0; i < length; i += stride) {
+      float* nextVec = data + i;
+      _mm_store_ps(nextVec, _mm_div_ps(_mm_load_ps(nextVec), _mm_set_ps1(nextVec[3])));
+    }
+  }
+  else {
+    for (size_t i = 0; i < length; i += stride) {
+      float* vec = data + i;
+      const float invDivisor = 1.f / vec[3];
+      vec[0] /= invDivisor;
+      vec[1] /= invDivisor;
+      vec[2] /= invDivisor;
+      vec[3] /= invDivisor;
+    }
+  }
 }
 
 }

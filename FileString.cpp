@@ -33,14 +33,17 @@ void FileString::operator=(const String& rhs) {
 }
 
 String FileString::GetVolume() const {
-  return mDrive;
+  String drive(mDrive, 0, mDriveLength);
+  return drive;
 }
 
 String FileString::GetFilename() const {
-  return mFilename;
+  String filename(mFilename, 0, mFilenameLength);
+  return filename;
 }
 
 String FileString::GetExtension() const {
+  String extension(mExtension, 0, mExtensionLength);
   return mExtension;
 }
 
@@ -85,8 +88,10 @@ void FileString::SetFilename(const String& filename) {
   }
   else {
     if (mNumDirectories != 0) {
-      mAbsolutePath[mPathLength - 1] = NULL;
-      mPathLength--;
+      if (mAbsolutePath[mPathLength - 1] == mDirectorySeparator) {
+        mAbsolutePath[mPathLength - 1] = NULL;
+        mPathLength--;
+      }
     }
 
     mFilename = mAbsolutePath + mPathLength;

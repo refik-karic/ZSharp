@@ -38,6 +38,8 @@ class GameInstance final {
   World mWorld;
   Renderer mRenderer;
 
+  size_t mLastFrameTime = 0;
+
   int64 mFrameCount = 0;
   int64 mRotationAmount = 0;
   int64 mRotationSpeed = 4;

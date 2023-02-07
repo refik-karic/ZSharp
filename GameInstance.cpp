@@ -7,6 +7,8 @@
 #include "ScopedTimer.h"
 #include "ZConfig.h"
 #include "ZString.h"
+#include "PlatformTime.h"
+#include "Constants.h"
 
 #include <cmath>
 
@@ -139,10 +141,27 @@ void GameInstance::Initialize() {
 void GameInstance::Tick() {
   NamedScopedTimer(Render);
 
+  size_t frameDelta;
+
+  if (mLastFrameTime == 0) {
+    frameDelta = static_cast<size_t>(FRAMERATE_60HZ_MS);
+  }
+  else {
+    frameDelta = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
+  }
+
+  mLastFrameTime = PlatformHighResClock();
+
   {
     String frame;
     frame.Appendf("Frame: {0}\n", mFrameCount);
     Logger::Log(LogCategory::Info, frame);
+  }
+
+  {
+    String delta;
+    delta.Appendf("Frame Delta (ms): {0}\n", frameDelta);
+    Logger::Log(LogCategory::Info, delta);
   }
 
   {

@@ -1,13 +1,14 @@
 #include "Mat2x3.h"
 
 #include <cmath>
+#include <cstring>
 
 namespace ZSharp {
 Mat2x3::Mat2x3() {
 }
 
-Mat2x3::Mat2x3(const Mat2x3& copy) {
-  *this = copy;
+Mat2x3::Mat2x3(const Mat2x3& copy)
+  : mData{copy.mData[0], copy.mData[1]} {
 }
 
 void Mat2x3::operator=(const Mat2x3& matrix) {
@@ -15,8 +16,7 @@ void Mat2x3::operator=(const Mat2x3& matrix) {
     return;
   }
 
-  mData[0] = matrix[0];
-  mData[1] = matrix[1];
+  memcpy(mData, matrix.mData, sizeof(mData));
 }
 
 Vec3& Mat2x3::operator[](size_t index) {
@@ -43,8 +43,7 @@ void Mat2x3::Identity() {
 }
 
 void Mat2x3::Clear() {
-  mData[0].Clear();
-  mData[1].Clear();
+  memset(mData, 0, sizeof(mData));
 }
 
 Vec3 Mat2x3::ApplyTransform(const Vec3& domain) const {

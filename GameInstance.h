@@ -24,7 +24,6 @@ class GameInstance final {
   ~GameInstance();
 
   GameInstance(const GameInstance& rhs) = delete;
-  GameInstance(const GameInstance&& rhs) = delete;
   void operator=(const GameInstance& rhs) = delete;
 
   void Initialize();

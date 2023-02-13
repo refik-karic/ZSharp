@@ -17,8 +17,8 @@ Vec3::Vec3(float x, float y, float z)
   : mData{x, y, z} {
 }
 
-Vec3::Vec3(const Vec3& copy) {
-  *this = copy;
+Vec3::Vec3(const Vec3& copy)
+  : mData{copy.mData[0], copy.mData[1], copy.mData[2]} {
 }
 
 void Vec3::operator=(const Vec3& vector) {

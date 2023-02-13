@@ -1,14 +1,15 @@
 #include "Mat4x4.h"
 
 #include <cmath>
+#include <cstring>
 
 namespace ZSharp {
 
 Mat4x4::Mat4x4() {
 }
 
-Mat4x4::Mat4x4(const Mat4x4& copy) {
-  *this = copy;
+Mat4x4::Mat4x4(const Mat4x4& copy)
+  : mData{copy.mData[0], copy.mData[1], copy.mData[2], copy.mData[3]} {
 }
 
 void Mat4x4::operator=(const Mat4x4& matrix) {
@@ -16,10 +17,7 @@ void Mat4x4::operator=(const Mat4x4& matrix) {
     return;
   }
 
-  mData[0] = matrix[0];
-  mData[1] = matrix[1];
-  mData[2] = matrix[2];
-  mData[3] = matrix[3];
+  memcpy(mData, matrix.mData, sizeof(mData));
 }
 
 Vec4& Mat4x4::operator[](size_t index) {
@@ -78,10 +76,7 @@ void Mat4x4::Identity() {
 }
 
 void Mat4x4::Clear() {
-  mData[0].Clear();
-  mData[1].Clear();
-  mData[2].Clear();
-  mData[3].Clear();
+  memset(mData, 0, sizeof(mData));
 }
 
 Mat4x4 Mat4x4::Transpose() const {

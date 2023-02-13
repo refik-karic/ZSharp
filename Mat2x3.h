@@ -34,9 +34,7 @@ class Mat2x3 final {
   Vec3 ApplyTransform(const Vec3& domain) const;
 
   private:
-  static const size_t Rows = 2;
-  static const size_t Columns = 3;
-  Vec3 mData[Rows];
+  Vec3 mData[2];
 };
 
 }

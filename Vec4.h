@@ -55,8 +55,7 @@ class alignas(16) Vec4 final {
   String ToString() const;
 
   private:
-  static const size_t Elements = 4;
-  float mData[Elements];
+  float mData[4];
 };
 
 }

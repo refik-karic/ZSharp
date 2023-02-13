@@ -29,9 +29,7 @@ class Mat3x3 {
   Mat3x3 Transpose() const;
 
   private:
-  static const size_t Rows = 3;
-  static const size_t Columns = 3;
-  Vec3 mData[Rows];
+  Vec3 mData[3];
 };
 
 }

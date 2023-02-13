@@ -50,8 +50,7 @@ public:
   String ToString() const;
 
 private:
-  static const size_t Elements = 3;
-  float mData[Elements];
+  float mData[3];
 };
 
 }

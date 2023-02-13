@@ -46,9 +46,7 @@ class Mat4x4 final {
   Vec4 ApplyTransform(const Vec4& domain) const;
 
   private:
-  static const size_t Rows = 4;
-  static const size_t Columns = 4;
-  Vec4 mData[Rows];
+  Vec4 mData[4];
 };
 
 }

@@ -19,8 +19,8 @@ Vec4::Vec4(float x, float y, float z, float w)
   : mData{x, y, z, w} {
 }
 
-Vec4::Vec4(const Vec4& copy) {
-  *this = copy;
+Vec4::Vec4(const Vec4& copy)
+  : mData{copy.mData[0], copy.mData[1], copy.mData[2], copy.mData[3]} {
 }
 
 Vec4::Vec4(const Vec3& copy) {

@@ -124,13 +124,26 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   ClipTriangles(vertexBuffer, indexBuffer);
 
   const size_t clipLength = vertexBuffer.GetClipLength();
+  const float* windowTransformVec0 = *mWindowTransform[0];
+  const float* windowTransformVec1 = *mWindowTransform[1];
   for (size_t i = 0; i < clipLength; ++i) {
     float* vertexData = vertexBuffer.GetClipData(i);
-    Vec3& vertexVector = *(reinterpret_cast<Vec3*>(vertexData));
 
     const float perspectiveZ = vertexData[2];
-    vertexVector.Homogenize();
-    vertexVector = mWindowTransform.ApplyTransform(vertexVector);
+
+    // Homogenize
+    const float invDivisor = 1.f / vertexData[2];
+    vertexData[0] *= invDivisor;
+    vertexData[1] *= invDivisor;
+    vertexData[2] *= invDivisor;
+
+    // Apply Window transform.
+    const float dotX = (vertexData[0] * windowTransformVec0[0]) + (vertexData[1] * windowTransformVec0[1]) + (vertexData[2] * windowTransformVec0[2]);
+    const float dotY = (vertexData[0] * windowTransformVec1[0]) + (vertexData[1] * windowTransformVec1[1]) + (vertexData[2] * windowTransformVec1[2]);
+
+    vertexData[0] = dotX;
+    vertexData[1] = dotY;
+
     // Store perspective Z and inverse Z for each vertex in the clip buffer.
     // Prevents us from having to calculate this at a later point in the drawing code.
     vertexData[2] = perspectiveZ;

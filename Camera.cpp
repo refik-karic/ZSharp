@@ -11,7 +11,7 @@
 
 #define ASSERT_CHECK 0
 
-#define DISABLE_BACKFACE_CULLING 0
+#define DISABLE_BACKFACE_CULLING 1
 
 namespace ZSharp {
 Camera::Camera() {

@@ -8,11 +8,16 @@
 #include "ZConfig.h"
 #include "ZString.h"
 #include "PlatformTime.h"
+#include "PlatformMemory.h"
 #include "Constants.h"
+
+#include "PNG.h"
+#include "PlatformFile.h"
 
 #include <cmath>
 
-#define DEBUG_TRIANGLE 0
+#define DEBUG_TEXTURE 1
+#define DEBUG_TRIANGLE 1
 #define DISABLE_DEBUG_TRANSFORMS 0
 
 namespace ZSharp {
@@ -29,6 +34,19 @@ GameInstance::~GameInstance() {
 }
 
 void GameInstance::LoadAssets() {
+#if DEBUG_TEXTURE
+  FileString texturePath(PlatformGetUserDesktopPath());
+  texturePath.SetFilename("test.png");
+
+  PNG png(texturePath);
+  uint8* pngData = nullptr;
+  png.Decompress(pngData);
+
+  if (pngData != nullptr) {
+    PlatformFree(pngData);
+  }
+#endif
+
 #if DEBUG_TRIANGLE
   const float X = 5.f;
   const float Y = 5.f;

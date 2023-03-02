@@ -42,12 +42,14 @@ target_sources(ZSharp
         PlatformMisc.h
         PlatformMemory.h
         PlatformTime.h
+        PNG.h
         Quaternion.h
         Random.h
         Renderer.h
         Serializer.h
         Stack.h
         ScopedTimer.h
+        Texture.h
         Tree.h
         Triangle.h
         Vec3.h
@@ -68,6 +70,7 @@ target_sources(ZSharp
 	
         AssetLoader.cpp
         Camera.cpp
+        Common.cpp
         CommonMath.cpp
         FileString.cpp
         Framebuffer.cpp
@@ -85,11 +88,13 @@ target_sources(ZSharp
         Model.cpp
         OBJFile.cpp
         OBJLoader.cpp
+        PNG.cpp
         Quaternion.cpp
         Random.cpp
         Renderer.cpp
         Serializer.cpp
         ScopedTimer.cpp
+        Texture.cpp
         Triangle.cpp
         Vec3.cpp
         Vec4.cpp

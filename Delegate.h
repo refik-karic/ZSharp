@@ -117,7 +117,6 @@ class BroadcastDelegate final {
   public:
   BroadcastDelegate() {}
 
-  // TODO: It might make this cleaner to have similar delegate creation helpers like above.
   void Add(const Delegate<Signature...>& delegate) {
     if (mCallList.Contains(delegate)) {
       ZAssert(false);

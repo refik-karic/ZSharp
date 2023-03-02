@@ -38,11 +38,11 @@ bool Vec3::operator==(const Vec3& vector) const {
 }
 
 float* Vec3::operator*() {
-  return &mData[0];
+  return mData;
 }
 
 const float* Vec3::operator*() const {
-  return &mData[0];
+  return mData;
 }
 
 float Vec3::operator[](const size_t index) const {

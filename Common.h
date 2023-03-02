@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 
@@ -10,5 +11,7 @@ void Swap(T& lhs, T& rhs) {
   rhs = lhs;
   lhs = temp;
 }
+
+uint32 EndianSwap(uint32 value);
 
 }

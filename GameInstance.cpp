@@ -16,7 +16,7 @@
 
 #include <cmath>
 
-#define DEBUG_TEXTURE 1
+#define DEBUG_TEXTURE 0
 #define DEBUG_TRIANGLE 1
 #define DISABLE_DEBUG_TRANSFORMS 0
 
@@ -39,8 +39,7 @@ void GameInstance::LoadAssets() {
   texturePath.SetFilename("test.png");
 
   PNG png(texturePath);
-  uint8* pngData = nullptr;
-  png.Decompress(pngData);
+  uint8* pngData = png.Decompress();
 
   if (pngData != nullptr) {
     PlatformFree(pngData);

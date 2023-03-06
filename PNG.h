@@ -13,9 +13,10 @@ class PNG final {
   PNG(const PNG& rhs) = delete;
   ~PNG();
 
-  // TODO: This should read from the PNG, allocate a buffer large enough, and decompress into that buffer.
-  // The caller will have a pointer which they are responsible for managing the lifetime of.
-  bool Decompress(uint8* buffer);
+  // Allocate and return a buffer to the caller.
+  // NOTE: The RGB channels may not be arranged in a native way for the current display.
+  //  This means we may need to do some channel swapping to get it right.
+  uint8* Decompress();
 
   private:
   const FileString mFilename;
@@ -30,11 +31,19 @@ class PNG final {
   size_t mBitOffset = 0; // Used to index into the Deflate stream.
 
   struct PngHuffman {
-    uint16 lengthCodes[16];
-    uint16 symbols[288];
-    uint16 distanceCodes[16];
-    uint16 distanceSymbols[30];
+    uint16 codes[16];
+    uint16 symbols[286];
   };
+
+  enum PngFilter {
+    None = 0,
+    Sub = 1,
+    Up = 2,
+    Average = 3,
+    Paeth = 4
+  };
+
+  uint8 PaethPredictor(int64 left, int64 above, int64 aboveLeft);
 
   const uint8* DataOffset();
 
@@ -46,9 +55,15 @@ class PNG final {
 
   uint32 ReadBits(size_t count);
 
-  void DecodeDynamicHuffman(uint8* output);
+  bool DecodeDynamicHuffman(uint8* output);
 
-  void BuildHuffman(PngHuffman& huffman, uint8* lengths, int32 count);
+  bool BuildHuffman(PngHuffman& huffman, uint16* lengths, int32 count);
+
+  bool DecodeSymbol(const PngHuffman& huffman, uint32& symbol);
+
+  bool DeflateStream(uint8* output, const PngHuffman& lengthHuff, const PngHuffman& distHuff);
+
+  uint8* FilterDeflatedImage(uint8* image);
 };
 
 }

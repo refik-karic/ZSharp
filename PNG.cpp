@@ -29,7 +29,7 @@ PNG::PNG(const FileString& filename)
 PNG::~PNG() {
 }
 
-uint8* PNG::Decompress() {
+uint8* PNG::Decompress(ChannelOrder order) {
   if (!mReader.IsOpen()) {
     return nullptr;
   }
@@ -104,7 +104,38 @@ uint8* PNG::Decompress() {
     }
   }
 
-  return FilterDeflatedImage(buffer);
+  uint8* outputImage = FilterDeflatedImage(buffer);
+
+  switch (order) {
+    case ChannelOrder::RGB: // Native order per spec.
+      break;
+    case ChannelOrder::BGR:
+      for (size_t y = 0; y < mHeight; ++y) {
+        for (size_t x = 0; x < mStride; x+=mChannels) {
+          const size_t redChannel = (y * mStride) + x;
+          const size_t blueChannel = (y * mStride) + x + 2;
+          uint8 blueValue = outputImage[blueChannel];
+          uint8 redValue = outputImage[redChannel];
+          outputImage[blueChannel] = redValue;
+          outputImage[redChannel] = blueValue;
+        }
+      }
+      break;
+  }
+
+  return outputImage;
+}
+
+size_t PNG::GetWidth() const {
+  return mWidth;
+}
+
+size_t PNG::GetHeight() const {
+  return mHeight;
+}
+
+size_t PNG::GetBitsPerPixel() const {
+  return mBitsPerPixel;
 }
 
 bool PNG::ReadHeader() {
@@ -166,7 +197,7 @@ bool PNG::ReadHeader() {
     mWidth = width;
     mHeight = height;
     mStride = width * 3;
-    mBitsPerPixel = bitDepth;
+    mBitsPerPixel = bitDepth * 3;
     mChannels = 3;
   }
   else if (colorType == 6) {
@@ -179,7 +210,7 @@ bool PNG::ReadHeader() {
     mWidth = width;
     mHeight = height;
     mStride = width * 4;
-    mBitsPerPixel = bitDepth;
+    mBitsPerPixel = bitDepth * 4;
     mChannels = 4;
   }
   else {

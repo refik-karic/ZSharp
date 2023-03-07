@@ -60,6 +60,8 @@ class Win32PlatformApplication {
   // Everything else not related to message loop.
 
   void UpdateFrame(const ZSharp::uint8* data);
+
+  void SplatTexture(const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel);
 };
 
 #endif

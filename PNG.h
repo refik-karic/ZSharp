@@ -6,6 +6,11 @@
 
 namespace ZSharp {
 
+enum class ChannelOrder : size_t {
+  RGB, // Native PNG
+  BGR
+};
+
 class PNG final {
   public:
 
@@ -16,7 +21,13 @@ class PNG final {
   // Allocate and return a buffer to the caller.
   // NOTE: The RGB channels may not be arranged in a native way for the current display.
   //  This means we may need to do some channel swapping to get it right.
-  uint8* Decompress();
+  uint8* Decompress(ChannelOrder order);
+
+  size_t GetWidth() const;
+
+  size_t GetHeight() const;
+
+  size_t GetBitsPerPixel() const;
 
   private:
   const FileString mFilename;

@@ -16,7 +16,7 @@
 namespace ZSharp {
 Camera::Camera() {
   mLook[2] = 1.f;
-  mUp[1] = 1.f;
+  mUp[1] = -1.f;
 
   mFovHoriz = 45.f;
   mFovVert = 45.f;

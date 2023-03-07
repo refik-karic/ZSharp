@@ -34,18 +34,6 @@ GameInstance::~GameInstance() {
 }
 
 void GameInstance::LoadAssets() {
-#if DEBUG_TEXTURE
-  FileString texturePath(PlatformGetUserDesktopPath());
-  texturePath.SetFilename("test.png");
-
-  PNG png(texturePath);
-  uint8* pngData = png.Decompress();
-
-  if (pngData != nullptr) {
-    PlatformFree(pngData);
-  }
-#endif
-
 #if DEBUG_TRIANGLE
   const float X = 5.f;
   const float Y = 5.f;
@@ -261,7 +249,7 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
   Vec3 V1(ProjectClick((float)oldX, (float)oldY));
   Vec3 V2(ProjectClick((float)x, (float)y));
 
-  Vec3 normal = V1.Cross(V2);
+  Vec3 normal = V2.Cross(V1);
   V1.Normalize();
   V2.Normalize();
 

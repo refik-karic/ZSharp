@@ -4,8 +4,13 @@
 
 #include "Common.h"
 #include "InputManager.h"
+#include "PlatformMemory.h"
+#include "PNG.h"
+#include "ScopedTimer.h"
 #include "ZConfig.h"
 #include "ZString.h"
+
+#define DEBUG_TEXTURE 0
 
 static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
 static constexpr UINT FRAMERATE_60_HZ_MS = 1000 / 60;
@@ -179,7 +184,7 @@ void Win32PlatformApplication::OnTimer() {
     }
 
     mBitmapInfo.bmiHeader.biWidth = activeWindowSize.right;
-    mBitmapInfo.bmiHeader.biHeight = activeWindowSize.bottom;
+    mBitmapInfo.bmiHeader.biHeight = -activeWindowSize.bottom;
 
     if (dirtySize) {
       OnWindowSizeChangedDelegate.Broadcast(activeWindowSize.right, activeWindowSize.bottom);
@@ -192,7 +197,27 @@ void Win32PlatformApplication::OnTimer() {
 }
 
 void Win32PlatformApplication::OnPaint() {
+#if DEBUG_TEXTURE
+  ZSharp::NamedScopedTimer(SplatTexture);
+
+  ZSharp::FileString texturePath(ZSharp::PlatformGetUserDesktopPath());
+  texturePath.SetFilename("test.png");
+
+  ZSharp::PNG png(texturePath);
+  ZSharp::uint8* pngData = png.Decompress(ZSharp::ChannelOrder::BGR);
+  ZSharp::size_t width = png.GetWidth();
+  ZSharp::size_t height = png.GetHeight();
+  ZSharp::size_t bitsPerPixel = png.GetBitsPerPixel();
+
+  SplatTexture(pngData, width, height, bitsPerPixel);
+#if 0
+  if (pngData != nullptr) {
+    ZSharp::PlatformFree(pngData);
+  }
+#endif
+#else
   UpdateFrame(mGameInstance.GetCurrentFrame());
+#endif
 }
 
 void Win32PlatformApplication::OnLButtonDown(ZSharp::int32 x, ZSharp::int32 y) {
@@ -272,13 +297,51 @@ void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
     0, 
     0, 
     mBitmapInfo.bmiHeader.biWidth, 
-    mBitmapInfo.bmiHeader.biHeight, 
+    -mBitmapInfo.bmiHeader.biHeight, 
     0, 
     0,
     0, 
-    mBitmapInfo.bmiHeader.biHeight,
+    -mBitmapInfo.bmiHeader.biHeight,
     data, 
     &mBitmapInfo, 
+    DIB_RGB_COLORS);
+
+  EndPaint(mWindowHandle, &ps);
+}
+
+void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel) {
+  if (data == nullptr) {
+    return;
+  }
+  
+  BITMAPINFO info;
+  ZeroMemory(&info, sizeof(BITMAPINFO));
+  info.bmiHeader.biSize = sizeof(BITMAPINFO);
+  info.bmiHeader.biWidth = (LONG)width;
+  info.bmiHeader.biHeight = -((LONG)height);
+  info.bmiHeader.biPlanes = 1;
+  info.bmiHeader.biBitCount = (WORD)bitsPerPixel;
+  info.bmiHeader.biCompression = BI_RGB;
+  info.bmiHeader.biSizeImage = 0;
+  info.bmiHeader.biXPelsPerMeter = 0;
+  info.bmiHeader.biYPelsPerMeter = 0;
+  info.bmiHeader.biClrUsed = 0;
+  info.bmiHeader.biClrImportant = 0;
+
+  PAINTSTRUCT ps;
+  HDC hdc = BeginPaint(mWindowHandle, &ps);
+
+  SetDIBitsToDevice(hdc,
+    0,
+    0,
+    info.bmiHeader.biWidth,
+    -info.bmiHeader.biHeight,
+    0,
+    0,
+    0,
+    -info.bmiHeader.biHeight,
+    data,
+    &info,
     DIB_RGB_COLORS);
 
   EndPaint(mWindowHandle, &ps);

@@ -1,42 +1,57 @@
 #include "ZColor.h"
 
 #include "ZAssert.h"
+#include "CommonMath.h"
 
 namespace ZSharp {
-ZColor::ZColor(uint32 color) : mColor(color) { }
+ZColor::ZColor() : mColor(0) {
+}
 
-ZColor::ZColor(uint8 R, uint8 G, uint8 B) {
-  mColor = 0xFF000000;
-  mColor |= (0x00FF0000 & (static_cast<uint32>(R) << 16));
-  mColor |= (0x0000FF00 & (static_cast<uint32>(G) << 8));
-  mColor |= (0x000000FF & (static_cast<uint32>(B)));
+ZColor::ZColor(uint32 color) : mColor(color) { 
+}
+
+ZColor::ZColor(uint8 R, uint8 G, uint8 B) : mA(0xFF), mR(R), mG(G), mB(B) {
 }
 
 ZColor::ZColor(const float R, const float G, const float B) {
   FloatToRGB(R, G, B);
 }
 
+ZColor::ZColor(const ZColor& rhs) : mColor(rhs.mColor) {
+}
+
+ZColor::ZColor(const ZColor& colorA, const ZColor& colorB, float parametricAmount) {
+  mA = 0xFF;
+  mR = static_cast<uint8>(Lerp(colorA.mR, colorB.mR, parametricAmount));
+  mG = static_cast<uint8>(Lerp(colorA.mG, colorB.mG, parametricAmount));
+  mB = static_cast<uint8>(Lerp(colorA.mB, colorB.mB, parametricAmount));
+}
+
+uint32 ZColor::Color() const {
+  return mColor;
+}
+
 void ZColor::FloatToRGB(const float R, const float G, const float B) {
-  mColor = 0xFF000000;
-  mColor |= (0x00FF0000 & (static_cast<uint8>(R * (float)0xFFU) << 16));
-  mColor |= (0x0000FF00 & (static_cast<uint8>(G * (float)0xFFU) << 8));
-  mColor |= (0x000000FF & static_cast<uint8>(B * (float)0xFFU));
+  mA = 0xFF;
+  mR = static_cast<uint8>(R * (float)0xFFU);
+  mG = static_cast<uint8>(G * (float)0xFFU);
+  mB = static_cast<uint8>(B * (float)0xFFU);
 }
 
 uint8 ZColor::A() const {
-  return ((mColor >> 24) & 0xFF);
+  return mA;
 }
 
 uint8 ZColor::R() const {
-  return ((mColor >> 16) & 0xFF);
+  return mR;
 }
 
 uint8 ZColor::G() const {
-  return ((mColor >> 8) & 0xFF);
+  return mG;
 }
 
 uint8 ZColor::B() const {
-  return (mColor & 0xFF);
+  return mB;
 }
 
 }

@@ -166,7 +166,6 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
 }
 
 void Win32PlatformApplication::OnTimer() {
-
   RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
     ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();

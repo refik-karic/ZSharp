@@ -22,12 +22,7 @@ float PerspectiveLerp(const float p0,
   float numeratorP1 = (p1 / -p1Z) * (1 - t);
 
   const float finalNumerator = numeratorP0 + numeratorP1;
-
-  const float denominatorP0 = invP0z * t;
-  const float denominatorP1 = invP1z * (1 - t);
-
-  const float finalDenominator = denominatorP0 + denominatorP1;
-
+  const float finalDenominator = fmaf(invP0z, t, invP1z * (1 - t));
   const float result = finalNumerator / finalDenominator;
 
   return result;

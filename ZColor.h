@@ -2,13 +2,14 @@
 
 #include "ZBaseTypes.h"
 
+#pragma warning(disable:4201) // nameless struct/union
+
 namespace ZSharp {
 
 class ZColor {
   public:
 
-  ZColor() {
-  }
+  ZColor();
 
   ZColor(uint32 color);
 
@@ -16,12 +17,11 @@ class ZColor {
 
   ZColor(const float R, const float G, const float B);
 
-  ZColor(const ZColor& rhs) : mColor(rhs.mColor) {
-  }
+  ZColor(const ZColor& rhs);
 
-  uint32 Color() const {
-    return mColor;
-  }
+  ZColor(const ZColor& colorA, const ZColor& colorB, float parametricAmount);
+
+  uint32 Color() const;
 
   void FloatToRGB(const float R, const float G, const float B);
   
@@ -31,7 +31,15 @@ class ZColor {
   uint8 B() const;
 
   private:
-  uint32 mColor = 0x0U;
+  union {
+    uint32 mColor;
+    struct {
+      uint8 mB;
+      uint8 mG;
+      uint8 mR;
+      uint8 mA;
+    };
+  };
 };
 
 enum ZColors : uint32 {

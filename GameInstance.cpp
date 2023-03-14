@@ -249,7 +249,7 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
   Vec3 V1(ProjectClick((float)oldX, (float)oldY));
   Vec3 V2(ProjectClick((float)x, (float)y));
 
-  Vec3 normal = V2.Cross(V1);
+  Vec3 normal = V1.Cross(V2);
   V1.Normalize();
   V2.Normalize();
 
@@ -280,7 +280,7 @@ Vec3 GameInstance::ProjectClick(float x, float y) {
     z = (((radius * radius) / 2.f) / sqrtf(((newX * newX) + (newY * newY))));
   }
 
-  return Vec3(-newX, -newY, z);
+  return Vec3(newX, -newY, z);
 }
 
 }

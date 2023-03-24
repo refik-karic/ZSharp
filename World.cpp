@@ -6,9 +6,9 @@ namespace ZSharp {
 World::World() {
 }
 
-void World::LoadModel(FileString& path) {
+void World::LoadModel(FileString& path, ShadingModeOrder order, size_t stride) {
   {
-    Model model;
+    Model model(order, stride);
     mActiveModels.PushBack(model);
   }
 
@@ -41,10 +41,10 @@ void World::LoadModel(FileString& path) {
   cachedVertBuffer.Resize(vertBufSize, vertStride);
 }
 
-void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3)
+void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, size_t stride)
 {
   {
-    Model model;
+    Model model(order, stride);
     mActiveModels.PushBack(model);
   }
 
@@ -59,15 +59,14 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3)
   }
 
   Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
-  cachedModel = Model(1);
+  cachedModel.CreateNewMesh();
   
-  const size_t stride = 7;
   {
-    const size_t strideBytes = 7 * sizeof(float);
+    const size_t strideBytes = stride * sizeof(float);
     Mesh& firstMesh = cachedModel[0];
     size_t vertSize = 3 * stride;
     size_t faceSize = 1;
-    firstMesh.Resize(vertSize, stride, faceSize);
+    firstMesh.Resize(vertSize, faceSize);
     firstMesh.SetData(v1, 0, strideBytes);
     firstMesh.SetData(v2, stride, strideBytes);
     firstMesh.SetData(v3, stride * 2, strideBytes);

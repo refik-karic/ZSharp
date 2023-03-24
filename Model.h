@@ -7,6 +7,7 @@
 #include "IndexBuffer.h"
 #include "Mat4x4.h"
 #include "Mesh.h"
+#include "ShadingMode.h"
 #include "Vec4.h"
 #include "VertexBuffer.h"
 #include "WorldObject.h"
@@ -16,9 +17,9 @@ namespace ZSharp {
 class Model final : public WorldObject {
   public:
 
-  Model();
+  Model() = default;
 
-  Model(size_t numMesh);
+  Model(ShadingModeOrder order, size_t stride);
 
   Model(const Model& copy);
 
@@ -27,6 +28,8 @@ class Model final : public WorldObject {
       return;
     }
 
+    mShadingOrder = rhs.mShadingOrder;
+    mStride = rhs.mStride;
     mData = rhs.mData;
   }
 
@@ -37,13 +40,21 @@ class Model final : public WorldObject {
 
   size_t MeshCount() const;
 
+  void CreateNewMesh();
+
   Array<Mesh>& GetMeshData();
 
   const Array<Mesh>& GetMeshData() const;
 
+  size_t Stride() const;
+
+  ShadingModeOrder ShadingOrder() const;
+
   void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const;
 
   private:
+  ShadingModeOrder mShadingOrder;
+  size_t mStride;
   Array<Mesh> mData;
 };
 

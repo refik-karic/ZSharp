@@ -1,6 +1,7 @@
 #include "ZDrawing.h"
 
 #include <cmath>
+#include <cstring>
 
 #include "ZColor.h"
 #include "Common.h"
@@ -149,7 +150,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
   }
 }
 
-void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, size_t primitiveIndex) {
+void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, size_t primitiveIndex, float* attributeBuffer, size_t attributeStride) {
   int32 x1 = static_cast<int32>(p0[0]);
   int32 y1 = static_cast<int32>(p0[1]);
   int32 x2 = static_cast<int32>(p1[0]);
@@ -166,11 +167,12 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
 
     for (int32 y = y1; y < y2; y++) {
       float yT = ParametricSolveForT(static_cast<float>(y), p0[1], p1[1]);
-      float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
-      float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);
-      float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], yT);
-      ZColor color(R, G, B);
-      edgeTable.AddPoint(y1, x1, color, primitiveIndex);
+
+      for (size_t a = 0; a < attributeStride; ++a) {
+        attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
+      }
+
+      edgeTable.AddPoint(y1, x1, primitiveIndex, attributeBuffer);
     }
   }
   else if (y1 == y2) { // Horizontal line.
@@ -178,10 +180,8 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
       Swap(x1, x2);
     }
 
-    ZColor x1Color(p0Attributes[0], p0Attributes[1], p0Attributes[2]);
-    ZColor x2Color(p1Attributes[0], p1Attributes[1], p1Attributes[2]);
-    edgeTable.AddPoint(y1, x1, x1Color, primitiveIndex);
-    edgeTable.AddPoint(y1, x2, x2Color, primitiveIndex);
+    edgeTable.AddPoint(y1, x1, primitiveIndex, p0Attributes);
+    edgeTable.AddPoint(y1, x2, primitiveIndex, p1Attributes);
   }
   else {
     float slope;
@@ -208,20 +208,22 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
 
         if (x2 <= x1) { // Tracing right to left.
           float xT = ParametricSolveForT(static_cast<float>(x1), p0[0], p1[0]);
-          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
-          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
-          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
-          ZColor color(R, G, B);
-          edgeTable.AddPoint(y1, x1, color, primitiveIndex);
+
+          for (size_t a = 0; a < attributeStride; ++a) {
+            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
+          }
+
+          edgeTable.AddPoint(y1, x1, primitiveIndex, attributeBuffer);
           x1 -= slopeStep;
         }
         else { // Tracing left to right.
           float xT = ParametricSolveForT(static_cast<float>(x1), p0[0], p1[0]);
-          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
-          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
-          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
-          ZColor color(R, G, B);
-          edgeTable.AddPoint(y1, x1, color, primitiveIndex);
+
+          for (size_t a = 0; a < attributeStride; ++a) {
+            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
+          }
+
+          edgeTable.AddPoint(y1, x1, primitiveIndex, attributeBuffer);
           x1 += slopeStep;
         }
 
@@ -243,11 +245,11 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
 
         for (int32 j = y1; j < y1 + slopeStep; j++) {
           float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
-          float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
-          float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);
-          float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], yT);
-          ZColor color(R, G, B);
-          edgeTable.AddPoint(j, x1, color, primitiveIndex);
+
+          for (size_t a = 0; a < attributeStride; ++a) {
+            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
+          }
+          edgeTable.AddPoint(j, x1, primitiveIndex, attributeBuffer);
         }
 
         x1 += minorStep;
@@ -257,21 +259,29 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
   }
 }
 
-void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {
-    GlobalEdgeTable edgeTable(framebuffer.GetHeight());
+void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const ShadingModeOrder& order) {
+  size_t stride = 0;
+  for (ShadingMode& mode : order) {
+    stride += mode.length;
+  }
+  
+  GlobalEdgeTable edgeTable(framebuffer.GetHeight(), stride);
 
-    size_t end = indexBuffer.GetClipLength();
-    for (size_t i = 0; i < end; i += TRI_VERTS) {
-      const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
-      const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
-      const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
+  Array<float> attributeBuffer(stride);
+  float* attributeBufferData = attributeBuffer.GetData();
 
-      TraceLine(edgeTable, v1, v2, i);
-      TraceLine(edgeTable, v2, v3, i);
-      TraceLine(edgeTable, v3, v1, i);
-    }
+  size_t end = indexBuffer.GetClipLength();
+  for (size_t i = 0; i < end; i += TRI_VERTS) {
+    const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
+    const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
+    const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
 
-    edgeTable.Draw(framebuffer);
+    TraceLine(edgeTable, v1, v2, i, attributeBufferData, stride);
+    TraceLine(edgeTable, v2, v3, i, attributeBufferData, stride);
+    TraceLine(edgeTable, v3, v1, i, attributeBufferData, stride);
+  }
+
+  edgeTable.Draw(framebuffer, order);
 }
 
 void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {

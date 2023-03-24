@@ -29,9 +29,9 @@ ZColor Texture::Sample(float u, float v) const {
   Clamp(u, 0.f, 1.f);
   Clamp(v, 0.f, 1.f);
 
-  size_t x = u * mWidth;
+  size_t x = static_cast<size_t>(u * mWidth);
   x *= mBytesPerPixel;
-  size_t y = v * mHeight;
+  size_t y = static_cast<size_t>(v * mHeight);
   size_t yStride = (y * mStride);
   size_t pixel = yStride + x;
 

@@ -5,6 +5,7 @@
 #include "CommonMath.h"
 #include "Logger.h"
 #include "ScopedTimer.h"
+#include "ShadingMode.h"
 #include "ZConfig.h"
 #include "ZString.h"
 #include "PlatformTime.h"
@@ -42,7 +43,12 @@ void GameInstance::LoadAssets() {
   const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f, 0.f };
   const float v2[]{ 0.f, Y, Z, W, 1.0f, 0.f, 0.f };
   const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f , 1.f };
-  mWorld.DebugLoadTriangle(v1, v2, v3);
+
+  ShadingModeOrder order;
+  ShadingMode mode(ShadingModes::RGB, 3);
+  order.PushBack(mode);
+
+  mWorld.DebugLoadTriangle(v1, v2, v3, order, 7);
 #else
   ZConfig& config = ZConfig::GetInstance();
   if (!config.GetAssetPath().GetAbsolutePath().IsEmpty()) {

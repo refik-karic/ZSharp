@@ -4,6 +4,7 @@
 
 #include "Array.h"
 #include "Framebuffer.h"
+#include "ShadingMode.h"
 #include "ZColor.h"
 
 namespace ZSharp {
@@ -11,12 +12,12 @@ namespace ZSharp {
 class GlobalEdgeTable final {
   public:
 
-  GlobalEdgeTable(size_t height);
+  GlobalEdgeTable(size_t height, size_t attributeStride);
   GlobalEdgeTable(const GlobalEdgeTable&) = delete;
   void operator=(const GlobalEdgeTable&) = delete;
 
-  void AddPoint(int32 yIndex, int32 x, ZColor color, size_t primitiveIndex);
-  void Draw(Framebuffer& frameBuffer);
+  void AddPoint(int32 yIndex, int32 x, size_t primitiveIndex, const float* attribute);
+  void Draw(Framebuffer& frameBuffer, const ShadingModeOrder& order);
 
   private:
   
@@ -24,16 +25,16 @@ class GlobalEdgeTable final {
     int32 x1;
     int32 x2;
     size_t primitiveIndex;
-    ZColor x1Color;
-    ZColor x2Color;
+    size_t x1AttributeIndex;
+    size_t x2AttributeIndex;
 
     ScanLine() 
-      : x1(0), x2(0), primitiveIndex(0) {
+      : x1(0), x2(0), primitiveIndex(0), x1AttributeIndex(0), x2AttributeIndex(0) {
 
     }
 
-    ScanLine(int32 p1, int32 p2, size_t index, ZColor p1Color, ZColor p2Color)
-      : x1(p1), x2(p2), primitiveIndex(index), x1Color(p1Color), x2Color(p2Color) {
+    ScanLine(int32 p1, int32 p2, size_t index, size_t p1AttributeIndex, size_t p2AttributeIndex)
+      : x1(p1), x2(p2), primitiveIndex(index), x1AttributeIndex(p1AttributeIndex), x2AttributeIndex(p2AttributeIndex) {
 
     }
   };
@@ -41,6 +42,9 @@ class GlobalEdgeTable final {
   typedef Array<ScanLine> ScanLineList;
 
   Array<ScanLineList> mEdgeTable;
+  Array<float> mLerpedAttributes;
+  size_t mAttributeStride = 0;
+  size_t mAttributeIndex = 0;
 };
 
 }

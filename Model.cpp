@@ -5,19 +5,21 @@
 #define FAST_LOAD 1
 
 namespace ZSharp {
-Model::Model() {
+Model::Model(ShadingModeOrder order, size_t stride) 
+  : mShadingOrder(order), mStride(stride) {
 }
 
-Model::Model(size_t numMesh) : mData(numMesh) {
-
-}
-
-Model::Model(const Model& copy) {
-  *this = copy;
+Model::Model(const Model& copy) 
+  : mShadingOrder(copy.mShadingOrder), mStride(copy.mStride), mData(copy.mData) {
 }
 
 size_t Model::MeshCount() const {
   return mData.Size();
+}
+
+void Model::CreateNewMesh() {
+  Mesh mesh(mStride);
+  mData.PushBack(mesh);
 }
 
 Array<Mesh>& Model::GetMeshData() {
@@ -26,6 +28,14 @@ Array<Mesh>& Model::GetMeshData() {
 
 const Array<Mesh>& Model::GetMeshData() const {
   return mData;
+}
+
+size_t Model::Stride() const {
+  return mStride;
+}
+
+ShadingModeOrder Model::ShadingOrder() const {
+  return mShadingOrder;
 }
 
 void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const {

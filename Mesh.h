@@ -10,7 +10,9 @@ namespace ZSharp {
 class Mesh final {
   public:
 
-  Mesh();
+  Mesh() = default;
+
+  Mesh(size_t stride);
 
   Mesh(size_t numVerts, size_t stride, size_t numTriangleFaces);
 
@@ -21,11 +23,12 @@ class Mesh final {
       return;
     }
 
+    mStride = rhs.mStride;
     mVertTable = rhs.mVertTable;
     mTriangleFaceTable = rhs.mTriangleFaceTable;
   }
 
-  void Resize(size_t vertexLength, size_t stride, size_t faceTableLength);
+  void Resize(size_t vertexLength, size_t faceTableLength);
 
   void SetData(const float* vertData, size_t index, size_t numBytes);
 

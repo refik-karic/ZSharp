@@ -32,7 +32,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     switch (mRenderMode) {
       case RenderMode::FLAT:
-        DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer);
+        DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer, model.ShadingOrder());
         break;
       case RenderMode::WIREFRAME:
         DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer);

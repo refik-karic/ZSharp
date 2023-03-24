@@ -6,6 +6,7 @@
 #include "Framebuffer.h"
 #include "GlobalEdgeTable.h"
 #include "IndexBuffer.h"
+#include "ShadingMode.h"
 #include "VertexBuffer.h"
 
 namespace ZSharp {
@@ -20,7 +21,8 @@ float PerspectiveLerp(const float p0,
 
 void DrawTrianglesFlat(Framebuffer& framebuffer,
     const VertexBuffer& vertexBuffer,
-    const IndexBuffer& indexBuffer);
+    const IndexBuffer& indexBuffer,
+    const ShadingModeOrder& order);
 
 void DrawTrianglesWireframe(Framebuffer& framebuffer,
     const VertexBuffer& vertexBuffer,
@@ -33,6 +35,8 @@ void DrawRunSlice(Framebuffer& framebuffer,
 void TraceLine(GlobalEdgeTable& edgeTable,
   const float* p0,
   const float* p1,
-  size_t primitiveIndex);
+  size_t primitiveIndex,
+  float* attributeBuffer,
+  size_t attributeStride);
 
 }

@@ -46,9 +46,10 @@ target_sources(ZSharp
         Quaternion.h
         Random.h
         Renderer.h
-        Serializer.h
-        Stack.h
         ScopedTimer.h
+        Serializer.h
+        ShadingMode.h
+        Stack.h
         Texture.h
         Tree.h
         Triangle.h

@@ -5,7 +5,8 @@
 #include <cstring>
 
 namespace ZSharp {
-Mesh::Mesh() {
+Mesh::Mesh(size_t stride)
+  : mStride(stride) {
 
 }
 
@@ -15,14 +16,13 @@ Mesh::Mesh(size_t numVerts, size_t stride, size_t numTriangleFaces) :
   mTriangleFaceTable.Resize(numTriangleFaces);
 }
 
-Mesh::Mesh(const Mesh& copy) {
-  *this = copy;
+Mesh::Mesh(const Mesh& copy) 
+  : mStride(copy.mStride), mVertTable(copy.mVertTable), mTriangleFaceTable(copy.mTriangleFaceTable) {
 }
 
-void Mesh::Resize(size_t vertexLength, size_t stride, size_t faceTableLength) {
+void Mesh::Resize(size_t vertexLength, size_t faceTableLength) {
   mVertTable.Resize(vertexLength);
   mTriangleFaceTable.Resize(faceTableLength);
-  mStride = stride;
 }
 
 void Mesh::SetData(const float* vertData, size_t index, size_t numBytes) {

@@ -19,7 +19,7 @@ void LoadModelOBJ(const FileString& fileName, Model& model) {
     OBJLoader objLoader(objFile, fileName, AssetFormat::Serialized);
   }
 
-  model = Model(1);
+  model.CreateNewMesh();
   Mesh& mesh = model[0];
 
   /*
@@ -31,7 +31,7 @@ void LoadModelOBJ(const FileString& fileName, Model& model) {
   size_t vertSize = objFile.GetVerts().Size() * stride;
   size_t indexSize = objFile.GetFaces().Size();
 
-  mesh.Resize(vertSize, stride, indexSize);
+  mesh.Resize(vertSize, indexSize);
 
   for (size_t i = 0, triIndex = 0; i < objFile.GetVerts().Size(); ++i) {
     const Vec4& vector = objFile.GetVerts()[i];

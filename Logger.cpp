@@ -11,7 +11,7 @@
 namespace ZSharp {
 
 Logger::Logger() : mLog(LogFilePath(), 0) {
-  LogPreamble();
+  LogPrologue();
 }
 
 Logger::~Logger() {
@@ -97,7 +97,7 @@ bool Logger::IsExcessiveSize(const size_t nextMessageLength) const {
   }
 }
 
-void Logger::LogPreamble() {
+void Logger::LogPrologue() {
   String preamble;
   preamble.Append("\n\n==========Begin Sys Info==========\n");
   preamble.Appendf("CPU: ID={0}, Brand={1}\n", 
@@ -113,6 +113,12 @@ void Logger::LogPreamble() {
   preamble.Appendf("OS: Username={0}, Machine={1}\n", 
     PlatformGetUsername(), 
     PlatformGetMachineName());
+
+  Array<String> displays(PlatformEnumDisplayInfo());
+  for (size_t i = 0; i < displays.Size(); ++i) {
+    preamble.Append(displays[i]);
+  }
+
   preamble.Append("==========End Sys Info==========\n\n");
 
   InternalLog(LogCategory::System, preamble);

@@ -33,7 +33,7 @@ class Logger {
 
   void InternalLog(LogCategory category, const String& message);
 
-  void LogPreamble();
+  void LogPrologue();
 
   BufferedFileWriter mLog;
   size_t mLogSize = 0;

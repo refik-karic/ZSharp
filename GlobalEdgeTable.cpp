@@ -7,7 +7,7 @@
 
 namespace ZSharp {
 GlobalEdgeTable::GlobalEdgeTable(size_t height, size_t attributeStride)
-  : mEdgeTable(height), mAttributeStride(attributeStride) {
+  : mEdgeTable(height), mAttributeStride(attributeStride), mLerpedAttributes(4096) {
 }
 
 void GlobalEdgeTable::AddPoint(int32 yIndex, int32 x, size_t primitiveIndex, const float* attribute) {

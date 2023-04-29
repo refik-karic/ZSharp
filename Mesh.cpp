@@ -41,8 +41,12 @@ const Array<float>& Mesh::GetVertTable() const {
   return mVertTable;
 }
 
-size_t Mesh::GetStride() const {
+size_t Mesh::Stride() const {
   return mStride;
+}
+
+void Mesh::SetStride(size_t stride) {
+  mStride = stride;
 }
 
 Array<Triangle>& Mesh::GetTriangleFaceTable() {

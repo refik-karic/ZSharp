@@ -9,6 +9,8 @@
 #include "Constants.h"
 #include "Triangle.h"
 
+float GlobalAttributeBuffer[4096];
+
 namespace ZSharp {
 
 float PerspectiveLerp(const float p0,
@@ -150,7 +152,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
   }
 }
 
-void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, size_t primitiveIndex, float* attributeBuffer, size_t attributeStride) {
+void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, size_t primitiveIndex, size_t attributeStride) {
   int32 x1 = static_cast<int32>(p0[0]);
   int32 y1 = static_cast<int32>(p0[1]);
   int32 x2 = static_cast<int32>(p1[0]);
@@ -169,10 +171,10 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
       float yT = ParametricSolveForT(static_cast<float>(y), p0[1], p1[1]);
 
       for (size_t a = 0; a < attributeStride; ++a) {
-        attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
+        GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
       }
 
-      edgeTable.AddPoint(y1, x1, primitiveIndex, attributeBuffer);
+      edgeTable.AddPoint(y1, x1, primitiveIndex, GlobalAttributeBuffer);
     }
   }
   else if (y1 == y2) { // Horizontal line.
@@ -210,20 +212,20 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
           float xT = ParametricSolveForT(static_cast<float>(x1), p0[0], p1[0]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
-            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
+            GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
           }
 
-          edgeTable.AddPoint(y1, x1, primitiveIndex, attributeBuffer);
+          edgeTable.AddPoint(y1, x1, primitiveIndex, GlobalAttributeBuffer);
           x1 -= slopeStep;
         }
         else { // Tracing left to right.
           float xT = ParametricSolveForT(static_cast<float>(x1), p0[0], p1[0]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
-            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
+            GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
           }
 
-          edgeTable.AddPoint(y1, x1, primitiveIndex, attributeBuffer);
+          edgeTable.AddPoint(y1, x1, primitiveIndex, GlobalAttributeBuffer);
           x1 += slopeStep;
         }
 
@@ -247,9 +249,9 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
           float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
-            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
+            GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
           }
-          edgeTable.AddPoint(j, x1, primitiveIndex, attributeBuffer);
+          edgeTable.AddPoint(j, x1, primitiveIndex, GlobalAttributeBuffer);
         }
 
         x1 += minorStep;
@@ -267,18 +269,15 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
   
   GlobalEdgeTable edgeTable(framebuffer.GetHeight(), stride);
 
-  Array<float> attributeBuffer(stride);
-  float* attributeBufferData = attributeBuffer.GetData();
-
   size_t end = indexBuffer.GetClipLength();
   for (size_t i = 0; i < end; i += TRI_VERTS) {
     const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
     const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
     const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
 
-    TraceLine(edgeTable, v1, v2, i, attributeBufferData, stride);
-    TraceLine(edgeTable, v2, v3, i, attributeBufferData, stride);
-    TraceLine(edgeTable, v3, v1, i, attributeBufferData, stride);
+    TraceLine(edgeTable, v1, v2, i, stride);
+    TraceLine(edgeTable, v2, v3, i, stride);
+    TraceLine(edgeTable, v3, v1, i, stride);
   }
 
   edgeTable.Draw(framebuffer, order);

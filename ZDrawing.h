@@ -36,7 +36,6 @@ void TraceLine(GlobalEdgeTable& edgeTable,
   const float* p0,
   const float* p1,
   size_t primitiveIndex,
-  float* attributeBuffer,
   size_t attributeStride);
 
 }

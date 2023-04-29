@@ -13,7 +13,7 @@ class World final {
 
   World();
 
-  void LoadModel(FileString& path, ShadingModeOrder order, size_t stride);
+  void LoadModel(FileString& path);
 
   void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, size_t stride);
 

@@ -6,9 +6,9 @@ namespace ZSharp {
 World::World() {
 }
 
-void World::LoadModel(FileString& path, ShadingModeOrder order, size_t stride) {
+void World::LoadModel(FileString& path) {
   {
-    Model model(order, stride);
+    Model model;
     mActiveModels.PushBack(model);
   }
 
@@ -34,7 +34,7 @@ void World::LoadModel(FileString& path, ShadingModeOrder order, size_t stride) {
   for (Mesh& mesh : cachedModel.GetMeshData()) {
     indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
     vertBufSize += mesh.GetVertTable().Size();
-    vertStride = mesh.GetStride();
+    vertStride = mesh.Stride();
   }
 
   cachedIndexBuffer.Resize(indexBufSize);

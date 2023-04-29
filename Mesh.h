@@ -38,7 +38,9 @@ class Mesh final {
 
   const Array<float>& GetVertTable() const;
 
-  size_t GetStride() const;
+  size_t Stride() const;
+
+  void SetStride(size_t stride);
 
   Array<Triangle>& GetTriangleFaceTable();
 

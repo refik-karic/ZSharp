@@ -2,7 +2,8 @@
 
 namespace ZSharp {
 OBJFile::OBJFile() {
-  
+  ShadingMode mode(ShadingModes::RGB, 3);
+  mShadingOrder.PushBack(mode); // TODO: Make this based off of the source asset.
 }
 
 const Array<Vec4>& OBJFile::GetVerts() const {
@@ -19,6 +20,14 @@ const Array<Vec3>& OBJFile::GetUVs() const {
 
 const Array<OBJFace>& OBJFile::GetFaces() const {
   return mFaces;
+}
+
+size_t OBJFile::GetStride() const {
+  return mStride;
+}
+
+const ShadingModeOrder& OBJFile::GetShadingOrder() const {
+  return mShadingOrder;
 }
 
 }

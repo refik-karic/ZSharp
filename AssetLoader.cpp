@@ -20,6 +20,8 @@ void LoadModelOBJ(const FileString& fileName, Model& model) {
   }
 
   model.CreateNewMesh();
+  model.SetShadingOrder(objFile.GetShadingOrder());
+  model.SetStride(objFile.GetStride());
   Mesh& mesh = model[0];
 
   /*

@@ -19,7 +19,7 @@ class Model final : public WorldObject {
 
   Model() = default;
 
-  Model(ShadingModeOrder order, size_t stride);
+  Model(const ShadingModeOrder& order, size_t stride);
 
   Model(const Model& copy);
 
@@ -48,7 +48,11 @@ class Model final : public WorldObject {
 
   size_t Stride() const;
 
-  ShadingModeOrder ShadingOrder() const;
+  const ShadingModeOrder& ShadingOrder() const;
+
+  void SetShadingOrder(const ShadingModeOrder& order);
+
+  void SetStride(size_t stride);
 
   void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const;
 

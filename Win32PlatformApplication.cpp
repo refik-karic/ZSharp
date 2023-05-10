@@ -289,6 +289,8 @@ void Win32PlatformApplication::OnDestroy() {
 }
 
 void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
+  ZSharp::NamedScopedTimer(BlitFrame);
+
   PAINTSTRUCT ps;
   HDC hdc = BeginPaint(mWindowHandle, &ps);
 

@@ -8,10 +8,11 @@
 #include "ZAlgorithm.h"
 #include "ZConfig.h"
 #include "PlatformIntrinsics.h"
+#include "ScopedTimer.h"
 
 #define ASSERT_CHECK 0
 
-#define DISABLE_BACKFACE_CULLING 0
+#define DISABLE_BACKFACE_CULLING 1
 
 namespace ZSharp {
 Camera::Camera() {
@@ -66,6 +67,8 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
 }
 
 void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
+  NamedScopedTimer(PerspectiveProjection);
+
   Vec3 w(-mLook);
   w.Normalize();
 

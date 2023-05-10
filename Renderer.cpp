@@ -8,12 +8,15 @@
 #include "VertexBuffer.h"
 #include "ZColor.h"
 #include "ZDrawing.h"
+#include "ScopedTimer.h"
 
 namespace ZSharp {
 Renderer::Renderer() {
 }
 
 void Renderer::RenderNextFrame(World& world, Camera& camera) {
+  NamedScopedTimer(RenderFrame);
+
   const ZColor clearColor(ZColors::ORANGE);
   mBuffer.Clear(clearColor);
 

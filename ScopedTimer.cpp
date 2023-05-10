@@ -8,8 +8,8 @@
 
 namespace ZSharp {
 
-ScopedTimer::ScopedTimer(int32 line, const char* file, const char* function)
-  : mLine(line), mFile(file), mFunction(function), mTime(PlatformHighResClock()) {
+ScopedTimer::ScopedTimer(const char* name, int32 line, const char* file, const char* function)
+  : mName(name), mLine(line), mFile(file), mFunction(function), mTime(PlatformHighResClock()) {
 
 }
 
@@ -17,7 +17,7 @@ ScopedTimer::~ScopedTimer() {
   size_t deltaMicroseconds = PlatformHighResClockDelta(mTime, ClockUnits::Microseconds);
 
   String log;
-  log.Appendf("{0} took {1} us.\n", mFunction, deltaMicroseconds);
+  log.Appendf("{0} took {1} us.\n", mName, deltaMicroseconds);
 
 #if LOG_SCOPED_TIMERS
   Logger::Log(LogCategory::Perf, log);

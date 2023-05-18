@@ -6,6 +6,7 @@
 #include "Win32PlatformApplication.h"
 #include "ZAssert.h"
 #include "ZConfig.h"
+#include "ScopedTimer.h"
 
 #include "PlatformIntrinsics.h"
 
@@ -81,6 +82,7 @@ void Framebuffer::SetRow(const size_t y, const size_t x1, const size_t x2, const
 }
 
 void Framebuffer::Clear(const ZColor color) {
+  NamedScopedTimer(ClearFrameBuffer);
   Aligned_Memset(mPixelBuffer, color.Color(), mTotalSize);
 }
 

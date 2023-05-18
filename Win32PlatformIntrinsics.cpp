@@ -154,6 +154,9 @@ float Aligned_128MulSum(const float* a, const float* b) {
 }
 
 void Aligned_Memset(void* __restrict dest, uint32 value, const size_t numBytes) {
+  __stosd((unsigned long*)dest, value, numBytes / 4);
+
+#if 0
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Sixteen) && ((numBytes % sizeof(__m512i)) == 0)) {
     __m512i repData;
 
@@ -176,6 +179,7 @@ void Aligned_Memset(void* __restrict dest, uint32 value, const size_t numBytes) 
   else {
     ZAssert(false); // numBytes is not a valid multiple.
   }
+#endif
 }
 
 void Unaligned_128Add(const float* a, const float* b, float* dest) {

@@ -20,9 +20,9 @@ float PerspectiveLerp(const float p0,
   const float p1Z,
   const float invP1z,
   const float t) {
-  // Assuming projection onto -1 Z plane.
-  float numeratorP0 = (p0 / -p0Z) * (t);
-  float numeratorP1 = (p1 / -p1Z) * (1 - t);
+  // Assuming projection onto +1 Z plane.
+  float numeratorP0 = (p0 / p0Z) * (t);
+  float numeratorP1 = (p1 / p1Z) * (1 - t);
 
   const float finalNumerator = numeratorP0 + numeratorP1;
   const float finalDenominator = fmaf(invP0z, t, invP1z * (1 - t));
@@ -160,7 +160,6 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
   
   const float* p0Attributes = p0 + 4;
   const float* p1Attributes = p1 + 4;
-
   // Vertical Line
   if (x1 == x2) {
     if (y2 < y1) {

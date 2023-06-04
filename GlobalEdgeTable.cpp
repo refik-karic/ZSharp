@@ -107,10 +107,10 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer, const ShadingModeOrder& ord
               switch (mode.mode) {
                 case ShadingModes::RGB:
                 {
-                  ZColor colorA(attributeDataX1[0], attributeDataX1[1], attributeDataX1[2]);
-                  ZColor colorB(attributeDataX2[0], attributeDataX2[1], attributeDataX2[2]);
-
-                  ZColor tempColor(colorA, colorB, xT);
+                  float r = Lerp(attributeDataX1[0], attributeDataX2[0], xT);
+                  float g = Lerp(attributeDataX1[1], attributeDataX2[1], xT);
+                  float b = Lerp(attributeDataX1[2], attributeDataX2[2], xT);
+                  ZColor tempColor(r, g, b);
                   pixel = tempColor;
                 }
                 break;

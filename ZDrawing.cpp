@@ -49,7 +49,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
     }
 
     for (; y1 < y2; y1++) {
-      float yT = ParametricSolveForT(static_cast<float>(y1), p0[1], p1[1]);
+      float yT = ParametricSolveForT(static_cast<float>(y1), p1[1], p0[1]);
       float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
       float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);
       float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], yT);
@@ -63,7 +63,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
     }
 
     for (int32 i = x1; i < x2; ++i) {
-      float xT = ParametricSolveForT(static_cast<float>(i), p0[0], p1[0]);
+      float xT = ParametricSolveForT(static_cast<float>(i), p1[0], p0[0]);
       float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
       float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
       float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
@@ -96,7 +96,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
         if (x2 <= x1) { // Drawing right to left, writing pixels left to right for cache coherency.
           for (int32 j = x1 - slopeStep; j < x1; ++j) {
-            float xT = ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
+            float xT = ParametricSolveForT(static_cast<float>(j), p1[0], p0[0]);
             float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
             float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
             float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
@@ -108,7 +108,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
         }
         else { // Drawing left to right
           for (int32 j = x1; j < x1 + slopeStep; ++j) {
-            float xT = ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
+            float xT = ParametricSolveForT(static_cast<float>(j), p1[0], p0[0]);
             float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], xT);
             float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], xT);
             float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], xT);
@@ -137,7 +137,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
         // Draw a vertical span for the current X
         for (int32 j = y1; j < y1 + slopeStep; j++) {
-          float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
+          float yT = ParametricSolveForT(static_cast<float>(j), p1[1], p0[1]);
           float R = PerspectiveLerp(p0Attributes[0], p1Attributes[0], p0[2], p0[3], p1[2], p1[3], yT);
           float G = PerspectiveLerp(p0Attributes[1], p1Attributes[1], p0[2], p0[3], p1[2], p1[3], yT);
           float B = PerspectiveLerp(p0Attributes[2], p1Attributes[2], p0[2], p0[3], p1[2], p1[3], yT);
@@ -157,7 +157,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
   int32 y1 = static_cast<int32>(p0[1]);
   int32 x2 = static_cast<int32>(p1[0]);
   int32 y2 = static_cast<int32>(p1[1]);
-  
+
   const float* p0Attributes = p0 + 4;
   const float* p1Attributes = p1 + 4;
   // Vertical Line
@@ -167,13 +167,13 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
     }
 
     for (int32 y = y1; y < y2; y++) {
-      float yT = ParametricSolveForT(static_cast<float>(y), p0[1], p1[1]);
+      float yT = ParametricSolveForT(static_cast<float>(y), p1[1], p0[1]);
 
       for (size_t a = 0; a < attributeStride; ++a) {
         GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
       }
 
-      edgeTable.AddPoint(y1, x1, primitiveIndex, GlobalAttributeBuffer);
+      edgeTable.AddPoint(y, x1, primitiveIndex, GlobalAttributeBuffer);
     }
   }
   else if (y1 == y2) { // Horizontal line.
@@ -208,7 +208,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
         }
 
         if (x2 <= x1) { // Tracing right to left.
-          float xT = ParametricSolveForT(static_cast<float>(x1), p0[0], p1[0]);
+          float xT = ParametricSolveForT(static_cast<float>(x1), p1[0], p0[0]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
             GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
@@ -218,7 +218,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
           x1 -= slopeStep;
         }
         else { // Tracing left to right.
-          float xT = ParametricSolveForT(static_cast<float>(x1), p0[0], p1[0]);
+          float xT = ParametricSolveForT(static_cast<float>(x1), p1[0], p0[0]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
             GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
@@ -245,7 +245,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
         }
 
         for (int32 j = y1; j < y1 + slopeStep; j++) {
-          float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
+          float yT = ParametricSolveForT(static_cast<float>(j), p1[1], p0[1]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
             GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);

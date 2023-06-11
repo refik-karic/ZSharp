@@ -5,6 +5,14 @@
 
 #include <cstring>
 
+#define DEBUG_TEXTURE 1
+
+#if DEBUG_TEXTURE
+#include "Texture.h"
+#include "PNG.h"
+#include "PlatformFile.h"
+#endif
+
 namespace ZSharp {
 GlobalEdgeTable::GlobalEdgeTable(size_t height, size_t attributeStride)
   : mEdgeTable(height), mAttributeStride(attributeStride), mLerpedAttributes(4096) {
@@ -60,6 +68,19 @@ void GlobalEdgeTable::AddPoint(int32 yIndex, int32 x, size_t primitiveIndex, con
 }
 
 void GlobalEdgeTable::Draw(Framebuffer& frameBuffer, const ShadingModeOrder& order) {
+#if DEBUG_TEXTURE
+  FileString texturePath(PlatformGetUserDesktopPath());
+  texturePath.SetFilename("wall_256.png");
+
+  PNG png(texturePath);
+  uint8* pngData = png.Decompress(ChannelOrder::BGR);
+  size_t width = png.GetWidth();
+  size_t height = png.GetHeight();
+  size_t channels = png.GetNumChannels();
+
+  Texture texture(pngData, channels, width, height);
+#endif
+
   for (size_t y = 0; y < mEdgeTable.Size(); ++y) {
     Array<ScanLine>& yList = mEdgeTable[y];
     if (!yList.IsEmpty()) {
@@ -82,6 +103,12 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer, const ShadingModeOrder& ord
               }
                 break;
               case ShadingModes::UV:
+              {
+#if DEBUG_TEXTURE
+                ZColor tempColor(texture.Sample(attributeData[0], attributeData[1]));
+                pixel = tempColor;
+#endif
+              }
                 break;
               case ShadingModes::Normals:
                 break;
@@ -115,6 +142,14 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer, const ShadingModeOrder& ord
                 }
                 break;
                 case ShadingModes::UV:
+                {
+#if DEBUG_TEXTURE
+                  float u = Lerp(attributeDataX1[0], attributeDataX2[0], xT);
+                  float v = Lerp(attributeDataX1[1], attributeDataX2[1], xT);
+                  ZColor tempColor(texture.Sample(u, v));
+                  pixel = tempColor;
+#endif
+                }
                   break;
                 case ShadingModes::Normals:
                   break;

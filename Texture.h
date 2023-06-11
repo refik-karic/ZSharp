@@ -20,7 +20,6 @@ class Texture final {
   public:
 
   Texture(uint8* data,
-    size_t bytesPerPixel, 
     size_t numChannels,
     size_t width,
     size_t height);
@@ -32,7 +31,6 @@ class Texture final {
   ZColor Sample(float u, float v) const;
 
   private:
-  size_t mBytesPerPixel = 0;
   size_t mNumChannels = 0;
   size_t mWidth = 0;
   size_t mStride = 0;

@@ -27,6 +27,8 @@ class PNG final {
 
   size_t GetHeight() const;
 
+  size_t GetNumChannels() const;
+
   size_t GetBitsPerPixel() const;
 
   private:
@@ -41,6 +43,9 @@ class PNG final {
   size_t mDataOffset = 0; // Used to index into the file data.
   size_t mBitOffset = 0; // Used to index into the Deflate stream.
 
+  uint8* mChunkedIDATData = nullptr;
+  size_t mOutputIndex = 0;
+
   struct PngHuffman {
     uint16 codes[16];
     uint16 symbols[286];
@@ -54,7 +59,7 @@ class PNG final {
     Paeth = 4
   };
 
-  uint8 PaethPredictor(int64 left, int64 above, int64 aboveLeft);
+  int64 PaethPredictor(int64 left, int64 above, int64 aboveLeft);
 
   const uint8* DataOffset();
 

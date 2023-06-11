@@ -8,6 +8,8 @@
 
 #include "ShadingMode.h"
 
+#define DEBUG_TEXTURE_OBJ 1
+
 namespace ZSharp {
 struct alignas(8) OBJFaceElement {
   uint64 vertexIndex = 0;
@@ -44,7 +46,11 @@ class OBJFile final {
 
   Array<OBJFace> mFaces;
 
+#if DEBUG_TEXTURE_OBJ
+  size_t mStride = 6; // TODO: Make this based off of the source asset.
+#else
   size_t mStride = 7; // TODO: Make this based off of the source asset.
+#endif
 
   ShadingModeOrder mShadingOrder;
 

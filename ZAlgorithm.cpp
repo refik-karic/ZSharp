@@ -14,8 +14,8 @@
 static const size_t MaxOutVerts = 2;
 static const size_t NumInVerts = 3;
 static const size_t NumAttributes = 3;
-static const size_t Stride = 7;
-static const size_t VertByteSize = 7 * sizeof(float);
+static const size_t Stride = 6;
+static const size_t VertByteSize = 6 * sizeof(float);
 
 namespace ZSharp {
 bool InsidePlane(const Vec3& point, const Vec3& clipEdge, const Vec3& normal) {

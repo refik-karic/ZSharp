@@ -200,7 +200,7 @@ void Win32PlatformApplication::OnPaint() {
   ZSharp::NamedScopedTimer(SplatTexture);
 
   ZSharp::FileString texturePath(ZSharp::PlatformGetUserDesktopPath());
-  texturePath.SetFilename("test.png");
+  texturePath.SetFilename("wall_256.png");
 
   ZSharp::PNG png(texturePath);
   ZSharp::uint8* pngData = png.Decompress(ZSharp::ChannelOrder::BGR);

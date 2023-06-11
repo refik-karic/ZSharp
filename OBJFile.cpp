@@ -1,9 +1,16 @@
 #include "OBJFile.h"
 
+#define DEBUG_TEXTURE 1
+
 namespace ZSharp {
 OBJFile::OBJFile() {
+#if DEBUG_TEXTURE
+  ShadingMode mode(ShadingModes::UV, 2);
+  mShadingOrder.PushBack(mode); // TODO: Make this based off of the source asset.
+#else
   ShadingMode mode(ShadingModes::RGB, 3);
   mShadingOrder.PushBack(mode); // TODO: Make this based off of the source asset.
+#endif
 }
 
 const Array<Vec4>& OBJFile::GetVerts() const {

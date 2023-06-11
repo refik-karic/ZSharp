@@ -34,26 +34,68 @@ uint8* PNG::Decompress(ChannelOrder order) {
     return nullptr;
   }
 
-  uint32 length = 0;
-  uint32 type = 0;
+  /*
+  TODO: This is not ideal. We allocate/reallocate length sized chunks into one big IDAT chunk.
+        Long term we want skip over chunks properly without doing this.
+  */
+  uint8* chunkedIDATData = nullptr;
+  size_t chunkedIDATDataLength = 0;
 
-  IdentifyChunk(length, type);
+  const size_t CRCLength = 4;
+  for (bool foundEndChunk = false; !foundEndChunk;) {
+    uint32 length = 0;
+    uint32 id = 0;
+    IdentifyChunk(length, id);
 
-  // At this point we assume that we have seeked to the proper IDAT chunk.
-  if (memcmp(&type, "IDAT", 4)) {
+    if (!memcmp(&id, "IDAT", 4)) {
+      if (chunkedIDATData == nullptr) {
+        chunkedIDATData = (uint8*)PlatformMalloc(length);
+        chunkedIDATDataLength = (size_t)length;
+        memcpy(chunkedIDATData, DataOffset(), length);
+      }
+      else {
+        const size_t oldLength = chunkedIDATDataLength;
+        chunkedIDATDataLength += (size_t)length;
+        chunkedIDATData = (uint8*)PlatformReAlloc(chunkedIDATData, chunkedIDATDataLength);
+        memcpy(chunkedIDATData + oldLength, DataOffset(), length);
+      }
+    }
+    else if (!memcmp(&id, "IEND", 4)) {
+      foundEndChunk = true;
+    }
+    
+    mDataOffset += length;
+    mDataOffset += CRCLength;
+  }
+
+  if (chunkedIDATData == nullptr) {
     ZAssert(false);
     return nullptr;
   }
 
+  /*
+  NOTE: PNG spec is a little confusing when it comes to multiple IDATs
+        It is perfectly legal to have more than 1 but they should be treated as one big stream.
+        This means we only check the zlib header once.
+        The rest of the data should be treated as one big DEFLATE stream.
+        This means:
+          1) Check for end of stream
+          2) Determine compression type
+          3) Repeat until end of stream
+  */
+
+  mChunkedIDATData = chunkedIDATData;
+  mBitOffset = 0;
+
   // Sanity check for zlib header DEFLATE compression method.
-  if ((DataOffset()[0] & 0x0F) != 8) {
+  if ((mChunkedIDATData[0] & 0x0F) != 8) {
     ZAssert(false);
     return nullptr;
   }
 
   // Skip over first two zlib header bytes.
   // PNG spec does not allow the optional preset dictionary so we skip directly to the DEFLATE stream.
-  mDataOffset += 2;
+  mChunkedIDATData += 2;
 
   // PNG spec calls for a filter byte on each scan line before/after compression.
   // This denotes one of 5 filtering methods that help to reduce image size before DEFLATE is applied.
@@ -75,7 +117,7 @@ uint8* PNG::Decompress(ChannelOrder order) {
       //  2 next bytes are NLEN (ones-complement of previous length)
       //  Next LEN bytes are uncompressed data that should be copied to the output.
       mBitOffset = RoundUpNearestMultiple(mBitOffset, 8);
-      
+
       const uint8* data = DataBitOffset();
 
       uint16 uncompressedLength = data[0];
@@ -132,6 +174,10 @@ size_t PNG::GetWidth() const {
 
 size_t PNG::GetHeight() const {
   return mHeight;
+}
+
+size_t PNG::GetNumChannels() const {
+  return mChannels;
 }
 
 size_t PNG::GetBitsPerPixel() const {
@@ -249,19 +295,19 @@ bool PNG::ReadHeader() {
   return true;
 }
 
-uint8 PNG::PaethPredictor(int64 left, int64 above, int64 aboveLeft) {
+int64 PNG::PaethPredictor(int64 left, int64 above, int64 aboveLeft) {
   int64 p = left + above - aboveLeft;
-  uint64 pa = llabs(p - left);
-  uint64 pb = llabs(p - above);
-  uint64 pc = llabs(p - aboveLeft);
+  int64 pa = llabs(p - left);
+  int64 pb = llabs(p - above);
+  int64 pc = llabs(p - aboveLeft);
   if ((pa <= pb) && (pa <= pc)) {
-    return (uint8)((uint64)left & 0xFF);
+    return left;
   }
   else if (pb <= pc) {
-    return (uint8)((uint64)above & 0xFF);
+    return above;
   }
   else {
-    return (uint8)((uint64)aboveLeft & 0xFF);
+    return aboveLeft;
   }
 }
 
@@ -284,7 +330,7 @@ uint32 PNG::ReadBits(size_t count) {
     return 0;
   }
 
-  const uint8* data = DataBitOffset();
+  const uint8* data = (mChunkedIDATData + (mBitOffset / 8));
   const size_t bitsReadInByte = (mBitOffset % 8);
 
   // Read the first bytes, drop unneeded bits.
@@ -339,9 +385,6 @@ bool PNG::DecodeDynamicHuffman(uint8* output) {
     uint32 symbol = ReadBits(3);
     alphabet[alphabetOrder[i]] = static_cast<uint16>(symbol);
   }
-
-  // Zero out any unused codes.
-  memset(alphabet + (codeCodes + 1), 0, 19 - (codeCodes + 1));
 
   PngHuffman lengthHuffman;
   memset(&lengthHuffman, 0, sizeof(PngHuffman));
@@ -427,8 +470,11 @@ bool PNG::BuildHuffman(PngHuffman& huffman, uint16* lengths, int32 count) {
   }
 
   // Check for valid range.
+  int32 left = 1;
   for (int32 i = 1; i <= MaxBits; ++i) {
-    if (huffman.codes[i] > (1 << i)) {
+    left <<= 1;
+    left -= huffman.codes[i];
+    if (left < 0) {
       ZAssert(false);
       return false;
     }
@@ -495,7 +541,6 @@ bool PNG::DeflateStream(uint8* output, const PngHuffman& lengthHuff, const PngHu
   // Must account for filter byte on each scan line.
   const size_t endOfImage = (mStride + 1) * mHeight;
 
-  size_t outputIndex = 0;
   for (bool reading = true; reading;) {
     uint32 symbol = 0;
     if (!DecodeSymbol(lengthHuff, symbol)) {
@@ -506,8 +551,8 @@ bool PNG::DeflateStream(uint8* output, const PngHuffman& lengthHuff, const PngHu
     reading = (symbol != 256);
     if (symbol < 256) {
       // Literal symbol to output.
-      output[outputIndex] = (uint8)symbol;
-      outputIndex++;
+      output[mOutputIndex] = (uint8)symbol;
+      mOutputIndex++;
     }
     else if (symbol > 256) {
       symbol -= 257;
@@ -526,14 +571,14 @@ bool PNG::DeflateStream(uint8* output, const PngHuffman& lengthHuff, const PngHu
       numBitsToRead = extraDistCodes[symbol];
       uint32 dist = distCodes[symbol] + ReadBits(numBitsToRead);
 
-      if (dist > outputIndex) {
+      if (dist > mOutputIndex) {
         ZAssert(false);
         return false;
       }
 
-      while (length-- && outputIndex < endOfImage) {
-        output[outputIndex] = output[outputIndex - dist];
-        outputIndex++;
+      while (length-- && mOutputIndex < endOfImage) {
+        output[mOutputIndex] = output[mOutputIndex - dist];
+        mOutputIndex++;
       }
     }
   }
@@ -562,29 +607,29 @@ uint8* PNG::FilterDeflatedImage(uint8* image) {
         for (size_t x = 0; x < mStride; ++x) {
           int64 prevIndex = x - mChannels;
           uint32 prev = (prevIndex < 0) ? 0 : outputImage[outputRowIndex + prevIndex];
-          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + prev) & 0xFF);
+          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + prev) % 256);
         }
       }
         break;
       case PngFilter::Up:
       {
         for (size_t x = 0; x < mStride; ++x) {
-          int64 aboveIndex = (((int64)outputRowIndex) - ((int64)mStride) + ((int64)x));
-          uint32 above = (aboveIndex < 0) ? 0 : outputImage[aboveIndex];
-          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + above) & 0xFF);
+          int64 aboveIndex = (((int64)outputRowIndex) - ((int64)mStride));
+          uint32 above = (aboveIndex < 0) ? 0 : outputImage[aboveIndex + x];
+          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + above) % 256);
         }
       }
         break;
       case PngFilter::Average:
       {
         for (size_t x = 0; x < mStride; ++x) {
-          int64 aboveIndex = (((int64)outputRowIndex) - ((int64)mStride) + ((int64)x));
-          uint32 above = (aboveIndex < 0) ? 0 : outputImage[aboveIndex];
+          int64 aboveIndex = (((int64)outputRowIndex) - ((int64)mStride));
+          uint32 above = (aboveIndex < 0) ? 0 : outputImage[aboveIndex + x];
 
           int64 prevIndex = x - mChannels;
           uint32 prev = (prevIndex < 0) ? 0 : outputImage[outputRowIndex + prevIndex];
 
-          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + ((prev + above) / 2)) & 0xFF);
+          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + ((prev + above) / 2)) % 256);
         }
       }
         break;
@@ -594,13 +639,13 @@ uint8* PNG::FilterDeflatedImage(uint8* image) {
           int64 priorAboveIndex = (((int64)outputRowIndex) - ((int64)mStride) + ((int64)x) - ((int64)mChannels));
           uint32 priorAbove = (priorAboveIndex < 0) ? 0 : outputImage[priorAboveIndex];
 
-          int64 aboveIndex = (((int64)outputRowIndex) - ((int64)mStride) + ((int64)x));
-          uint32 above = (aboveIndex < 0) ? 0 : outputImage[aboveIndex];
+          int64 aboveIndex = (((int64)outputRowIndex) - ((int64)mStride));
+          uint32 above = (aboveIndex < 0) ? 0 : outputImage[aboveIndex + x];
 
           int64 prevIndex = x - mChannels;
           uint32 prev = (prevIndex < 0) ? 0 : outputImage[outputRowIndex + prevIndex];
 
-          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + PaethPredictor((int64)prev, (int64)above, (int64)priorAbove)) & 0xFF);
+          outputImage[outputRowIndex + x] = (uint8)(((int64)image[rowData + x] + PaethPredictor((int64)prev, (int64)above, (int64)priorAbove)) % 256);
         }
       }
         break;

@@ -11,6 +11,8 @@
 
 #include <cstring>
 
+#define DEBUG_TEXTURE 1
+
 namespace ZSharp {
 void LoadModelOBJ(const FileString& fileName, Model& model) {
   OBJFile objFile;
@@ -28,7 +30,11 @@ void LoadModelOBJ(const FileString& fileName, Model& model) {
   X, Y, Z, W
   R, G, B
   */
+#if DEBUG_TEXTURE
+  const size_t stride = 4 + 2; // TODO: Make this based off of the source asset.
+#else
   const size_t stride = 4 + 3; // TODO: Make this based off of the source asset.
+#endif
 
   size_t vertSize = objFile.GetVerts().Size() * stride;
   size_t indexSize = objFile.GetFaces().Size();
@@ -42,6 +48,25 @@ void LoadModelOBJ(const FileString& fileName, Model& model) {
     float vertex[stride];
     memcpy(vertex, reinterpret_cast<const float*>(&vector), sizeof(Vec4));
 
+#if DEBUG_TEXTURE
+    const float T0[] = { 0.f, 1.f };
+    const float T1[] = { 0.5f, 0.f };
+    const float T2[] = { 1.0f, 1.f };
+
+    switch (triIndex % 3) {
+      case 0:
+        memcpy(vertex + 4, T0, sizeof(T0));
+        break;
+      case 1:
+        memcpy(vertex + 4, T1, sizeof(T1));
+        break;
+      case 2:
+        memcpy(vertex + 4, T2, sizeof(T2));
+        break;
+      default:
+        break;
+    }
+#else
     const float R[] = { 1.f, 0.f, 0.f };
     const float G[] = { 0.f, 1.f, 0.f };
     const float B[] = { 0.f, 0.f, 1.f };
@@ -59,6 +84,7 @@ void LoadModelOBJ(const FileString& fileName, Model& model) {
       default:
         break;
     }
+#endif
 
     triIndex++;
 

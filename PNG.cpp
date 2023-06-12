@@ -146,6 +146,11 @@ uint8* PNG::Decompress(ChannelOrder order) {
     }
   }
 
+  PlatformFree(chunkedIDATData);
+  chunkedIDATData = nullptr;
+  mChunkedIDATData = nullptr;
+  mBitOffset = 0;
+
   uint8* outputImage = FilterDeflatedImage(buffer);
 
   switch (order) {

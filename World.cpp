@@ -60,6 +60,11 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
 
   Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
   cachedModel.CreateNewMesh();
+
+  // TODO: Make this based off of the config file.
+  FileString texturePath(PlatformGetUserDesktopPath());
+  texturePath.SetFilename("wall_256.png");
+  cachedModel.BindTexture(texturePath);
   
   {
     const size_t strideBytes = stride * sizeof(float);

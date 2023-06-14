@@ -260,7 +260,7 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
   }
 }
 
-void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const ShadingModeOrder& order) {
+void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const ShadingModeOrder& order, const Texture* texture) {
   size_t stride = 0;
   for (ShadingMode& mode : order) {
     stride += mode.length;
@@ -279,7 +279,7 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
     TraceLine(edgeTable, v3, v1, i, stride);
   }
 
-  edgeTable.Draw(framebuffer, order);
+  edgeTable.Draw(framebuffer, order, texture);
 }
 
 void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {

@@ -5,7 +5,6 @@
 
 namespace ZSharp {
 
-
 /*
 A 2D texture that owns its memory. The idea is to load some kind of standardized image/material format into an agnostic class.
 The renderer can then sample from this texture using U,V's.
@@ -19,6 +18,8 @@ We do not do any filtering at the moment.
 class Texture final {
   public:
 
+  Texture();
+
   Texture(uint8* data,
     size_t numChannels,
     size_t width,
@@ -27,6 +28,13 @@ class Texture final {
   Texture(const Texture& rhs) = delete;
 
   ~Texture();
+
+  void Assign(uint8* data,
+    size_t numChannels,
+    size_t width,
+    size_t height);
+
+  bool IsAssigned() const;
 
   ZColor Sample(float u, float v) const;
 

@@ -33,9 +33,15 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     camera.PerspectiveProjection(vertexBuffer, indexBuffer);
 
+    // TODO: This is a little hacky for now. We want a cleaner solution to handle missing textures.
+    Texture* texture = &model.GetTexture();
+    if (!texture->IsAssigned()) {
+      texture = nullptr;
+    }
+
     switch (mRenderMode) {
       case RenderMode::FLAT:
-        DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer, model.ShadingOrder());
+        DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer, model.ShadingOrder(), texture);
         break;
       case RenderMode::WIREFRAME:
         DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer);

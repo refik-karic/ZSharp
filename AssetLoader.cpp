@@ -32,6 +32,11 @@ void LoadModelOBJ(const FileString& fileName, Model& model) {
   */
 #if DEBUG_TEXTURE
   const size_t stride = 4 + 2; // TODO: Make this based off of the source asset.
+
+  // TODO: Make this based off of the config file.
+  FileString texturePath(PlatformGetUserDesktopPath());
+  texturePath.SetFilename("wall_256.png");
+  model.BindTexture(texturePath);
 #else
   const size_t stride = 4 + 3; // TODO: Make this based off of the source asset.
 #endif

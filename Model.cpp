@@ -1,6 +1,7 @@
 #include "Model.h"
 
 #include "Triangle.h"
+#include "PNG.h"
 
 #define FAST_LOAD 1
 
@@ -71,6 +72,19 @@ void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) co
     }
 #endif
   }
+}
+
+void Model::BindTexture(const FileString& path) {
+  PNG png(path);
+  uint8* pngData = png.Decompress(ChannelOrder::BGR);
+  size_t width = png.GetWidth();
+  size_t height = png.GetHeight();
+  size_t channels = png.GetNumChannels();
+  mTexture.Assign(pngData, channels, width, height);
+}
+
+Texture& Model::GetTexture() {
+  return mTexture;
 }
 
 }

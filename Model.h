@@ -5,9 +5,11 @@
 
 #include "Array.h"
 #include "IndexBuffer.h"
+#include "FileString.h"
 #include "Mat4x4.h"
 #include "Mesh.h"
 #include "ShadingMode.h"
+#include "Texture.h"
 #include "Vec4.h"
 #include "VertexBuffer.h"
 #include "WorldObject.h"
@@ -56,10 +58,15 @@ class Model final : public WorldObject {
 
   void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const;
 
+  void BindTexture(const FileString& path);
+
+  Texture& GetTexture();
+
   private:
   ShadingModeOrder mShadingOrder;
   size_t mStride;
   Array<Mesh> mData;
+  Texture mTexture;
 };
 
 }

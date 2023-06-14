@@ -5,6 +5,7 @@
 #include "Array.h"
 #include "Framebuffer.h"
 #include "ShadingMode.h"
+#include "Texture.h"
 #include "ZColor.h"
 
 namespace ZSharp {
@@ -17,7 +18,7 @@ class GlobalEdgeTable final {
   void operator=(const GlobalEdgeTable&) = delete;
 
   void AddPoint(int32 yIndex, int32 x, size_t primitiveIndex, const float* attribute);
-  void Draw(Framebuffer& frameBuffer, const ShadingModeOrder& order);
+  void Draw(Framebuffer& frameBuffer, const ShadingModeOrder& order, const Texture* texture);
 
   private:
   

@@ -66,8 +66,12 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer, const ShadingModeOrder& ord
     Array<ScanLine>& yList = mEdgeTable[y];
     for (ScanLine& line : yList) {
       const size_t MaxWidth = frameBuffer.GetWidth() - 1;
-      Clamp(line.x1, 0, (int32)MaxWidth);
-      Clamp(line.x2, 0, (int32)MaxWidth);
+
+      if ((line.x1 < 0 && line.x2 < 0) ||
+        (line.x1 > MaxWidth && line.x2 > MaxWidth)) {
+        // Skip over scan lines that are offscreen.
+        continue;
+      }
 
       if (line.x1 == line.x2) {
         float* attributeData = mLerpedAttributes.GetData() + (line.x1AttributeIndex * mAttributeStride);
@@ -99,7 +103,7 @@ void GlobalEdgeTable::Draw(Framebuffer& frameBuffer, const ShadingModeOrder& ord
         frameBuffer.SetPixel(line.x1, y, pixel);
       }
       else {
-        for (size_t i = line.x1; i < line.x2; ++i) {
+        for (int32 i = line.x1; i < line.x2; ++i) {
 #if 1
           float* attributeDataX1 = mLerpedAttributes.GetData() + (line.x1AttributeIndex * mAttributeStride);
           float* attributeDataX2 = mLerpedAttributes.GetData() + (line.x2AttributeIndex * mAttributeStride);

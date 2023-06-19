@@ -11,7 +11,7 @@
 
 #define ASSERT_CHECK 0
 
-static const size_t MaxOutVerts = 2;
+static const size_t MaxOutVerts = 3;
 static const size_t NumInVerts = 3;
 static const size_t NumAttributes = 3;
 static const size_t Stride = 6;
@@ -47,7 +47,7 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     const float* v2 = vertexBuffer[i2];
     const float* v3 = vertexBuffer[i3];
 
-    float clipBuffer[(NumInVerts * Stride) * 2];
+    float clipBuffer[(NumInVerts * Stride) * MaxOutVerts];
     memset(clipBuffer, 0, sizeof(clipBuffer));
     memcpy(clipBuffer, v1, VertByteSize);
     memcpy(clipBuffer + Stride, v2, VertByteSize);
@@ -93,7 +93,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     const float* v2 = vertexBuffer[i2];
     const float* v3 = vertexBuffer[i3];
 
-    float clipBuffer[(NumInVerts * Stride) * 2];
+    float clipBuffer[(NumInVerts * Stride) * MaxOutVerts];
     memset(clipBuffer, 0, sizeof(clipBuffer));
     memcpy(clipBuffer, v1, VertByteSize);
     memcpy(clipBuffer + Stride, v2, VertByteSize);
@@ -175,7 +175,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, const Vec3& clipEdge, const Vec3& edgeNormal) {
   size_t numOutputVerts = 0;
 
-  float clipBuffer[(NumInVerts * Stride) * 2];
+  float clipBuffer[(NumInVerts * Stride) * MaxOutVerts];
   memset(clipBuffer, 0, sizeof(clipBuffer));
 
   for (size_t i = 0; i < numInputVerts; ++i) {

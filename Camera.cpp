@@ -75,7 +75,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   Vec3 v(mUp - (w * (mUp * w)));
   v.Normalize();
 
-  Vec3 u(v.Cross(w));
+  Vec3 u(w.Cross(v));
 
   Mat4x4 translation;
   translation.Identity();

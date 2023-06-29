@@ -2,6 +2,8 @@
 
 #include "ZBaseTypes.h"
 
+#include "Asset.h"
+
 #include "Array.h"
 #include "Vec3.h"
 #include "Vec4.h"
@@ -25,17 +27,20 @@ class OBJFile final {
   public:
   OBJFile();
 
-  const Array<Vec4>& GetVerts() const;
+  // Load loose or serialized asset from bundle.
+  OBJFile(const Asset& asset);
 
-  const Array<Vec3>& GetNormals() const;
+  Array<Vec4>& Verts();
 
-  const Array<Vec3>& GetUVs() const;
+  Array<Vec3>& Normals();
 
-  const Array<OBJFace>& GetFaces() const;
+  Array<Vec3>& UVs();
 
-  size_t GetStride() const;
+  Array<OBJFace>& Faces();
 
-  const ShadingModeOrder& GetShadingOrder() const;
+  size_t& Stride();
+
+  ShadingModeOrder& ShadingOrder();
 
   private:
   Array<Vec4> mVerts;
@@ -53,7 +58,5 @@ class OBJFile final {
 #endif
 
   ShadingModeOrder mShadingOrder;
-
-  friend class OBJLoader;
 };
 }

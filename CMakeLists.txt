@@ -7,7 +7,8 @@ target_sources(ZSharp
         Visualizer.natvis
 
         Array.h
-        AssetLoader.h
+        Asset.h
+        Bundle.h
         Camera.h
         Common.h
         CommonMath.h
@@ -69,7 +70,8 @@ target_sources(ZSharp
         ZFile.h
         ZString.h
 	
-        AssetLoader.cpp
+        Asset.cpp
+        Bundle.cpp
         Camera.cpp
         Common.cpp
         CommonMath.cpp

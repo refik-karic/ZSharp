@@ -8,33 +8,26 @@
 #include "ZFile.h"
 
 namespace ZSharp {
-OBJLoader::OBJLoader(OBJFile& file, const FileString& path, AssetFormat format)
-  : mFile(file) {
-  switch (format) {
-    case AssetFormat::Raw:
-      ParseRaw(path);
-      break;
-    case AssetFormat::Serialized:
-    {
-      Deserializer deserializer(path);
-      Deserialize(deserializer);
-    }
-      break;
-  }
+OBJLoader::OBJLoader(const FileString& path, OBJFile& objFile) : mObjFile(objFile) {
+  ParseRaw(path);
 }
 
-void OBJLoader::Serialize(Serializer& serializer) {
-  mFile.mVerts.Serialize(serializer);
-  mFile.mNormals.Serialize(serializer);
-  mFile.mUVCoords.Serialize(serializer);
-  mFile.mFaces.Serialize(serializer);
+OBJLoader::OBJLoader(IDeserializer& deserializer, OBJFile& objFile) : mObjFile(objFile) {
+  Deserialize(deserializer);
 }
 
-void OBJLoader::Deserialize(Deserializer& deserializer) {
-  mFile.mVerts.Deserialize(deserializer);
-  mFile.mNormals.Deserialize(deserializer);
-  mFile.mUVCoords.Deserialize(deserializer);
-  mFile.mFaces.Deserialize(deserializer);
+void OBJLoader::Serialize(ISerializer& serializer) {
+  mObjFile.Verts().Serialize(serializer);
+  mObjFile.Normals().Serialize(serializer);
+  mObjFile.UVs().Serialize(serializer);
+  mObjFile.Faces().Serialize(serializer);
+}
+
+void OBJLoader::Deserialize(IDeserializer& deserializer) {
+  mObjFile.Verts().Deserialize(deserializer);
+  mObjFile.Normals().Deserialize(deserializer);
+  mObjFile.UVs().Deserialize(deserializer);
+  mObjFile.Faces().Deserialize(deserializer);
 }
 
 void OBJLoader::ParseRaw(const FileString& objFilePath) {
@@ -63,7 +56,7 @@ void OBJLoader::ParseLine(const char* currentLine) {
         Vec3 vertex;
         String choppedLine(rawLine + 3);
         ParseVec3(vertex, choppedLine, 0.0f);
-        mFile.mNormals.PushBack(vertex);
+        mObjFile.Normals().PushBack(vertex);
       }
       else if (rawLine[1] == 'p') {
         // Vertex Parameters.
@@ -75,14 +68,14 @@ void OBJLoader::ParseLine(const char* currentLine) {
         Vec3 vertex;
         String choppedLine(rawLine + 3);
         ParseVec3(vertex, choppedLine, 0.0f);
-        mFile.mUVCoords.PushBack(vertex);
+        mObjFile.UVs().PushBack(vertex);
       }
       else {
         // Vertex Data.
         Vec4 vertex;
         String choppedLine(rawLine + 2);
         ParseVec4(vertex, choppedLine, 1.0f);
-        mFile.mVerts.PushBack(vertex);
+        mObjFile.Verts().PushBack(vertex);
       }
       break;
     case 'f':
@@ -91,7 +84,7 @@ void OBJLoader::ParseLine(const char* currentLine) {
       OBJFace face;
       String choppedLine(rawLine + 2);
       ParseFace(face, choppedLine);
-      mFile.mFaces.PushBack(face);
+      mObjFile.Faces().PushBack(face);
     }
     break;
     case 'l':

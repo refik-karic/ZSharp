@@ -1,5 +1,7 @@
 #include "OBJFile.h"
 
+#include "OBJLoader.h"
+
 #define DEBUG_TEXTURE 1
 
 namespace ZSharp {
@@ -13,27 +15,37 @@ OBJFile::OBJFile() {
 #endif
 }
 
-const Array<Vec4>& OBJFile::GetVerts() const {
+OBJFile::OBJFile(const Asset& asset) {
+  if (asset.IsLoose()) {
+    OBJLoader loader(asset.LoosePath(), *this);
+  }
+  else {
+    MemoryDeserializer deserializer(asset.Loader());
+    OBJLoader loader(deserializer, *this);
+  }
+}
+
+Array<Vec4>& OBJFile::Verts() {
   return mVerts;
 }
 
-const Array<Vec3>& OBJFile::GetNormals() const {
+Array<Vec3>& OBJFile::Normals() {
   return mNormals;
 }
 
-const Array<Vec3>& OBJFile::GetUVs() const {
+Array<Vec3>& OBJFile::UVs() {
   return mUVCoords;
 }
 
-const Array<OBJFace>& OBJFile::GetFaces() const {
+Array<OBJFace>& OBJFile::Faces() {
   return mFaces;
 }
 
-size_t OBJFile::GetStride() const {
+size_t& OBJFile::Stride() {
   return mStride;
 }
 
-const ShadingModeOrder& OBJFile::GetShadingOrder() const {
+ShadingModeOrder& OBJFile::ShadingOrder() {
   return mShadingOrder;
 }
 

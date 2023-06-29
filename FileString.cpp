@@ -10,6 +10,10 @@ namespace ZSharp {
 const char FileString::mDirectorySeparator = '\\';
 const char FileString::mExtensionSeparator = '.';
 
+FileString::FileString() {
+  Reset();
+}
+
 FileString::FileString(const String& absoluteFilePath) {
   Initialize(absoluteFilePath);
 }
@@ -145,6 +149,10 @@ bool FileString::HasFilename() const {
 
 bool FileString::HasExtension() const {
   return mExtensionLength != 0;
+}
+
+bool FileString::IsEmpty() const {
+  return mPathLength == 0;
 }
 
 void FileString::Initialize(const String& absoluteFilePath) {

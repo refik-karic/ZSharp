@@ -13,7 +13,7 @@ class World final {
 
   World();
 
-  void LoadModel(FileString& path);
+  void LoadModels();
 
   void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, size_t stride);
 
@@ -31,6 +31,8 @@ class World final {
   Array<Model> mActiveModels;
   Array<VertexBuffer> mVertexBuffers;
   Array<IndexBuffer> mIndexBuffers;
+
+  void LoadOBJ(Model& model);
 };
 
 }

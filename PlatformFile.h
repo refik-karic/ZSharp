@@ -14,6 +14,8 @@ struct PlatformFileHandle;
 
 struct PlatformMemoryMappedFileHandle;
 
+struct PlatformFileSearchHandle;
+
 // General File I/O.
 PlatformFileHandle* PlatformOpenFile(const FileString& filename, size_t flags);
 
@@ -46,5 +48,13 @@ FileString PlatformGetUserDesktopPath();
 FileString PlatformGetExecutableDirectory();
 
 FileString PlatformGetWorkingDirectory();
+
+PlatformFileSearchHandle* PlatformBeginFileSearch(const FileString& filter);
+
+bool PlatformNextFileInSearch(PlatformFileSearchHandle* handle);
+
+void PlatformStopFileSearch(PlatformFileSearchHandle* handle);
+
+String PlatformGetNameFromSearchHandle(PlatformFileSearchHandle* handle);
 
 }

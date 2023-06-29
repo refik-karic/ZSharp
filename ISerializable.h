@@ -11,8 +11,8 @@ enum class AssetFormat : size_t {
 
 class ISerializable {
   public:
-  virtual void Serialize(Serializer& serializer) = 0;
+  virtual void Serialize(ISerializer& serializer) = 0;
 
-  virtual void Deserialize(Deserializer& deserializer) = 0;
+  virtual void Deserialize(IDeserializer& deserializer) = 0;
 };
 }

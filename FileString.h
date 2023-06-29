@@ -6,6 +6,8 @@
 namespace ZSharp {
 class FileString final {
   public:
+  FileString();
+
   FileString(const String& absoluteFilePath);
 
   FileString(const FileString& rhs);
@@ -27,6 +29,8 @@ class FileString final {
   bool HasFilename() const;
 
   bool HasExtension() const;
+
+  bool IsEmpty() const;
 
   private:
   char* mDrive = nullptr;

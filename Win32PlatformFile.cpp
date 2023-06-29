@@ -25,6 +25,11 @@ struct PlatformMemoryMappedFileHandle {
   void* mappedData = nullptr;
 };
 
+struct PlatformFileSearchHandle {
+  HANDLE searchHandle = nullptr;
+  WIN32_FIND_DATAA fileData{};
+};
+
 DWORD SetFlags(size_t inFlags) {
   DWORD winFlags = 0;
   
@@ -285,6 +290,54 @@ FileString PlatformGetWorkingDirectory() {
     return FileString("");
   }
 }
+
+PlatformFileSearchHandle* PlatformBeginFileSearch(const FileString& filter) {
+  WIN32_FIND_DATAA findData{};
+
+  HANDLE result = FindFirstFileA(filter.GetAbsolutePath().Str(), &findData);
+
+  if (result != INVALID_HANDLE_VALUE) {
+    PlatformFileSearchHandle* searchHandle = new PlatformFileSearchHandle;
+    searchHandle->searchHandle = result;
+    searchHandle->fileData = findData;
+    return searchHandle;
+  }
+  else {
+    return nullptr;
+  }
+}
+
+bool PlatformNextFileInSearch(PlatformFileSearchHandle* handle) {
+  if (handle == nullptr) {
+    return false;
+  }
+
+  return FindNextFileA(handle->searchHandle, &handle->fileData);
+}
+
+void PlatformStopFileSearch(PlatformFileSearchHandle* handle) {
+  if (handle == nullptr || (handle->searchHandle == INVALID_HANDLE_VALUE)) {
+    return;
+  }
+
+  FindClose(handle->searchHandle);
+  delete handle;
+}
+
+String PlatformGetNameFromSearchHandle(PlatformFileSearchHandle* handle) {
+  String filename;
+  
+  if (handle == nullptr || handle->searchHandle == INVALID_HANDLE_VALUE) {
+    return filename;
+  }
+  else {
+    filename = handle->fileData.cFileName;
+  }
+
+  return filename;
+}
+
+
 
 }
 

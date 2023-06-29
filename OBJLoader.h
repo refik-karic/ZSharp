@@ -10,14 +10,18 @@ namespace ZSharp {
 class OBJLoader final : public ISerializable {
   public:
 
-  OBJLoader(OBJFile& file, const FileString& path, AssetFormat format);
+  // Load OBJ file from disk. Can be used both for loose loading or during packaging.
+  OBJLoader(const FileString& path, OBJFile& objFile);
 
-  virtual void Serialize(Serializer& serializer) override;
+  // Load serialized OBJ file from a packaged bundle.
+  OBJLoader(IDeserializer& deserializer, OBJFile& objFile);
 
-  virtual void Deserialize(Deserializer& deserializer) override;
+  virtual void Serialize(ISerializer& serializer) override;
+
+  virtual void Deserialize(IDeserializer& deserializer) override;
 
   private:
-  OBJFile& mFile;
+  OBJFile& mObjFile;
 
   void ParseRaw(const FileString& objFilePath);
 

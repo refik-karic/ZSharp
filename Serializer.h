@@ -12,12 +12,26 @@ TODO:
   2) Endian swap?
 */
 
-class Serializer final {
+class ISerializer {
   public:
 
-  Serializer(const FileString& path);
+  virtual bool Serialize(const void* memory, size_t sizeBytes) = 0;
+};
 
-  bool Serialize(const void* memory, size_t sizeBytes);
+class IDeserializer {
+  public:
+
+  virtual bool Deserialize(void* memory, size_t sizeBytes) = 0;
+};
+
+// File Serialization
+
+class FileSerializer : public ISerializer {
+  public:
+
+  FileSerializer(const FileString& path);
+
+  virtual bool Serialize(const void* memory, size_t sizeBytes) override;
 
   private:
   size_t mOffset;
@@ -27,16 +41,58 @@ class Serializer final {
   // Which means that we must write to the file using PlatformWriteFile.
 };
 
-class Deserializer final {
+class FileDeserializer : public IDeserializer {
   public:
 
-  Deserializer(const FileString& path);
+  FileDeserializer(const FileString& path);
 
-  bool Deserialize(void* memory, size_t sizeBytes);
+  virtual bool Deserialize(void* memory, size_t sizeBytes) override;
 
   private:
   size_t mOffset;
   MemoryMappedFileReader mReader;
+};
+
+// Memory serialization
+class MemorySerializer : public ISerializer {
+  public:
+
+  MemorySerializer(size_t initialSize = 0);
+
+  ~MemorySerializer();
+
+  virtual bool Serialize(const void* memory, size_t sizeBytes) override;
+
+  const uint8* Data() const;
+
+  size_t Size() const;
+
+  private:
+  size_t mOffset;
+  size_t mSize;
+  uint8* mMemory;
+};
+
+class MemoryDeserializer : public IDeserializer {
+  public:
+
+  MemoryDeserializer();
+
+  MemoryDeserializer(const void* baseAddress);
+
+  MemoryDeserializer(const MemoryDeserializer& rhs);
+
+  virtual bool Deserialize(void* memory, size_t sizeBytes) override;
+
+  uint8* BaseAddress();
+
+  size_t Offset() const;
+
+  void Reassign(void* baseAddress);
+
+  private:
+  size_t mOffset;
+  uint8* mBaseAddress;
 };
 
 }

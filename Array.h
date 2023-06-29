@@ -195,7 +195,7 @@ class Array final : public ISerializable {
     return Iterator(mData + mSize);
   }
 
-  virtual void Serialize(Serializer& serializer) override {
+  virtual void Serialize(ISerializer& serializer) override {
     // Must write size even if 0.
     // This makes it so Deserialize can check for size 0 and return.
     serializer.Serialize(&mSize, sizeof(mSize));
@@ -212,7 +212,7 @@ class Array final : public ISerializable {
     serializer.Serialize(mData, sizeBytes);
   }
 
-  virtual void Deserialize(Deserializer& deserializer) override {
+  virtual void Deserialize(IDeserializer& deserializer) override {
     size_t savedSize = 0;
     deserializer.Deserialize(&savedSize, sizeof(savedSize));
 

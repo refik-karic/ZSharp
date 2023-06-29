@@ -1,15 +1,18 @@
 #include "Serializer.h"
 
 #include "ZAssert.h"
+#include "PlatformMemory.h"
+
 #include <cstring>
 
 namespace ZSharp {
 
-Serializer::Serializer(const FileString& path)
+// File serializers
+FileSerializer::FileSerializer(const FileString& path)
   : mWriter(path, 0), mOffset(0) {
 }
 
-bool Serializer::Serialize(const void* memory, size_t sizeBytes) {
+bool FileSerializer::Serialize(const void* memory, size_t sizeBytes) {
   if (!mWriter.IsOpen()) {
     return false;
   }
@@ -30,11 +33,11 @@ bool Serializer::Serialize(const void* memory, size_t sizeBytes) {
   return true;
 }
 
-Deserializer::Deserializer(const FileString& path)
+FileDeserializer::FileDeserializer(const FileString& path)
   : mReader(path), mOffset(0) {
 }
 
-bool Deserializer::Deserialize(void* memory, size_t sizeBytes) {
+bool FileDeserializer::Deserialize(void* memory, size_t sizeBytes) {
   if (!mReader.IsOpen()) {
     return false;
   }
@@ -54,6 +57,91 @@ bool Deserializer::Deserialize(void* memory, size_t sizeBytes) {
   mOffset += sizeBytes;
 
   return true;
+}
+
+// Memory serializers
+MemorySerializer::MemorySerializer(size_t initialSize)
+  : mOffset(0), mSize(initialSize), mMemory(nullptr) {
+  if (mSize > 0) {
+    mMemory = (uint8*)PlatformMalloc(mSize);
+  }
+}
+
+MemorySerializer::~MemorySerializer() {
+  if (mMemory != nullptr) {
+    PlatformFree(mMemory);
+  }
+}
+
+bool MemorySerializer::Serialize(const void* memory, size_t sizeBytes) {
+  const size_t typeSize = sizeof(sizeBytes);
+
+  if (mMemory == nullptr) {
+    mSize = sizeBytes + typeSize;
+    mMemory = (uint8*)PlatformMalloc(mSize);
+  }
+  else if (mOffset + sizeBytes + typeSize >= mSize) {
+    mSize = mOffset + sizeBytes + typeSize;
+    mMemory = (uint8*)PlatformReAlloc(mMemory, mSize);
+  }
+
+  // Write size and data following it.
+  memcpy(mMemory + mOffset, &sizeBytes, typeSize);
+  mOffset += typeSize;
+  memcpy(mMemory + mOffset, memory, sizeBytes);
+  mOffset += sizeBytes;
+  return true;
+}
+
+const uint8* MemorySerializer::Data() const {
+  return mMemory;
+}
+
+size_t MemorySerializer::Size() const {
+  return mSize;
+}
+
+MemoryDeserializer::MemoryDeserializer() : mOffset(0), mBaseAddress(0) {
+}
+
+MemoryDeserializer::MemoryDeserializer(const void* baseAddress)
+  : mBaseAddress((uint8*)baseAddress), mOffset(0) {
+}
+
+MemoryDeserializer::MemoryDeserializer(const MemoryDeserializer& rhs)
+  : mBaseAddress(rhs.mBaseAddress), mOffset(0) {
+}
+
+bool MemoryDeserializer::Deserialize(void* memory, size_t sizeBytes) {
+  if (mBaseAddress == nullptr) {
+    return false;
+  }
+
+  const size_t typeSize = sizeof(sizeBytes);
+
+  size_t savedBytes = 0;
+  memcpy(&savedBytes, mBaseAddress + mOffset, typeSize);
+
+  ZAssert(savedBytes == sizeBytes);
+  
+  mOffset += typeSize;
+  memcpy(memory, mBaseAddress + mOffset, sizeBytes);
+  mOffset += sizeBytes;
+
+  return true;
+}
+
+uint8* MemoryDeserializer::BaseAddress() {
+  return mBaseAddress;
+}
+
+size_t MemoryDeserializer::Offset() const {
+  return mOffset;
+}
+
+void MemoryDeserializer::Reassign(void* baseAddress) {
+  mBaseAddress = (uint8*)baseAddress;
+  mOffset = 0;
 }
 
 }

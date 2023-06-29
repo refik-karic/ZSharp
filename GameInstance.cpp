@@ -15,10 +15,12 @@
 #include "PNG.h"
 #include "PlatformFile.h"
 
+#include "Bundle.h"
+
 #include <cmath>
 
 #define DEBUG_TRIANGLE 0
-#define DEBUG_TRIANGLE_TEXTURE 1
+#define DEBUG_TRIANGLE_TEXTURE 0
 #define DISABLE_DEBUG_TRANSFORMS 1
 
 namespace ZSharp {
@@ -66,11 +68,7 @@ void GameInstance::LoadAssets() {
 #else
   ZConfig& config = ZConfig::GetInstance();
   if (!config.GetAssetPath().GetAbsolutePath().IsEmpty()) {
-    for (const String& asset : config.GetAssets()) {
-      FileString filePath(config.GetAssetPath().GetAbsolutePath());
-      filePath.SetFilename(asset);
-      mWorld.LoadModel(filePath);
-    }
+    mWorld.LoadModels();
   }
   else {
     Logger::Log(LogCategory::Warning, "Asset path was empty. Loading debug triangle.\n");

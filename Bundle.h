@@ -10,7 +10,7 @@
 
 namespace ZSharp {
 
-bool GenerateBundle(const FileString& filename, Array<Asset>& assets, MemorySerializer& data);
+static const size_t BundleVersion;
 
 /*
 A bundle contains a collection of assets.

@@ -2,24 +2,9 @@
 
 #include "ZConfig.h"
 
-const size_t BundleVersion = 0;
+static const size_t BundleVersion = 0;
 
 namespace ZSharp {
-
-bool GenerateBundle(const FileString& filename, Array<Asset>& assets, MemorySerializer& data) {
-  FileSerializer fileSerializer(filename);
-  if (!fileSerializer.Serialize(&BundleVersion, sizeof(BundleVersion))) {
-    return false;
-  }
-
-  assets.Serialize(fileSerializer);
-
-  if (!fileSerializer.Serialize(data.Data(), data.Size())) {
-    return false;
-  }
-
-  return true;
-}
 
 Bundle::Bundle(const FileString& filename) : mHandle(filename) {
   if (mHandle.IsOpen()) {

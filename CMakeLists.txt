@@ -9,6 +9,7 @@ target_sources(ZSharp
         Array.h
         Asset.h
         Bundle.h
+        BundleGeneration.h
         Camera.h
         Common.h
         CommonMath.h
@@ -72,6 +73,7 @@ target_sources(ZSharp
 	
         Asset.cpp
         Bundle.cpp
+        BundleGeneration.cpp
         Camera.cpp
         Common.cpp
         CommonMath.cpp

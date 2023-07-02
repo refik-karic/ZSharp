@@ -74,13 +74,8 @@ void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) co
   }
 }
 
-void Model::BindTexture(const FileString& path) {
-  PNG png(path);
-  uint8* pngData = png.Decompress(ChannelOrder::BGR);
-  size_t width = png.GetWidth();
-  size_t height = png.GetHeight();
-  size_t channels = png.GetNumChannels();
-  mTexture.Assign(pngData, channels, width, height);
+void Model::BindTexture(uint8* data, size_t width, size_t height, size_t channels) {
+  mTexture.Assign(data, channels, width, height);
 }
 
 Texture& Model::GetTexture() {

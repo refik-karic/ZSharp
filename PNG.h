@@ -3,6 +3,7 @@
 #include "ZBaseTypes.h"
 #include "FileString.h"
 #include "ZFile.h"
+#include "Serializer.h"
 
 namespace ZSharp {
 
@@ -14,9 +15,17 @@ enum class ChannelOrder : size_t {
 class PNG final {
   public:
 
+  PNG();
+
   PNG(const FileString& filename);
+
   PNG(const PNG& rhs) = delete;
+  
   ~PNG();
+
+  void Serialize(MemorySerializer& serializer);
+
+  void Deserialize(MemoryDeserializer& deserializer);
 
   // Allocate and return a buffer to the caller.
   // NOTE: The RGB channels may not be arranged in a native way for the current display.
@@ -34,6 +43,8 @@ class PNG final {
   private:
   const FileString mFilename;
   MemoryMappedFileReader mReader;
+  uint8* mDataPtr = nullptr;
+  size_t mFileSize = 0;
 
   size_t mWidth = 0;
   size_t mHeight = 0;

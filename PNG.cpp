@@ -20,17 +20,56 @@
 static const size_t MaxBits = 15;
 
 namespace ZSharp {
+PNG::PNG() 
+  : mFilename(""), mReader(FileString("")) {
+}
 
 PNG::PNG(const FileString& filename)
   : mFilename(filename), mReader(filename) {
-  ReadHeader();
+  if (mReader.IsOpen()) {
+    mDataPtr = (uint8*)mReader.GetBuffer();
+    mFileSize = mReader.GetSize();
+    ReadHeader();
+  }
 }
 
 PNG::~PNG() {
 }
 
-uint8* PNG::Decompress(ChannelOrder order) {
+void PNG::Serialize(MemorySerializer& serializer) {
+  // Restrict this to serializing PNG files to bundles.
   if (!mReader.IsOpen()) {
+    ZAssert(false);
+    return;
+  }
+
+  serializer.Serialize(&mFileSize, sizeof(mFileSize));
+  serializer.Serialize(mDataPtr, mFileSize);
+}
+
+void PNG::Deserialize(MemoryDeserializer& deserializer) {
+  // Only deserialize an unbound PNG.
+  if (mReader.IsOpen()) {
+    ZAssert(false);
+    return;
+  }
+
+  size_t fileSize = 0;
+  if (!deserializer.Deserialize(&fileSize, sizeof(fileSize))) {
+    ZAssert(false);
+    return;
+  }
+
+  const size_t padding = sizeof(size_t);
+
+  mFileSize = fileSize;
+  mDataPtr = deserializer.BaseAddress() + deserializer.Offset() + padding;
+
+  ReadHeader();
+}
+
+uint8* PNG::Decompress(ChannelOrder order) {
+  if (mDataPtr == nullptr) {
     return nullptr;
   }
 
@@ -190,7 +229,7 @@ size_t PNG::GetBitsPerPixel() const {
 }
 
 bool PNG::ReadHeader() {
-  if (!mReader.IsOpen()) {
+  if (mDataPtr == nullptr) {
     ZAssert(false);
     return false;
   }
@@ -198,7 +237,7 @@ bool PNG::ReadHeader() {
   const size_t MagicHeaderLength = 8;
   const size_t CRCLength = 4;
 
-  const uint8* data = reinterpret_cast<const uint8*>(mReader.GetBuffer());
+  const uint8* data = reinterpret_cast<const uint8*>(mDataPtr);
 
   char header[MagicHeaderLength];
   memset(header, 0, sizeof(header));
@@ -270,8 +309,6 @@ bool PNG::ReadHeader() {
     return false;
   }
 
-  const size_t fileSize = mReader.GetSize();
-
   for (bool foundDataChunk = false; !foundDataChunk;) {
     uint32 length = 0;
     uint32 id = 0;
@@ -291,7 +328,7 @@ bool PNG::ReadHeader() {
       mDataOffset += CRCLength;
     }
 
-    if (mDataOffset >= fileSize) {
+    if (mDataOffset >= mFileSize) {
       ZAssert(false);
       return false;
     }
@@ -317,11 +354,11 @@ int64 PNG::PaethPredictor(int64 left, int64 above, int64 aboveLeft) {
 }
 
 const uint8* PNG::DataOffset() {
-  return reinterpret_cast<const uint8*>(mReader.GetBuffer()) + mDataOffset;
+  return reinterpret_cast<const uint8*>(mDataPtr) + mDataOffset;
 }
 
 const uint8* PNG::DataBitOffset() {
-  return reinterpret_cast<const uint8*>(mReader.GetBuffer()) + mDataOffset + (mBitOffset / 8);
+  return reinterpret_cast<const uint8*>(mDataPtr) + mDataOffset + (mBitOffset / 8);
 }
 
 uint32 PNG::ReadBits(size_t count) {

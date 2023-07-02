@@ -84,11 +84,11 @@ class MemoryDeserializer : public IDeserializer {
 
   virtual bool Deserialize(void* memory, size_t sizeBytes) override;
 
+  void Reassign(void* baseAddress);
+
   uint8* BaseAddress();
 
   size_t Offset() const;
-
-  void Reassign(void* baseAddress);
 
   private:
   size_t mOffset;

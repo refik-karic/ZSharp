@@ -77,10 +77,10 @@ bool Bundle::Deserialize(MemoryDeserializer& deserializer) {
   // TODO: Add this to the serializer so that we don't make assumptions.
   const size_t padding = sizeof(size_t);
 
-  for (size_t i = 0; i < mAssets.Size(); ++i) {
-    // Skip over memory block size.
-    deserializer.Reassign(deserializer.BaseAddress() + deserializer.Offset() + padding);
+  // Skip over memory block size.
+  deserializer.Reassign(deserializer.BaseAddress() + deserializer.Offset() + padding);
 
+  for (size_t i = 0; i < mAssets.Size(); ++i) {
     size_t serializedSize = 0;
     if (!deserializer.Deserialize(&serializedSize, sizeof(serializedSize))) {
       return false;
@@ -91,7 +91,7 @@ bool Bundle::Deserialize(MemoryDeserializer& deserializer) {
 
     // Set the asset load point and skip ahead to the next block of memory.
     asset.SetLoaderOffset(offset, serializedSize);
-    deserializer.Reassign(offset + serializedSize + padding);
+    deserializer.Reassign(offset + serializedSize);
   }
 
   return true;

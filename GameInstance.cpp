@@ -20,7 +20,7 @@
 #include <cmath>
 
 #define DEBUG_TRIANGLE 0
-#define DEBUG_TRIANGLE_TEXTURE 0
+#define DEBUG_TRIANGLE_TEXTURE 1
 #define DISABLE_DEBUG_TRANSFORMS 1
 
 namespace ZSharp {
@@ -56,7 +56,7 @@ void GameInstance::LoadAssets() {
   const float Y = 5.f;
   const float Z = 0.f;
   const float W = 1.f;
-  const float v1[]{ 0.f, 0.f, Z, W, 0.f, 1.f };
+  const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f };
   const float v2[]{ 0.f, Y, Z, W, 0.5f, 0.f };
   const float v3[]{ X, 0.f, Z, W, 1.0f, 1.f };
 

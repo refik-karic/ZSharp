@@ -3,6 +3,7 @@
 #include "Bundle.h"
 #include "OBJFile.h"
 #include "OBJLoader.h"
+#include "PNG.h"
 
 #include "CommonMath.h"
 
@@ -67,11 +68,28 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
   Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
   cachedModel.CreateNewMesh();
 
-  // TODO: Make this based off of the config file.
-  FileString texturePath(PlatformGetUserDesktopPath());
-  texturePath.SetFilename("wall_256.png");
-  cachedModel.BindTexture(texturePath);
+  Bundle& bundle = Bundle::Get();
+  if (bundle.Assets().Size() == 0) {
+    return;
+  }
+
+  Asset* pngAsset = bundle.GetAsset("wall_256");
   
+  if (pngAsset == nullptr) {
+    ZAssert(false);
+    return;
+  }
+
+  MemoryDeserializer pngDeserializer(pngAsset->Loader());
+
+  PNG texture;
+  texture.Deserialize(pngDeserializer);
+  uint8* pngData = texture.Decompress(ChannelOrder::BGR);
+  size_t width = texture.GetWidth();
+  size_t height = texture.GetHeight();
+  size_t channels = texture.GetNumChannels();
+  cachedModel.BindTexture(pngData, width, height, channels);
+
   {
     const size_t strideBytes = stride * sizeof(float);
     Mesh& firstMesh = cachedModel[0];
@@ -121,11 +139,11 @@ void World::LoadOBJ(Model& model) {
     return;
   }
 
-  const Asset& asset = bundle.Assets()[0];
-  MemoryDeserializer deserializer(asset.Loader());
+  const Asset& objAsset = bundle.Assets()[0];
+  MemoryDeserializer objDeserializer(objAsset.Loader());
 
   OBJFile objFile;
-  OBJLoader objLoader(deserializer, objFile);
+  OBJLoader objLoader(objDeserializer, objFile);
 
   model.CreateNewMesh();
   model.SetShadingOrder(objFile.ShadingOrder());
@@ -139,10 +157,23 @@ void World::LoadOBJ(Model& model) {
 #if DEBUG_TEXTURE
   const size_t stride = 4 + 2; // TODO: Make this based off of the source asset.
 
-  // TODO: Make this based off of the config file.
-  FileString texturePath(PlatformGetUserDesktopPath());
-  texturePath.SetFilename("wall_256.png");
-  model.BindTexture(texturePath);
+  Asset* pngAsset = bundle.GetAsset("wall_256");
+  
+  if (pngAsset == nullptr) {
+    ZAssert(false);
+    return;
+  }
+
+  MemoryDeserializer pngDeserializer(pngAsset->Loader());
+
+  PNG texture;
+  texture.Deserialize(pngDeserializer);
+  uint8* pngData = texture.Decompress(ChannelOrder::BGR);
+  size_t width = texture.GetWidth();
+  size_t height = texture.GetHeight();
+  size_t channels = texture.GetNumChannels();
+  model.BindTexture(pngData, width, height, channels);
+
 #else
   const size_t stride = 4 + 3; // TODO: Make this based off of the source asset.
 #endif

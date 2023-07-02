@@ -9,9 +9,11 @@
 namespace ZSharp {
 
 BaseFile::BaseFile(const FileString& fileName, size_t flags)
-: mFile(fileName) {
-  mFileHandle = PlatformOpenFile(mFile, flags);
-  mOpen = (mFileHandle != nullptr);
+: mFile(fileName), mFileHandle(nullptr), mOpen(false) {
+  if (!fileName.IsEmpty()) {
+    mFileHandle = PlatformOpenFile(mFile, flags);
+    mOpen = (mFileHandle != nullptr);
+  }
 }
 
 BaseFile::~BaseFile() {

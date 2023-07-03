@@ -21,6 +21,8 @@ void OBJLoader::Serialize(ISerializer& serializer) {
   mObjFile.Normals().Serialize(serializer);
   mObjFile.UVs().Serialize(serializer);
   mObjFile.Faces().Serialize(serializer);
+  mObjFile.ShadingOrder().Serialize(serializer);
+  mObjFile.AlbedoTexture().Serialize(serializer);
 }
 
 void OBJLoader::Deserialize(IDeserializer& deserializer) {
@@ -28,6 +30,8 @@ void OBJLoader::Deserialize(IDeserializer& deserializer) {
   mObjFile.Normals().Deserialize(deserializer);
   mObjFile.UVs().Deserialize(deserializer);
   mObjFile.Faces().Deserialize(deserializer);
+  mObjFile.ShadingOrder().Deserialize(deserializer);
+  mObjFile.AlbedoTexture().Deserialize(deserializer);
 }
 
 void OBJLoader::ParseRaw(const FileString& objFilePath) {

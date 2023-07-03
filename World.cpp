@@ -7,8 +7,6 @@
 
 #include "CommonMath.h"
 
-#define DEBUG_TEXTURE 1
-
 namespace ZSharp {
 World::World() {
 }
@@ -68,27 +66,32 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
   Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
   cachedModel.CreateNewMesh();
 
-  Bundle& bundle = Bundle::Get();
-  if (bundle.Assets().Size() == 0) {
-    return;
-  }
+  const bool isTextureMapped = order.Contains(ShadingMode(ShadingModes::UV, 2));
 
-  Asset* pngAsset = bundle.GetAsset("wall_256");
+  if (isTextureMapped) {
+    Bundle& bundle = Bundle::Get();
+    if (bundle.Assets().Size() == 0) {
+      return;
+    }
+
+    Asset* pngAsset = bundle.GetAsset("wall_256");
+
+    if (pngAsset == nullptr) {
+      ZAssert(false);
+      return;
+    }
+
+    MemoryDeserializer pngDeserializer(pngAsset->Loader());
+
+    PNG texture;
+    texture.Deserialize(pngDeserializer);
+    uint8* pngData = texture.Decompress(ChannelOrder::BGR);
+    size_t width = texture.GetWidth();
+    size_t height = texture.GetHeight();
+    size_t channels = texture.GetNumChannels();
+    cachedModel.BindTexture(pngData, width, height, channels);
+  }
   
-  if (pngAsset == nullptr) {
-    ZAssert(false);
-    return;
-  }
-
-  MemoryDeserializer pngDeserializer(pngAsset->Loader());
-
-  PNG texture;
-  texture.Deserialize(pngDeserializer);
-  uint8* pngData = texture.Decompress(ChannelOrder::BGR);
-  size_t width = texture.GetWidth();
-  size_t height = texture.GetHeight();
-  size_t channels = texture.GetNumChannels();
-  cachedModel.BindTexture(pngData, width, height, channels);
 
   {
     const size_t strideBytes = stride * sizeof(float);
@@ -150,33 +153,32 @@ void World::LoadOBJ(Model& model) {
   model.SetStride(objFile.Stride());
   Mesh& mesh = model[0];
 
-  /*
-  X, Y, Z, W
-  R, G, B
-  */
-#if DEBUG_TEXTURE
-  const size_t stride = 4 + 2; // TODO: Make this based off of the source asset.
+  const bool isTextureMapped = objFile.ShadingOrder().Contains(ShadingMode(ShadingModes::UV, 2));
+  const size_t textureStride = 2;
 
-  Asset* pngAsset = bundle.GetAsset("wall_256");
-  
-  if (pngAsset == nullptr) {
-    ZAssert(false);
-    return;
+  if (isTextureMapped) {
+    Asset* pngAsset = bundle.GetAsset(objFile.AlbedoTexture());
+
+    if (pngAsset == nullptr) {
+      ZAssert(false);
+      return;
+    }
+
+    MemoryDeserializer pngDeserializer(pngAsset->Loader());
+
+    PNG texture;
+    texture.Deserialize(pngDeserializer);
+    uint8* pngData = texture.Decompress(ChannelOrder::BGR);
+    size_t width = texture.GetWidth();
+    size_t height = texture.GetHeight();
+    size_t channels = texture.GetNumChannels();
+    model.BindTexture(pngData, width, height, channels);
+  }
+  else {
+    objFile.ShadingOrder().PushBack(ShadingMode(ShadingModes::RGB, 3));
   }
 
-  MemoryDeserializer pngDeserializer(pngAsset->Loader());
-
-  PNG texture;
-  texture.Deserialize(pngDeserializer);
-  uint8* pngData = texture.Decompress(ChannelOrder::BGR);
-  size_t width = texture.GetWidth();
-  size_t height = texture.GetHeight();
-  size_t channels = texture.GetNumChannels();
-  model.BindTexture(pngData, width, height, channels);
-
-#else
-  const size_t stride = 4 + 3; // TODO: Make this based off of the source asset.
-#endif
+  const size_t stride = objFile.Stride();
 
   size_t vertSize = objFile.Verts().Size() * stride;
   size_t indexSize = objFile.Faces().Size();
@@ -187,50 +189,37 @@ void World::LoadOBJ(Model& model) {
     const Vec4& vector = objFile.Verts()[i];
     ZAssert(FloatEqual(vector[3], 1.f));
 
-    float vertex[stride];
+    const size_t scratchSize = 64;
+    float vertex[scratchSize];
     memcpy(vertex, reinterpret_cast<const float*>(&vector), sizeof(Vec4));
 
-#if DEBUG_TEXTURE
-    const float T0[] = { 0.f, 1.f };
-    const float T1[] = { 0.5f, 0.f };
-    const float T2[] = { 1.0f, 1.f };
-
-    switch (triIndex % 3) {
-      case 0:
-        memcpy(vertex + 4, T0, sizeof(T0));
-        break;
-      case 1:
-        memcpy(vertex + 4, T1, sizeof(T1));
-        break;
-      case 2:
-        memcpy(vertex + 4, T2, sizeof(T2));
-        break;
-      default:
-        break;
+    if (isTextureMapped) {
+      memcpy(vertex + 4, &objFile.UVs()[i], textureStride * sizeof(float));
     }
-#else
-    const float R[] = { 1.f, 0.f, 0.f };
-    const float G[] = { 0.f, 1.f, 0.f };
-    const float B[] = { 0.f, 0.f, 1.f };
+    else {
+      // Assign 
+      const float R[] = { 1.f, 0.f, 0.f };
+      const float G[] = { 0.f, 1.f, 0.f };
+      const float B[] = { 0.f, 0.f, 1.f };
 
-    switch (triIndex % 3) {
-      case 0:
-        memcpy(vertex + 4, R, sizeof(R));
-        break;
-      case 1:
-        memcpy(vertex + 4, G, sizeof(G));
-        break;
-      case 2:
-        memcpy(vertex + 4, B, sizeof(B));
-        break;
-      default:
-        break;
+      switch (triIndex % 3) {
+        case 0:
+          memcpy(vertex + 4, R, sizeof(R));
+          break;
+        case 1:
+          memcpy(vertex + 4, G, sizeof(G));
+          break;
+        case 2:
+          memcpy(vertex + 4, B, sizeof(B));
+          break;
+        default:
+          break;
+      }
     }
-#endif
 
     triIndex++;
 
-    mesh.SetData(vertex, i * stride, sizeof(vertex));
+    mesh.SetData(vertex, i * stride, stride * sizeof(float));
   }
 
   const Array<OBJFace>& faceList = objFile.Faces();

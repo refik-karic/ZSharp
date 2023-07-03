@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZBaseTypes.h"
+#include "ISerializable.h"
 
 namespace ZSharp {
 
@@ -9,7 +10,7 @@ class Array;
 
 class WideString;
 
-class String final {
+class String final : public ISerializable {
   private:
   class VariableArg {
     private:
@@ -157,6 +158,10 @@ class String final {
 
   WideString ToWide() const;
 
+  virtual void Serialize(ISerializer& serializer) override;
+
+  virtual void Deserialize(IDeserializer& deserializer) override;
+
   private:
   struct LongString {
     size_t size;
@@ -218,7 +223,7 @@ class String final {
   void VariadicArgsAppend(const char* format, const VariableArg* args, size_t numArgs);
 };
 
-class WideString final {
+class WideString final : public ISerializable {
 private:
   class VariableArg {
   private:
@@ -336,6 +341,10 @@ public:
   float ToFloat() const;
 
   String ToNarrow() const;
+
+  virtual void Serialize(ISerializer& serializer) override;
+
+  virtual void Deserialize(IDeserializer& deserializer) override;
 
 private:
   struct LongString {

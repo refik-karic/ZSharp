@@ -19,6 +19,10 @@ struct ShadingMode {
   ShadingMode() : mode(ShadingModes::None), length(0) {};
   ShadingMode(ShadingModes inMode, size_t inLength) : mode(inMode), length(inLength) {};
   ShadingMode(const ShadingMode& rhs) : mode(rhs.mode), length(rhs.length) {};
+
+  bool operator==(const ShadingMode& rhs) {
+    return (mode == rhs.mode) && (length == rhs.length);
+  }
 };
 
 typedef Array<ShadingMode> ShadingModeOrder;

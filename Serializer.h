@@ -3,6 +3,7 @@
 #include "ZBaseTypes.h"
 #include "FileString.h"
 #include "ZFile.h"
+#include "ISerializable.h"
 
 namespace ZSharp {
 
@@ -11,18 +12,6 @@ TODO:
   1) CRC checksum?
   2) Endian swap?
 */
-
-class ISerializer {
-  public:
-
-  virtual bool Serialize(const void* memory, size_t sizeBytes) = 0;
-};
-
-class IDeserializer {
-  public:
-
-  virtual bool Deserialize(void* memory, size_t sizeBytes) = 0;
-};
 
 // File Serialization
 

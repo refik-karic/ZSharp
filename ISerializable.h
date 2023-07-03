@@ -1,12 +1,19 @@
 #pragma once
 
-#include "Serializer.h"
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 
-enum class AssetFormat : size_t {
-  Raw, // Unchanged source asset, requires parsing.
-  Serialized, // Stripped asset that can be batch loaded.
+class ISerializer {
+  public:
+
+  virtual bool Serialize(const void* memory, size_t sizeBytes) = 0;
+};
+
+class IDeserializer {
+  public:
+
+  virtual bool Deserialize(void* memory, size_t sizeBytes) = 0;
 };
 
 class ISerializable {

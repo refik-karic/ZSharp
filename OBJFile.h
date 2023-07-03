@@ -7,10 +7,9 @@
 #include "Array.h"
 #include "Vec3.h"
 #include "Vec4.h"
+#include "ZString.h"
 
 #include "ShadingMode.h"
-
-#define DEBUG_TEXTURE_OBJ 1
 
 namespace ZSharp {
 struct alignas(8) OBJFaceElement {
@@ -38,9 +37,11 @@ class OBJFile final {
 
   Array<OBJFace>& Faces();
 
-  size_t& Stride();
+  size_t Stride() const;
 
   ShadingModeOrder& ShadingOrder();
+
+  String& AlbedoTexture();
 
   private:
   Array<Vec4> mVerts;
@@ -51,11 +52,7 @@ class OBJFile final {
 
   Array<OBJFace> mFaces;
 
-#if DEBUG_TEXTURE_OBJ
-  size_t mStride = 6; // TODO: Make this based off of the source asset.
-#else
-  size_t mStride = 7; // TODO: Make this based off of the source asset.
-#endif
+  String mAlbedoTexture;
 
   ShadingModeOrder mShadingOrder;
 };

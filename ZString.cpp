@@ -323,6 +323,26 @@ WideString String::ToWide() const {
   return result;
 }
 
+void String::Serialize(ISerializer& serializer) {
+  size_t length = Length();
+  const char* str = Str();
+  serializer.Serialize(&length, sizeof(length));
+  serializer.Serialize(str, length);
+}
+
+void String::Deserialize(IDeserializer& deserializer) {
+  size_t length = 0;
+  deserializer.Deserialize(&length, sizeof(length));
+
+  char* buffer = (char*)PlatformMalloc(length + 1);
+  deserializer.Deserialize(buffer, length);
+  buffer[length] = '\0';
+
+  Append(buffer);
+
+  PlatformFree(buffer);
+}
+
 bool String::IsShort(const char* str) const {
   return (strlen(str) + 1) < MinCapacity;
 }
@@ -910,6 +930,26 @@ String WideString::ToNarrow() const {
   wcstombs(dest.GetData(), Str(), Length() + 1);
   String result(dest.GetData());
   return result;
+}
+
+void WideString::Serialize(ISerializer& serializer) {
+  size_t length = Length();
+  const wchar_t* str = Str();
+  serializer.Serialize(&length, sizeof(length));
+  serializer.Serialize(str, length * sizeof(wchar_t));
+}
+
+void WideString::Deserialize(IDeserializer& deserializer) {
+  size_t length = 0;
+  deserializer.Deserialize(&length, sizeof(length));
+
+  wchar_t* buffer = (wchar_t*)PlatformMalloc(length + 1);
+  deserializer.Deserialize(buffer, length * sizeof(wchar_t));
+  buffer[length] = L'\0';
+
+  Append(buffer);
+
+  PlatformFree(buffer);
 }
 
 bool WideString::IsShort(const wchar_t* str) const {

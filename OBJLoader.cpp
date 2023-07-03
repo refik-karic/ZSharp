@@ -35,19 +35,25 @@ void OBJLoader::Deserialize(IDeserializer& deserializer) {
 }
 
 void OBJLoader::ParseRaw(const FileString& objFilePath) {
-  BufferedFileReader reader(objFilePath);
+  MemoryMappedFileReader reader(objFilePath);
   if (!reader.IsOpen()) {
     return;
   }
 
-  for (size_t bytesRead = reader.ReadLine(); bytesRead > 0; bytesRead = reader.ReadLine()) {
-    if (bytesRead > 2) {
-      ParseLine(reader.GetBuffer());
+  const char* fileBuffer = reader.GetBuffer();
+  size_t fileSize = reader.GetSize();
+  size_t lastLineIndex = 0;
+
+  for (size_t offset = 0; offset < fileSize; ++offset) {
+    if (fileBuffer[offset] == '\n') {
+      size_t lineLength = offset - lastLineIndex;
+      ParseLine(fileBuffer + lastLineIndex, lineLength);
+      lastLineIndex = offset + 1;
     }
   }
 }
 
-void OBJLoader::ParseLine(const char* currentLine) {
+void OBJLoader::ParseLine(const char* currentLine, size_t length) {
   const char* rawLine = currentLine;
 
   // All lines in the input file must be terminated with a newline.
@@ -58,26 +64,27 @@ void OBJLoader::ParseLine(const char* currentLine) {
       if (rawLine[1] == 'n') {
         // Vertex Normals.
         Vec3 vertex;
-        String choppedLine(rawLine + 3);
+        String choppedLine(rawLine + 3, 0, length);
         ParseVec3(vertex, choppedLine, 0.0f);
         mObjFile.Normals().PushBack(vertex);
       }
       else if (rawLine[1] == 'p') {
         // Vertex Parameters.
         // For curves and surfaces, ignoring for now.
-        Logger::Log(LogCategory::Info, String::FromFormat("Vertex Parameters: [{0}]\n", rawLine));
+        String choppedLine(rawLine, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Vertex Parameters: [{0}]\n", choppedLine));
       }
       else if (rawLine[1] == 't') {
         // Vertex Texture Coordinates (U, V, W).
         Vec3 vertex;
-        String choppedLine(rawLine + 3);
+        String choppedLine(rawLine + 3, 0, length);
         ParseVec3(vertex, choppedLine, 0.0f);
         mObjFile.UVs().PushBack(vertex);
       }
       else {
         // Vertex Data.
         Vec4 vertex;
-        String choppedLine(rawLine + 2);
+        String choppedLine(rawLine + 2, 0, length);
         ParseVec4(vertex, choppedLine, 1.0f);
         mObjFile.Verts().PushBack(vertex);
       }
@@ -86,17 +93,23 @@ void OBJLoader::ParseLine(const char* currentLine) {
       // Vertex face.
     {
       OBJFace face;
-      String choppedLine(rawLine + 2);
+      String choppedLine(rawLine + 2, 0, length);
       ParseFace(face, choppedLine);
       mObjFile.Faces().PushBack(face);
     }
     break;
     case 'l':
+    {
       // Line.
-      Logger::Log(LogCategory::Info, String::FromFormat("Line: [{0}]\n", rawLine));
+      String choppedLine(rawLine, 0, length);
+      Logger::Log(LogCategory::Info, String::FromFormat("Line: [{0}]\n", choppedLine));
+    }
       break;
     default:
-      Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", rawLine));
+    {
+      String choppedLine(rawLine, 0, length);
+      Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
+    }
       break;
   }
 }

@@ -14,7 +14,6 @@ TODO:
 */
 
 // File Serialization
-
 class FileSerializer : public ISerializer {
   public:
 

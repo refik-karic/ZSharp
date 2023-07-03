@@ -25,7 +25,7 @@ class OBJLoader final : public ISerializable {
 
   void ParseRaw(const FileString& objFilePath);
 
-  void ParseLine(const char* currentLine);
+  void ParseLine(const char* currentLine, size_t length);
 
   void ParseVec3(Vec3& fillVec, String& line, float fallback);
 

@@ -14,20 +14,14 @@ class List final {
   private:
 
   struct Node {
-    T* mValue = nullptr;
+    T mValue;
     Node* mNext = nullptr;
     Node* mPrev = nullptr;
 
     Node(const T& value, Node* prev) 
-      : mValue(new T(value)), mPrev(prev) {
+      : mValue(value), mPrev(prev) {
       if (prev != nullptr) {
         prev->mNext = this;
-      }
-    }
-
-    ~Node() {
-      if (mValue != nullptr) {
-        delete mValue;
       }
     }
   };
@@ -69,11 +63,11 @@ class List final {
     }
 
     T& operator*() const {
-      return *(mPtr->mValue);
+      return mPtr->mValue;
     }
 
     T* operator->() {
-      return mPtr->mValue;
+      return &mPtr->mValue;
     }
 
     private:
@@ -126,7 +120,7 @@ class List final {
     bool wasRemoved = false;
 
     for (Node* node = mTail; (node != mHead) && (node != nullptr); node = node->mPrev) {
-      if (item == (*(node->mValue))) {
+      if (item == node->mValue) {
         Node* prevNode = node->mPrev;
         Node* nextNode = node->mNext;
 
@@ -144,7 +138,7 @@ class List final {
       }
     }
 
-    if (item == (*(mHead->mValue))) {
+    if (item == mHead->mValue) {
       if (mHead->mNext == nullptr) {
         DeleteNode(mHead);
         wasRemoved = true;
@@ -229,6 +223,31 @@ class List final {
     return Iterator(nullptr);
   }
 
+  /*
+  Sort using in-place Merge Sort.
+  Order is not guaranteed.
+  */
+  void Sort() {
+    // Must have > 2 elements to do anything useful.
+    if (mSize < 2) {
+      return;
+    }
+
+    mHead = MergeSort(mHead);
+    mHead->mPrev = nullptr;
+  }
+
+  template<typename Compare>
+  void Sort(const Compare& comp) {
+    // Must have > 2 elements to do anything useful.
+    if (mSize < 2) {
+      return;
+    }
+
+    mHead = MergeSort(mHead, comp);
+    mHead->mPrev = nullptr;
+  }
+
   private:
   Node* mHead = nullptr;
   Node* mTail = nullptr;
@@ -243,6 +262,117 @@ class List final {
   void DeleteNode(Node* node) {
     delete node;
     --mSize;
+  }
+
+  Node* GetMiddle(Node* node) {
+    if (node == nullptr) {
+      return node;
+    }
+
+    Node* slow = node;
+    Node* fast = node;
+    while (fast->mNext != nullptr && fast->mNext->mNext != nullptr) {
+      slow = slow->mNext;
+      fast = fast->mNext->mNext;
+    }
+
+    return slow;
+  }
+
+  Node* MergeSort(Node* node) {
+    if (node == nullptr || node->mNext == nullptr) {
+      return node;
+    }
+
+    Node* middle = GetMiddle(node);
+    Node* rightSide = middle->mNext;
+    middle->mNext = nullptr;
+
+    return SortNodes(MergeSort(node), MergeSort(rightSide));
+  }
+
+  template<typename Compare>
+  Node* MergeSort(Node* node, const Compare& comp) {
+    if (node == nullptr || node->mNext == nullptr) {
+      return node;
+    }
+
+    Node* middle = GetMiddle(node);
+    Node* rightSide = middle->mNext;
+    middle->mNext = nullptr;
+
+    return SortNodes(MergeSort(node, comp), MergeSort(rightSide, comp), comp);
+  }
+
+  Node* SortNodes(Node* a, Node* b) {
+    Node* result = nullptr;
+
+    if (a == nullptr) {
+      return b;
+    }
+    else if (b == nullptr) {
+      return a;
+    }
+
+    if (a->mValue < b->mValue) {
+      result = a;
+      result->mNext = SortNodes(a->mNext, b);
+    }
+    else {
+      result = b;
+      result->mNext = SortNodes(a, b->mNext);
+    }
+
+    // Keep back references up to date and tail at the end.
+    if(result->mNext != nullptr) {
+      result->mNext->mPrev = result;
+    }
+
+    if (a->mValue > mTail->mValue) {
+      mTail = a;
+    }
+
+    if (b->mValue > mTail->mValue) {
+      mTail = b;
+    }
+
+    return result;
+  }
+
+  template<typename Compare>
+  Node* SortNodes(Node* a, Node* b, const Compare& comp) {
+    Node* result = nullptr;
+
+    if (a == nullptr) {
+      return b;
+    }
+    else if (b == nullptr) {
+      return a;
+    }
+
+    if (comp(a->mValue, b->mValue)) {
+      result = a;
+      result->mNext = SortNodes(a->mNext, b, comp);
+    }
+    else {
+      result = b;
+      result->mNext = SortNodes(a, b->mNext, comp);
+    }
+
+    // Keep back references up to date and tail at the end.
+    if (result->mNext != nullptr) {
+      result->mNext->mPrev = result;
+    }
+
+    if (!comp(a->mValue, mTail->mValue)) {
+      mTail = a;
+    }
+
+    if (!comp(b->mValue, mTail->mValue)) {
+      mTail = b;
+    }
+
+    return result;
   }
 };
 

@@ -22,6 +22,7 @@ target_sources(ZSharp
         GlobalEdgeTable.h
         HashFunctions.h
         HashTable.h
+        Heap.h
         IndexBuffer.h
         IniFile.h
         InputManager.h

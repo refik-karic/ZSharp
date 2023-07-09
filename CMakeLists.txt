@@ -20,6 +20,7 @@ target_sources(ZSharp
         Framebuffer.h
         GameInstance.h
         GlobalEdgeTable.h
+        Graph.h
         HashFunctions.h
         HashTable.h
         Heap.h

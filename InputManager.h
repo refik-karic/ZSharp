@@ -41,7 +41,7 @@ class InputManager final {
   private:
   InputManager();
 
-  FixedArray<KeyState, Z_UINT8_MAX> mKeyboard;
+  FixedArray<KeyState, max_uint8> mKeyboard;
 
   bool mMousePressed = false;
   int32 mOldMouseX = 0;

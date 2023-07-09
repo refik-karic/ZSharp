@@ -1,7 +1,8 @@
 #pragma once
 
 #include "ZBaseTypes.h"
-#include "ZAssert.h"
+
+#include <initializer_list>
 
 namespace ZSharp {
 
@@ -18,9 +19,9 @@ class Heap final {
 
     HeapNode() {}
 
-    HeapNode(const T& inValue, size_t inHeight) : value(inValue), height(inHeight) {}
+    HeapNode(const T& inValue, HeapNode* inParent, size_t inHeight) : value(inValue), parent(inParent), height(inHeight) {}
 
-    HeapNode(const HeapNode& rhs) : value(rhs.value), height(rhs.height) {}
+    HeapNode(const HeapNode& rhs) = delete;
 
     bool HasLeft() const {
       return left != nullptr;
@@ -56,7 +57,16 @@ class Heap final {
   
   public:
 
-  Heap(const Compare& comparer) : mComparer(comparer) {}
+  Heap() {}
+
+  Heap(std::initializer_list<T> initList) {
+    for (const T& item : initList) {
+      Add(item);
+    }
+  }
+
+  Heap(const Heap& rhs) = delete;
+  void operator=(const Heap& rhs) = delete;
 
   ~Heap() {
     DeleteTree(mRoot);
@@ -64,27 +74,29 @@ class Heap final {
 
   bool Add(const T& item) {
     if (mRoot == nullptr) {
-      mRoot = new HeapNode(item, 0);
+      mRoot = new HeapNode(item, nullptr, 0);
       ++mSize;
       return true;
     }
 
-    HeapNode* insertionPoint = InsertionPoint(mRoot);
+    HeapNode* insertionPoint = InsertionPoint(mRoot, &item);
+    if (insertionPoint == nullptr) {
+      // Contains duplicate value.
+      return false;
+    }
+
     HeapNode* nodeToInsert = nullptr;
     if (insertionPoint->left == nullptr) {
-      nodeToInsert = new HeapNode(item, insertionPoint->height + 1);
+      nodeToInsert = new HeapNode(item, insertionPoint, insertionPoint->height + 1);
       insertionPoint->left = nodeToInsert;
-      nodeToInsert->parent = insertionPoint;
     }
     else if (insertionPoint->right == nullptr) {
-      nodeToInsert = new HeapNode(item, insertionPoint->height + 1);
+      nodeToInsert = new HeapNode(item, insertionPoint, insertionPoint->height + 1);
       insertionPoint->right = nodeToInsert;
-      nodeToInsert->parent = insertionPoint;
     }
     else {
-      nodeToInsert = new HeapNode(item, insertionPoint->left->height + 1);
+      nodeToInsert = new HeapNode(item, insertionPoint->left, insertionPoint->left->height + 1);
       insertionPoint->left->left = nodeToInsert;
-      nodeToInsert->parent = insertionPoint->left;
     }
 
     ++mSize;
@@ -105,7 +117,7 @@ class Heap final {
       return true;
     }
 
-    HeapNode* insertionPoint = InsertionPoint(mRoot);
+    HeapNode* insertionPoint = InsertionPoint(mRoot, nullptr);
     if (insertionPoint->NumChildren() == 0) {
       HeapNode* sibling = insertionPoint->Sibling();
       HeapNode* siblingLeaf = sibling->right;
@@ -156,6 +168,10 @@ class Heap final {
     else {
       return &mRoot->value;
     }
+  }
+
+  size_t Size() const {
+    return mSize;
   }
 
   private:
@@ -299,10 +315,21 @@ class Heap final {
     }
   }
 
-  HeapNode* InsertionPoint(HeapNode* node) {
+  HeapNode* InsertionPoint(HeapNode* node, const T* valuePtr) {
+    // Check for duplicates.
+    if (valuePtr != nullptr) {
+      if ((*valuePtr) == node->value) {
+        return nullptr;
+      }
+    }
+
     if (node->NumChildren() == 2) {
-      HeapNode* leftNode = InsertionPoint(node->left);
-      HeapNode* rightNode = InsertionPoint(node->right);
+      HeapNode* leftNode = InsertionPoint(node->left, valuePtr);
+      HeapNode* rightNode = InsertionPoint(node->right, valuePtr);
+
+      if (leftNode == nullptr || rightNode == nullptr) {
+        return nullptr;
+      }
 
       if (leftNode->NumChildren() < 2) {
         if (leftNode->height > rightNode->height) {

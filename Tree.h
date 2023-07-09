@@ -152,7 +152,21 @@ class Tree {
     }
   }
 
-  Tree(const Tree&&) = delete;
+  void operator=(const Tree& rhs) {
+    if (&rhs == this) {
+      return;
+    }
+
+    DeleteTree(mRoot);
+
+    for (Iterator iter = rhs.begin(); iter != rhs.end(); ++iter) {
+      Key& key = *(iter.mNode->key);
+      Value& value = *(iter.mNode->value);
+      Add(key, value);
+    }
+  }
+
+  Tree(Tree&&) = delete;
 
   ~Tree() {
     DeleteTree(mRoot);

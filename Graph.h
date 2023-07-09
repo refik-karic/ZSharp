@@ -3,8 +3,6 @@
 #include "ZBaseTypes.h"
 #include "List.h"
 #include "Heap.h"
-#include "Array.h"
-#include "Pair.h"
 
 namespace ZSharp {
 
@@ -83,6 +81,41 @@ class Graph final {
   };
 
   public:
+  class Iterator {
+    public:
+    Iterator(typename List<GraphNode>::Iterator iter) : mIter(iter) {
+    }
+
+    Iterator& operator++() {
+      mIter++;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator temp(mIter);
+      ++(*this);
+      return temp;
+    }
+
+    bool operator==(const Iterator& rhs) {
+      return mIter == rhs.mIter;
+    }
+
+    bool operator!=(const Iterator& rhs) {
+      return mIter != rhs.mIter;
+    }
+
+    T& operator*() const {
+      return (*mIter).value;
+    }
+
+    T* operator->() {
+      return (&(mIter.operator->()).value);
+    }
+
+    private:
+    typename List<GraphNode>::Iterator mIter;
+  };
 
   Graph() {
   }
@@ -144,6 +177,80 @@ class Graph final {
     return true;
   }
 
+  bool RemoveVertex(const T& value) {
+    GraphNode* nodeToRemove = nullptr;
+
+    for (GraphNode& node : mGraph) {
+      if (node.value != value) {
+        GraphEdge* edgeToRemove = nullptr;
+
+        for (GraphEdge& edge : node.adjacentList) {
+          if (edge.v->value == value) {
+            edgeToRemove = &edge;
+            break;
+          }
+        }
+
+        if (edgeToRemove != nullptr) {
+          node.adjacentList.Remove(*edgeToRemove);
+        }
+      }
+      else {
+        nodeToRemove = &node;
+      }
+    }
+
+    if (nodeToRemove == nullptr) {
+      return false;
+    }
+    else {
+      return mGraph.Remove(*nodeToRemove);
+    }
+  }
+
+  bool RemoveEdge(const T& a, const T& b) {
+    GraphNode* nodeToRemoveA = nullptr;
+    GraphNode* nodeToRemoveB = nullptr;
+
+    for (GraphNode& node : mGraph) {
+      if (node.value == a) {
+        nodeToRemoveA = &node;
+      }
+      else if (node.value == b) {
+        nodeToRemoveB = &node;
+      }
+    }
+
+    if (nodeToRemoveA == nullptr || nodeToRemoveB == nullptr) {
+      return false;
+    }
+
+    GraphEdge* edgeToRemoveA = nullptr;
+    GraphEdge* edgeToRemoveB = nullptr;
+
+    for (GraphEdge& edge : nodeToRemoveA->adjacentList) {
+      if (edge.v->value == b) {
+        edgeToRemoveA = &edge;
+        break;
+      }
+    }
+
+    for (GraphEdge& edge : nodeToRemoveB->adjacentList) {
+      if (edge.v->value == a) {
+        edgeToRemoveB = &edge;
+        break;
+      }
+    }
+
+    if (edgeToRemoveA == nullptr || edgeToRemoveB == nullptr) {
+      return false;
+    }
+    else {
+      return nodeToRemoveA->adjacentList.Remove(*edgeToRemoveA) &&
+        nodeToRemoveB->adjacentList.Remove(*edgeToRemoveB);
+    }
+  }
+
   List<T*> MinimumDistance(const T& start, const T& end) {
     if (mGraph.Size() == 0) {
       List<T*> path;
@@ -151,6 +258,14 @@ class Graph final {
     }
 
     return Dijkstra(start, end);
+  }
+
+  Iterator begin() const {
+    return mGraph.begin();
+  }
+
+  Iterator end() const {
+    return mGraph.end();
   }
 
   private:

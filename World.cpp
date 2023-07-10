@@ -7,6 +7,8 @@
 
 #include "CommonMath.h"
 
+#include <cstring>
+
 namespace ZSharp {
 World::World() {
 }

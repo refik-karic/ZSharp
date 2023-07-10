@@ -5,11 +5,14 @@
 
 #include <cstring>
 
+#if PLATFORM_WINDOWS
+static const char PlatformDirectorySeparator = '\\';
+static const char PlatformExtensionSeparator = '.';
+static const size_t PlatformMaxDrive = 3;
+#endif
+
 // Exampe: C:\Users\kr\Desktop\ZSharp-Tools\src\Debug
 namespace ZSharp {
-const char FileString::mDirectorySeparator = '\\';
-const char FileString::mExtensionSeparator = '.';
-
 FileString::FileString() {
   Reset();
 }
@@ -61,17 +64,17 @@ void FileString::SetFilename(const String& filename) {
     totalFilenameLength += (1 + mExtensionLength);
   }
 
-  if ((mPathLength - totalFilenameLength) + filename.Length() >= _MAX_PATH) {
+  if ((mPathLength - totalFilenameLength) + filename.Length() >= PLATFORM_MAX_PATH) {
     ZAssert(false);
     return;
   }
 
-  memset(mAbsolutePath + (mPathLength - totalFilenameLength), 0, _MAX_PATH - (mPathLength - totalFilenameLength));
+  memset(mAbsolutePath + (mPathLength - totalFilenameLength), 0, PLATFORM_MAX_PATH - (mPathLength - totalFilenameLength));
   mPathLength -= totalFilenameLength;
 
   const char* extension = filename.FindFirst('.');
   if (extension != nullptr) {
-    mDirs[mDirectoryLength] = mDirectorySeparator;
+    mDirs[mDirectoryLength] = PlatformDirectorySeparator;
     mDirectoryLength++;
     mPathLength++;
 
@@ -79,7 +82,7 @@ void FileString::SetFilename(const String& filename) {
 
     mFilename = mAbsolutePath + mPathLength;
     memcpy(mFilename, filename.Str(), length);
-    mFilename[length] = mExtensionSeparator;
+    mFilename[length] = PlatformExtensionSeparator;
     mFilenameLength = length;
     mPathLength += (length + 1);
 
@@ -92,7 +95,7 @@ void FileString::SetFilename(const String& filename) {
   }
   else {
     if (mNumDirectories != 0) {
-      if (mAbsolutePath[mPathLength - 1] == mDirectorySeparator) {
+      if (mAbsolutePath[mPathLength - 1] == PlatformDirectorySeparator) {
         mAbsolutePath[mPathLength - 1] = NULL;
         mPathLength--;
       }
@@ -106,13 +109,13 @@ void FileString::SetFilename(const String& filename) {
 }
 
 void FileString::AddDirectory(const String& directory) {
-  if (mPathLength + directory.Length() >= _MAX_PATH) {
+  if (mPathLength + directory.Length() >= PLATFORM_MAX_PATH) {
     ZAssert(false);
     return;
   }
 
   char* directoryBuffer = mDirs + mDirectoryLength;
-  (*directoryBuffer) = mDirectorySeparator;
+  (*directoryBuffer) = PlatformDirectorySeparator;
   mDirectoryLength++;
   directoryBuffer++;
   mPathLength++;
@@ -126,7 +129,7 @@ void FileString::AddDirectory(const String& directory) {
 
     memmove(directoryBuffer + (directoryLength + 1), directoryBuffer, filenameLength);
     memcpy(directoryBuffer, directory.Str(), directoryLength);
-    directoryBuffer[directoryLength] = mDirectorySeparator;
+    directoryBuffer[directoryLength] = PlatformDirectorySeparator;
     mDirectoryLength += (directoryLength + 1);
     mPathLength += (directoryLength + 1);
     mFilename = mDirs + mDirectoryLength;
@@ -158,7 +161,7 @@ bool FileString::IsEmpty() const {
 void FileString::Initialize(const String& absoluteFilePath) {
   Reset();
 
-  if (absoluteFilePath.Length() >= _MAX_PATH) {
+  if (absoluteFilePath.Length() >= PLATFORM_MAX_PATH) {
     ZAssert(false);
     return;
   }
@@ -169,13 +172,13 @@ void FileString::Initialize(const String& absoluteFilePath) {
     const char* str = absoluteFilePath.Str();
     size_t length = (volume - str) + 1;
 
-    if (length >= _MAX_DRIVE) {
+    if (length >= PlatformMaxDrive) {
       ZAssert(false);
       return;
     }
 
     memcpy(mAbsolutePath, str, length);
-    mAbsolutePath[length] = mDirectorySeparator;
+    mAbsolutePath[length] = PlatformDirectorySeparator;
     mDrive = mAbsolutePath;
     mDriveLength = length;
     mPathLength += (length + 1); // Account for directory separator.
@@ -185,12 +188,12 @@ void FileString::Initialize(const String& absoluteFilePath) {
     return;
   }
 
-  for (const char* directory = strchr(absoluteFilePath.Str(), mDirectorySeparator); directory != nullptr;) {
+  for (const char* directory = strchr(absoluteFilePath.Str(), PlatformDirectorySeparator); directory != nullptr;) {
     const char* nextDirectory = directory;
     nextDirectory++;
 
     if (nextDirectory != nullptr) {
-      nextDirectory = strchr(nextDirectory, mDirectorySeparator);
+      nextDirectory = strchr(nextDirectory, PlatformDirectorySeparator);
     }
     else {
       directory = nullptr;
@@ -204,21 +207,21 @@ void FileString::Initialize(const String& absoluteFilePath) {
 
       char* directoryBuffer = mAbsolutePath + mPathLength;
       memcpy(directoryBuffer, str + start, length);
-      directoryBuffer[length] = mDirectorySeparator;
+      directoryBuffer[length] = PlatformDirectorySeparator;
       mDirectoryLength += (length + 1);
       mPathLength += (length + 1);
       mNumDirectories++;
     }
     else {
       directory++;
-      const char* extension = strchr(directory, mExtensionSeparator);
+      const char* extension = strchr(directory, PlatformExtensionSeparator);
       if (extension != nullptr) {
         size_t length = extension - directory;
         
         mFilename = mAbsolutePath + mPathLength;
 
         memcpy(mFilename, directory, length);
-        mFilename[length] = mExtensionSeparator;
+        mFilename[length] = PlatformExtensionSeparator;
         mFilenameLength = length;
         mPathLength += (length + 1);
 

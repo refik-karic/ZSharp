@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cmath>
 #include "ZBaseTypes.h"
 
 namespace ZSharp {

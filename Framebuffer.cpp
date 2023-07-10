@@ -1,7 +1,5 @@
 ﻿#include "Framebuffer.h"
 
-#include <cstdlib>
-
 #include "PlatformMemory.h"
 #include "Win32PlatformApplication.h"
 #include "ZAssert.h"

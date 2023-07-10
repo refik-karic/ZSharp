@@ -1,6 +1,5 @@
 #include "ZFile.h"
 
-#include <cstdlib>
 #include <cstring>
 
 #include "PlatformFile.h"

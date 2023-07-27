@@ -18,6 +18,16 @@ void Clamp(T& value, const T& min, const T& max) {
   }
 }
 
+template<typename T>
+T& Min(T& a, T& b) {
+  return (a < b) ? a : b;
+}
+
+template<typename T>
+T& Max(T& a, T& b) {
+  return (a > b) ? a : b;
+}
+
 size_t RoundUpNearestMultiple(size_t val, size_t multiple);
 
 float DegreesToRadians(float degrees);

@@ -1,6 +1,11 @@
 #include "Common.h"
 
 namespace ZSharp {
+uint16 EndianSwap(uint16 value) {
+  uint16 result = (value & 0x00FF) << 8;
+  result |= (value & 0xFF00) >> 8;
+  return result;
+}
 
 uint32 EndianSwap(uint32 value) {
   uint32 result = (value & 0x000000FF) << 24;

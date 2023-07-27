@@ -1,5 +1,6 @@
 #include "GameInstance.h"
 
+// TODO: Clean this up
 #include "Constants.h"
 #include "InputManager.h"
 #include "CommonMath.h"
@@ -14,11 +15,16 @@
 
 #include "PNG.h"
 #include "PlatformFile.h"
+#include "PlatformMemory.h"
+#include "PlatformAudio.h"
 
 #include "Bundle.h"
 
+#include "MP3.h"
+
 #include <cmath>
 
+#define DEBUG_AUDIO 1
 #define DEBUG_TRIANGLE 0
 #define DEBUG_TRIANGLE_TEXTURE 1
 #define DISABLE_DEBUG_TRANSFORMS 1
@@ -37,6 +43,25 @@ GameInstance::~GameInstance() {
 }
 
 void GameInstance::LoadAssets() {
+#if DEBUG_AUDIO
+  FileString audioPath(PlatformGetUserDesktopPath());
+  audioPath.SetFilename("AmbientTest.mp3");
+  MP3 audioFile(audioPath);
+
+  MP3::PCMAudio pcmAudio(audioFile.Decompress());
+  if (pcmAudio.data != nullptr) {
+    PlatformAudioDevice* device = PlatformInitializeAudioDevice();
+    ZAssert(device != nullptr);
+
+    if (device != nullptr) {
+      PlatformPlayAudio(device, pcmAudio.data, pcmAudio.length);
+      PlatformReleaseAudioDevice(device);
+    }
+
+    PlatformFree(pcmAudio.data);
+  }
+#endif
+
 #if DEBUG_TRIANGLE
   const float X = 5.f;
   const float Y = 5.f;

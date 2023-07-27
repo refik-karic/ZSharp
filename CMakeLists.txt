@@ -35,9 +35,11 @@ target_sources(ZSharp
         Mat4x4.h
         Mesh.h
         Model.h
+        MP3.h
         OBJFile.h
         OBJLoader.h
         Pair.h
+        PlatformAudio.h
         PlatformDebug.h
         PlatformDefines.h
         PlatformFile.h
@@ -93,6 +95,7 @@ target_sources(ZSharp
         Mat4x4.cpp
         Mesh.cpp
         Model.cpp
+        MP3.cpp
         OBJFile.cpp
         OBJLoader.cpp
         PNG.cpp
@@ -107,6 +110,7 @@ target_sources(ZSharp
         Vec4.cpp
         VertexBuffer.cpp
         Win32PlatformApplication.cpp
+        Win32PlatformAudio.cpp
         Win32PlatformDebug.cpp
         Win32PlatformFile.cpp
         Win32PlatformHAL.cpp

@@ -11,6 +11,8 @@ void Swap(T& lhs, T& rhs) {
   lhs = temp;
 }
 
+uint16 EndianSwap(uint16 value);
+
 uint32 EndianSwap(uint32 value);
 
 }

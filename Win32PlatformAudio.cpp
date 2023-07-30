@@ -27,12 +27,9 @@ struct PlatformAudioDevice {
   WAVEFORMATEX* waveFormat = nullptr;
 };
 
-#define REFTIMES_PER_SEC  10000000
-#define REFTIMES_PER_MILLISEC  10000
-
-PlatformAudioDevice* PlatformInitializeAudioDevice() {
+PlatformAudioDevice* PlatformInitializeAudioDevice(size_t samplesPerSecond, size_t numChannels, size_t durationMillisecond) {
   HRESULT hr = S_OK;
-  REFERENCE_TIME hnsRequestedDuration = REFTIMES_PER_SEC;
+  REFERENCE_TIME hnsRequestedDuration = durationMillisecond * 10000; // In 100ns intervals
   IMMDeviceEnumerator* pEnumerator = nullptr;
   IMMDevice* pDevice = nullptr;
   IAudioClient* pAudioClient = nullptr;
@@ -56,8 +53,6 @@ PlatformAudioDevice* PlatformInitializeAudioDevice() {
     return nullptr;
   }
 
-  //pEnumerator->Release();
-
   hr = pDevice->Activate(
     my_IID_IAudioClient, CLSCTX_ALL,
     NULL, (void**)&pAudioClient);
@@ -68,21 +63,22 @@ PlatformAudioDevice* PlatformInitializeAudioDevice() {
 
   hr = pAudioClient->GetMixFormat(&pwfx);
 
-  pwfx->wFormatTag = WAVE_FORMAT_PCM;
-  pwfx->nChannels = 2;
-  pwfx->nSamplesPerSec = 48000;
-  pwfx->nAvgBytesPerSec = (48000) * ((2 * 16) / 8);
-  pwfx->nBlockAlign = (2 * 16) / 8;
-  pwfx->wBitsPerSample = 16;
-  pwfx->cbSize = 0;
-
   if (hr != S_OK) {
     return nullptr;
   }
 
-  DWORD flags = (AUDCLNT_STREAMFLAGS_RATEADJUST
+  pwfx->wFormatTag = WAVE_FORMAT_PCM;
+  pwfx->nChannels = (WORD)numChannels;
+  pwfx->nSamplesPerSec = (DWORD)samplesPerSecond;
+  pwfx->nAvgBytesPerSec = (DWORD)((samplesPerSecond) * ((numChannels * 16) / 8));
+  pwfx->nBlockAlign = (WORD)(numChannels * 16) / 8;
+  pwfx->wBitsPerSample = 16;
+  pwfx->cbSize = 0;
+
+  /*DWORD flags = (AUDCLNT_STREAMFLAGS_RATEADJUST
     | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
-    | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY);
+    | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY);*/
+  DWORD flags = AUDCLNT_STREAMFLAGS_RATEADJUST;
 
   hr = pAudioClient->Initialize(
     AUDCLNT_SHAREMODE_SHARED,
@@ -106,6 +102,8 @@ PlatformAudioDevice* PlatformInitializeAudioDevice() {
 
   pEnumerator->Release();
 
+  hr = pAudioClient->Start();
+
   PlatformAudioDevice* audioHandle = new PlatformAudioDevice;
   audioHandle->deviceHandle = pDevice;
   audioHandle->clientHandle = pAudioClient;
@@ -115,69 +113,55 @@ PlatformAudioDevice* PlatformInitializeAudioDevice() {
   return audioHandle;
 }
 
-void PlatformPlayAudio(PlatformAudioDevice* device, int16* pcmSignal, size_t length) {
+size_t PlatformPlayAudio(PlatformAudioDevice* device, int16* pcmSignal, size_t offset, size_t endTrack) {
   if (device == nullptr ||
     device->deviceHandle == nullptr ||
     device->clientHandle == nullptr ||
     device->renderClientHandle == nullptr) {
-    return;
+    return 0;
   }
 
   UINT32 bufferFrameCount;
-  UINT32 numFramesAvailable;
-  UINT32 numFramesPadding;
-
-  size_t processedFrames = 0;
 
   HRESULT hr = device->clientHandle->GetBufferSize(&bufferFrameCount);
 
   if (hr != S_OK) {
-    return;
+    return 0;
+  }
+
+  UINT32 numFramesPadding;
+  hr = device->clientHandle->GetCurrentPadding(&numFramesPadding);
+
+  if (hr != S_OK) {
+    return 0;
+  }
+
+  UINT32 numFramesAvailable = bufferFrameCount - numFramesPadding;
+  if (numFramesAvailable == 0) {
+    return 0;
+  }
+
+  const size_t frameSize = (size_t)device->waveFormat->nBlockAlign;
+  if (offset + (numFramesAvailable * frameSize) > endTrack) {
+    numFramesAvailable = (UINT32)((endTrack - offset) / frameSize);
   }
 
   BYTE* pData;
-
-  // Calculate the actual duration of the allocated buffer.
-  REFERENCE_TIME hnsActualDuration = (REFERENCE_TIME)REFTIMES_PER_SEC *
-    bufferFrameCount / device->waveFormat->nSamplesPerSec;
-
-  hr = device->clientHandle->Start();  // Start playing.
+  hr = device->renderClientHandle->GetBuffer(bufferFrameCount, &pData);
 
   if (hr != S_OK) {
-    return;
+    return 0;
   }
 
-  for (; processedFrames < length; processedFrames += bufferFrameCount) {
-    // See how much buffer space is available.
-    hr = device->clientHandle->GetCurrentPadding(&numFramesPadding);
+  memcpy(pData + (numFramesPadding * frameSize), ((int8*)pcmSignal) + offset, numFramesAvailable * frameSize);
 
-    if (hr != S_OK) {
-      return;
-    }
+  hr = device->renderClientHandle->ReleaseBuffer(bufferFrameCount, 0);
 
-    numFramesAvailable = bufferFrameCount - numFramesPadding;
-
-    // Grab all the available space in the shared buffer.
-    hr = device->renderClientHandle->GetBuffer(numFramesAvailable, &pData);
-
-    if (hr != S_OK) {
-      return;
-    }
-
-    memcpy(pData, ((uint8*)(pcmSignal)) + processedFrames, bufferFrameCount);
-    processedFrames += bufferFrameCount;
-
-    hr = device->renderClientHandle->ReleaseBuffer(numFramesAvailable, 0);
-
-    if (hr != S_OK) {
-      return;
-    }
-
-    // Each loop fills an entire buffer second
-    Sleep((DWORD)(hnsActualDuration / REFTIMES_PER_MILLISEC / 2));
+  if (hr != S_OK) {
+    return 0;
   }
 
-  hr = device->clientHandle->Stop();  // Stop playing.
+  return numFramesAvailable * frameSize;
 }
 
 void PlatformReleaseAudioDevice(PlatformAudioDevice* device) {
@@ -188,6 +172,8 @@ void PlatformReleaseAudioDevice(PlatformAudioDevice* device) {
     return;
   }
 
+  device->clientHandle->Stop();
+
   device->deviceHandle->Release();
   device->clientHandle->Release();
   device->renderClientHandle->Release();
@@ -195,6 +181,5 @@ void PlatformReleaseAudioDevice(PlatformAudioDevice* device) {
 }
 
 }
-
 
 #endif

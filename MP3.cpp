@@ -161,6 +161,8 @@ MP3::PCMAudio MP3::Decompress() {
   memset(qmfState, 0, 960 * sizeof(float));
 
   PCMAudio pcmAudio;
+  size_t sampleRateBits = 0;
+  size_t numChannels = 0;
 
   while (((mBitOffset / 8) + 4) < mStreamSize) {
     const FrameHeader header(ReadFrameHeader());
@@ -171,7 +173,8 @@ MP3::PCMAudio MP3::Decompress() {
 
     SideInfomation sideInfo(ReadSideInformation(header.sampleRateBits, header.mode, header.modeExt));
 
-    pcmAudio.channels = sideInfo.numChannels;
+    numChannels = sideInfo.numChannels;
+    sampleRateBits = header.sampleRateBits;
 
     // We may have some remaining data lingering from previous frames, copy it over.
     const size_t headerAndSideInfoSize = sideInfo.byteLength + 4;
@@ -223,6 +226,23 @@ MP3::PCMAudio MP3::Decompress() {
 
   pcmAudio.data = decompressedSamples;
   pcmAudio.length = numSamples;
+  pcmAudio.channels = numChannels / 2;
+
+  switch (sampleRateBits) {
+    case 0x00:
+      pcmAudio.samplesPerSecond = 44100;
+      break;
+    case 0x01:
+      pcmAudio.samplesPerSecond = 48000;
+      break;
+    case 0x02:
+      pcmAudio.samplesPerSecond = 32000;
+      break;
+    default:
+      pcmAudio.samplesPerSecond = 0;
+      break;
+  }
+
   return pcmAudio;
 }
 

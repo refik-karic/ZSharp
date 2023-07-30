@@ -24,7 +24,7 @@
 
 #include <cmath>
 
-#define DEBUG_AUDIO 1
+#define DEBUG_AUDIO 0
 #define DEBUG_TRIANGLE 0
 #define DEBUG_TRIANGLE_TEXTURE 1
 #define DISABLE_DEBUG_TRANSFORMS 1
@@ -40,6 +40,14 @@ GameInstance::~GameInstance() {
   inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
   inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
+
+  if (mAmbientTrack.data != nullptr) {
+    PlatformFree(mAmbientTrack.data);
+  }
+
+  if (mAudioDevice != nullptr) {
+    PlatformReleaseAudioDevice(mAudioDevice);
+  }
 }
 
 void GameInstance::LoadAssets() {
@@ -48,17 +56,10 @@ void GameInstance::LoadAssets() {
   audioPath.SetFilename("AmbientTest.mp3");
   MP3 audioFile(audioPath);
 
-  MP3::PCMAudio pcmAudio(audioFile.Decompress());
-  if (pcmAudio.data != nullptr) {
-    PlatformAudioDevice* device = PlatformInitializeAudioDevice();
-    ZAssert(device != nullptr);
-
-    if (device != nullptr) {
-      PlatformPlayAudio(device, pcmAudio.data, pcmAudio.length);
-      PlatformReleaseAudioDevice(device);
-    }
-
-    PlatformFree(pcmAudio.data);
+  mAmbientTrack = audioFile.Decompress();
+  if (mAmbientTrack.data != nullptr) {
+    mAudioDevice = PlatformInitializeAudioDevice(mAmbientTrack.samplesPerSecond, mAmbientTrack.channels, 16);
+    ZAssert(mAudioDevice != nullptr);
   }
 #endif
 
@@ -240,6 +241,16 @@ void GameInstance::Tick() {
     model.Rotation() = rotation;
   }
 #endif
+
+  if (mAudioDevice != nullptr && mAmbientTrack.data != nullptr) {
+    // TODO: This forces the track to loop.
+    if (mAudioPosition >= mAmbientTrack.length) {
+      mAudioPosition = 0;
+    }
+
+    // TODO: Audio is still a little choppy, fix this.
+    mAudioPosition += PlatformPlayAudio(mAudioDevice, mAmbientTrack.data, mAudioPosition, mAmbientTrack.length);
+  }
 
   mRenderer.RenderNextFrame(mWorld, mCamera);
 }

@@ -11,8 +11,9 @@ class MP3 final {
 
   struct PCMAudio {
     int16* data = nullptr;
-    size_t channels = 0;
     size_t length = 0;
+    size_t channels = 0;
+    size_t samplesPerSecond = 0;
   };
 
   MP3(const FileString& path);

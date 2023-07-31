@@ -145,10 +145,9 @@ MP3::PCMAudio MP3::Decompress() {
     return pcmAudio;
   }
 
-  const int16 frameSampleIncrement = 1152 * 4;
-  int16* decompressedSamples = (int16*)PlatformMalloc(frameSampleIncrement);
-  memset(decompressedSamples, 0, frameSampleIncrement);
+  int16* decompressedSamples = nullptr;
 
+  size_t guessedSize = 0;
   size_t numSamples = 0;
 
   float* intermediateValues = (float*)PlatformMalloc(2 * 576 * sizeof(float));
@@ -188,6 +187,23 @@ MP3::PCMAudio MP3::Decompress() {
     memcpy(MainDataResevoir, MainDataCache + reverseIndex, cacheOffset);
     memcpy(MainDataResevoir + cacheOffset, mDataStream + (mBitOffset / 8), frameSize);
 
+    if (decompressedSamples == nullptr) {
+      // Make a guess as to how big the buffer is going to be for storing an entire audio track.
+      const size_t numFrames = (mStreamSize / header.frameBytes) - 1;
+      const size_t totalSize = numFrames * 1152 * (numChannels / 2) * sizeof(int16);
+      decompressedSamples = (int16*)PlatformMalloc(totalSize);
+      memset(decompressedSamples, 0, totalSize);
+      guessedSize = totalSize;
+    }
+
+    const size_t frameSampleIncrement = 1152 * sideInfo.numChannels;
+    numSamples += frameSampleIncrement;
+
+    if (guessedSize + frameSampleIncrement < numSamples) {
+      decompressedSamples = (int16*)PlatformReAlloc(decompressedSamples, numSamples + frameSampleIncrement);
+      memset(((uint8*)decompressedSamples) + numSamples, 0, frameSampleIncrement);
+    }
+
     size_t resevoirBitsRead = 0;
     DecodeMainData(MainDataResevoir, 
       resevoirBitsRead, 
@@ -198,10 +214,6 @@ MP3::PCMAudio MP3::Decompress() {
       overlapValues, 
       decompressedSamples + (numSamples / 4),
       qmfState);
-
-    numSamples += frameSampleIncrement;
-    decompressedSamples = (int16*)PlatformReAlloc(decompressedSamples, numSamples + frameSampleIncrement);
-    memset(((uint8*)decompressedSamples) + numSamples, 0, frameSampleIncrement);
 
     MainDataCacheLength = (cacheOffset + frameSize) - (resevoirBitsRead / 8);
     if (MainDataCacheLength > 0) {

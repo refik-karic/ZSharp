@@ -10,10 +10,15 @@
 #include "ZConfig.h"
 #include "ZString.h"
 
+#include <synchapi.h>
+#include <timeapi.h>
+
 #define DEBUG_TEXTURE 0
 
 static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
-static constexpr UINT FRAMERATE_60_HZ_MS = 1000 / 60;
+static ZSharp::WideString TimerName(L"MainLoop");
+static constexpr LONG FRAMERATE_60_HZ_MS = 1000 / 60;
+UINT MinTimerPeriod = 0;
 
 ZSharp::BroadcastDelegate<size_t, size_t> Win32PlatformApplication::OnWindowSizeChangedDelegate;
 
@@ -84,9 +89,17 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
     mGameInstance.Initialize();
 
     ShowWindow(mWindowHandle, SW_SHOW);
-    for (MSG msg; GetMessageW(&msg, mWindowHandle, 0, 0) > 0;) {
-      TranslateMessage(&msg);
-      DispatchMessageW(&msg);
+    for (MSG msg; mWindowHandle != nullptr;) {
+      while (PeekMessageW(&msg, mWindowHandle, 0, 0, 0)) {
+        if (GetMessageW(&msg, mWindowHandle, 0, 0)) {
+          TranslateMessage(&msg);
+          DispatchMessageW(&msg);
+        }
+      }
+      
+      UpdateAudio();
+
+      SleepEx(MinTimerPeriod, true);
     }
 
     UnregisterClassW(WindowClassName.Str(), mInstance);
@@ -158,10 +171,52 @@ HWND Win32PlatformApplication::SetupWindow() {
 }
 
 void Win32PlatformApplication::OnCreate(HWND initialHandle) {
-  mWindowsFrameTimer = SetTimer(initialHandle, 1, FRAMERATE_60_HZ_MS, NULL);
-
-  if (mWindowsFrameTimer == 0) {
+  TIMECAPS timecaps = {};
+  if (timeGetDevCaps(&timecaps, sizeof(timecaps)) != MMSYSERR_NOERROR) {
     DestroyWindow(initialHandle);
+    return;
+  }
+
+  MinTimerPeriod = timecaps.wPeriodMin;
+
+  if (timeBeginPeriod(MinTimerPeriod) != MMSYSERR_NOERROR) {
+    DestroyWindow(initialHandle);
+    return;
+  }
+
+
+  mHighPrecisionTimer = CreateWaitableTimerW(NULL, false, TimerName.Str());
+
+  if (mHighPrecisionTimer == INVALID_HANDLE_VALUE) {
+    DestroyWindow(initialHandle);
+    return;
+  }
+
+  LARGE_INTEGER dueTime = {};
+  ZSharp::int64 dueTimeLarge = -1;
+  dueTime.LowPart = (DWORD)(dueTimeLarge & 0xFFFFFFFF);
+  dueTime.HighPart = (LONG)(dueTimeLarge >> 32);
+
+  bool success = SetWaitableTimer(mHighPrecisionTimer,
+    &dueTime,
+    FRAMERATE_60_HZ_MS - 2,
+    &Win32PlatformApplication::OnTimerThunk,
+    this,
+    true);
+
+  if (!success) {
+    DestroyWindow(initialHandle);
+    return;
+  }
+}
+
+void Win32PlatformApplication::OnTimerThunk(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue) {
+  (void)timerLowVal;
+  (void)timerHighValue;
+
+  Win32PlatformApplication* app = (Win32PlatformApplication*)optionalArg;
+  if (!app->mPaused) {
+    app->OnTimer();
   }
 }
 
@@ -238,17 +293,7 @@ void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
 void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
   switch (key) {
   case VK_SPACE:
-    if (mWindowsFrameTimer == 0) {
-      mWindowsFrameTimer = SetTimer(mWindowHandle, 1, FRAMERATE_60_HZ_MS, NULL);
-
-      if (mWindowsFrameTimer == 0) {
-        DestroyWindow(mWindowHandle);
-      }
-    }
-    else {
-      KillTimer(mWindowHandle, mWindowsFrameTimer);
-      mWindowsFrameTimer = 0;
-    }
+    mPaused = !mPaused;
     break;
   case VK_ESCAPE:
     DestroyWindow(mWindowHandle);
@@ -284,7 +329,15 @@ void Win32PlatformApplication::OnClose() {
 }
 
 void Win32PlatformApplication::OnDestroy() {
-  KillTimer(mWindowHandle, mWindowsFrameTimer);
+  if (mHighPrecisionTimer != INVALID_HANDLE_VALUE) {
+    CancelWaitableTimer(mHighPrecisionTimer);
+    CloseHandle(mHighPrecisionTimer);
+  }
+
+  timeEndPeriod(MinTimerPeriod);
+
+  mWindowHandle = nullptr;
+
   PostQuitMessage(0);
 }
 
@@ -346,6 +399,10 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
     DIB_RGB_COLORS);
 
   EndPaint(mWindowHandle, &ps);
+}
+
+void Win32PlatformApplication::UpdateAudio() {
+  mGameInstance.TickAudio();
 }
 
 #endif

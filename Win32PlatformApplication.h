@@ -22,7 +22,8 @@ class Win32PlatformApplication {
   private:
   HINSTANCE mInstance = nullptr;
   HWND mWindowHandle = nullptr;
-  UINT_PTR mWindowsFrameTimer = 0;
+  HANDLE mHighPrecisionTimer = nullptr;
+  bool mPaused = false;
   BITMAPINFO mBitmapInfo;
 
   ZSharp::GameInstance mGameInstance;
@@ -36,6 +37,8 @@ class Win32PlatformApplication {
   // Win32 message loop handlers.
 
   void OnCreate(HWND initialHandle);
+
+  static void OnTimerThunk(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue);
 
   void OnTimer();
 
@@ -62,6 +65,8 @@ class Win32PlatformApplication {
   void UpdateFrame(const ZSharp::uint8* data);
 
   void SplatTexture(const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel);
+
+  void UpdateAudio();
 };
 
 #endif

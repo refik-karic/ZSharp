@@ -58,7 +58,8 @@ void GameInstance::LoadAssets() {
 
   mAmbientTrack = audioFile.Decompress();
   if (mAmbientTrack.data != nullptr) {
-    mAudioDevice = PlatformInitializeAudioDevice(mAmbientTrack.samplesPerSecond, mAmbientTrack.channels, 16);
+    // TODO: How big of an audio buffer do we actually need if we can fill it at ~1ms intervals?
+    mAudioDevice = PlatformInitializeAudioDevice(mAmbientTrack.samplesPerSecond, mAmbientTrack.channels, 100);
     ZAssert(mAudioDevice != nullptr);
   }
 #endif
@@ -242,6 +243,18 @@ void GameInstance::Tick() {
   }
 #endif
 
+  mRenderer.RenderNextFrame(mWorld, mCamera);
+}
+
+void GameInstance::TickAudio() {
+  size_t audioDelta = 1;
+
+  if (mLastAudioTime > 0) {
+    audioDelta = PlatformHighResClockDelta(mLastAudioTime, ClockUnits::Milliseconds);
+  }
+
+  mLastAudioTime = PlatformHighResClock();
+
   if (mAudioDevice != nullptr && mAmbientTrack.data != nullptr) {
     // TODO: This forces the track to loop.
     if (mAudioPosition >= mAmbientTrack.length) {
@@ -251,8 +264,6 @@ void GameInstance::Tick() {
     // TODO: Audio is still a little choppy, fix this.
     mAudioPosition += PlatformPlayAudio(mAudioDevice, mAmbientTrack.data, mAudioPosition, mAmbientTrack.length);
   }
-
-  mRenderer.RenderNextFrame(mWorld, mCamera);
 }
 
 uint8* GameInstance::GetCurrentFrame() {

@@ -32,6 +32,8 @@ class GameInstance final {
 
   void Tick();
 
+  void TickAudio();
+
   uint8* GetCurrentFrame();
 
   private:
@@ -43,6 +45,7 @@ class GameInstance final {
   size_t mAudioPosition = 0;
 
   size_t mLastFrameTime = 0;
+  size_t mLastAudioTime = 0;
 
   int64 mFrameCount = 0;
   int64 mRotationAmount = 0;

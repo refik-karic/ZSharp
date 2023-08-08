@@ -52,6 +52,7 @@ class GameInstance final {
   int64 mRotationSpeed = 4;
 
   bool mPauseTransforms = false;
+  bool mDrawStats = true;
 
   void PauseTransforms();
 

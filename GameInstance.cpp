@@ -11,12 +11,12 @@
 #include "ZString.h"
 #include "PlatformTime.h"
 #include "PlatformMemory.h"
-#include "Constants.h"
 
 #include "PNG.h"
 #include "PlatformFile.h"
 #include "PlatformMemory.h"
 #include "PlatformAudio.h"
+#include "DebugText.h"
 
 #include "Bundle.h"
 
@@ -24,7 +24,7 @@
 
 #include <cmath>
 
-#define DEBUG_AUDIO 1
+#define DEBUG_AUDIO 0
 #define DEBUG_TRIANGLE 0
 #define DEBUG_TRIANGLE_TEXTURE 1
 #define DISABLE_DEBUG_TRANSFORMS 1
@@ -206,17 +206,11 @@ void GameInstance::Tick() {
 
   mLastFrameTime = PlatformHighResClock();
 
-  {
-    String frame;
-    frame.Appendf("Frame: {0}\n", mFrameCount);
-    Logger::Log(LogCategory::Info, frame);
-  }
+  const String frameString(String::FromFormat("Frame: {0}\n", mFrameCount));
+  Logger::Log(LogCategory::Info, frameString);
 
-  {
-    String delta;
-    delta.Appendf("Frame Delta (ms): {0}\n", frameDelta);
-    Logger::Log(LogCategory::Info, delta);
-  }
+  const String deltaString(String::FromFormat("Frame Delta (ms): {0}\n", frameDelta));
+  Logger::Log(LogCategory::Info, deltaString);
 
   {
     String cameraPosition(mCamera.Position().ToString());
@@ -243,6 +237,12 @@ void GameInstance::Tick() {
 #endif
 
   mRenderer.RenderNextFrame(mWorld, mCamera);
+
+  if (mDrawStats) {
+    Framebuffer& frameBuffer = mRenderer.GetFrameBuffer();
+    DrawText(frameString, 10, 10, frameBuffer, ZColors::BLACK);
+    DrawText(deltaString, 10, 20, frameBuffer, ZColors::BLACK);
+  }
 }
 
 void GameInstance::TickAudio() {
@@ -297,6 +297,9 @@ void GameInstance::OnKeyDown(uint8 key) {
     break;
   case 'E':
     RotateCamera(Mat4x4::Axis::Y, -1.0F);
+    break;
+  case 'I':
+    mDrawStats = !mDrawStats;
     break;
     // TODO: Come up with a better system for mapping non trivial keys.
   case 0x26: // VK_UP Windows

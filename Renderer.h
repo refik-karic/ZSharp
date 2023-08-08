@@ -25,6 +25,8 @@ class Renderer final {
 
   void ToggleRenderMode(RenderMode mode);
 
+  Framebuffer& GetFrameBuffer();
+
   private:
   Framebuffer mBuffer;
   RenderMode mRenderMode = RenderMode::FLAT;

@@ -9,6 +9,7 @@
 #include "ZColor.h"
 #include "ZDrawing.h"
 #include "ScopedTimer.h"
+#include "DebugText.h"
 
 namespace ZSharp {
 Renderer::Renderer() {
@@ -56,6 +57,10 @@ uint8* Renderer::GetFrame() {
 
 void Renderer::ToggleRenderMode(RenderMode mode) {
   mRenderMode = mode;
+}
+
+Framebuffer& Renderer::GetFrameBuffer() {
+  return mBuffer;
 }
 
 }

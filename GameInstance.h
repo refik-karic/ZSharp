@@ -41,7 +41,7 @@ class GameInstance final {
   World mWorld;
   Renderer mRenderer;
   PlatformAudioDevice* mAudioDevice = nullptr;
-  MP3::PCMAudio mAmbientTrack;
+  MP3::PCMAudioFloat mAmbientTrack;
   size_t mAudioPosition = 0;
 
   size_t mLastFrameTime = 0;

@@ -34,9 +34,6 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
   case WM_CREATE:
     app.OnCreate(hwnd);
     return 0;
-  case WM_TIMER:
-    app.OnTimer();
-    return 0;
   case WM_PAINT:
     app.OnPaint();
     return 0;

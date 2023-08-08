@@ -15,7 +15,7 @@ PlatformAudioDevice* PlatformInitializeAudioDevice(size_t samplesPerSecond,
   size_t numChannels,
   size_t durationMillisecond);
 
-size_t PlatformPlayAudio(PlatformAudioDevice* device, int16* pcmSignal, size_t offset, size_t endTrack);
+size_t PlatformPlayAudio(PlatformAudioDevice* device, float* pcmSignal, size_t offset, size_t endTrack, size_t milliseconds);
 
 void PlatformReleaseAudioDevice(PlatformAudioDevice* device);
 

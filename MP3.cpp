@@ -196,7 +196,7 @@ MP3::PCMAudio MP3::Decompress() {
       guessedSize = totalSize;
     }
 
-    const size_t frameSampleIncrement = 1152 * sideInfo.numChannels;
+    const size_t frameSampleIncrement = 1152 * (sideInfo.numChannels / 2) * sizeof(int16);
     numSamples += frameSampleIncrement;
 
     if (guessedSize + frameSampleIncrement < numSamples) {
@@ -214,6 +214,137 @@ MP3::PCMAudio MP3::Decompress() {
       overlapValues, 
       decompressedSamples + (numSamples / 4),
       qmfState);
+
+    MainDataCacheLength = (cacheOffset + frameSize) - (resevoirBitsRead / 8);
+    if (MainDataCacheLength > 0) {
+      size_t slack = 0;
+      if ((resevoirBitsRead % 8) > 0) {
+        --MainDataCacheLength;
+        slack = 1;
+      }
+
+      memset(MainDataCache, 0, sizeof(MainDataCache));
+      memcpy(MainDataCache, MainDataResevoir + ((resevoirBitsRead / 8) + slack), MainDataCacheLength);
+    }
+
+    memset(MainDataResevoir, 0, sizeof(MainDataResevoir));
+
+    mBitOffset = nextFrameIndex;
+  }
+
+  PlatformFree(intermediateValues);
+  PlatformFree(overlapValues);
+  PlatformFree(qmfState);
+
+  pcmAudio.data = decompressedSamples;
+  pcmAudio.length = numSamples;
+  pcmAudio.channels = numChannels / 2;
+
+  switch (sampleRateBits) {
+    case 0x00:
+      pcmAudio.samplesPerSecond = 44100;
+      break;
+    case 0x01:
+      pcmAudio.samplesPerSecond = 48000;
+      break;
+    case 0x02:
+      pcmAudio.samplesPerSecond = 32000;
+      break;
+    default:
+      pcmAudio.samplesPerSecond = 0;
+      break;
+  }
+
+  return pcmAudio;
+}
+
+MP3::PCMAudioFloat MP3::DecompressFloat() {
+  if (mDataStream == nullptr) {
+    PCMAudioFloat pcmAudio;
+    return pcmAudio;
+  }
+
+  float* decompressedSamples = nullptr;
+
+  size_t guessedSize = 0;
+  size_t numSamples = 0;
+
+  float* intermediateValues = (float*)PlatformMalloc(2 * 576 * sizeof(float));
+  memset(intermediateValues, 0, 2 * 576 * sizeof(float));
+
+  float* overlapValues = (float*)PlatformMalloc(2 * 288 * sizeof(float));
+  memset(overlapValues, 0, 2 * 288 * sizeof(float));
+
+  float* qmfState = (float*)PlatformMalloc(960 * sizeof(float));
+  memset(qmfState, 0, 960 * sizeof(float));
+
+  PCMAudioFloat pcmAudio;
+  size_t sampleRateBits = 0;
+  size_t numChannels = 0;
+
+  while (((mBitOffset / 8) + 4) < mStreamSize) {
+    const FrameHeader header(ReadFrameHeader());
+
+    if ((mBitOffset / 8) + header.frameBytes >= mStreamSize) {
+      break;
+    }
+
+    SideInfomation sideInfo(ReadSideInformation(header.sampleRateBits, header.mode, header.modeExt));
+
+    numChannels = sideInfo.numChannels;
+    sampleRateBits = header.sampleRateBits;
+
+    // We may have some remaining data lingering from previous frames, copy it over.
+    const size_t headerAndSideInfoSize = sideInfo.byteLength + 4;
+    const size_t frameSize = header.frameBytes - headerAndSideInfoSize;
+
+    const size_t nextFrameIndex = mBitOffset + (frameSize * 8);
+
+    size_t cacheOffset = Min(MainDataCacheLength, sideInfo.mainData);
+    size_t reverseIndex = (sideInfo.mainData > MainDataCacheLength) ? 0 : MainDataCacheLength - sideInfo.mainData;
+
+    memcpy(MainDataResevoir, MainDataCache + reverseIndex, cacheOffset);
+    memcpy(MainDataResevoir + cacheOffset, mDataStream + (mBitOffset / 8), frameSize);
+
+    size_t resevoirBitsRead = 0;
+
+    if (decompressedSamples == nullptr) {
+      // Make a guess as to how big the buffer is going to be for storing an entire audio track.
+      const size_t numFrames = (mStreamSize / header.frameBytes) - 1;
+      const size_t totalSize = numFrames * 1152 * (numChannels / 2) * sizeof(float);
+      decompressedSamples = (float*)PlatformMalloc(totalSize);
+      memset(decompressedSamples, 0, totalSize);
+      guessedSize = totalSize;
+
+      DecodeMainDataFloat(MainDataResevoir,
+        resevoirBitsRead,
+        sideInfo,
+        header.modeExt,
+        header.sampleRateBits,
+        intermediateValues,
+        overlapValues,
+        decompressedSamples,
+        qmfState);
+    }
+    else {
+      const size_t frameSampleIncrement = 1152 * (numChannels / 2) * sizeof(float);
+      numSamples += frameSampleIncrement;
+
+      if (guessedSize + frameSampleIncrement < numSamples) {
+        decompressedSamples = (float*)PlatformReAlloc(decompressedSamples, numSamples + frameSampleIncrement);
+        memset(((uint8*)decompressedSamples) + numSamples, 0, frameSampleIncrement);
+      }
+
+      DecodeMainDataFloat(MainDataResevoir,
+        resevoirBitsRead,
+        sideInfo,
+        header.modeExt,
+        header.sampleRateBits,
+        intermediateValues,
+        overlapValues,
+        decompressedSamples + (numSamples / 8),
+        qmfState);
+    }
 
     MainDataCacheLength = (cacheOffset + frameSize) - (resevoirBitsRead / 8);
     if (MainDataCacheLength > 0) {
@@ -601,6 +732,78 @@ void MP3::DecodeMainData(uint8* resevoir, size_t& resevoirBitsRead, SideInfomati
 
     for (size_t j = 0; j < bands; j += 2) {
       Synthesize(intermediateValues + j, currOutData + (32 * numChannelsForGranule * j), numChannelsForGranule, synthesis + j * 64);
+    }
+
+    memcpy(qmfState, synthesis + (bands * 64), 960 * sizeof(float));
+  }
+}
+
+void MP3::DecodeMainDataFloat(uint8* resevoir, size_t& resevoirBitsRead, SideInfomation& sideInfo, ChannelModeExt ext, size_t sampleRateBits, float* intermediateValues, float* overlapValues, float* outData, float* qmfState) {
+  Granule* granules[] = { sideInfo.gr0, sideInfo.gr1 };
+  uint8 sharedScaleFactors[2][39] = {};
+  float scaleFactors[40] = {};
+  const size_t numChannelsForGranule = sideInfo.numChannels / 2;
+
+  for (size_t i = 0; i < 2; ++i) {
+    Granule* granule = granules[i];
+    memset(intermediateValues, 0, 2 * 576 * sizeof(float));
+
+    float synthesis[2112] = {};
+    float* currOutData = outData + (i * (576 * numChannelsForGranule));
+
+    for (size_t channel = 0; channel < numChannelsForGranule; ++channel) {
+      // Each granule can have 1-2 channels.
+      Granule* currentGranule = granule + channel;
+      size_t frameBitEnd = resevoirBitsRead + currentGranule->part2_3_length;
+      DecodeScaleFactors(resevoir, resevoirBitsRead, *currentGranule, currentGranule->scaleFactorSelect, ext == ChannelModeExt::MidStereo, scaleFactors, sharedScaleFactors[channel]);
+      DecodeHuffman(resevoir, resevoirBitsRead, *currentGranule, scaleFactors, intermediateValues + (channel * 576), frameBitEnd);
+    }
+
+    if (ext == ChannelModeExt::IntensityStereo) {
+      IntensityStereoProcess(intermediateValues, sharedScaleFactors[1], *granule);
+    }
+    else if (ext == ChannelModeExt::MidStereo) {
+      MidStereoProcess(intermediateValues, 576);
+    }
+
+    for (size_t channel = 0; channel < numChannelsForGranule; ++channel) {
+      Granule* currentGranule = granule + channel;
+
+      uint32 sampleRateIndex = (uint32)(6 + sampleRateBits);
+      if (sampleRateIndex > 0) {
+        --sampleRateIndex;
+      }
+
+      int32 antiAliasBands = 31;
+      int32 longBands = (currentGranule->mixedBlocks) ? 2 : 0;
+      if (sampleRateIndex == 2) {
+        longBands <<= 1;
+      }
+
+      float* granuleBuffer = (intermediateValues + (channel * 576));
+
+      if (currentGranule->shortScaleBand > 0) {
+        antiAliasBands = longBands - 1;
+        Reorder(granuleBuffer + (longBands * 18),
+          synthesis,
+          currentGranule->scaleFactorTable + currentGranule->longScaleBand);
+      }
+
+      float* overlap = (overlapValues + (channel * 288));
+      AntiAlias(granuleBuffer, antiAliasBands);
+      InverseMDCTGranule(granuleBuffer, overlap, currentGranule->blockType, longBands);
+      FlipSigns(granuleBuffer);
+    }
+
+    const int32 bands = 18;
+    for (size_t channel = 0; channel < numChannelsForGranule; ++channel) {
+      DCT2(intermediateValues + 576 * channel, bands);
+    }
+
+    memcpy(synthesis, qmfState, 960 * sizeof(float));
+
+    for (size_t j = 0; j < bands; j += 2) {
+      SynthesizeFloat(intermediateValues + j, currOutData + (32 * numChannelsForGranule * j), numChannelsForGranule, synthesis + j * 64);
     }
 
     memcpy(qmfState, synthesis + (bands * 64), 960 * sizeof(float));
@@ -1320,6 +1523,16 @@ void MP3::SynthesizeGranule(float* buffer, int32 bands, size_t channels, int16* 
   }
 }
 
+void MP3::SynthesizeGranuleFloat(float* buffer, int32 bands, size_t channels, float* outData, float* lines) {
+  for (int32 i = 0; i < channels; i++) {
+    DCT2(buffer + 576 * i, bands);
+  }
+
+  for (int32 i = 0; i < bands; i += 2) {
+    SynthesizeFloat(buffer + i, outData + (32 * channels * i), channels, lines + i * 64);
+  }
+}
+
 void MP3::SynthesizePair(int16* outData, size_t channels, const float* z) {
   float a = (z[14 * 64] - z[0]) * 29;
   a += (z[1 * 64] + z[13 * 64]) * 213;
@@ -1341,6 +1554,29 @@ void MP3::SynthesizePair(int16* outData, size_t channels, const float* z) {
   a += z[2 * 64] * 146;
   a += z[0 * 64] * -5;
   outData[16 * channels] = ScalePCM(a);
+}
+
+void MP3::SynthesizePairFloat(float* outData, size_t channels, const float* z) {
+  float a = (z[14 * 64] - z[0]) * 29;
+  a += (z[1 * 64] + z[13 * 64]) * 213;
+  a += (z[12 * 64] - z[2 * 64]) * 459;
+  a += (z[3 * 64] + z[11 * 64]) * 2037;
+  a += (z[10 * 64] - z[4 * 64]) * 5153;
+  a += (z[5 * 64] + z[9 * 64]) * 6574;
+  a += (z[8 * 64] - z[6 * 64]) * 37489;
+  a += z[7 * 64] * 75038;
+  outData[0] = ScalePCMFloat(a);
+
+  z += 2;
+  a = z[14 * 64] * 104;
+  a += z[12 * 64] * 1567;
+  a += z[10 * 64] * 9727;
+  a += z[8 * 64] * 64019;
+  a += z[6 * 64] * -9975;
+  a += z[4 * 64] * -45;
+  a += z[2 * 64] * 146;
+  a += z[0 * 64] * -5;
+  outData[16 * channels] = ScalePCMFloat(a);
 }
 
 void MP3::Synthesize(float* x1, int16* outData, size_t channels, float* lines) {
@@ -1503,6 +1739,166 @@ void MP3::Synthesize(float* x1, int16* outData, size_t channels, float* lines) {
   }
 }
 
+void MP3::SynthesizeFloat(float* x1, float* outData, size_t channels, float* lines) {
+  float* xr = x1 + 576 * (channels - 1);
+  float* dstr = outData + (channels - 1);
+  float* zlin = lines + 15 * 64;
+
+  zlin[4 * 15] = x1[18 * 16];
+  zlin[4 * 15 + 1] = xr[18 * 16];
+  zlin[4 * 15 + 2] = x1[0];
+  zlin[4 * 15 + 3] = xr[0];
+
+  zlin[4 * 31] = x1[1 + 18 * 16];
+  zlin[4 * 31 + 1] = xr[1 + 18 * 16];
+  zlin[4 * 31 + 2] = x1[1];
+  zlin[4 * 31 + 3] = xr[1];
+
+  SynthesizePairFloat(dstr, channels, lines + 4 * 15 + 1);
+  SynthesizePairFloat(dstr + 32 * channels, channels, lines + 4 * 15 + 64 + 1);
+  SynthesizePairFloat(outData, channels, lines + 4 * 15);
+  SynthesizePairFloat(outData + 32 * channels, channels, lines + 4 * 15 + 64);
+
+  static const float lut[] = {
+    -1,26,-31,208,218,401,-519,2063,2000,4788,-5517,7134,5959,35640,-39336,74992,
+    -1,24,-35,202,222,347,-581,2080,1952,4425,-5879,7640,5288,33791,-41176,74856,
+    -1,21,-38,196,225,294,-645,2087,1893,4063,-6237,8092,4561,31947,-43006,74630,
+    -1,19,-41,190,227,244,-711,2085,1822,3705,-6589,8492,3776,30112,-44821,74313,
+    -1,17,-45,183,228,197,-779,2075,1739,3351,-6935,8840,2935,28289,-46617,73908,
+    -1,16,-49,176,228,153,-848,2057,1644,3004,-7271,9139,2037,26482,-48390,73415,
+    -2,14,-53,169,227,111,-919,2032,1535,2663,-7597,9389,1082,24694,-50137,72835,
+    -2,13,-58,161,224,72,-991,2001,1414,2330,-7910,9592,70,22929,-51853,72169,
+    -2,11,-63,154,221,36,-1064,1962,1280,2006,-8209,9750,-998,21189,-53534,71420,
+    -2,10,-68,147,215,2,-1137,1919,1131,1692,-8491,9863,-2122,19478,-55178,70590,
+    -3,9,-73,139,208,-29,-1210,1870,970,1388,-8755,9935,-3300,17799,-56778,69679,
+    -3,8,-79,132,200,-57,-1283,1817,794,1095,-8998,9966,-4533,16155,-58333,68692,
+    -4,7,-85,125,189,-83,-1356,1759,605,814,-9219,9959,-5818,14548,-59838,67629,
+    -4,7,-91,117,177,-106,-1428,1698,402,545,-9416,9916,-7154,12980,-61289,66494,
+    -5,6,-97,111,163,-127,-1498,1634,185,288,-9585,9838,-8540,11455,-62684,65290
+  };
+
+  const float* w = lut;
+  for (int32 i = 14; i >= 0; --i) {
+    float a[4] = {};
+    float b[4] = {};
+
+    zlin[4 * i] = x1[18 * (31 - i)];
+    zlin[4 * i + 1] = xr[18 * (31 - i)];
+    zlin[4 * i + 2] = x1[1 + 18 * (31 - i)];
+    zlin[4 * i + 3] = xr[1 + 18 * (31 - i)];
+    zlin[4 * (i + 16)] = x1[1 + 18 * (1 + i)];
+    zlin[4 * (i + 16) + 1] = xr[1 + 18 * (1 + i)];
+    zlin[4 * (i - 16) + 2] = x1[18 * (1 + i)];
+    zlin[4 * (i - 16) + 3] = xr[18 * (1 + i)];
+
+    // S0(0), S2(1), S1(2), S2(3), S1(4), S2(5), S1(6), S2(7)
+    size_t k = 0;
+    { // S0(0)
+      float w0 = *w++;
+      float w1 = *w++;
+      float* vz = &zlin[4 * i - k * 64];
+      float* vy = &zlin[4 * i - (15 - k) * 64];
+      for (int32 j = 0; j < 4; j++) {
+        b[j] = vz[j] * w1 + vy[j] * w0;
+        a[j] = vz[j] * w0 - vy[j] * w1;
+      }
+    }
+
+    k = 1;
+    { // S2(1)
+      float w0 = *w++;
+      float w1 = *w++;
+      float* vz = &zlin[4 * i - k * 64];
+      float* vy = &zlin[4 * i - (15 - k) * 64];
+      for (size_t j = 0; j < 4; j++) {
+        b[j] += vz[j] * w1 + vy[j] * w0;
+        a[j] += vy[j] * w1 - vz[j] * w0;
+      }
+    }
+
+    k = 2;
+    { // S1(2)
+      float w0 = *w++;
+      float w1 = *w++;
+      float* vz = &zlin[4 * i - k * 64];
+      float* vy = &zlin[4 * i - (15 - k) * 64];
+      for (size_t j = 0; j < 4; j++) {
+        b[j] += vz[j] * w1 + vy[j] * w0;
+        a[j] += vz[j] * w0 - vy[j] * w1;
+      }
+    }
+
+    k = 3;
+    { // S2(3)
+      float w0 = *w++;
+      float w1 = *w++;
+      float* vz = &zlin[4 * i - k * 64];
+      float* vy = &zlin[4 * i - (15 - k) * 64];
+      for (size_t j = 0; j < 4; j++) {
+        b[j] += vz[j] * w1 + vy[j] * w0;
+        a[j] += vy[j] * w1 - vz[j] * w0;
+      }
+    }
+
+    k = 4;
+    { // S1(4)
+      float w0 = *w++;
+      float w1 = *w++;
+      float* vz = &zlin[4 * i - k * 64];
+      float* vy = &zlin[4 * i - (15 - k) * 64];
+      for (size_t j = 0; j < 4; j++) {
+        b[j] += vz[j] * w1 + vy[j] * w0;
+        a[j] += vz[j] * w0 - vy[j] * w1;
+      }
+    }
+
+    k = 5;
+    { // S2(5)
+      float w0 = *w++;
+      float w1 = *w++;
+      float* vz = &zlin[4 * i - k * 64];
+      float* vy = &zlin[4 * i - (15 - k) * 64];
+      for (size_t j = 0; j < 4; j++) {
+        b[j] += vz[j] * w1 + vy[j] * w0;
+        a[j] += vy[j] * w1 - vz[j] * w0;
+      }
+    }
+
+    k = 6;
+    { // S1(6)
+      float w0 = *w++;
+      float w1 = *w++;
+      float* vz = &zlin[4 * i - k * 64];
+      float* vy = &zlin[4 * i - (15 - k) * 64];
+      for (size_t j = 0; j < 4; j++) {
+        b[j] += vz[j] * w1 + vy[j] * w0;
+        a[j] += vz[j] * w0 - vy[j] * w1;
+      }
+    }
+
+    k = 7;
+    { // S2(7)
+      float w0 = *w++;
+      float w1 = *w++;
+      float* vz = &zlin[4 * i - k * 64];
+      float* vy = &zlin[4 * i - (15 - k) * 64];
+      for (size_t j = 0; j < 4; j++) {
+        b[j] += vz[j] * w1 + vy[j] * w0;
+        a[j] += vy[j] * w1 - vz[j] * w0;
+      }
+    }
+
+    dstr[(15 - i) * channels] = ScalePCMFloat(a[1]);
+    dstr[(17 + i) * channels] = ScalePCMFloat(b[1]);
+    outData[(15 - i) * channels] = ScalePCMFloat(a[0]);
+    outData[(17 + i) * channels] = ScalePCMFloat(b[0]);
+    dstr[(47 - i) * channels] = ScalePCMFloat(a[3]);
+    dstr[(49 + i) * channels] = ScalePCMFloat(b[3]);
+    outData[(47 - i) * channels] = ScalePCMFloat(a[2]);
+    outData[(49 + i) * channels] = ScalePCMFloat(b[2]);
+  }
+}
+
 int16 MP3::ScalePCM(float sample) {
   if (sample >= 32766.5f) {
     return (int16)32767;
@@ -1514,6 +1910,10 @@ int16 MP3::ScalePCM(float sample) {
 
   int16 s = (int16)(sample + .5f);
   return (s < 0) ? s - 1 : s;
+}
+
+float MP3::ScalePCMFloat(float sample) {
+  return sample * (1.f / 32768.f);
 }
 
 }

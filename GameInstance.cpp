@@ -56,10 +56,9 @@ void GameInstance::LoadAssets() {
   audioPath.SetFilename("AmbientTest.mp3");
   MP3 audioFile(audioPath);
 
-  mAmbientTrack = audioFile.Decompress();
+  mAmbientTrack = audioFile.DecompressFloat();
   if (mAmbientTrack.data != nullptr) {
-    // TODO: How big of an audio buffer do we actually need if we can fill it at ~1ms intervals?
-    mAudioDevice = PlatformInitializeAudioDevice(mAmbientTrack.samplesPerSecond, mAmbientTrack.channels, 100);
+    mAudioDevice = PlatformInitializeAudioDevice(mAmbientTrack.samplesPerSecond, mAmbientTrack.channels, 10);
     ZAssert(mAudioDevice != nullptr);
   }
 #endif
@@ -262,7 +261,7 @@ void GameInstance::TickAudio() {
     }
 
     // TODO: Audio is still a little choppy, fix this.
-    mAudioPosition += PlatformPlayAudio(mAudioDevice, mAmbientTrack.data, mAudioPosition, mAmbientTrack.length);
+    mAudioPosition += PlatformPlayAudio(mAudioDevice, mAmbientTrack.data, mAudioPosition, mAmbientTrack.length, audioDelta);
   }
 }
 

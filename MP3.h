@@ -16,9 +16,18 @@ class MP3 final {
     size_t samplesPerSecond = 0;
   };
 
+  struct PCMAudioFloat {
+    float* data = nullptr;
+    size_t length = 0;
+    size_t channels = 0;
+    size_t samplesPerSecond = 0;
+  };
+
   MP3(const FileString& path);
 
   PCMAudio Decompress();
+
+  PCMAudioFloat DecompressFloat();
 
   private:
   MemoryMappedFileReader mReader;
@@ -110,6 +119,16 @@ class MP3 final {
     int16* outData,
     float* qmfState);
 
+  void DecodeMainDataFloat(uint8* resevoir,
+    size_t& resevoirBitsRead,
+    SideInfomation& sideInfo,
+    ChannelModeExt ext,
+    size_t sampleRateBits,
+    float* intermediateValues,
+    float* overlapValues,
+    float* outData,
+    float* qmfState);
+
   void DecodeScaleFactors(uint8* resevoir, size_t& resevoirBitsRead, Granule& granule, size_t scaleFactorSelect, bool isMidStereo, float* scaleFactors, uint8* sharedScaleFactors);
 
   static void DecodeHuffman(uint8* resevoir, size_t& resevoirBitsRead, Granule& granule, float* scaleFactors, float* intermediateValues, size_t frameEnd);
@@ -156,11 +175,19 @@ class MP3 final {
 
   static void SynthesizeGranule(float* buffer, int32 bands, size_t channels, int16* outData, float* lines);
 
+  static void SynthesizeGranuleFloat(float* buffer, int32 bands, size_t channels, float* outData, float* lines);
+
   static void SynthesizePair(int16* outData, size_t channels, const float* z);
+
+  static void SynthesizePairFloat(float* outData, size_t channels, const float* z);
 
   static void Synthesize(float* x1, int16* outData, size_t channels, float* lines);
 
+  static void SynthesizeFloat(float* x1, float* outData, size_t channels, float* lines);
+
   static int16 ScalePCM(float sample);
+
+  static float ScalePCMFloat(float sample);
 };
 
 }

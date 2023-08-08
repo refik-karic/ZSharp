@@ -7,6 +7,7 @@
 #include <AudioSessionTypes.h>
 #include <Audioclient.h>
 #include <mmdeviceapi.h>
+#include <ksmedia.h>
 
 #include <initguid.h>
 
@@ -26,20 +27,16 @@ struct PlatformAudioDevice {
   IMMDevice* deviceHandle = nullptr;
   IAudioClient2* clientHandle = nullptr;
   IAudioRenderClient* renderClientHandle = nullptr;
-  IAudioClock* clockHandle = nullptr;
-  WAVEFORMATEX waveFormat = {};
 };
 
 PlatformAudioDevice* PlatformInitializeAudioDevice(size_t samplesPerSecond, size_t numChannels, size_t durationMillisecond) {
-  HRESULT hr = S_OK;
   REFERENCE_TIME hnsRequestedDuration = durationMillisecond * 10000; // In 100ns intervals
   IMMDeviceEnumerator* pEnumerator = nullptr;
   IMMDevice* pDevice = nullptr;
   IAudioClient2* pAudioClient = nullptr;
   IAudioRenderClient* pRenderClient = nullptr;
-  IAudioClock* pAudioClock = nullptr;
 
-  hr = CoCreateInstance(
+  HRESULT hr = CoCreateInstance(
     my_CLSID_MMDeviceEnumerator, NULL,
     CLSCTX_ALL, my_IID_IMMDeviceEnumerator,
     (void**)&pEnumerator);
@@ -76,27 +73,50 @@ PlatformAudioDevice* PlatformInitializeAudioDevice(size_t samplesPerSecond, size
     return nullptr;
   }
 
+  REFERENCE_TIME defaultPeriod = {};
+  REFERENCE_TIME minPeriod = {};
+  hr = pAudioClient->GetDevicePeriod(&defaultPeriod, &minPeriod);
+
+  if (hr != S_OK) {
+    return nullptr;
+  }
+
+#if 0
   WAVEFORMATEX waveFormat = {};
   waveFormat.wFormatTag = WAVE_FORMAT_PCM;
   waveFormat.nChannels = (WORD)numChannels;
   waveFormat.nSamplesPerSec = (DWORD)samplesPerSecond;
   waveFormat.nAvgBytesPerSec = (DWORD)((samplesPerSecond) * ((numChannels * 16) / 8));
-  waveFormat.nBlockAlign = (WORD)(numChannels * 16) / 8;
+  waveFormat.nBlockAlign = (WORD)((numChannels * 16) / 8);
   waveFormat.wBitsPerSample = 16;
   waveFormat.cbSize = 0;
+#endif
+
+  (void)numChannels;
+  (void)samplesPerSecond;
+
+  WAVEFORMATEX* actualFormat = nullptr;
+  hr = pAudioClient->GetMixFormat(&actualFormat);
+
+  if (hr != S_OK) {
+    return 0;
+  }
 
   /*DWORD flags = (AUDCLNT_STREAMFLAGS_RATEADJUST
     | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
     | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY);*/
-  DWORD flags = 0;
 
-  // TODO: Seems like Audio is playing back at 2x speed. How do we get consistent playback?
+  DWORD flags = (AUDCLNT_STREAMFLAGS_RATEADJUST
+    | AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM
+    | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY);
+
   hr = pAudioClient->Initialize(
     AUDCLNT_SHAREMODE_SHARED,
     flags,
     hnsRequestedDuration,
+    //minPeriod,
     0,
-    &waveFormat,
+    actualFormat,
     NULL);
 
   if (hr != S_OK) {
@@ -111,15 +131,19 @@ PlatformAudioDevice* PlatformInitializeAudioDevice(size_t samplesPerSecond, size
     return nullptr;
   }
 
-  hr = pAudioClient->GetService(
-    my_IID_IAudioClock,
-    (void**)&pAudioClock);
-
-  if (hr != S_OK) {
-    return nullptr;
-  }
-
   pEnumerator->Release();
+
+  {
+    BYTE* data = nullptr;
+    UINT32 bufferSize = 0;
+    pAudioClient->GetBufferSize(&bufferSize);
+
+    pRenderClient->GetBuffer(bufferSize, &data);
+
+    memset(data, 0, bufferSize * 8);
+
+    pRenderClient->ReleaseBuffer(bufferSize, AUDCLNT_BUFFERFLAGS_SILENT);
+  }
 
   hr = pAudioClient->Start();
 
@@ -127,13 +151,11 @@ PlatformAudioDevice* PlatformInitializeAudioDevice(size_t samplesPerSecond, size
   audioHandle->deviceHandle = pDevice;
   audioHandle->clientHandle = pAudioClient;
   audioHandle->renderClientHandle = pRenderClient;
-  audioHandle->waveFormat = waveFormat;
-  audioHandle->clockHandle = pAudioClock;
 
   return audioHandle;
 }
 
-size_t PlatformPlayAudio(PlatformAudioDevice* device, int16* pcmSignal, size_t offset, size_t endTrack) {
+size_t PlatformPlayAudio(PlatformAudioDevice* device, float* pcmSignal, size_t offset, size_t endTrack, size_t milliseconds) {
   if (device == nullptr ||
     device->deviceHandle == nullptr ||
     device->clientHandle == nullptr ||
@@ -141,41 +163,26 @@ size_t PlatformPlayAudio(PlatformAudioDevice* device, int16* pcmSignal, size_t o
     return 0;
   }
 
-#if 0
-  {
-    REFERENCE_TIME defaultPeriod{};
-    REFERENCE_TIME minimumPeriod{};
-    HRESULT ret = device->clientHandle->GetDevicePeriod(&defaultPeriod, &minimumPeriod);
-    if (ret != S_OK) {
-      return 0;
-    }
-
-    UINT64 position{};
-    UINT64 timestamp{};
-    ret = device->clockHandle->GetPosition(&position, &timestamp);
-
-    if (ret != S_OK) {
-      return 0;
-    }
-
-    UINT64 frequency{};
-    ret = device->clockHandle->GetFrequency(&frequency);
-
-    if (ret != S_OK) {
-      return 0;
-    }
-  }
-#endif
-
-  UINT32 bufferFrameCount;
-
-  HRESULT hr = device->clientHandle->GetBufferSize(&bufferFrameCount);
+  WAVEFORMATEX* actualFormat = nullptr;
+  HRESULT hr = device->clientHandle->GetMixFormat(&actualFormat);
 
   if (hr != S_OK) {
     return 0;
   }
 
-  UINT32 numFramesPadding;
+#if 0
+  WAVEFORMATEXTENSIBLE* extendedFormat = (WAVEFORMATEXTENSIBLE*)actualFormat;
+  (void)extendedFormat;
+#endif
+
+  UINT32 bufferFrameCount;
+  hr = device->clientHandle->GetBufferSize(&bufferFrameCount);
+
+  if (hr != S_OK) {
+    return 0;
+  }
+
+  UINT32 numFramesPadding = 0;
   hr = device->clientHandle->GetCurrentPadding(&numFramesPadding);
 
   if (hr != S_OK) {
@@ -187,7 +194,15 @@ size_t PlatformPlayAudio(PlatformAudioDevice* device, int16* pcmSignal, size_t o
     return 0;
   }
 
-  const size_t frameSize = (size_t)device->waveFormat.nBlockAlign;
+  const size_t frameSize = (size_t)actualFormat->nBlockAlign;
+
+  const size_t numSamplesToQueue = milliseconds * (actualFormat->nAvgBytesPerSec / 1000);
+  if ((numSamplesToQueue / frameSize) > numFramesAvailable) {
+    return 0;
+  }
+
+  numFramesAvailable = (UINT32)(numSamplesToQueue / frameSize);
+
   if (offset + (numFramesAvailable * frameSize) > endTrack) {
     numFramesAvailable = (UINT32)((endTrack - offset) / frameSize);
   }
@@ -198,6 +213,16 @@ size_t PlatformPlayAudio(PlatformAudioDevice* device, int16* pcmSignal, size_t o
   if (hr != S_OK) {
     return 0;
   }
+
+  /*
+  NOTE: In exclusive mode the sound card is looking for IEEE_FLOAT format.
+    WASAPI DOES NOT PROVIDE A SAMPLE RATE CONVERTER IN EXCLUSIVE MODE.
+    It's up to us to convert ourselves. Luckily our sound card is already defaulting to 48KHz.
+    We just need to make sure to give it the right float data.
+
+  NOTE: In shared mode WASAPI will do the sample rate conversion for us.
+    WASAPI uses 32-bit float internally during mixing so we might be able to get better latency/perf if we give it the native format.
+  */
 
   memcpy(pData, ((uint8*)pcmSignal) + offset, numFramesAvailable * frameSize);
 

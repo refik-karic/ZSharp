@@ -9,6 +9,7 @@
 #include "ScopedTimer.h"
 #include "ZConfig.h"
 #include "ZString.h"
+#include "PlatformTime.h"
 
 #include <synchapi.h>
 #include <timeapi.h>
@@ -189,22 +190,7 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
     return;
   }
 
-  LARGE_INTEGER dueTime = {};
-  ZSharp::int64 dueTimeLarge = -1;
-  dueTime.LowPart = (DWORD)(dueTimeLarge & 0xFFFFFFFF);
-  dueTime.HighPart = (LONG)(dueTimeLarge >> 32);
-
-  bool success = SetWaitableTimer(mHighPrecisionTimer,
-    &dueTime,
-    FRAMERATE_60_HZ_MS - 2,
-    &Win32PlatformApplication::OnTimerThunk,
-    this,
-    true);
-
-  if (!success) {
-    DestroyWindow(initialHandle);
-    return;
-  }
+  StartTimer((ZSharp::int64)1);
 }
 
 void Win32PlatformApplication::OnTimerThunk(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue) {
@@ -218,6 +204,10 @@ void Win32PlatformApplication::OnTimerThunk(LPVOID optionalArg, DWORD timerLowVa
 }
 
 void Win32PlatformApplication::OnTimer() {
+  size_t frameDeltaTime = ZSharp::PlatformHighResClock();
+
+  PauseTimer();
+
   RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
     ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
@@ -245,6 +235,18 @@ void Win32PlatformApplication::OnTimer() {
   mGameInstance.Tick();
 
   InvalidateRect(mWindowHandle, &activeWindowSize, false);
+
+  // Sleep if we have some time left in the frame, otherwise start again immediately.
+  frameDeltaTime = ZSharp::PlatformHighResClockDelta(frameDeltaTime, ZSharp::ClockUnits::Milliseconds);
+  if (frameDeltaTime >= FRAMERATE_60_HZ_MS) {
+    frameDeltaTime = 1;
+  }
+  else {
+    frameDeltaTime = FRAMERATE_60_HZ_MS - frameDeltaTime;
+    frameDeltaTime = (frameDeltaTime * 10000);
+  }
+
+  StartTimer((ZSharp::int64)frameDeltaTime);
 }
 
 void Win32PlatformApplication::OnPaint() {
@@ -327,7 +329,7 @@ void Win32PlatformApplication::OnClose() {
 
 void Win32PlatformApplication::OnDestroy() {
   if (mHighPrecisionTimer != INVALID_HANDLE_VALUE) {
-    CancelWaitableTimer(mHighPrecisionTimer);
+    PauseTimer();
     CloseHandle(mHighPrecisionTimer);
   }
 
@@ -400,6 +402,24 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
 
 void Win32PlatformApplication::UpdateAudio() {
   mGameInstance.TickAudio();
+}
+
+void Win32PlatformApplication::PauseTimer() {
+  CancelWaitableTimer(mHighPrecisionTimer);
+}
+
+void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds) {
+  LARGE_INTEGER dueTime = {};
+  ZSharp::int64 dueTimeLarge = -1 * relativeNanoseconds;
+  dueTime.LowPart = (DWORD)(dueTimeLarge & 0xFFFFFFFF);
+  dueTime.HighPart = (LONG)(dueTimeLarge >> 32);
+
+  SetWaitableTimer(mHighPrecisionTimer,
+    &dueTime,
+    FRAMERATE_60_HZ_MS - 2,
+    &Win32PlatformApplication::OnTimerThunk,
+    this,
+    true);
 }
 
 #endif

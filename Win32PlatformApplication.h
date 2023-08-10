@@ -67,6 +67,10 @@ class Win32PlatformApplication {
   void SplatTexture(const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel);
 
   void UpdateAudio();
+
+  void PauseTimer();
+
+  void StartTimer(ZSharp::int64 relativeNanoseconds);
 };
 
 #endif

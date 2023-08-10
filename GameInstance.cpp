@@ -185,6 +185,9 @@ void GameInstance::Initialize() {
   LoadAssets();
 
   mCamera.Position() = Vec3(0.f, 0.f, -40.f);
+  // Clip the model at the origin by moving the camera far away.
+  // From there we can see how long the clipping pass takes for a given scene.
+  //mCamera.Position() = Vec3(0.f, 0.f, -200.f);
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));

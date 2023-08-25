@@ -16,8 +16,8 @@
 
 namespace ZSharp {
 Camera::Camera() {
-  mLook[2] = 1.f;
-  mUp[1] = -1.f;
+  mLook[2] = -1.f;
+  mUp[1] = 1.f;
 
   mFovHoriz = 45.f;
   mFovVert = 45.f;
@@ -75,7 +75,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   Vec3 v(mUp - (w * (mUp * w)));
   v.Normalize();
 
-  Vec3 u(w.Cross(v));
+  Vec3 u(v.Cross(w));
 
   Mat4x4 translation;
   translation.Identity();
@@ -132,7 +132,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   for (size_t i = 0; i < clipLength; ++i) {
     float* vertexData = vertexBuffer.GetClipData(i);
 
-    const float perspectiveZ = vertexData[2];
+    const float perspectiveZ = vertexData[3];
 
     // Homogenize
     const float invDivisor = 1.f / vertexData[2];
@@ -167,9 +167,9 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 }
 
 void Camera::OnResize(size_t width, size_t height) {
-  mWindowTransform[0][0] = (float)width;
+  mWindowTransform[0][0] = -((float)width);
   mWindowTransform[0][2] = (float)width;
-  mWindowTransform[1][1] = -((float)height);
+  mWindowTransform[1][1] = (float)height;
   mWindowTransform[1][2] = (float)height;
   mWindowTransform = mWindowTransform * (1.f / 2.f);
 }

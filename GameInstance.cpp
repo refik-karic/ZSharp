@@ -26,7 +26,7 @@
 
 #define DEBUG_AUDIO 0
 #define DEBUG_TRIANGLE 0
-#define DEBUG_TRIANGLE_TEXTURE 0
+#define DEBUG_TRIANGLE_TEXTURE 1
 #define DISABLE_DEBUG_TRANSFORMS 1
 
 namespace ZSharp {
@@ -64,13 +64,23 @@ void GameInstance::LoadAssets() {
 #endif
 
 #if DEBUG_TRIANGLE
+#if 0
+  const float X = 5.f;
+  const float Y = 5.f;
+  //const float Z = 0.f;
+  const float W = 1.f;
+  const float v1[]{ -X, 0.f, -30.f, W, 0.f, 0.f, 1.f };
+  const float v3[]{ 0.f, Y, 0.f, W, 1.0f, 0.f, 0.f };
+  const float v2[]{ X, -3.f, 10.f, W, 0.0f, 1.f, 0.f };
+#else
   const float X = 5.f;
   const float Y = 5.f;
   const float Z = 0.f;
   const float W = 1.f;
-  const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f, 0.f };
+  const float v1[]{ -X, 0.f, Z, W, 0.f, 0.f, 1.f };
   const float v2[]{ 0.f, Y, Z, W, 1.0f, 0.f, 0.f };
-  const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
+  const float v3[]{ X, 0.f, Z, W, 0.0f, 1.f, 0.f };
+#endif
 
   ShadingModeOrder order;
   ShadingMode mode(ShadingModes::RGB, 3);
@@ -129,13 +139,13 @@ void GameInstance::MoveCamera(Direction direction) {
   case Direction::LEFT:
   {
     Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
-    mCamera.Position() = mCamera.Position() - sideVec;
+    mCamera.Position() = mCamera.Position() + sideVec;
   }
   break;
   case Direction::RIGHT:
   {
     Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
-    mCamera.Position() = mCamera.Position() + sideVec;
+    mCamera.Position() = mCamera.Position() - sideVec;
   }
   break;
   }
@@ -184,10 +194,10 @@ void GameInstance::PauseTransforms() {
 void GameInstance::Initialize() {
   LoadAssets();
 
-  //mCamera.Position() = Vec3(0.f, 0.f, -40.f);
+  mCamera.Position() = Vec3(0.f, 0.f, 40.f);
   // Clip the model at the origin by moving the camera far away.
   // From there we can see how long the clipping pass takes for a given scene.
-  mCamera.Position() = Vec3(0.f, 0.f, -200.f);
+  //mCamera.Position() = Vec3(0.f, 0.f, 200.f);
 
   InputManager& inputManager = InputManager::GetInstance();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
@@ -198,14 +208,7 @@ void GameInstance::Initialize() {
 void GameInstance::Tick() {
   NamedScopedTimer(Render);
 
-  size_t frameDelta;
-
-  if (mLastFrameTime == 0) {
-    frameDelta = static_cast<size_t>(FRAMERATE_60HZ_MS);
-  }
-  else {
-    frameDelta = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
-  }
+  size_t frameDelta = (mLastFrameTime == 0) ? static_cast<size_t>(FRAMERATE_60HZ_MS) : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
 
   mLastFrameTime = PlatformHighResClock();
 
@@ -215,11 +218,8 @@ void GameInstance::Tick() {
   const String deltaString(String::FromFormat("Frame Delta (ms): {0}\n", frameDelta));
   Logger::Log(LogCategory::Info, deltaString);
 
-  {
-    String cameraPosition(mCamera.Position().ToString());
-    cameraPosition.Append("\n");
-    Logger::Log(LogCategory::Info, cameraPosition);
-  }
+  const String cameraPosition(String::FromFormat("Camera: {0}\n", mCamera.Position().ToString()));
+  Logger::Log(LogCategory::Info, cameraPosition);
 
   ++mFrameCount;
 
@@ -245,6 +245,7 @@ void GameInstance::Tick() {
     Framebuffer& frameBuffer = mRenderer.GetFrameBuffer();
     DrawText(frameString, 10, 10, frameBuffer, ZColors::BLACK);
     DrawText(deltaString, 10, 20, frameBuffer, ZColors::BLACK);
+    DrawText(cameraPosition, 10, 30, frameBuffer, ZColors::BLACK);
   }
 }
 

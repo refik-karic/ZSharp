@@ -49,8 +49,7 @@ void Logger::InternalLog(LogCategory category, const String& message) {
       break;
   }
 
-  logMessage.Appendf("[{0}] ", PlatformSystemTimeFormat());
-  logMessage.Append(message);
+  logMessage.Appendf("[{0}] {1}", PlatformSystemTimeFormat(), message);
 
   // Log to 3 locations:
   //  1) Console (if process contains one)

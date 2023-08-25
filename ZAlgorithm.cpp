@@ -15,6 +15,7 @@
 static const size_t MaxOutVerts = 3;
 static const size_t NumInVerts = 3;
 static const size_t NumAttributes = 3;
+static const size_t ScatchSize = 128;
 
 namespace ZSharp {
 
@@ -22,10 +23,6 @@ bool InsidePlane(const float point[3], const float clipEdge[3], const float norm
   return (((point[0] - clipEdge[0]) * normal[0]) +
     ((point[1] - clipEdge[1]) * normal[1]) +
     ((point[2] - clipEdge[2]) * normal[2])) < 0.f;
-}
-
-Vec3 GetParametricVector3D(const float point, const Vec3& start, const Vec3& end) {
-  return (start + ((end - start) * point));
 }
 
 void GetParametricVector4D(const float point, const float start[4], const float end[4], float outVec[4]) {
@@ -105,9 +102,9 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 
   const size_t stride = vertexBuffer.GetStride();
   const size_t vertByteSize = stride * sizeof(float);
-  const size_t scatchSize = 128;
+  const size_t indexBufferSize = indexBuffer.GetIndexSize();
 
-  for (size_t i = 0; i < indexBuffer.GetIndexSize(); i += TRI_VERTS) {
+  for (size_t i = 0; i < indexBufferSize; i += TRI_VERTS) {
     const size_t i1 = indexBuffer[i];
     const size_t i2 = indexBuffer[i + 1];
     const size_t i3 = indexBuffer[i + 2];
@@ -115,8 +112,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     const float* v2 = vertexBuffer[i2];
     const float* v3 = vertexBuffer[i3];
 
-    float clipBuffer[scatchSize];
-    memset(clipBuffer, 0, sizeof(clipBuffer));
+    float clipBuffer[ScatchSize] = {};
     memcpy(clipBuffer, v1, vertByteSize);
     memcpy(clipBuffer + stride, v2, vertByteSize);
     memcpy(clipBuffer + (stride * 2), v3, vertByteSize);
@@ -196,12 +192,8 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 
 size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, const float clipEdge[3], const float edgeNormal[3], size_t stride) {
   size_t numOutputVerts = 0;
-
   const size_t vertByteSize = stride * sizeof(float);
-  const size_t scratchSize = 128;
-
-  float clipBuffer[scratchSize];
-  memset(clipBuffer, 0, sizeof(clipBuffer));
+  float clipBuffer[ScatchSize] = {};
 
   for (size_t i = 0; i < numInputVerts; ++i) {
     const size_t nextIndex = (i + 1) % numInputVerts;
@@ -241,7 +233,7 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
         // Clipped vertex.
         memcpy(clipBuffer + (numOutputVerts * stride),
           clipPoint, 
-          sizeof(Vec4));
+          sizeof(clipPoint));
         // Clipped attributes.
         memcpy(clipBuffer + (numOutputVerts * stride) + 4,
           clippedAttributes,
@@ -264,7 +256,7 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
         // Clipped vertex.
         memcpy(clipBuffer + (numOutputVerts * stride),
           clipPoint, 
-          sizeof(Vec4));
+          sizeof(clipPoint));
         // Clipped attributes.
         memcpy(clipBuffer + (numOutputVerts * stride) + 4,
           clippedAttributes,
@@ -280,11 +272,15 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
 }
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer) {
+  NamedScopedTimer(BackfaceCull);
+  
   ZAssert((indexBuffer.GetIndexSize() % TRI_VERTS) == 0);
   
   if (indexBuffer.GetIndexSize() < TRI_VERTS) {
     return;
   }
+
+  const float* view = *viewer;
 
   for (size_t i = indexBuffer.GetIndexSize(); i >= TRI_VERTS; i -= TRI_VERTS) {
     size_t i1 = indexBuffer[i - 3];
@@ -293,13 +289,21 @@ void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& ind
     const float* v1 = vertexBuffer[i1];
     const float* v2 = vertexBuffer[i2];
     const float* v3 = vertexBuffer[i3];
-    const Vec3& firstEdge = *(reinterpret_cast<const Vec3*>(v1));
-    const Vec3& secondEdge = *(reinterpret_cast<const Vec3*>(v2));
-    const Vec3& thirdEdge = *(reinterpret_cast<const Vec3*>(v3));
-    const Vec3 p1p0(secondEdge - firstEdge);
-    const Vec3 p2p0(thirdEdge - firstEdge);
-    const Vec3 triangleNormal(p1p0.Cross(p2p0));
-    float dotResult = (viewer - firstEdge) * triangleNormal;
+
+    // TODO: Move this into a dedicate math header.
+    // We're doing vec3 sub, cross product, and dot product.
+    const float p1p0[3] = { v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2] };
+    const float p2p0[3] = { v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2] };
+
+    float normal[3] = {
+      (p1p0[1] * p2p0[2]) - (p1p0[2] * p2p0[1]),
+      (p1p0[2] * p2p0[0]) - (p1p0[0] * p2p0[2]),
+      (p1p0[0] * p2p0[1]) - (p1p0[1] * p2p0[0]),
+    };
+
+    float dotResult = ((view[0] - v1[0]) * normal[0]) + 
+      ((view[1] - v1[1]) * normal[1]) + 
+      ((view[2] - v1[2]) * normal[2]);
     if (FloatLessThanEqual(dotResult, 0.f)) {
       indexBuffer.RemoveTriangle(i - 3);
     }

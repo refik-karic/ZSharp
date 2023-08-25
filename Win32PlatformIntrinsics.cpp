@@ -255,17 +255,18 @@ void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
     for (size_t i = 0; i < length; i += stride) {
       float* nextVec = data + i;
-      _mm_store_ps(nextVec, _mm_div_ps(_mm_load_ps(nextVec), _mm_set_ps1(nextVec[3])));
+      float perspectiveTerm = nextVec[3];
+      _mm_store_ps(nextVec, _mm_div_ps(_mm_load_ps(nextVec), _mm_set_ps1(perspectiveTerm)));
+      nextVec[3] = perspectiveTerm;
     }
   }
   else {
     for (size_t i = 0; i < length; i += stride) {
       float* vec = data + i;
       const float invDivisor = 1.f / vec[3];
-      vec[0] /= invDivisor;
-      vec[1] /= invDivisor;
-      vec[2] /= invDivisor;
-      vec[3] /= invDivisor;
+      vec[0] *= invDivisor;
+      vec[1] *= invDivisor;
+      vec[2] *= invDivisor;
     }
   }
 }

@@ -14,7 +14,6 @@
 
 static const size_t MaxOutVerts = 3;
 static const size_t NumInVerts = 3;
-static const size_t NumAttributes = 3;
 static const size_t ScatchSize = 128;
 
 namespace ZSharp {
@@ -46,12 +45,11 @@ float ParametricLinePlaneIntersection(const float start[3], const float end[3], 
 void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, float nearClipZ) {
   NamedScopedTimer(NearClip);
 
-  float nearEdge[3] = { 0.f, 0.f, nearClipZ };
-  float edgeNormal[3] = { 0.f, 0.f, -1.f };
+  const float nearEdge[3] = { 0.f, 0.f, nearClipZ };
+  const float edgeNormal[3] = { 0.f, 0.f, -1.f };
 
   const size_t stride = vertexBuffer.GetStride();
   const size_t vertByteSize = stride * sizeof(float);
-  const size_t scatchSize = 128;
 
   for (size_t i = 0; i < indexBuffer.GetIndexSize(); i += TRI_VERTS) {
     const size_t i1 = indexBuffer[i];
@@ -61,14 +59,13 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     const float* v2 = vertexBuffer[i2];
     const float* v3 = vertexBuffer[i3];
 
-    float clipBuffer[scatchSize];
+    float clipBuffer[ScatchSize];
     memset(clipBuffer, 0, sizeof(clipBuffer));
     memcpy(clipBuffer, v1, vertByteSize);
     memcpy(clipBuffer + stride, v2, vertByteSize);
     memcpy(clipBuffer + (stride * 2), v3, vertByteSize);
 
-    size_t numClippedVerts = 3;
-    numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, nearEdge, edgeNormal, stride);
+    const size_t numClippedVerts = SutherlandHodgmanClip(clipBuffer, 3, nearEdge, edgeNormal, stride);
 
     if (numClippedVerts > 0) {
       size_t currentClipIndex = vertexBuffer.GetClipLength();
@@ -193,13 +190,13 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, const float clipEdge[3], const float edgeNormal[3], size_t stride) {
   size_t numOutputVerts = 0;
   const size_t vertByteSize = stride * sizeof(float);
-  float clipBuffer[ScatchSize] = {};
+  float clipBuffer[ScatchSize];
 
   for (size_t i = 0; i < numInputVerts; ++i) {
     const size_t nextIndex = (i + 1) % numInputVerts;
 
-    float* currentOffset = inputVerts + (i * stride);
-    float* nextOffset = inputVerts + (nextIndex * stride);
+    const float* currentOffset = inputVerts + (i * stride);
+    const float* nextOffset = inputVerts + (nextIndex * stride);
 
     const bool p0Inside = InsidePlane(currentOffset, clipEdge, edgeNormal);
     const bool p1Inside = InsidePlane(nextOffset, clipEdge, edgeNormal);
@@ -222,22 +219,17 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
       const float* currentAttributes = currentOffset + 4;
       const float* nextAttributes = nextOffset + 4;
 
-      float clippedAttributes[NumAttributes];
-      memset(clippedAttributes, 0, sizeof(clippedAttributes));
-
-      for (size_t j = 0; j < NumAttributes; ++j) {
-        clippedAttributes[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
-      }
-
       if (!p0Inside) {
         // Clipped vertex.
         memcpy(clipBuffer + (numOutputVerts * stride),
           clipPoint, 
           sizeof(clipPoint));
+
         // Clipped attributes.
-        memcpy(clipBuffer + (numOutputVerts * stride) + 4,
-          clippedAttributes,
-          sizeof(clippedAttributes));
+        float* attributeOffset = (clipBuffer + (numOutputVerts * stride)) + 4;
+        for (size_t j = 0; j < stride - 4; ++j) {
+          attributeOffset[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
+        }
         ++numOutputVerts;
 
         // Unchanged input vertex.
@@ -257,16 +249,18 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
         memcpy(clipBuffer + (numOutputVerts * stride),
           clipPoint, 
           sizeof(clipPoint));
+
         // Clipped attributes.
-        memcpy(clipBuffer + (numOutputVerts * stride) + 4,
-          clippedAttributes,
-          sizeof(clippedAttributes));
+        float* attributeOffset = (clipBuffer + (numOutputVerts * stride)) + 4;
+        for (size_t j = 0; j < stride - 4; ++j) {
+          attributeOffset[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
+        }
         ++numOutputVerts;
       }
     }
   }
 
-  memcpy(inputVerts, clipBuffer, sizeof(clipBuffer));
+  memcpy(inputVerts, clipBuffer, numOutputVerts * vertByteSize);
 
   return numOutputVerts;
 }

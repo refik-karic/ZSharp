@@ -1,14 +1,13 @@
 #pragma once
 
 #include "IndexBuffer.h"
-#include "FixedArray.h"
 #include "Vec3.h"
-#include "Vec4.h"
 #include "VertexBuffer.h"
+#include "PlatformDefines.h"
 
 namespace ZSharp {
 
-bool InsidePlane(const float point[3], const float clipEdge[3], const float normal[3]);
+FORCE_INLINE bool InsidePlane(const float point[3], const float clipEdge[3], const float normal[3]);
 
 void GetParametricVector4D(const float point, const float start[4], const float end[4], float outVec[4]);
 

@@ -6,6 +6,7 @@
 #include "CommonMath.h"
 #include "Constants.h"
 #include "PlatformMemory.h"
+#include "ScopedTimer.h"
 #include "Vec4.h"
 
 static constexpr size_t MAX_INDICIES_AFTER_CLIP = 12;
@@ -99,6 +100,8 @@ void VertexBuffer::Reset() {
 }
 
 void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
+  NamedScopedTimer(VertexBufferTransform);
+
   for (size_t i = 0; i < GetVertSize(); ++i) {
     Vec4& vertexVector = *(reinterpret_cast<Vec4*>(mData + (i * mStride)));
     vertexVector = transform.ApplyTransform(vertexVector);

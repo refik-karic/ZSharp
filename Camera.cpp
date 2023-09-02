@@ -13,6 +13,7 @@
 #define ASSERT_CHECK 0
 
 #define DISABLE_BACKFACE_CULLING 1
+#define ROTATE_CAMERA_WORLD_CENTER 1
 
 namespace ZSharp {
 Camera::Camera() {
@@ -47,22 +48,34 @@ Vec3 Camera::GetUp() const {
 }
 
 void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
-  Vec4 rotatedVec(mLook);
-  rotatedVec = rotationMatrix.ApplyTransform(rotatedVec);
+#if 1
+  Vec4 lookVec(mLook);
+  lookVec = rotationMatrix.ApplyTransform(lookVec);
 
-  rotatedVec.Homogenize();
-  mLook[0] = rotatedVec[0];
-  mLook[1] = rotatedVec[1];
-  mLook[2] = rotatedVec[2];
+  lookVec.Homogenize();
+  mLook[0] = lookVec[0];
+  mLook[1] = lookVec[1];
+  mLook[2] = lookVec[2];
+#endif
+
+#if ROTATE_CAMERA_WORLD_CENTER
+  Vec4 positionVec(mPosition);
+  positionVec = rotationMatrix.ApplyTransform(positionVec);
+
+  positionVec.Homogenize();
+  mPosition[0] = positionVec[0];
+  mPosition[1] = positionVec[1];
+  mPosition[2] = positionVec[2];
+#endif
 
 #if 0
-  rotatedVec = mUp;
-  rotatedVec = rotationMatrix.ApplyTransform(rotatedVec);
+  Vec4 upVec(mUp);
+  upVec = rotationMatrix.ApplyTransform(upVec);
 
-  rotatedVec.Homogenize();
-  mUp[0] = rotatedVec[0];
-  mUp[1] = rotatedVec[1];
-  mUp[2] = rotatedVec[2];
+  upVec.Homogenize();
+  mUp[0] = upVec[0];
+  mUp[1] = upVec[1];
+  mUp[2] = upVec[2];
 #endif
 }
 

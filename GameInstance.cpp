@@ -221,6 +221,9 @@ void GameInstance::Tick() {
   const String cameraPosition(String::FromFormat("Camera: {0}\n", mCamera.Position().ToString()));
   Logger::Log(LogCategory::Info, cameraPosition);
 
+  const String cameraView(String::FromFormat("Camera View: {0}\n", mCamera.GetLook().ToString()));
+  Logger::Log(LogCategory::Info, cameraView);
+
   ++mFrameCount;
 
   InputManager& inputManager = InputManager::GetInstance();
@@ -246,6 +249,7 @@ void GameInstance::Tick() {
     DrawText(frameString, 10, 10, frameBuffer, ZColors::BLACK);
     DrawText(deltaString, 10, 20, frameBuffer, ZColors::BLACK);
     DrawText(cameraPosition, 10, 30, frameBuffer, ZColors::BLACK);
+    DrawText(cameraView, 10, 40, frameBuffer, ZColors::BLACK);
   }
 }
 
@@ -326,37 +330,33 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
   Vec3 V2(ProjectClick((float)x, (float)y));
 
   Vec3 normal = V1.Cross(V2);
-  V1.Normalize();
-  V2.Normalize();
-
-  float theta = acosf((V1 * V2));
-
-  Quaternion quat(DegreesToRadians(theta), normal);
+  float theta = V1 * V2;
+  Quaternion quat(theta, normal);
   RotateTrackball(quat);
 }
 
 Vec3 GameInstance::ProjectClick(float x, float y) {
-  const float radius = 1.f;
-
   ZConfig& config = ZConfig::GetInstance();
-  int32 width = (int32)config.GetViewportWidth().Value();
-  int32 height = (int32)config.GetViewportHeight().Value();
+  float width = (float)config.GetViewportWidth().Value();
+  float height = (float)config.GetViewportHeight().Value();
 
-  float scale = fminf((float)width, (float)height) - 1;
+  // TODO: The bigger the radius, the slower the rotation.
+  // Maybe we could use this to adjust the speed at which the camera spins?
+  float radius = width * 5.f;
 
-  float newX = ((2 * x) - width + 1) / scale;
-  float newY = ((2 * y) - height + 1) / scale;
+  float newX = ((x - (width / 2.f)) / radius);
+  float newY = ((y - (height / 2.f)) / radius);
 
-  bool insideSphere = ((newX * newX) + (newY * newY)) <= ((radius * radius) / 2.f);
-  float z = 0.f;
-  if (insideSphere) {
-    z = sqrtf((radius * radius) - ((newX * newX) - (newY * newY)));
+  // Note that we flip the X axis so that left/right rotation looks natural.
+
+  float r = (newX * newX) + (newY * newY);
+  if (r > 1.f) {
+    float s = 1.f / sqrtf(r);
+    return Vec3(-newX * s, newY * s, 0.f);
   }
   else {
-    z = (((radius * radius) / 2.f) / sqrtf(((newX * newX) + (newY * newY))));
+    return Vec3(-newX, newY, sqrtf(1.f - r));
   }
-
-  return Vec3(newX, newY, -z);
 }
 
 }

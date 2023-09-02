@@ -22,6 +22,8 @@ void InputManager::UpdateMousePosition(int32 x, int32 y) {
   else {
     mOldMouseX = x;
     mOldMouseY = y;
+    mCurrentMouseX = x;
+    mCurrentMouseY = y;
   }
 }
 
@@ -53,6 +55,7 @@ void InputManager::Process() {
 
   if (mMousePressed) {
     OnMouseMoveDelegate.Broadcast(mOldMouseX, mOldMouseY, mCurrentMouseX, mCurrentMouseY);
+    UpdateMousePosition(mCurrentMouseX, mCurrentMouseY);
   }
 
   mKeyboard.Fill(KeyState::Clear);

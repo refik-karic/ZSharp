@@ -2,7 +2,6 @@
 
 #include "ZBaseTypes.h"
 #include "ZString.h"
-#include "Mat4x4.h"
 
 namespace ZSharp {
 
@@ -42,7 +41,7 @@ void Unaligned_128MulByValue(const float* a, const float b, float* dest);
 
 float Unaligned_128MulSum(const float* a, const float* b);
 
-void Aligned_Mat4x4Transform(const Mat4x4& matrix, float* data, size_t stride, size_t length);
+void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t stride, size_t length);
 
 void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length);
 

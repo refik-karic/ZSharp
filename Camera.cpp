@@ -10,8 +10,6 @@
 #include "PlatformIntrinsics.h"
 #include "ScopedTimer.h"
 
-#define ASSERT_CHECK 0
-
 #define DISABLE_BACKFACE_CULLING 1
 #define ROTATE_CAMERA_WORLD_CENTER 1
 
@@ -117,15 +115,14 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   unhing[2][3] = standardNearPlane;
   unhing[3][2] = -(standardFarPlane - standardNearPlane);
 
-  Mat4x4 perspectiveTransform(scale * (uToE * translation));
-  perspectiveTransform = unhing * perspectiveTransform;
+  const Mat4x4 perspectiveTransform(unhing * (scale * (uToE * translation)));
 
 #if !DISABLE_BACKFACE_CULLING
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 #endif
 
   // Apply the perspective projection transform to all input vertices.
-  Aligned_Mat4x4Transform(perspectiveTransform, vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+  Aligned_Mat4x4Transform((const float(*) [4])*perspectiveTransform, vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
 
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.
@@ -154,8 +151,8 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     vertexData[2] *= invDivisor;
 
     // Apply Window transform.
-    const float dotX = (vertexData[0] * windowTransformVec0[0]) + (vertexData[1] * windowTransformVec0[1]) + (vertexData[2] * windowTransformVec0[2]);
-    const float dotY = (vertexData[0] * windowTransformVec1[0]) + (vertexData[1] * windowTransformVec1[1]) + (vertexData[2] * windowTransformVec1[2]);
+    const float dotX = Dot3(vertexData, windowTransformVec0);
+    const float dotY = Dot3(vertexData, windowTransformVec1);
 
     vertexData[0] = dotX;
     vertexData[1] = dotY;
@@ -164,18 +161,6 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     // Prevents us from having to calculate this at a later point in the drawing code.
     vertexData[2] = perspectiveZ;
     vertexData[3] = (1 / perspectiveZ);
-
-#if ASSERT_CHECK
-    const float width = (float)ZConfig::GetInstance().GetViewportWidth();
-    const float height = (float)ZConfig::GetInstance().GetViewportHeight();
-
-    // TODO: Window transform is not transforming point to correct screen space bounds.
-    // Investigate if there's a bug here...
-    ZAssert(vertexVector[0] >= 0.f);
-    ZAssert(vertexVector[0] <= width);
-    ZAssert(vertexVector[1] >= 0.f);
-    ZAssert(vertexVector[1] <= height);
-#endif
   }
 }
 
@@ -184,7 +169,7 @@ void Camera::OnResize(size_t width, size_t height) {
   mWindowTransform[0][2] = (float)width;
   mWindowTransform[1][1] = (float)height;
   mWindowTransform[1][2] = (float)height;
-  mWindowTransform = mWindowTransform * (1.f / 2.f);
+  mWindowTransform = mWindowTransform * 0.5f;
 }
   
 }

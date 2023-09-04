@@ -55,18 +55,18 @@ float& Vec3::operator[](const size_t index) {
 
 Vec3 Vec3::operator+(const Vec3& vector) const {
   Vec3 result(
-    mData[0] + vector[0],
-    mData[1] + vector[1],
-    mData[2] + vector[2]
+    mData[0] + vector.mData[0],
+    mData[1] + vector.mData[1],
+    mData[2] + vector.mData[2]
   );
   return result;
 }
 
 Vec3 Vec3::operator-(const Vec3& vector) const {
   Vec3 result(
-    mData[0] - vector[0],
-    mData[1] - vector[1],
-    mData[2] - vector[2]
+    mData[0] - vector.mData[0],
+    mData[1] - vector.mData[1],
+    mData[2] - vector.mData[2]
   );
   return result;
 }
@@ -86,14 +86,14 @@ Vec3 Vec3::operator*(float scalar) const {
 }
 
 float Vec3::operator*(const Vec3& vector) const {
-  return (mData[0] * vector[0]) + (mData[1] * vector[1]) + (mData[2] * vector[2]);
+  return Dot3(mData, vector.mData);
 }
 
 Vec3 Vec3::Cross(const Vec3& vec) const {
   Vec3 result(
-    (mData[1] * vec[2]) - (mData[2] * vec[1]),
-    (mData[2] * vec[0]) - (mData[0] * vec[2]),
-    (mData[0] * vec[1]) - (mData[1] * vec[0])
+    (mData[1] * vec.mData[2]) - (mData[2] * vec.mData[1]),
+    (mData[2] * vec.mData[0]) - (mData[0] * vec.mData[2]),
+    (mData[0] * vec.mData[1]) - (mData[1] * vec.mData[0])
   );
   return result;
 }
@@ -121,9 +121,14 @@ void Vec3::Clear() {
 }
 
 String Vec3::ToString() const {
-  String result;
-  result.Appendf("X={0}, Y={1}, Z={2}", mData[0], mData[1], mData[2]);
+  String result(String::FromFormat("X={0}, Y={1}, Z={2}", mData[0], mData[1], mData[2]));
   return result;
+}
+
+float Dot3(const float lhs[3], const float rhs[3]) {
+  return (lhs[0] * rhs[0]) + 
+    (lhs[1] * rhs[1]) + 
+    (lhs[2] * rhs[2]);
 }
 
 }

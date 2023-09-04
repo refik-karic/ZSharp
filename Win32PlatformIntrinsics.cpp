@@ -201,50 +201,49 @@ float Unaligned_128MulSum(const float* a, const float* b) {
   return _mm_cvtss_f32(mulResult);
 }
 
-void Aligned_Mat4x4Transform(const Mat4x4& matrix, float* data, size_t stride, size_t length) {
+void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t stride, size_t length) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
-    __m128 v0 = _mm_load_ps(*(matrix[0]));
-    __m128 v1 = _mm_load_ps(*(matrix[1]));
-    __m128 v2 = _mm_load_ps(*(matrix[2]));
-    __m128 v3 = _mm_load_ps(*(matrix[3]));
+    /*
+      We preload 4 registers with all of the matrix X, Y, Z, W values.
+      We also broadcast each vector component (X, Y, Z, W) to 4 registers.
+
+      This saves us some arithmetic. We only have to perform 4 multiplies and 4 adds per vertex in the end.
+    */
+
+    __m128 matrixX = _mm_set_ps(matrix[3][0], matrix[2][0], matrix[1][0], matrix[0][0]);
+    __m128 matrixY = _mm_set_ps(matrix[3][1], matrix[2][1], matrix[1][1], matrix[0][1]);
+    __m128 matrixZ = _mm_set_ps(matrix[3][2], matrix[2][2], matrix[1][2], matrix[0][2]);
+    __m128 matrixW = _mm_set_ps(matrix[3][3], matrix[2][3], matrix[1][3], matrix[0][3]);
 
     for (size_t i = 0; i < length; i += stride) {
-      __m128 vec = _mm_load_ps(data + i);
+      float* vecData = data + i;
 
-      __m128 x = _mm_mul_ps(vec, v0);
-      __m128 y = _mm_mul_ps(vec, v1);
-      __m128 z = _mm_mul_ps(vec, v2);
-      __m128 w = _mm_mul_ps(vec, v3);
+      __m128 vecX = _mm_set_ps1(vecData[0]);
+      __m128 vecY = _mm_set_ps1(vecData[1]);
+      __m128 vecZ = _mm_set_ps1(vecData[2]);
+      __m128 vecW = _mm_set_ps1(vecData[3]);
 
-      x = _mm_hadd_ps(x, x);
-      x = _mm_hadd_ps(x, x);
+      vecX = _mm_mul_ps(matrixX, vecX);
+      vecY = _mm_mul_ps(matrixY, vecY);
+      vecZ = _mm_mul_ps(matrixZ, vecZ);
+      vecW = _mm_mul_ps(matrixW, vecW);
 
-      y = _mm_hadd_ps(y, y);
-      y = _mm_hadd_ps(y, y);
+      __m128 result = _mm_add_ps(vecX, vecY);
+      result = _mm_add_ps(result, vecZ);
+      result = _mm_add_ps(result, vecW);
 
-      z = _mm_hadd_ps(z, z);
-      z = _mm_hadd_ps(z, z);
-
-      w = _mm_hadd_ps(w, w);
-      w = _mm_hadd_ps(w, w);
-
-      vec.m128_f32[0] = _mm_cvtss_f32(x);
-      vec.m128_f32[1] = _mm_cvtss_f32(y);
-      vec.m128_f32[2] = _mm_cvtss_f32(z);
-      vec.m128_f32[3] = _mm_cvtss_f32(w);
-
-      _mm_store_ps(data + i, vec);
+      _mm_store_ps(vecData, result);
     }
   }
   else {
     for (size_t i = 0; i < length; i += stride) {
-      Vec4& vec = *(reinterpret_cast<Vec4*>(data + i));
+      float* vec = (data + i);
 
       float xyzw[4];
-      xyzw[0] = matrix[0] * vec;
-      xyzw[1] = matrix[1] * vec;
-      xyzw[2] = matrix[2] * vec;
-      xyzw[3] = matrix[3] * vec;
+      xyzw[0] = (matrix[0][0] * vec[0]) + (matrix[0][1] * vec[1]) + (matrix[0][2] * vec[2]) + (matrix[0][3] * vec[3]);
+      xyzw[1] = (matrix[1][0] * vec[0]) + (matrix[1][1] * vec[1]) + (matrix[1][2] * vec[2]) + (matrix[1][3] * vec[3]);
+      xyzw[2] = (matrix[2][0] * vec[0]) + (matrix[2][1] * vec[1]) + (matrix[2][2] * vec[2]) + (matrix[2][3] * vec[3]);
+      xyzw[3] = (matrix[3][0] * vec[0]) + (matrix[3][1] * vec[1]) + (matrix[3][2] * vec[2]) + (matrix[3][3] * vec[3]);
 
       memcpy(data + i, xyzw, sizeof(xyzw));
     }

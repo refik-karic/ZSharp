@@ -25,6 +25,10 @@ class Mat4x4 final {
 
   const Vec4& operator[](size_t index) const;
 
+  float* operator*();
+
+  const float* operator*() const;
+
   Mat4x4 operator*(float scalar);
 
   Mat4x4 operator*(const Mat4x4& matrix);

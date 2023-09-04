@@ -28,6 +28,14 @@ const Vec4& Mat4x4::operator[](size_t index) const {
   return mData[index];
 }
 
+float* Mat4x4::operator*() {
+  return (float*)&mData[0];
+}
+
+const float* Mat4x4::operator*() const {
+  return (float*)&mData[0];
+}
+
 Mat4x4 Mat4x4::operator*(float scalar) {
   Mat4x4 result;
 

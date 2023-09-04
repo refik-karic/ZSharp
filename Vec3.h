@@ -5,6 +5,8 @@
 
 namespace ZSharp {
 
+float Dot3(const float lhs[3], const float rhs[3]);
+
 class Vec3 final {
 public:
   Vec3();

@@ -25,7 +25,7 @@
 #include <cmath>
 
 #define DEBUG_AUDIO 0
-#define DEBUG_TRIANGLE 0
+#define DEBUG_TRIANGLE 1
 #define DEBUG_TRIANGLE_TEXTURE 0
 #define DISABLE_DEBUG_TRANSFORMS 1
 

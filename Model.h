@@ -1,11 +1,10 @@
 ﻿#pragma once
 
-#include "ZAssert.h"
 #include "ZBaseTypes.h"
 
+#include "AABB.h"
 #include "Array.h"
 #include "IndexBuffer.h"
-#include "Mat4x4.h"
 #include "Mesh.h"
 #include "ShadingMode.h"
 #include "Texture.h"
@@ -24,20 +23,9 @@ class Model final : public WorldObject {
 
   Model(const Model& copy);
 
-  void operator=(const Model& rhs) {
-    if (this == &rhs) {
-      return;
-    }
+  void operator=(const Model& rhs);
 
-    mShadingOrder = rhs.mShadingOrder;
-    mStride = rhs.mStride;
-    mData = rhs.mData;
-  }
-
-  Mesh& operator[](size_t index) {
-    ZAssert(index < mData.Size());
-    return mData[index];
-  }
+  Mesh& operator[](size_t index);
 
   size_t MeshCount() const;
 
@@ -60,6 +48,8 @@ class Model final : public WorldObject {
   void BindTexture(uint8* data, size_t width, size_t height, size_t channels);
 
   Texture& GetTexture();
+
+  AABB ComputeBoundingBox() const;
 
   private:
   ShadingModeOrder mShadingOrder;

@@ -270,6 +270,25 @@ void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
   }
 }
 
+void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]) {
+  /*
+  Note that we don't do any kind of CPUID check here.
+  minps/maxps are available since the first version of SSE.
+  */
+
+  __m128 min = _mm_loadu_ps(outMin);
+  __m128 max = _mm_loadu_ps(outMax);
+  
+  for (size_t i = 0; i < numVertices; i += stride) {
+    __m128 vertex = _mm_loadu_ps(vertices + i);
+    min = _mm_min_ps(min, vertex);
+    max = _mm_max_ps(max, vertex);
+  }
+
+  _mm_storeu_ps(outMin, min);
+  _mm_storeu_ps(outMax, max);
+}
+
 }
 
 #endif

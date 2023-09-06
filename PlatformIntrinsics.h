@@ -45,4 +45,6 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t strid
 
 void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length);
 
+void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
+
 }

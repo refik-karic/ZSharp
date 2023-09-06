@@ -18,15 +18,7 @@ class Mesh final {
 
   Mesh(const Mesh& copy);
   
-  void operator=(const Mesh& rhs) {
-    if (this == &rhs) {
-      return;
-    }
-
-    mStride = rhs.mStride;
-    mVertTable = rhs.mVertTable;
-    mTriangleFaceTable = rhs.mTriangleFaceTable;
-  }
+  void operator=(const Mesh& rhs);
 
   void Resize(size_t vertexLength, size_t faceTableLength);
 

@@ -6,6 +6,7 @@ target_sources(ZSharp
     PRIVATE
         Visualizer.natvis
 
+        AABB.h
         Array.h
         Asset.h
         Bundle.h
@@ -76,6 +77,7 @@ target_sources(ZSharp
         ZFile.h
         ZString.h
 	
+        AABB.cpp
         Asset.cpp
         Bundle.cpp
         BundleGeneration.cpp

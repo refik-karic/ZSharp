@@ -1,7 +1,10 @@
 #include "Model.h"
 
+#include "ZAssert.h"
 #include "Triangle.h"
 #include "PNG.h"
+#include "ScopedTimer.h"
+#include "PlatformIntrinsics.h"
 
 #define FAST_LOAD 1
 
@@ -12,6 +15,21 @@ Model::Model(const ShadingModeOrder& order, size_t stride)
 
 Model::Model(const Model& copy) 
   : mShadingOrder(copy.mShadingOrder), mStride(copy.mStride), mData(copy.mData) {
+}
+
+void Model::operator=(const Model& rhs) {
+  if (this == &rhs) {
+    return;
+  }
+
+  mShadingOrder = rhs.mShadingOrder;
+  mStride = rhs.mStride;
+  mData = rhs.mData;
+}
+
+Mesh& Model::operator[](size_t index) {
+  ZAssert(index < mData.Size());
+  return mData[index];
 }
 
 size_t Model::MeshCount() const {
@@ -80,6 +98,25 @@ void Model::BindTexture(uint8* data, size_t width, size_t height, size_t channel
 
 Texture& Model::GetTexture() {
   return mTexture;
+}
+
+AABB Model::ComputeBoundingBox() const {
+  NamedScopedTimer(ComputeAABB);
+
+  float min[4] = {};
+  float max[4] = {};
+
+  for (Mesh& mesh : mData) {
+    const size_t stride = mesh.Stride();
+    const float* vertices = mesh.GetVertTable().GetData();
+    const size_t numVertices = mesh.GetVertTable().Size();
+
+    Unaligned_AABB(vertices, numVertices, stride, min, max);
+  }
+
+  AABB aabb(min, max);
+
+  return aabb;
 }
 
 }

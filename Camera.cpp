@@ -77,8 +77,12 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
 #endif
 }
 
-void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
+void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds) {
   NamedScopedTimer(PerspectiveProjection);
+
+  if (clipBounds == ClipBounds::Outside) {
+    return;
+  }
 
   Vec3 w(-mLook);
   w.Normalize();
@@ -127,14 +131,22 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.
   // The near clip edge must be > 0, hence we negate the plane.
-  ClipTrianglesNearPlane(vertexBuffer, indexBuffer, -standardNearPlane);
+  if (clipBounds == ClipBounds::ClippedNear) {
+    ClipTrianglesNearPlane(vertexBuffer, indexBuffer, -standardNearPlane);
+  }
 
   // Points at this stage must have Z > 0.
   // If Z < 0, points will re-appear in front of the camera.
   // If Z = 0, divide by 0 occurs and trashes the results.
   Aligned_Vec4Homogenize(vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
 
-  ClipTriangles(vertexBuffer, indexBuffer);
+  if (clipBounds == ClipBounds::Inside) {
+    vertexBuffer.AppendClipData(vertexBuffer[0], vertexBuffer.GetVertSize() * vertexBuffer.GetStride() * sizeof(float), vertexBuffer.GetVertSize());
+    indexBuffer.AppendClipData(indexBuffer.GetInputData(), indexBuffer.GetIndexSize() * 3);
+  }
+  else {
+    ClipTriangles(vertexBuffer, indexBuffer);
+  }
 
   const size_t clipLength = vertexBuffer.GetClipLength();
   const float* windowTransformVec0 = *mWindowTransform[0];
@@ -161,6 +173,81 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     // Prevents us from having to calculate this at a later point in the drawing code.
     vertexData[2] = perspectiveZ;
     vertexData[3] = (1 / perspectiveZ);
+  }
+}
+
+ClipBounds Camera::ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
+  NamedScopedTimer(ClipBoundsCheck);
+
+  const size_t inIndexSize = indexBuffer.GetIndexSize();
+
+  Vec3 w(-mLook);
+  w.Normalize();
+
+  Vec3 v(mUp - (w * (mUp * w)));
+  v.Normalize();
+
+  Vec3 u(v.Cross(w));
+
+  Mat4x4 translation;
+  translation.Identity();
+  translation.SetTranslation(-mPosition);
+
+  Mat4x4 uToE;
+  uToE[0] = u;
+  uToE[1] = v;
+  uToE[2] = w;
+  uToE[3][3] = 1.f;
+
+  const float fovScale = (PI_OVER_180 / 2.f);
+  Mat4x4 scale;
+  scale[0][0] = 1.f / (mFarPlane * (tanf((mFovHoriz * fovScale))));
+  scale[1][1] = 1.f / (mFarPlane * (tanf((mFovVert * fovScale))));
+  scale[2][2] = 1.f / mFarPlane;
+  scale[3][3] = 1.f;
+
+  const float standardNearPlane = -(mNearPlane / mFarPlane);
+  const float standardFarPlane = -1.f;
+
+  Mat4x4 unhing;
+  unhing[0][0] = standardFarPlane - standardNearPlane;
+  unhing[1][1] = standardFarPlane - standardNearPlane;
+  unhing[2][2] = standardFarPlane;
+  unhing[2][3] = standardNearPlane;
+  unhing[3][2] = -(standardFarPlane - standardNearPlane);
+
+  const Mat4x4 perspectiveTransform(unhing * (scale * (uToE * translation)));
+
+  // Apply the perspective projection transform to all input vertices.
+  Aligned_Mat4x4Transform((const float(*)[4]) * perspectiveTransform, vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+
+  // Clip against near plane to avoid things behind camera reappearing.
+  // This clip is special because it needs to append clip data and shuffle it back to the beginning.
+  // The near clip edge must be > 0, hence we negate the plane.
+  ClipTrianglesNearPlane(vertexBuffer, indexBuffer, -standardNearPlane);
+
+  if (indexBuffer.GetIndexSize() == 0) {
+    return ClipBounds::Outside;
+  }
+  else if (indexBuffer.GetIndexSize() != inIndexSize) {
+    return ClipBounds::ClippedNear;
+  }
+
+  // Points at this stage must have Z > 0.
+  // If Z < 0, points will re-appear in front of the camera.
+  // If Z = 0, divide by 0 occurs and trashes the results.
+  Aligned_Vec4Homogenize(vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+
+  ClipTriangles(vertexBuffer, indexBuffer);
+  
+  if (indexBuffer.GetClipLength() == 0) {
+    return ClipBounds::Outside;
+  }
+  else if (indexBuffer.GetClipLength() != inIndexSize) {
+    return ClipBounds::ClippedNDC;
+  }
+  else {
+    return ClipBounds::Inside;
   }
 }
 

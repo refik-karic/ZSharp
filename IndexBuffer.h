@@ -23,6 +23,8 @@ class IndexBuffer final {
 
   void CopyInputData(const size_t* data, size_t index, size_t length);
 
+  size_t* GetInputData();
+
   void Resize(size_t size);
 
   void Clear();
@@ -30,6 +32,8 @@ class IndexBuffer final {
   void Reset();
 
   void RemoveTriangle(size_t index);
+
+  void AppendClipData(const size_t* data, const size_t length);
 
   void AppendClipData(const Triangle& triangle);
 

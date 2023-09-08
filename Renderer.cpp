@@ -10,6 +10,7 @@
 #include "ZDrawing.h"
 #include "ScopedTimer.h"
 #include "DebugText.h"
+#include "ZAlgorithm.h"
 
 namespace ZSharp {
 Renderer::Renderer() {
@@ -32,7 +33,18 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     vertexBuffer.ApplyTransform(model.ObjectTransform());
 
-    camera.PerspectiveProjection(vertexBuffer, indexBuffer);
+    const AABB aabb(model.ComputeBoundingBox());
+    ClipBounds clipBounds;
+    {
+      VertexBuffer aabbVertexBuffer;
+      IndexBuffer aabbIndexBuffer;
+      TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer);
+      aabbVertexBuffer.ApplyTransform(model.ObjectTransform());
+
+      clipBounds = camera.ClipBoundsCheck(aabbVertexBuffer, aabbIndexBuffer);
+    }
+
+    camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds);
 
     // TODO: This is a little hacky for now. We want a cleaner solution to handle missing textures.
     Texture* texture = &model.GetTexture();

@@ -51,6 +51,10 @@ void IndexBuffer::CopyInputData(const size_t* data, size_t index, size_t length)
   mWorkingSize += length;
 }
 
+size_t* IndexBuffer::GetInputData() {
+  return mData;
+}
+
 void IndexBuffer::Resize(size_t size) {
   if (mData != nullptr) {
     PlatformAlignedFree(mData);
@@ -90,6 +94,11 @@ void IndexBuffer::RemoveTriangle(size_t index) {
   }
 
   ZAssert((mWorkingSize % TRI_VERTS) == 0);
+}
+
+void IndexBuffer::AppendClipData(const size_t* data, const size_t length) {
+  memcpy(mClipData + mClipLength, data, length * sizeof(size_t));
+  mClipLength += (length / TRI_VERTS);
 }
 
 void IndexBuffer::AppendClipData(const Triangle& triangle) {

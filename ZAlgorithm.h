@@ -4,6 +4,7 @@
 #include "Vec3.h"
 #include "VertexBuffer.h"
 #include "PlatformDefines.h"
+#include "AABB.h"
 
 namespace ZSharp {
 
@@ -20,5 +21,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, const float clipEdge[3], const float edgeNormal[3], size_t stride);
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer);
+
+void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 
 }

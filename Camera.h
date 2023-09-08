@@ -10,6 +10,13 @@
 
 namespace ZSharp {
 
+enum class ClipBounds {
+  Inside,
+  Outside,
+  ClippedNear,
+  ClippedNDC
+};
+
 class Camera final : public WorldObject {
   public:
   Camera();
@@ -22,7 +29,9 @@ class Camera final : public WorldObject {
 
   void RotateCamera(const Mat4x4& rotationMatrix);
 
-  void PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
+  void PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds);
+
+  ClipBounds ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 
   private:
   Vec3 mLook;

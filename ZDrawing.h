@@ -34,10 +34,6 @@ void DrawRunSlice(Framebuffer& framebuffer,
     const float* p0,
     const float* p1);
 
-void TraceLine(GlobalEdgeTable& edgeTable,
-  const float* p0,
-  const float* p1,
-  size_t primitiveIndex,
-  size_t attributeStride);
+void TraceLine(const float* p0, const float* p1, size_t attributeStride);
 
 }

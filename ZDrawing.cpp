@@ -7,11 +7,12 @@
 #include "Common.h"
 #include "CommonMath.h"
 #include "Constants.h"
+#include "ScopedTimer.h"
 #include "Triangle.h"
 
-float GlobalAttributeBuffer[4096];
-
 namespace ZSharp {
+
+static GlobalEdgeTable globalEdgeTable(1080, 3);
 
 float PerspectiveLerp(const float p0,
   const float p1,
@@ -152,7 +153,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
   }
 }
 
-void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, size_t primitiveIndex, size_t attributeStride) {
+void TraceLine(const float* p0, const float* p1, size_t attributeStride) {
   int32 x1 = static_cast<int32>(p0[0]);
   int32 y1 = static_cast<int32>(p0[1]);
   int32 x2 = static_cast<int32>(p1[0]);
@@ -160,6 +161,9 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
 
   const float* p0Attributes = p0 + 4;
   const float* p1Attributes = p1 + 4;
+
+  float* attributeBuffer = globalEdgeTable.AttributeScratchBuffer();
+
   // Vertical Line
   if (x1 == x2) {
     if (y2 < y1) {
@@ -170,10 +174,10 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
       float yT = ParametricSolveForT(static_cast<float>(y), p1[1], p0[1]);
 
       for (size_t a = 0; a < attributeStride; ++a) {
-        GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
+        attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
       }
 
-      edgeTable.AddPoint(y, x1, primitiveIndex, GlobalAttributeBuffer);
+      globalEdgeTable.AddPoint(y, x1, attributeBuffer);
     }
   }
   else if (y1 == y2) { // Horizontal line.
@@ -181,8 +185,11 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
       Swap(x1, x2);
     }
 
-    edgeTable.AddPoint(y1, x1, primitiveIndex, p0Attributes);
-    edgeTable.AddPoint(y1, x2, primitiveIndex, p1Attributes);
+    memcpy(attributeBuffer, p0Attributes, attributeStride * sizeof(float));
+    globalEdgeTable.AddPoint(y1, x1, attributeBuffer);
+
+    memcpy(attributeBuffer, p1Attributes, attributeStride * sizeof(float));
+    globalEdgeTable.AddPoint(y1, x2, attributeBuffer);
   }
   else {
     float slope;
@@ -211,20 +218,22 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
           float xT = ParametricSolveForT(static_cast<float>(x1), p1[0], p0[0]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
-            GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
+            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
           }
 
-          edgeTable.AddPoint(y1, x1, primitiveIndex, GlobalAttributeBuffer);
+          globalEdgeTable.AddPoint(y1, x1, attributeBuffer);
+
           x1 -= slopeStep;
         }
         else { // Tracing left to right.
           float xT = ParametricSolveForT(static_cast<float>(x1), p1[0], p0[0]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
-            GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
+            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], xT);
           }
 
-          edgeTable.AddPoint(y1, x1, primitiveIndex, GlobalAttributeBuffer);
+          globalEdgeTable.AddPoint(y1, x1, attributeBuffer);
+
           x1 += slopeStep;
         }
 
@@ -248,9 +257,10 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
           float yT = ParametricSolveForT(static_cast<float>(j), p1[1], p0[1]);
 
           for (size_t a = 0; a < attributeStride; ++a) {
-            GlobalAttributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
+            attributeBuffer[a] = PerspectiveLerp(p0Attributes[a], p1Attributes[a], p0[2], p0[3], p1[2], p1[3], yT);
           }
-          edgeTable.AddPoint(j, x1, primitiveIndex, GlobalAttributeBuffer);
+
+          globalEdgeTable.AddPoint(j, x1, attributeBuffer);
         }
 
         x1 += minorStep;
@@ -261,12 +271,19 @@ void TraceLine(GlobalEdgeTable& edgeTable, const float* p0, const float* p1, siz
 }
 
 void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const ShadingModeOrder& order, const Texture* texture) {
+  NamedScopedTimer(DrawFlatTriangles);
+  
   size_t stride = 0;
   for (ShadingMode& mode : order) {
     stride += mode.length;
   }
   
-  GlobalEdgeTable edgeTable(framebuffer.GetHeight(), stride);
+  const size_t frameHeight = framebuffer.GetHeight();
+  const float maxHeight = (float)frameHeight;
+
+  if ((globalEdgeTable.TableHeight() != frameHeight) || (globalEdgeTable.AttributeSize() != stride)) {
+    globalEdgeTable.Resize(frameHeight, stride);
+  }
 
   size_t end = indexBuffer.GetClipLength();
   for (size_t i = 0; i < end; i += TRI_VERTS) {
@@ -274,12 +291,26 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
     const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
     const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
 
-    TraceLine(edgeTable, v1, v2, i, stride);
-    TraceLine(edgeTable, v2, v3, i, stride);
-    TraceLine(edgeTable, v3, v1, i, stride);
-  }
+    // Calculate the amount of scan lines a triangle occupies.
+    // Round to prev/next to avoid flooring.
+    float minY = Min(Min(v1[1], v2[1]), v3[1]);
+    float maxY = Max(Max(v1[1], v2[1]), v3[1]);
 
-  edgeTable.Draw(framebuffer, order, texture);
+    minY -= 1;
+    maxY += 1;
+
+    TraceLine(v1, v2, stride);
+    TraceLine(v2, v3, stride);
+    TraceLine(v3, v1, stride);
+
+    Clamp(minY, 0.f, maxHeight);
+    Clamp(maxY, 0.f, maxHeight);
+
+    size_t startY = (size_t)minY;
+    size_t endY = (size_t)maxY;
+
+    globalEdgeTable.Draw(framebuffer, order, texture, startY, endY);
+  }
 }
 
 void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {

@@ -14,38 +14,47 @@ class GlobalEdgeTable final {
   public:
 
   GlobalEdgeTable(size_t height, size_t attributeStride);
+  ~GlobalEdgeTable();
   GlobalEdgeTable(const GlobalEdgeTable&) = delete;
   void operator=(const GlobalEdgeTable&) = delete;
 
-  void AddPoint(int32 yIndex, int32 x, size_t primitiveIndex, const float* attribute);
-  void Draw(Framebuffer& frameBuffer, const ShadingModeOrder& order, const Texture* texture);
+  void AddPoint(int32 yIndex, int32 x, const float* attribute);
+  
+  size_t TableHeight() const;
+  
+  size_t AttributeSize() const;
+  
+  float* AttributeScratchBuffer();
+
+  void Resize(size_t height, size_t stride);
+
+  void Draw(Framebuffer& frameBuffer, const ShadingModeOrder& order, const Texture* texture, size_t startY, size_t endY);
 
   private:
   
   struct ScanLine {
     int32 x1;
     int32 x2;
-    size_t primitiveIndex;
-    size_t x1AttributeIndex;
-    size_t x2AttributeIndex;
+    float* x1Attributes;
+    float* x2Attributes;
 
     ScanLine() 
-      : x1(0), x2(0), primitiveIndex(0), x1AttributeIndex(0), x2AttributeIndex(0) {
+      : x1(0), x2(0), x1Attributes(nullptr), x2Attributes(nullptr) {
 
     }
 
-    ScanLine(int32 p1, int32 p2, size_t index, size_t p1AttributeIndex, size_t p2AttributeIndex)
-      : x1(p1), x2(p2), primitiveIndex(index), x1AttributeIndex(p1AttributeIndex), x2AttributeIndex(p2AttributeIndex) {
+    ScanLine(int32 p1, int32 p2, float* p1AttributeIndex, float* p2AttributeIndex)
+      : x1(p1), x2(p2), x1Attributes(p1AttributeIndex), x2Attributes(p2AttributeIndex) {
 
     }
   };
 
-  typedef Array<ScanLine> ScanLineList;
+  void ResetScanLine(ScanLine* scanLine);
 
-  Array<ScanLineList> mEdgeTable;
-  Array<float> mLerpedAttributes;
+  ScanLine* mScanLines = nullptr;
+  float* mScratchBuffer = nullptr;
+  size_t mScanHeight = 0;
   size_t mAttributeStride = 0;
-  size_t mAttributeIndex = 0;
 };
 
 }

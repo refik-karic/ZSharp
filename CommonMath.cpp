@@ -1,10 +1,5 @@
 #include "CommonMath.h"
 
-#include <cmath>
-
-#include "Constants.h"
-#include "ZAssert.h"
-
 namespace ZSharp {
 size_t RoundUpNearestMultiple(size_t val, size_t multiple) {
   if (val == 0 || multiple == 0) {
@@ -22,10 +17,6 @@ size_t RoundUpNearestMultiple(size_t val, size_t multiple) {
 
 float DegreesToRadians(float degrees) {
   return degrees * PI_OVER_180;
-}
-
-float Lerp(float x1, float x2, float point) {
-  return fmaf(point, x2, (1.f - point) * x1);
 }
 
 float ParametricSolveForT(const float step, const float p0, const float p1) {

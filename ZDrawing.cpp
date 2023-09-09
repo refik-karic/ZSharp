@@ -285,19 +285,22 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
     globalEdgeTable.Resize(frameHeight, stride);
   }
 
-  size_t end = indexBuffer.GetClipLength();
+  const size_t vertexStride = vertexBuffer.GetStride();
+  const float* vertexClipData = vertexBuffer.GetClipData(0);
+  const size_t* indexClipData = indexBuffer.GetClipData(0);
+  const size_t end = indexBuffer.GetClipLength();
   for (size_t i = 0; i < end; i += TRI_VERTS) {
-    const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
-    const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
-    const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
+    const float* v1 = vertexClipData + (indexClipData[i] * vertexStride);
+    const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
+    const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
 
     // Calculate the amount of scan lines a triangle occupies.
     // Round to prev/next to avoid flooring.
     float minY = Min(Min(v1[1], v2[1]), v3[1]);
     float maxY = Max(Max(v1[1], v2[1]), v3[1]);
 
-    minY -= 1;
-    maxY += 1;
+    minY -= 1.f;
+    maxY += 1.f;
 
     TraceLine(v1, v2, stride);
     TraceLine(v2, v3, stride);
@@ -314,15 +317,20 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
 }
 
 void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {
-    size_t end = indexBuffer.GetClipLength();
-    for (size_t i = 0; i < end; i += TRI_VERTS) {
-        const float* v1 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i));
-        const float* v2 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 1));
-        const float* v3 = vertexBuffer.GetClipData(indexBuffer.GetClipData(i + 2));
-        DrawRunSlice(framebuffer, v1, v2);
-        DrawRunSlice(framebuffer, v2, v3);
-        DrawRunSlice(framebuffer, v3, v1);
-    }
+  NamedScopedTimer(DrawWireframeTriangles);
+  
+  const size_t vertexStride = vertexBuffer.GetStride();
+  const float* vertexClipData = vertexBuffer.GetClipData(0);
+  const size_t* indexClipData = indexBuffer.GetClipData(0);
+  const size_t end = indexBuffer.GetClipLength();
+  for (size_t i = 0; i < end; i += TRI_VERTS) {
+    const float* v1 = vertexClipData + (indexClipData[i] * vertexStride);
+    const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
+    const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
+    DrawRunSlice(framebuffer, v1, v2);
+    DrawRunSlice(framebuffer, v2, v3);
+    DrawRunSlice(framebuffer, v3, v1);
+  }
 }
 
 }

@@ -114,8 +114,8 @@ size_t IndexBuffer::GetClipLength() const {
   return mClipLength;
 }
 
-size_t IndexBuffer::GetClipData(size_t index) const {
-  return *(mClipData + index);
+const size_t* IndexBuffer::GetClipData(size_t index) const {
+  return mClipData + index;
 }
 
 void IndexBuffer::ShuffleClippedData() {

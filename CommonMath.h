@@ -3,6 +3,9 @@
 #include "ZAssert.h"
 #include "ZBaseTypes.h"
 #include "Constants.h"
+#include "PlatformDefines.h"
+
+#include <cmath>
 
 namespace ZSharp {
 
@@ -32,7 +35,9 @@ size_t RoundUpNearestMultiple(size_t val, size_t multiple);
 
 float DegreesToRadians(float degrees);
 
-float Lerp(float x1, float x2, float point);
+FORCE_INLINE float Lerp(float x1, float x2, float point) {
+  return fmaf(point, x2, (1.f - point) * x1);
+}
 
 float ParametricSolveForT(const float step, const float p0, const float p1);
 

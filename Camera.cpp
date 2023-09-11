@@ -125,8 +125,10 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 #endif
 
+  const size_t stride = vertexBuffer.GetStride();
+
   // Apply the perspective projection transform to all input vertices.
-  Aligned_Mat4x4Transform((const float(*) [4])*perspectiveTransform, vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+  Aligned_Mat4x4Transform((const float(*) [4])*perspectiveTransform, vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
 
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.
@@ -141,7 +143,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   Aligned_Vec4Homogenize(vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
 
   if (clipBounds == ClipBounds::Inside) {
-    vertexBuffer.AppendClipData(vertexBuffer[0], vertexBuffer.GetVertSize() * vertexBuffer.GetStride() * sizeof(float), vertexBuffer.GetVertSize());
+    vertexBuffer.AppendClipData(vertexBuffer[0], vertexBuffer.GetVertSize() * stride * sizeof(float), vertexBuffer.GetVertSize());
     indexBuffer.AppendClipData(indexBuffer.GetInputData(), indexBuffer.GetIndexSize() * 3);
   }
   else {
@@ -155,6 +157,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     float* vertexData = vertexBuffer.GetClipData(i);
 
     const float perspectiveZ = vertexData[3];
+    const float invPerspectiveZ = 1.f / vertexData[3];
 
     // Homogenize
     const float invDivisor = 1.f / vertexData[2];
@@ -172,7 +175,11 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     // Store perspective Z and inverse Z for each vertex in the clip buffer.
     // Prevents us from having to calculate this at a later point in the drawing code.
     vertexData[2] = perspectiveZ;
-    vertexData[3] = (1 / perspectiveZ);
+    vertexData[3] = invPerspectiveZ;
+
+    for (size_t j = 4; j < stride; ++j) {
+      vertexData[j] *= invPerspectiveZ;
+    }
   }
 }
 

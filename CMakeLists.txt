@@ -21,7 +21,6 @@ target_sources(ZSharp
         FixedArray.h
         Framebuffer.h
         GameInstance.h
-        GlobalEdgeTable.h
         Graph.h
         HashFunctions.h
         HashTable.h
@@ -88,7 +87,6 @@ target_sources(ZSharp
         FileString.cpp
         Framebuffer.cpp
         GameInstance.cpp
-        GlobalEdgeTable.cpp
         HashFunctions.cpp
         IndexBuffer.cpp
         IniFile.cpp

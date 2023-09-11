@@ -13,8 +13,8 @@ ZColor::ZColor(uint32 color) : mColor(color) {
 ZColor::ZColor(uint8 R, uint8 G, uint8 B) : mA(0xFF), mR(R), mG(G), mB(B) {
 }
 
-ZColor::ZColor(const float R, const float G, const float B) {
-  FloatToRGB(R, G, B);
+ZColor::ZColor(const float R, const float G, const float B)
+  : mA(0xFF), mR((uint8)(R * 255.f)), mG((uint8)(G * 255.f)), mB((uint8)(B * 255.f)) {
 }
 
 ZColor::ZColor(const ZColor& rhs) : mColor(rhs.mColor) {
@@ -33,9 +33,9 @@ uint32 ZColor::Color() const {
 
 void ZColor::FloatToRGB(const float R, const float G, const float B) {
   mA = 0xFF;
-  mR = static_cast<uint8>(R * (float)0xFFU);
-  mG = static_cast<uint8>(G * (float)0xFFU);
-  mB = static_cast<uint8>(B * (float)0xFFU);
+  mR = static_cast<uint8>(R * 255.f);
+  mG = static_cast<uint8>(G * 255.f);
+  mB = static_cast<uint8>(B * 255.f);
 }
 
 uint8 ZColor::A() const {

@@ -77,9 +77,9 @@ void GameInstance::LoadAssets() {
   const float Y = 5.f;
   const float Z = 0.f;
   const float W = 1.f;
-  const float v1[]{ -X, 0.f, Z, W, 0.f, 0.f, 1.f };
-  const float v2[]{ 0.f, Y, -10.f, W, 1.0f, 0.f, 0.f };
-  const float v3[]{ X, 0.f, Z, W, 0.0f, 1.f, 0.f };
+  const float v1[]{ -X, 0.f, Z, W, 1.f, 0.f, 0.f };
+  const float v2[]{ 0.f, Y, Z, W, 0.0f, 1.f, 0.f };
+  const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
 #endif
 
   ShadingModeOrder order;
@@ -93,8 +93,8 @@ void GameInstance::LoadAssets() {
   const float Z = 0.f;
   const float W = 1.f;
   const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f };
-  const float v2[]{ 0.f, Y, -15.f, W, 0.5f, 0.f };
-  const float v3[]{ X, 0.f, Z, W, 1.0f, 1.f };
+  const float v2[]{ 0.f, Y, Z, W, 0.5f, 0.f };
+  const float v3[]{ X, 0.f, Z, W, 1.f, 1.f };
 
   ShadingModeOrder order;
   ShadingMode mode(ShadingModes::UV, 2);

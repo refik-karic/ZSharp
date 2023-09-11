@@ -10,7 +10,7 @@
 namespace ZSharp {
 
 template<typename T>
-void Clamp(T& value, const T& min, const T& max) {
+FORCE_INLINE void Clamp(T& value, const T& min, const T& max) {
   ZAssert(min <= max);
   
   if (value < min) {
@@ -22,12 +22,12 @@ void Clamp(T& value, const T& min, const T& max) {
 }
 
 template<typename T>
-T& Min(T& a, T& b) {
+FORCE_INLINE T& Min(T& a, T& b) {
   return (a < b) ? a : b;
 }
 
 template<typename T>
-T& Max(T& a, T& b) {
+FORCE_INLINE T& Max(T& a, T& b) {
   return (a > b) ? a : b;
 }
 

@@ -2,10 +2,15 @@
 
 #include "ZBaseTypes.h"
 #include "ZString.h"
+#include "PlatformDefines.h"
 
 namespace ZSharp {
 
-float Dot3(const float lhs[3], const float rhs[3]);
+FORCE_INLINE float Dot3(const float lhs[3], const float rhs[3]) {
+  return (lhs[0] * rhs[0]) +
+    (lhs[1] * rhs[1]) +
+    (lhs[2] * rhs[2]);
+}
 
 class Vec3 final {
 public:

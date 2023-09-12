@@ -8,6 +8,7 @@
 #include "CommonMath.h"
 #include "Constants.h"
 #include "ScopedTimer.h"
+#include "PlatformIntrinsics.h"
 
 namespace ZSharp {
 
@@ -184,36 +185,44 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
     const size_t sMinY = (size_t)minY;
     const size_t sMaxY = (size_t)maxY;
 
-    float p[2] = { minX, minY };
+    // Factor out some of the BarycentricArea equation that's constant for each vertex. 
+    const float factor10 = v2[0] - v1[0];
+    const float factor11 = v2[1] - v1[1];
 
-    for (size_t h = sMinY; h < sMaxY; ++h, p[1]++) {
-      p[0] = minX;
+    const float factor20 = v3[0] - v2[0];
+    const float factor21 = v3[1] - v2[1];
 
-      for (size_t w = sMinX; w < sMaxX; ++w, p[0]++) {
-        float w0 = BarycentricArea(v1, v2, p);
-        float w1 = BarycentricArea(v2, v3, p);
-        float w2 = BarycentricArea(v3, v1, p);
+    const float factor30 = v1[0] - v3[0];
+    const float factor31 = v1[1] - v3[1];
+
+    const float invArea = 1.f / ((v3[0] - v1[0]) * factor11 - ((v3[1] - v1[1]) * factor10));
+    float p0 = minX;
+    float p1 = minY;
+
+    for (size_t h = sMinY; h < sMaxY; ++h, p1++) {
+      p0 = minX;
+
+      for (size_t w = sMinX; w < sMaxX; ++w, p0++) {
+        float w0 = ((p0 - v1[0]) * factor11 - ((p1 - v1[1]) * factor10));
+        float w1 = ((p0 - v2[0]) * factor21 - ((p1 - v2[1]) * factor20));
+        float w2 = ((p0 - v3[0]) * factor31 - ((p1 - v3[1]) * factor30));
 
         // Ignore winding order for now. We need a long term solution to get models in the right order.
         // Backface culling is handled earlier in the pipeline.
         if ((w0 <= 0.f && w1 <= 0.f && w2 <= 0.f) || (w0 >= 0.f && w1 >= 0.f && w2 >= 0.f)) {
-          const float invArea = 1.f / BarycentricArea(v1, v2, v3);
-
           w0 *= invArea;
           w1 *= invArea;
           w2 *= invArea;
+
+          const float invDenominator = 1.f / ((w0 * v1[3]) + (w1 * v2[3]) + (w2 * v3[3]));
 
           for (ShadingMode& mode : order) {
             switch (mode.mode) {
               case ShadingModes::RGB:
               {
-                float r = (w0 * v1Attr[0]) + (w1 * v2Attr[0]) + (w2 * v3Attr[0]);
-                float g = (w0 * v1Attr[1]) + (w1 * v2Attr[1]) + (w2 * v3Attr[1]);
-                float b = (w0 * v1Attr[2]) + (w1 * v2Attr[2]) + (w2 * v3Attr[2]);
-
-                r /= ((w0 * v1[3]) + (w1 * v2[3]) + (w2 * v3[3]));
-                g /= ((w0 * v1[3]) + (w1 * v2[3]) + (w2 * v3[3]));
-                b /= ((w0 * v1[3]) + (w1 * v2[3]) + (w2 * v3[3]));
+                float r = invDenominator * ((w0 * v1Attr[0]) + (w1 * v2Attr[0]) + (w2 * v3Attr[0]));
+                float g = invDenominator * ((w0 * v1Attr[1]) + (w1 * v2Attr[1]) + (w2 * v3Attr[1]));
+                float b = invDenominator * ((w0 * v1Attr[2]) + (w1 * v2Attr[2]) + (w2 * v3Attr[2]));
 
                 const ZColor color(r, g, b);
                 framebuffer.SetPixel(w, h, color);
@@ -221,11 +230,9 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
               break;
               case ShadingModes::UV:
               {
-                float u = (w0 * v1Attr[0]) + (w1 * v2Attr[0]) + (w2 * v3Attr[0]);
-                float v = (w0 * v1Attr[1]) + (w1 * v2Attr[1]) + (w2 * v3Attr[1]);
 
-                u /= ((w0 * v1[3]) + (w1 * v2[3]) + (w2 * v3[3]));
-                v /= ((w0 * v1[3]) + (w1 * v2[3]) + (w2 * v3[3]));
+                const float u = invDenominator * ((w0 * v1Attr[0]) + (w1 * v2Attr[0]) + (w2 * v3Attr[0]));
+                const float v = invDenominator * ((w0 * v1Attr[1]) + (w1 * v2Attr[1]) + (w2 * v3Attr[1]));
 
                 framebuffer.SetPixel(w, h, texture->Sample(u, v));
               }

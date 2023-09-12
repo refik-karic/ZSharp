@@ -125,10 +125,4 @@ String Vec3::ToString() const {
   return result;
 }
 
-float Dot3(const float lhs[3], const float rhs[3]) {
-  return (lhs[0] * rhs[0]) + 
-    (lhs[1] * rhs[1]) + 
-    (lhs[2] * rhs[2]);
-}
-
 }

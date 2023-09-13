@@ -8,7 +8,6 @@
 #include "CommonMath.h"
 #include "Constants.h"
 #include "ScopedTimer.h"
-#include "PlatformIntrinsics.h"
 
 namespace ZSharp {
 
@@ -140,6 +139,11 @@ void DrawRunSlice(Framebuffer& framebuffer,
 void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const ShadingModeOrder& order, const Texture* texture) {
   NamedScopedTimer(DrawFlatTriangles);
   
+  if (order.Size() == 0) {
+    ZAssert(false);
+    return;
+  }
+
   size_t stride = 0;
   for (ShadingMode& mode : order) {
     stride += mode.length;
@@ -154,92 +158,178 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
   const float* vertexClipData = vertexBuffer.GetClipData(0);
   const size_t* indexClipData = indexBuffer.GetClipData(0);
   const size_t end = indexBuffer.GetClipLength();
-  for (size_t i = 0; i < end; i += TRI_VERTS) {
-    const float* v1 = vertexClipData + (indexClipData[i] * vertexStride);
-    const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
-    const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
+  
+  // TODO: Come up with a better long term solution to different shading modes.
+  // Maybe a callback function for flat shading with known attributes?
+  ShadingModes mode = order[0].mode;
+  if (mode == ShadingModes::RGB) {
+    for (size_t i = 0; i < end; i += TRI_VERTS) {
+      const float* v1 = vertexClipData + (indexClipData[i] * vertexStride);
+      const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
+      const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
 
-    const float* v1Attr = v1 + 4;
-    const float* v2Attr = v2 + 4;
-    const float* v3Attr = v3 + 4;
+      const float* v1Attr = v1 + 4;
+      const float* v2Attr = v2 + 4;
+      const float* v3Attr = v3 + 4;
 
-    // Calculate the amount of scan lines a triangle occupies.
-    // Round to prev/next to avoid flooring.
-    float minX = Min(Min(v1[0], v2[0]), v3[0]);
-    float maxX = Max(Max(v1[0], v2[0]), v3[0]);
-    float minY = Min(Min(v1[1], v2[1]), v3[1]);
-    float maxY = Max(Max(v1[1], v2[1]), v3[1]);
+      // Calculate the amount of scan lines a triangle occupies.
+      // Round to prev/next to avoid flooring.
+      float minX = Min(Min(v1[0], v2[0]), v3[0]);
+      float maxX = Max(Max(v1[0], v2[0]), v3[0]);
+      float minY = Min(Min(v1[1], v2[1]), v3[1]);
+      float maxY = Max(Max(v1[1], v2[1]), v3[1]);
 
-    minX -= 1.f;
-    maxX += 1.f;
-    minY -= 1.f;
-    maxY += 1.f;
+      minX -= 1.f;
+      maxX += 1.f;
+      minY -= 1.f;
+      maxY += 1.f;
 
-    Clamp(minX, 0.f, maxWidth);
-    Clamp(maxX, 0.f, maxWidth);
-    Clamp(minY, 0.f, maxHeight);
-    Clamp(maxY, 0.f, maxHeight);
+      Clamp(minX, 0.f, maxWidth);
+      Clamp(maxX, 0.f, maxWidth);
+      Clamp(minY, 0.f, maxHeight);
+      Clamp(maxY, 0.f, maxHeight);
 
-    const size_t sMinX = (size_t)minX;
-    const size_t sMaxX = (size_t)maxX;
-    const size_t sMinY = (size_t)minY;
-    const size_t sMaxY = (size_t)maxY;
+      const size_t sMinX = (size_t)minX;
+      const size_t sMaxX = (size_t)maxX;
+      const size_t sMinY = (size_t)minY;
+      const size_t sMaxY = (size_t)maxY;
 
-    // Factor out some of the BarycentricArea equation that's constant for each vertex. 
-    const float factor10 = v2[0] - v1[0];
-    const float factor11 = v2[1] - v1[1];
+      // Factor out some of the BarycentricArea equation that's constant for each vertex. 
+      const float factor10 = v2[0] - v1[0];
+      const float factor11 = v2[1] - v1[1];
 
-    const float factor20 = v3[0] - v2[0];
-    const float factor21 = v3[1] - v2[1];
+      const float factor20 = v3[0] - v2[0];
+      const float factor21 = v3[1] - v2[1];
 
-    const float factor30 = v1[0] - v3[0];
-    const float factor31 = v1[1] - v3[1];
+      const float factor30 = v1[0] - v3[0];
+      const float factor31 = v1[1] - v3[1];
 
-    const float invArea = 1.f / ((v3[0] - v1[0]) * factor11 - ((v3[1] - v1[1]) * factor10));
-    float p0 = minX;
-    float p1 = minY;
+      const float invArea = 1.f / ((v3[0] - v1[0]) * factor11 - ((v3[1] - v1[1]) * factor10));
 
-    for (size_t h = sMinY; h < sMaxY; ++h, p1++) {
-      p0 = minX;
+      const float invV1 = v1[3] * invArea;
+      const float invV2 = v2[3] * invArea;
+      const float invV3 = v3[3] * invArea;
 
-      for (size_t w = sMinX; w < sMaxX; ++w, p0++) {
-        float w0 = ((p0 - v1[0]) * factor11 - ((p1 - v1[1]) * factor10));
-        float w1 = ((p0 - v2[0]) * factor21 - ((p1 - v2[1]) * factor20));
-        float w2 = ((p0 - v3[0]) * factor31 - ((p1 - v3[1]) * factor30));
+      const float invV1Attr0 = v1Attr[0] * invArea;
+      const float invV1Attr1 = v1Attr[1] * invArea;
+      const float invV1Attr2 = v1Attr[2] * invArea;
+      const float invV2Attr0 = v2Attr[0] * invArea;
+      const float invV2Attr1 = v2Attr[1] * invArea;
+      const float invV2Attr2 = v2Attr[2] * invArea;
+      const float invV3Attr0 = v3Attr[0] * invArea;
+      const float invV3Attr1 = v3Attr[1] * invArea;
+      const float invV3Attr2 = v3Attr[2] * invArea;
 
-        // Ignore winding order for now. We need a long term solution to get models in the right order.
-        // Backface culling is handled earlier in the pipeline.
-        if ((w0 <= 0.f && w1 <= 0.f && w2 <= 0.f) || (w0 >= 0.f && w1 >= 0.f && w2 >= 0.f)) {
-          w0 *= invArea;
-          w1 *= invArea;
-          w2 *= invArea;
+      float p0 = minX;
+      float p1 = minY;
 
-          const float invDenominator = 1.f / ((w0 * v1[3]) + (w1 * v2[3]) + (w2 * v3[3]));
+      for (size_t h = sMinY; h < sMaxY; ++h, p1++) {
+        p0 = minX;
 
-          for (ShadingMode& mode : order) {
-            switch (mode.mode) {
-              case ShadingModes::RGB:
-              {
-                float r = invDenominator * ((w0 * v1Attr[0]) + (w1 * v2Attr[0]) + (w2 * v3Attr[0]));
-                float g = invDenominator * ((w0 * v1Attr[1]) + (w1 * v2Attr[1]) + (w2 * v3Attr[1]));
-                float b = invDenominator * ((w0 * v1Attr[2]) + (w1 * v2Attr[2]) + (w2 * v3Attr[2]));
+        const float p1Factor0 = (p1 - v1[1]) * factor10;
+        const float p1Factor1 = (p1 - v2[1]) * factor20;
+        const float p1Factor2 = (p1 - v3[1]) * factor30;
 
-                const ZColor color(r, g, b);
-                framebuffer.SetPixel(w, h, color);
-              }
-              break;
-              case ShadingModes::UV:
-              {
+        for (size_t w = sMinX; w < sMaxX; ++w, p0++) {
+          const float w0 = (((p0 - v1[0]) * factor11) - p1Factor0);
+          const float w1 = (((p0 - v2[0]) * factor21) - p1Factor1);
+          const float w2 = (((p0 - v3[0]) * factor31) - p1Factor2);
 
-                const float u = invDenominator * ((w0 * v1Attr[0]) + (w1 * v2Attr[0]) + (w2 * v3Attr[0]));
-                const float v = invDenominator * ((w0 * v1Attr[1]) + (w1 * v2Attr[1]) + (w2 * v3Attr[1]));
+          // Ignore winding order for now. We need a long term solution to get models in the right order.
+          // Backface culling is handled earlier in the pipeline.
+          if ((w0 <= 0.f && w1 <= 0.f && w2 <= 0.f) || (w0 >= 0.f && w1 >= 0.f && w2 >= 0.f)) {
+            const float invDenominator = 1.f / ((w0 * invV1) + (w1 * invV2) + (w2 * invV3));
 
-                framebuffer.SetPixel(w, h, texture->Sample(u, v));
-              }
-              break;
-              case ShadingModes::Normals:
-                break;
-            }
+            const float r = invDenominator * ((w0 * invV1Attr0) + (w1 * invV2Attr0) + (w2 * invV3Attr0));
+            const float g = invDenominator * ((w0 * invV1Attr1) + (w1 * invV2Attr1) + (w2 * invV3Attr1));
+            const float b = invDenominator * ((w0 * invV1Attr2) + (w1 * invV2Attr2) + (w2 * invV3Attr2));
+
+            const ZColor color(r, g, b);
+            framebuffer.SetPixel(w, h, color);
+          }
+        }
+      }
+    }
+  }
+  else if (mode == ShadingModes::UV) {
+    for (size_t i = 0; i < end; i += TRI_VERTS) {
+      const float* v1 = vertexClipData + (indexClipData[i] * vertexStride);
+      const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
+      const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
+
+      const float* v1Attr = v1 + 4;
+      const float* v2Attr = v2 + 4;
+      const float* v3Attr = v3 + 4;
+
+      // Calculate the amount of scan lines a triangle occupies.
+      // Round to prev/next to avoid flooring.
+      float minX = Min(Min(v1[0], v2[0]), v3[0]);
+      float maxX = Max(Max(v1[0], v2[0]), v3[0]);
+      float minY = Min(Min(v1[1], v2[1]), v3[1]);
+      float maxY = Max(Max(v1[1], v2[1]), v3[1]);
+
+      minX -= 1.f;
+      maxX += 1.f;
+      minY -= 1.f;
+      maxY += 1.f;
+
+      Clamp(minX, 0.f, maxWidth);
+      Clamp(maxX, 0.f, maxWidth);
+      Clamp(minY, 0.f, maxHeight);
+      Clamp(maxY, 0.f, maxHeight);
+
+      const size_t sMinX = (size_t)minX;
+      const size_t sMaxX = (size_t)maxX;
+      const size_t sMinY = (size_t)minY;
+      const size_t sMaxY = (size_t)maxY;
+
+      // Factor out some of the BarycentricArea equation that's constant for each vertex. 
+      const float factor10 = v2[0] - v1[0];
+      const float factor11 = v2[1] - v1[1];
+
+      const float factor20 = v3[0] - v2[0];
+      const float factor21 = v3[1] - v2[1];
+
+      const float factor30 = v1[0] - v3[0];
+      const float factor31 = v1[1] - v3[1];
+
+      const float invArea = 1.f / ((v3[0] - v1[0]) * factor11 - ((v3[1] - v1[1]) * factor10));
+
+      const float invV1 = v1[3] * invArea;
+      const float invV2 = v2[3] * invArea;
+      const float invV3 = v3[3] * invArea;
+
+      const float invV1Attr0 = v1Attr[0] * invArea;
+      const float invV1Attr1 = v1Attr[1] * invArea;
+      const float invV2Attr0 = v2Attr[0] * invArea;
+      const float invV2Attr1 = v2Attr[1] * invArea;
+      const float invV3Attr0 = v3Attr[0] * invArea;
+      const float invV3Attr1 = v3Attr[1] * invArea;
+
+      float p0 = minX;
+      float p1 = minY;
+
+      for (size_t h = sMinY; h < sMaxY; ++h, p1++) {
+        p0 = minX;
+
+        const float p1Factor0 = (p1 - v1[1]) * factor10;
+        const float p1Factor1 = (p1 - v2[1]) * factor20;
+        const float p1Factor2 = (p1 - v3[1]) * factor30;
+
+        for (size_t w = sMinX; w < sMaxX; ++w, p0++) {
+          const float w0 = (((p0 - v1[0]) * factor11) - p1Factor0);
+          const float w1 = (((p0 - v2[0]) * factor21) - p1Factor1);
+          const float w2 = (((p0 - v3[0]) * factor31) - p1Factor2);
+          
+          // Ignore winding order for now. We need a long term solution to get models in the right order.
+          // Backface culling is handled earlier in the pipeline.
+          if ((w0 <= 0.f && w1 <= 0.f && w2 <= 0.f) || (w0 >= 0.f && w1 >= 0.f && w2 >= 0.f)) {
+            const float invDenominator = 1.f / ((w0 * invV1) + (w1 * invV2) + (w2 * invV3));
+
+            const float u = invDenominator * ((w0 * invV1Attr0) + (w1 * invV2Attr0) + (w2 * invV3Attr0));
+            const float v = invDenominator * ((w0 * invV1Attr1) + (w1 * invV2Attr1) + (w2 * invV3Attr1));
+
+            framebuffer.SetPixel(w, h, texture->Sample(u, v));
           }
         }
       }

@@ -2,6 +2,8 @@
 
 #include "ZBaseTypes.h"
 #include "ZColor.h"
+#include "CommonMath.h"
+#include "PlatformDefines.h"
 
 namespace ZSharp {
 
@@ -36,7 +38,21 @@ class Texture final {
 
   bool IsAssigned() const;
 
-  ZColor Sample(float u, float v) const;
+  FORCE_INLINE ZColor Sample(float u, float v) const {
+    Clamp(u, 0.f, 1.f);
+    Clamp(v, 0.f, 1.f);
+
+    const size_t x = static_cast<size_t>(u * (mWidth - 1));
+    const size_t y = static_cast<size_t>(v * (mHeight - 1));
+    const size_t pixel = (y * mStride) + (x * mNumChannels);
+
+    const uint8 B = mData[pixel];
+    const uint8 G = mData[pixel + 1];
+    const uint8 R = mData[pixel + 2];
+
+    ZColor color(R, G, B);
+    return color;
+  }
 
   private:
   size_t mNumChannels = 0;

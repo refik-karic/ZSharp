@@ -140,7 +140,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   // Points at this stage must have Z > 0.
   // If Z < 0, points will re-appear in front of the camera.
   // If Z = 0, divide by 0 occurs and trashes the results.
-  Aligned_Vec4Homogenize(vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+  Aligned_Vec4Homogenize(vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
 
   if (clipBounds == ClipBounds::Inside) {
     vertexBuffer.AppendClipData(vertexBuffer[0], vertexBuffer.GetVertSize() * stride * sizeof(float), vertexBuffer.GetVertSize());
@@ -153,8 +153,9 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   const size_t clipLength = vertexBuffer.GetClipLength();
   const float* windowTransformVec0 = *mWindowTransform[0];
   const float* windowTransformVec1 = *mWindowTransform[1];
+  float* vertexClipData = vertexBuffer.GetClipData(0);
   for (size_t i = 0; i < clipLength; ++i) {
-    float* vertexData = vertexBuffer.GetClipData(i);
+    float* vertexData = vertexClipData + (i * stride);
 
     const float perspectiveZ = vertexData[3];
     const float invPerspectiveZ = 1.f / vertexData[3];

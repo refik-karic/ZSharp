@@ -289,6 +289,82 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
+void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, const float maxWidth, const float maxHeight, uint8* framebuffer, const Texture* texture) {
+  __m128 min = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
+  __m128 min1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
+  __m128 min2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+
+  __m128 max = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
+  __m128 max1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
+  __m128 max2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+
+  min = _mm_min_ps(_mm_min_ps(min, min1), min2);
+  max = _mm_max_ps(_mm_max_ps(max, max1), max2);
+
+  min = _mm_sub_ps(min, _mm_set_ps1(1.f));
+  max = _mm_add_ps(max, _mm_set_ps1(1.f));
+
+  min = _mm_max_ps(min, _mm_set_ps1(0.f));
+  max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
+
+  // Factor out some of the BarycentricArea equation that's constant for each vertex. 
+  const float factor10 = v2[0] - v1[0];
+  const float factor11 = v2[1] - v1[1];
+
+  const float factor20 = v3[0] - v2[0];
+  const float factor21 = v3[1] - v2[1];
+
+  const float factor30 = v1[0] - v3[0];
+  const float factor31 = v1[1] - v3[1];
+
+  __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * factor11 - ((v3[1] - v1[1]) * factor10)));
+
+  __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
+  __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), invArea);
+  __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), invArea);
+
+  __m128 p0 = _mm_set_ps1(min.m128_f32[3]);
+  __m128 p1 = _mm_set_ps1(min.m128_f32[2]);
+
+  const size_t sMinX = (size_t)min.m128_f32[3];
+  const size_t sMaxX = (size_t)max.m128_f32[3];
+  const size_t sMinY = (size_t)min.m128_f32[2];
+  const size_t sMaxY = (size_t)max.m128_f32[2];
+  const size_t sMaxWidth = (size_t)maxWidth;
+
+  __m128 xValues = _mm_set_ps(v1[0], v2[0], v3[0], 0.f);
+  __m128 yValues = _mm_set_ps(v1[1], v2[1], v3[1], 0.f);
+  __m128 factors0 = _mm_set_ps(factor10, factor20, factor30, 0.f);
+  __m128 factors1 = _mm_set_ps(factor11, factor21, factor31, 0.f);
+
+  for (size_t h = sMinY; h < sMaxY; ++h) {
+    p0 = _mm_set_ps1(min.m128_f32[3]);
+
+    __m128 p1Factor = _mm_mul_ps(_mm_sub_ps(p1, yValues), factors0);
+
+    p1 = _mm_add_ps(p1, _mm_set_ps1(1.f));
+
+    uint32* pixels = reinterpret_cast<uint32*>(framebuffer) + (sMinX + (h * sMaxWidth));
+    for (size_t w = sMinX; w < sMaxX; ++w, pixels++) {
+      __m128 weights = _mm_sub_ps(_mm_mul_ps(_mm_sub_ps(p0, xValues), factors1), p1Factor);
+
+      p0 = _mm_add_ps(p0, _mm_set_ps1(1.f));
+
+      // Ignore winding order for now. We need a long term solution to get models in the right order.
+      // Backface culling is handled earlier in the pipeline.
+      if ((weights.m128_f32[3] <= 0.f && weights.m128_f32[2] <= 0.f && weights.m128_f32[1] <= 0.f) || 
+        (weights.m128_f32[3] >= 0.f && weights.m128_f32[2] >= 0.f && weights.m128_f32[1] >= 0.f)) {
+        const float invDenominator = 1.f / ((weights.m128_f32[3] * invVert.m128_f32[3]) + (weights.m128_f32[2] * invVert.m128_f32[2]) + (weights.m128_f32[1] * invVert.m128_f32[1]));
+
+        const float u = invDenominator * ((weights.m128_f32[3] * invAttr0.m128_f32[3]) + (weights.m128_f32[2] * invAttr0.m128_f32[2]) + (weights.m128_f32[1] * invAttr0.m128_f32[1]));
+        const float v = invDenominator * ((weights.m128_f32[3] * invAttr1.m128_f32[3]) + (weights.m128_f32[2] * invAttr1.m128_f32[2]) + (weights.m128_f32[1] * invAttr1.m128_f32[1]));
+
+        *pixels = texture->Sample(u, v).Color();
+      }
+    }
+  }
+}
+
 }
 
 #endif

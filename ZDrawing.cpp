@@ -8,6 +8,7 @@
 #include "CommonMath.h"
 #include "Constants.h"
 #include "ScopedTimer.h"
+#include "PlatformIntrinsics.h"
 
 namespace ZSharp {
 
@@ -257,6 +258,7 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
       const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
       const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
 
+#if 0
       const float* v1Attr = v1 + 4;
       const float* v2Attr = v2 + 4;
       const float* v3Attr = v3 + 4;
@@ -333,6 +335,9 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
           }
         }
       }
+#else
+      Unaligned_FlatShadeUVs(v1, v2, v3, maxWidth, maxHeight, framebuffer.GetBuffer(), texture);
+#endif
     }
   }
 }

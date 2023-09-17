@@ -307,17 +307,7 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
   min = _mm_max_ps(min, _mm_set_ps1(0.f));
   max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
 
-  // Factor out some of the BarycentricArea equation that's constant for each vertex. 
-  const float factor10 = v2[0] - v1[0];
-  const float factor11 = v2[1] - v1[1];
-
-  const float factor20 = v3[0] - v2[0];
-  const float factor21 = v3[1] - v2[1];
-
-  const float factor30 = v1[0] - v3[0];
-  const float factor31 = v1[1] - v3[1];
-
-  __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * factor11 - ((v3[1] - v1[1]) * factor10)));
+  __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
 
   __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
   __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), invArea);
@@ -334,8 +324,10 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
 
   __m128 xValues = _mm_set_ps(v1[0], v2[0], v3[0], 0.f);
   __m128 yValues = _mm_set_ps(v1[1], v2[1], v3[1], 0.f);
-  __m128 factors0 = _mm_set_ps(factor10, factor20, factor30, 0.f);
-  __m128 factors1 = _mm_set_ps(factor11, factor21, factor31, 0.f);
+
+  // Factor out some of the BarycentricArea equation that's constant for each vertex.
+  __m128 factors0 = _mm_sub_ps(_mm_set_ps(v2[0], v3[0], v1[0], 0.f), _mm_set_ps(v1[0], v2[0], v3[0], 0.f));
+  __m128 factors1 = _mm_sub_ps(_mm_set_ps(v2[1], v3[1], v1[1], 0.f), _mm_set_ps(v1[1], v2[1], v3[1], 0.f));
 
   for (size_t h = sMinY; h < sMaxY; ++h) {
     p0 = _mm_set_ps1(min.m128_f32[3]);

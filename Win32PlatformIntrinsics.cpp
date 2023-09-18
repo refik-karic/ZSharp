@@ -301,8 +301,8 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
   min = _mm_min_ps(_mm_min_ps(min, min1), min2);
   max = _mm_max_ps(_mm_max_ps(max, max1), max2);
 
-  min = _mm_sub_ps(min, _mm_set_ps1(1.f));
-  max = _mm_add_ps(max, _mm_set_ps1(1.f));
+  min = _mm_floor_ps(min);
+  max = _mm_ceil_ps(max);
 
   min = _mm_max_ps(min, _mm_set_ps1(0.f));
   max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
@@ -326,8 +326,8 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
   __m128 yValues = _mm_set_ps(v1[1], v2[1], v3[1], 0.f);
 
   // Factor out some of the BarycentricArea equation that's constant for each vertex.
-  __m128 factors0 = _mm_sub_ps(_mm_set_ps(v2[0], v3[0], v1[0], 0.f), _mm_set_ps(v1[0], v2[0], v3[0], 0.f));
-  __m128 factors1 = _mm_sub_ps(_mm_set_ps(v2[1], v3[1], v1[1], 0.f), _mm_set_ps(v1[1], v2[1], v3[1], 0.f));
+  __m128 factors0 = _mm_sub_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(xValues), 0b10011100)), xValues);
+  __m128 factors1 = _mm_sub_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(yValues), 0b10011100)), yValues);
 
   for (size_t h = sMinY; h < sMaxY; ++h) {
     p0 = _mm_set_ps1(min.m128_f32[3]);

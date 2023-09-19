@@ -305,6 +305,8 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
   max = _mm_ceil_ps(max);
 
   min = _mm_max_ps(min, _mm_set_ps1(0.f));
+  min = _mm_min_ps(min, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
+  max = _mm_max_ps(max, _mm_set_ps1(0.f));
   max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
 
   __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
@@ -312,9 +314,6 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
   __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
   __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), invArea);
   __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), invArea);
-
-  __m128 p0 = _mm_set_ps1(min.m128_f32[3]);
-  __m128 p1 = _mm_set_ps1(min.m128_f32[2]);
 
   const size_t sMinX = (size_t)min.m128_f32[3];
   const size_t sMaxX = (size_t)max.m128_f32[3];
@@ -329,16 +328,18 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
   __m128 factors0 = _mm_sub_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(xValues), 0b10011100)), xValues);
   __m128 factors1 = _mm_sub_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(yValues), 0b10011100)), yValues);
 
-  for (size_t h = sMinY; h < sMaxY; ++h) {
-    p0 = _mm_set_ps1(min.m128_f32[3]);
+  __m128 p1 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[2]), yValues);
 
-    __m128 p1Factor = _mm_mul_ps(_mm_sub_ps(p1, yValues), factors0);
+  for (size_t h = sMinY; h < sMaxY; ++h) {
+    __m128 p0 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[3]), xValues);
+
+    __m128 p1Factor = _mm_mul_ps(p1, factors0);
 
     p1 = _mm_add_ps(p1, _mm_set_ps1(1.f));
 
     uint32* pixels = reinterpret_cast<uint32*>(framebuffer) + (sMinX + (h * sMaxWidth));
-    for (size_t w = sMinX; w < sMaxX; ++w, pixels++) {
-      __m128 weights = _mm_sub_ps(_mm_mul_ps(_mm_sub_ps(p0, xValues), factors1), p1Factor);
+    for (size_t w = sMinX; w < sMaxX; ++w, ++pixels) {
+      __m128 weights = _mm_sub_ps(_mm_mul_ps(p0, factors1), p1Factor);
 
       p0 = _mm_add_ps(p0, _mm_set_ps1(1.f));
 
@@ -346,10 +347,15 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
       // Backface culling is handled earlier in the pipeline.
       if ((weights.m128_f32[3] <= 0.f && weights.m128_f32[2] <= 0.f && weights.m128_f32[1] <= 0.f) || 
         (weights.m128_f32[3] >= 0.f && weights.m128_f32[2] >= 0.f && weights.m128_f32[1] >= 0.f)) {
-        const float invDenominator = 1.f / ((weights.m128_f32[3] * invVert.m128_f32[3]) + (weights.m128_f32[2] * invVert.m128_f32[2]) + (weights.m128_f32[1] * invVert.m128_f32[1]));
+        __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
-        const float u = invDenominator * ((weights.m128_f32[3] * invAttr0.m128_f32[3]) + (weights.m128_f32[2] * invAttr0.m128_f32[2]) + (weights.m128_f32[1] * invAttr0.m128_f32[1]));
-        const float v = invDenominator * ((weights.m128_f32[3] * invAttr1.m128_f32[3]) + (weights.m128_f32[2] * invAttr1.m128_f32[2]) + (weights.m128_f32[1] * invAttr1.m128_f32[1]));
+        __m128 denominator = _mm_set_ps1(weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1]);
+
+        __m128 weightedAttr0 = _mm_div_ps(_mm_mul_ps(weights, invAttr0), denominator);
+        __m128 weightedAttr1 = _mm_div_ps(_mm_mul_ps(weights, invAttr1), denominator);
+
+        const float u = weightedAttr0.m128_f32[3] + weightedAttr0.m128_f32[2] + weightedAttr0.m128_f32[1];
+        const float v = weightedAttr1.m128_f32[3] + weightedAttr1.m128_f32[2] + weightedAttr1.m128_f32[1];
 
         *pixels = texture->Sample(u, v).Color();
       }

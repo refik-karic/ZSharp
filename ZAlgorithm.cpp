@@ -70,7 +70,7 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     if (numClippedVerts > 0) {
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
-      vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * stride * sizeof(float), numClippedVerts);
+      vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * vertByteSize, numClippedVerts);
 
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
       indexBuffer.AppendClipData(nextTriangle);
@@ -78,7 +78,7 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
       if (numClippedVerts > 3) {
         ZAssert(numClippedVerts < 6);
 
-        for (size_t j = 2; j < numClippedVerts; j += 3) {
+        for (size_t j = 2; j < numClippedVerts; j+=3) {
           const size_t clip0 = currentClipIndex + (j % numClippedVerts);
           const size_t clip1 = currentClipIndex + ((j + 1) % numClippedVerts);
           const size_t clip2 = currentClipIndex + ((j + 2) % numClippedVerts);
@@ -167,13 +167,13 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     if (numClippedVerts > 0) {
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
-      vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * stride * sizeof(float), numClippedVerts);
+      vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * vertByteSize, numClippedVerts);
 
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
       indexBuffer.AppendClipData(nextTriangle);
 
       if (numClippedVerts > 3) {
-        for (size_t j = 2; j < numClippedVerts; j += 3) {
+        for (size_t j = 2; j < numClippedVerts; j+=3) {
           const size_t clip0 = currentClipIndex + (j % numClippedVerts);
           const size_t clip1 = currentClipIndex + ((j + 1) % numClippedVerts);
           const size_t clip2 = currentClipIndex + ((j + 2) % numClippedVerts);
@@ -295,10 +295,10 @@ void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& ind
       (p1p0[0] * p2p0[1]) - (p1p0[1] * p2p0[0]),
     };
 
-    float dotResult = ((view[0] - v1[0]) * normal[0]) + 
-      ((view[1] - v1[1]) * normal[1]) + 
-      ((view[2] - v1[2]) * normal[2]);
-    if (FloatLessThanEqual(dotResult, 0.f)) {
+    float dotResult = ((v1[0] - view[0]) * normal[0]) +
+      ((v1[1] - view[1]) * normal[1]) +
+      ((v1[2] - view[2]) * normal[2]);
+    if (dotResult < 0.f) {
       indexBuffer.RemoveTriangle(i - 3);
     }
   }

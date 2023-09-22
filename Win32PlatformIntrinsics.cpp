@@ -343,10 +343,7 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
 
       p0 = _mm_add_ps(p0, _mm_set_ps1(1.f));
 
-      // Ignore winding order for now. We need a long term solution to get models in the right order.
-      // Backface culling is handled earlier in the pipeline.
-      if ((weights.m128_f32[3] <= 0.f && weights.m128_f32[2] <= 0.f && weights.m128_f32[1] <= 0.f) || 
-        (weights.m128_f32[3] >= 0.f && weights.m128_f32[2] >= 0.f && weights.m128_f32[1] >= 0.f)) {
+      if (weights.m128_f32[3] <= 0.f && weights.m128_f32[2] <= 0.f && weights.m128_f32[1] <= 0.f) {
         __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
         __m128 denominator = _mm_set_ps1(weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1]);

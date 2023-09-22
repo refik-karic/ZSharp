@@ -10,7 +10,7 @@
 #include "PlatformIntrinsics.h"
 #include "ScopedTimer.h"
 
-#define DISABLE_BACKFACE_CULLING 1
+#define DISABLE_BACKFACE_CULLING 0
 #define ROTATE_CAMERA_WORLD_CENTER 1
 
 namespace ZSharp {

@@ -16,13 +16,10 @@ ScopedTimer::ScopedTimer(const char* name, int32 line, const char* file, const c
 ScopedTimer::~ScopedTimer() {
   size_t deltaMicroseconds = PlatformHighResClockDelta(mTime, ClockUnits::Microseconds);
 
-  String log;
-  log.Appendf("{0} took {1} us.\n", mName, deltaMicroseconds);
-
 #if LOG_SCOPED_TIMERS
-  Logger::Log(LogCategory::Perf, log);
+  Logger::Log(LogCategory::Perf, String::FromFormat("{0} took {1} us.\n", mName, deltaMicroseconds));
 #else
-  PlatformDebugPrint(log.Str());
+  PlatformDebugPrint(String::FromFormat("{0} took {1} us.\n", mName, deltaMicroseconds).Str());
 #endif
 }
 

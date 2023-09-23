@@ -97,17 +97,12 @@ void IndexBuffer::RemoveTriangle(size_t index) {
 }
 
 void IndexBuffer::AppendClipData(const size_t* data, const size_t length) {
-  memcpy(mClipData + mClipLength, data, length * sizeof(size_t));
-  mClipLength += (length / TRI_VERTS);
-}
-
-void IndexBuffer::AppendClipData(const Triangle& triangle) {
-  if (mWorkingSize + mClipLength + TRI_VERTS > mAllocatedSize) {
-      return;
+  if (mWorkingSize + mClipLength + length > mAllocatedSize) {
+    return;
   }
 
-  memcpy(mClipData + mClipLength, &triangle, sizeof(Triangle));
-  mClipLength += TRI_VERTS;
+  memcpy(mClipData + mClipLength, data, length * sizeof(size_t));
+  mClipLength += length;
 }
 
 size_t IndexBuffer::GetClipLength() const {
@@ -125,7 +120,6 @@ void IndexBuffer::ShuffleClippedData() {
   mClipLength = 0;
   mClipData = mData + offset;
   mWorkingSize = offset;
-  mInputSize = offset;
 }
 
 }

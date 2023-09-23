@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Triangle.h"
-
 namespace ZSharp {
 
 class IndexBuffer final {
@@ -34,8 +32,6 @@ class IndexBuffer final {
   void RemoveTriangle(size_t index);
 
   void AppendClipData(const size_t* data, const size_t length);
-
-  void AppendClipData(const Triangle& triangle);
 
   size_t GetClipLength() const;
 

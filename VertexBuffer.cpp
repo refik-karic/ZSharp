@@ -124,6 +124,5 @@ void VertexBuffer::ShuffleClippedData() {
   mClipLength = 0;
   mClipData = mData + offset;
   mWorkingSize = offset;
-  mInputSize = offset;
 }
 }

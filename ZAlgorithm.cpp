@@ -68,6 +68,8 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     const size_t numClippedVerts = SutherlandHodgmanClip(clipBuffer, 3, nearEdge, edgeNormal, stride);
 
     if (numClippedVerts > 0) {
+      ZAssert(numClippedVerts < 6);
+
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
       vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * vertByteSize, numClippedVerts);
@@ -75,17 +77,28 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
       indexBuffer.AppendClipData(nextTriangle);
 
-      if (numClippedVerts > 3) {
-        ZAssert(numClippedVerts < 6);
+      if (numClippedVerts == 4) {
+        const size_t clip0 = currentClipIndex + 0;
+        const size_t clip1 = currentClipIndex + 2;
+        const size_t clip2 = currentClipIndex + 3;
 
-        for (size_t j = 2; j < numClippedVerts; j+=3) {
-          const size_t clip0 = currentClipIndex + (j % numClippedVerts);
-          const size_t clip1 = currentClipIndex + ((j + 1) % numClippedVerts);
-          const size_t clip2 = currentClipIndex + ((j + 2) % numClippedVerts);
+        Triangle clippedTriangle(clip0, clip1, clip2);
+        indexBuffer.AppendClipData(clippedTriangle);
+      }
+      else if (numClippedVerts == 5) {
+        const size_t clip0 = currentClipIndex + 0;
+        const size_t clip1 = currentClipIndex + 2;
+        const size_t clip2 = currentClipIndex + 3;
 
-          Triangle clippedTriangle(clip0, clip1, clip2);
-          indexBuffer.AppendClipData(clippedTriangle);
-        }
+        Triangle clippedTriangle1(clip0, clip1, clip2);
+        indexBuffer.AppendClipData(clippedTriangle1);
+
+        const size_t clip3 = currentClipIndex + 3;
+        const size_t clip4 = currentClipIndex + 4;
+        const size_t clip5 = currentClipIndex + 0;
+
+        Triangle clippedTriangle2(clip3, clip4, clip5);
+        indexBuffer.AppendClipData(clippedTriangle2);
       }
     }
   }
@@ -165,6 +178,8 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 #endif
 
     if (numClippedVerts > 0) {
+      ZAssert(numClippedVerts < 6);
+
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
       vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * vertByteSize, numClippedVerts);
@@ -172,15 +187,28 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
       Triangle nextTriangle(currentClipIndex, currentClipIndex + 1, currentClipIndex + 2);
       indexBuffer.AppendClipData(nextTriangle);
 
-      if (numClippedVerts > 3) {
-        for (size_t j = 2; j < numClippedVerts; j+=3) {
-          const size_t clip0 = currentClipIndex + (j % numClippedVerts);
-          const size_t clip1 = currentClipIndex + ((j + 1) % numClippedVerts);
-          const size_t clip2 = currentClipIndex + ((j + 2) % numClippedVerts);
+      if (numClippedVerts == 4) {
+        const size_t clip0 = currentClipIndex + 0;
+        const size_t clip1 = currentClipIndex + 2;
+        const size_t clip2 = currentClipIndex + 3;
 
-          Triangle clippedTriangle(clip0, clip1, clip2);
-          indexBuffer.AppendClipData(clippedTriangle);
-        }
+        Triangle clippedTriangle(clip0, clip1, clip2);
+        indexBuffer.AppendClipData(clippedTriangle);
+      }
+      else if (numClippedVerts == 5) {
+        const size_t clip0 = currentClipIndex + 0;
+        const size_t clip1 = currentClipIndex + 2;
+        const size_t clip2 = currentClipIndex + 3;
+
+        Triangle clippedTriangle1(clip0, clip1, clip2);
+        indexBuffer.AppendClipData(clippedTriangle1);
+
+        const size_t clip3 = currentClipIndex + 3;
+        const size_t clip4 = currentClipIndex + 4;
+        const size_t clip5 = currentClipIndex + 0;
+
+        Triangle clippedTriangle2(clip3, clip4, clip5);
+        indexBuffer.AppendClipData(clippedTriangle2);
       }
     }
 #endif
@@ -220,6 +248,11 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
       const float* nextAttributes = nextOffset + 4;
 
       if (!p0Inside) {
+        /*
+          NOTE: We intentionaly do not add the second vertex when the first is outside the clip region.
+            This avoids duplicating vertices since only those inside the clip region are added.
+        */
+
         // Clipped vertex.
         memcpy(clipBuffer + (numOutputVerts * stride),
           clipPoint, 
@@ -230,12 +263,6 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
         for (size_t j = 0; j < stride - 4; ++j) {
           attributeOffset[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
         }
-        ++numOutputVerts;
-
-        // Unchanged input vertex.
-        memcpy(clipBuffer + (numOutputVerts * stride), 
-          nextOffset,
-          vertByteSize);
         ++numOutputVerts;
       }
       else {

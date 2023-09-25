@@ -144,7 +144,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   if (clipBounds == ClipBounds::Inside) {
     vertexBuffer.AppendClipData(vertexBuffer[0], vertexBuffer.GetVertSize() * stride * sizeof(float), vertexBuffer.GetVertSize());
-    indexBuffer.AppendClipData(indexBuffer.GetInputData(), indexBuffer.GetIndexSize() * 3);
+    indexBuffer.AppendClipData(indexBuffer.GetInputData(), indexBuffer.GetIndexSize());
   }
   else {
     ClipTriangles(vertexBuffer, indexBuffer);

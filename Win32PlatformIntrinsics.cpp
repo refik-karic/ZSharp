@@ -270,6 +270,41 @@ void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
   }
 }
 
+void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]) {
+  __m128 view = _mm_loadu_ps(viewer);
+  
+  size_t* indexData = indexBuffer.GetInputData();
+  const float* vertexData = vertexBuffer[0];
+  const size_t vertexStride = vertexBuffer.GetStride();
+
+  for (size_t i = indexBuffer.GetIndexSize(); i >= 3; i -= 3) {
+    size_t i1 = indexData[i - 3] * vertexStride;
+    size_t i2 = indexData[i - 2] * vertexStride;
+    size_t i3 = indexData[i - 1] * vertexStride;
+    __m128 v1 = _mm_load_ps(vertexData + i1);
+    __m128 v2 = _mm_load_ps(vertexData + i2);
+    __m128 v3 = _mm_load_ps(vertexData + i3);
+
+    __m128 p1p0 = _mm_sub_ps(v2, v1);
+    __m128 p2p0 = _mm_sub_ps(v3, v1);
+
+    __m128 p1p0Shuffled0 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(p1p0), 0b11001001));
+    __m128 p1p0Shuffled1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(p1p0), 0b11010010));
+
+    __m128 p2p0Shuffled0 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(p2p0), 0b11010010));
+    __m128 p2p0Shuffled1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(p2p0), 0b11001001));
+
+    __m128 normal = _mm_sub_ps(_mm_mul_ps(p1p0Shuffled0, p2p0Shuffled0), _mm_mul_ps(p1p0Shuffled1, p2p0Shuffled1));
+
+    __m128 dotIntermediate = _mm_mul_ps(_mm_sub_ps(v1, view), normal);
+    float dotResult = dotIntermediate.m128_f32[0] + dotIntermediate.m128_f32[1] + dotIntermediate.m128_f32[2];
+
+    if (dotResult < 0.f) {
+      indexBuffer.RemoveTriangle(i - 3);
+    }
+  }
+}
+
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]) {
   /*
   Note that we don't do any kind of CPUID check here.

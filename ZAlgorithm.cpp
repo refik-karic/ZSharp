@@ -5,6 +5,7 @@
 
 #include "ZAssert.h"
 #include "ScopedTimer.h"
+#include "PlatformIntrinsics.h"
 
 #include <cstring>
 
@@ -287,40 +288,15 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer) {
   NamedScopedTimer(BackfaceCull);
   
-  ZAssert((indexBuffer.GetIndexSize() % TRI_VERTS) == 0);
+  ZAssert((indexBuffer.GetIndexSize() % 3) == 0);
   
-  if (indexBuffer.GetIndexSize() < TRI_VERTS) {
+  if (indexBuffer.GetIndexSize() < 3) {
     return;
   }
 
   const float* view = *viewer;
 
-  for (size_t i = indexBuffer.GetIndexSize(); i >= TRI_VERTS; i -= TRI_VERTS) {
-    size_t i1 = indexBuffer[i - 3];
-    size_t i2 = indexBuffer[i - 2];
-    size_t i3 = indexBuffer[i - 1];
-    const float* v1 = vertexBuffer[i1];
-    const float* v2 = vertexBuffer[i2];
-    const float* v3 = vertexBuffer[i3];
-
-    // TODO: Move this into a dedicate math header.
-    // We're doing vec3 sub, cross product, and dot product.
-    const float p1p0[3] = { v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2] };
-    const float p2p0[3] = { v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2] };
-
-    float normal[3] = {
-      (p1p0[1] * p2p0[2]) - (p1p0[2] * p2p0[1]),
-      (p1p0[2] * p2p0[0]) - (p1p0[0] * p2p0[2]),
-      (p1p0[0] * p2p0[1]) - (p1p0[1] * p2p0[0]),
-    };
-
-    float dotResult = ((v1[0] - view[0]) * normal[0]) +
-      ((v1[1] - view[1]) * normal[1]) +
-      ((v1[2] - view[2]) * normal[2]);
-    if (dotResult < 0.f) {
-      indexBuffer.RemoveTriangle(i - 3);
-    }
-  }
+  Aligned_BackfaceCull(indexBuffer, vertexBuffer, view);
 }
 
 void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {

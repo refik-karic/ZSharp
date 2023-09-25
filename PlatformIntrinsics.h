@@ -3,6 +3,8 @@
 #include "ZBaseTypes.h"
 #include "ZString.h"
 #include "Texture.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 
 namespace ZSharp {
 
@@ -45,6 +47,8 @@ float Unaligned_128MulSum(const float* a, const float* b);
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t stride, size_t length);
 
 void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length);
+
+void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]);
 
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
 

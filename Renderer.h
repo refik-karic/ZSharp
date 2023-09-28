@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "Framebuffer.h"
+#include "DepthBuffer.h"
 #include "World.h"
 
 namespace ZSharp {
@@ -23,12 +24,15 @@ class Renderer final {
 
   uint8* GetFrame();
 
+  uint8* GetDepth();
+
   void ToggleRenderMode(RenderMode mode);
 
   Framebuffer& GetFrameBuffer();
 
   private:
-  Framebuffer mBuffer;
+  Framebuffer mFramebuffer;
+  DepthBuffer mDepthBuffer;
   RenderMode mRenderMode = RenderMode::FLAT;
 };
 }

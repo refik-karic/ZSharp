@@ -17,6 +17,7 @@ target_sources(ZSharp
         Constants.h
         DebugText.h
         Delegate.h
+        DepthBuffer.h
         FileString.h
         FixedArray.h
         Framebuffer.h
@@ -84,6 +85,7 @@ target_sources(ZSharp
         Common.cpp
         CommonMath.cpp
         DebugText.cpp
+        DepthBuffer.cpp
         FileString.cpp
         Framebuffer.cpp
         GameInstance.cpp

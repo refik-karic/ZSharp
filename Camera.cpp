@@ -154,6 +154,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   const float* windowTransformVec0 = *mWindowTransform[0];
   const float* windowTransformVec1 = *mWindowTransform[1];
   float* vertexClipData = vertexBuffer.GetClipData(0);
+
   for (size_t i = 0; i < clipLength; ++i) {
     float* vertexData = vertexClipData + (i * stride);
 

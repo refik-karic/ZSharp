@@ -274,7 +274,12 @@ void GameInstance::TickAudio() {
 }
 
 uint8* GameInstance::GetCurrentFrame() {
-  return mRenderer.GetFrame();
+  if (!mVisualizeDepth) {
+    return mRenderer.GetFrame();
+  }
+  else {
+    return mRenderer.GetDepth();
+  }
 }
 
 void GameInstance::OnKeyDown(uint8 key) {
@@ -308,6 +313,9 @@ void GameInstance::OnKeyDown(uint8 key) {
     break;
   case 'I':
     mDrawStats = !mDrawStats;
+    break;
+  case 'Z':
+    mVisualizeDepth = !mVisualizeDepth;
     break;
     // TODO: Come up with a better system for mapping non trivial keys.
   case 0x26: // VK_UP Windows

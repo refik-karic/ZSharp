@@ -12,6 +12,8 @@
 #include "DebugText.h"
 #include "ZAlgorithm.h"
 
+#include <cmath>
+
 namespace ZSharp {
 Renderer::Renderer() {
 }
@@ -20,7 +22,8 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
   NamedScopedTimer(RenderFrame);
 
   const ZColor clearColor(ZColors::ORANGE);
-  mBuffer.Clear(clearColor);
+  mFramebuffer.Clear(clearColor);
+  mDepthBuffer.Clear();
 
   for (size_t i = 0; i < world.GetTotalModels(); ++i) {
     Model& model = world.GetModels()[i];
@@ -54,17 +57,44 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     switch (mRenderMode) {
       case RenderMode::FLAT:
-        DrawTrianglesFlat(mBuffer, vertexBuffer, indexBuffer, model.ShadingOrder(), texture);
+        DrawTrianglesFlat(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, model.ShadingOrder(), texture);
         break;
       case RenderMode::WIREFRAME:
-        DrawTrianglesWireframe(mBuffer, vertexBuffer, indexBuffer);
+        DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer);
         break;
     }
   }
 }
 
 uint8* Renderer::GetFrame() {
-  return mBuffer.GetBuffer();
+  return mFramebuffer.GetBuffer();
+}
+
+uint8* Renderer::GetDepth() {
+  size_t width = mDepthBuffer.GetWidth();
+  size_t height = mDepthBuffer.GetHeight();
+  float* buffer = mDepthBuffer.GetBuffer();
+
+  ZColor black(ZColors::BLACK);
+  ZColor white(ZColors::WHITE);
+
+  // TODO: Find a better way to scale the depth values.
+  //  This is just a good guess.
+  float denominator = -6.f;
+
+  for (size_t h = 0; h < height; ++h) {
+    for (size_t w = 0; w < width; ++w) {
+      float* pixel = buffer + (h * width) + w;
+
+      float numerator = *pixel - 6.f;
+      float t = numerator / denominator;
+
+      ZColor pixelColor(black, white, t);
+      (*((uint32*)pixel)) = pixelColor.Color();
+    }
+  }
+
+  return reinterpret_cast<uint8*>(buffer);
 }
 
 void Renderer::ToggleRenderMode(RenderMode mode) {
@@ -72,7 +102,7 @@ void Renderer::ToggleRenderMode(RenderMode mode) {
 }
 
 Framebuffer& Renderer::GetFrameBuffer() {
-  return mBuffer;
+  return mFramebuffer;
 }
 
 }

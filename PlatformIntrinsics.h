@@ -53,6 +53,6 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
 
 void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3,
-  const float maxWidth, const float maxHeight, uint8* framebuffer, const Texture* texture);
+  const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture);
 
 }

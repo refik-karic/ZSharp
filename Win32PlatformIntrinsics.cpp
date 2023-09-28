@@ -324,7 +324,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
-void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, const float maxWidth, const float maxHeight, uint8* framebuffer, const Texture* texture) {
+void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture) {
   __m128 min = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
   __m128 min1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
   __m128 min2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
@@ -373,7 +373,8 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
     p1 = _mm_add_ps(p1, _mm_set_ps1(1.f));
 
     uint32* pixels = reinterpret_cast<uint32*>(framebuffer) + (sMinX + (h * sMaxWidth));
-    for (size_t w = sMinX; w < sMaxX; ++w, ++pixels) {
+    float* pixelDepth = depthBuffer + (sMinX + (h * sMaxWidth));
+    for (size_t w = sMinX; w < sMaxX; ++w, ++pixels, ++pixelDepth) {
       __m128 weights = _mm_sub_ps(_mm_mul_ps(p0, factors1), p1Factor);
 
       p0 = _mm_add_ps(p0, _mm_set_ps1(1.f));
@@ -381,15 +382,20 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
       if (weights.m128_f32[3] <= 0.f && weights.m128_f32[2] <= 0.f && weights.m128_f32[1] <= 0.f) {
         __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
-        __m128 denominator = _mm_set_ps1(weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1]);
+        float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
+        if ((*pixelDepth) > pixelZ) {
+          *pixelDepth = pixelZ;
 
-        __m128 weightedAttr0 = _mm_div_ps(_mm_mul_ps(weights, invAttr0), denominator);
-        __m128 weightedAttr1 = _mm_div_ps(_mm_mul_ps(weights, invAttr1), denominator);
+          __m128 denominator = _mm_set_ps1(weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1]);
 
-        const float u = weightedAttr0.m128_f32[3] + weightedAttr0.m128_f32[2] + weightedAttr0.m128_f32[1];
-        const float v = weightedAttr1.m128_f32[3] + weightedAttr1.m128_f32[2] + weightedAttr1.m128_f32[1];
+          __m128 weightedAttr0 = _mm_div_ps(_mm_mul_ps(weights, invAttr0), denominator);
+          __m128 weightedAttr1 = _mm_div_ps(_mm_mul_ps(weights, invAttr1), denominator);
 
-        *pixels = texture->Sample(u, v).Color();
+          const float u = weightedAttr0.m128_f32[3] + weightedAttr0.m128_f32[2] + weightedAttr0.m128_f32[1];
+          const float v = weightedAttr1.m128_f32[3] + weightedAttr1.m128_f32[2] + weightedAttr1.m128_f32[1];
+
+          *pixels = texture->Sample(u, v).Color();
+        }
       }
     }
   }

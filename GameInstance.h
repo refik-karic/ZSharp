@@ -53,6 +53,7 @@ class GameInstance final {
 
   bool mPauseTransforms = false;
   bool mDrawStats = true;
+  bool mVisualizeDepth = false;
 
   void PauseTransforms();
 

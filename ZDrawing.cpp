@@ -137,7 +137,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
   }
 }
 
-void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const ShadingModeOrder& order, const Texture* texture) {
+void DrawTrianglesFlat(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const ShadingModeOrder& order, const Texture* texture) {
   NamedScopedTimer(DrawFlatTriangles);
   
   if (order.Size() == 0) {
@@ -336,7 +336,7 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, const VertexBuffer& vertexBuffe
         }
       }
 #else
-      Unaligned_FlatShadeUVs(v1, v2, v3, maxWidth, maxHeight, framebuffer.GetBuffer(), texture);
+      Unaligned_FlatShadeUVs(v1, v2, v3, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture);
 #endif
     }
   }

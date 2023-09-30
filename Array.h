@@ -273,6 +273,7 @@ class Array final : public ISerializable {
       PlatformFree(mData);
       mData = nullptr;
       mSize = 0;
+      mCapacity = 0;
     }
   }
 

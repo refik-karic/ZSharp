@@ -9,6 +9,8 @@
 
 #include <cstring>
 
+#define DEBUG_FLAT_SHADE_RGB 0
+
 namespace ZSharp {
 World::World() {
 }
@@ -155,7 +157,11 @@ void World::LoadOBJ(Model& model) {
   model.SetStride(objFile.Stride());
   Mesh& mesh = model[0];
 
+#if !DEBUG_FLAT_SHADE_RGB
   const bool isTextureMapped = objFile.ShadingOrder().Contains(ShadingMode(ShadingModes::UV, 2));
+#else
+  const bool isTextureMapped = false;
+#endif
   const size_t textureStride = 2;
 
   if (isTextureMapped) {
@@ -177,7 +183,11 @@ void World::LoadOBJ(Model& model) {
     model.BindTexture(pngData, width, height, channels);
   }
   else {
-    objFile.ShadingOrder().PushBack(ShadingMode(ShadingModes::RGB, 3));
+    objFile.ShadingOrder().Clear();
+    ShadingMode mode(ShadingModes::RGB, 3);
+    objFile.ShadingOrder().PushBack(mode);
+    model.SetShadingOrder(objFile.ShadingOrder());
+    model.SetStride(7);
   }
 
   const size_t stride = objFile.Stride();

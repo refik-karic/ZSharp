@@ -169,6 +169,7 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const
       const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
       const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
 
+#if 0
       const float* v1Attr = v1 + 4;
       const float* v2Attr = v2 + 4;
       const float* v3Attr = v3 + 4;
@@ -250,6 +251,9 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const
           }
         }
       }
+#else
+      Unaligned_FlatShadeRGB(v1, v2, v3, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
+#endif
     }
   }
   else if (mode == ShadingModes::UV) {
@@ -314,24 +318,32 @@ void DrawTrianglesFlat(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const
       for (size_t h = sMinY; h < sMaxY; ++h, p1++) {
         p0 = minX;
 
-        const float p1Factor0 = (p1 - v1[1]) * factor10;
-        const float p1Factor1 = (p1 - v2[1]) * factor20;
-        const float p1Factor2 = (p1 - v3[1]) * factor30;
+        const float p1Factor0 = (p1 - v2[1]) * factor20;
+        const float p1Factor1 = (p1 - v3[1]) * factor30;
+        const float p1Factor2 = (p1 - v1[1]) * factor10;
 
-        for (size_t w = sMinX; w < sMaxX; ++w, p0++) {
-          const float w0 = (((p0 - v1[0]) * factor11) - p1Factor0);
-          const float w1 = (((p0 - v2[0]) * factor21) - p1Factor1);
-          const float w2 = (((p0 - v3[0]) * factor31) - p1Factor2);
+        float* pixelDepth = depthBuffer.GetBuffer() + (sMinX + (h * (size_t)maxWidth));
+        for (size_t w = sMinX; w < sMaxX; ++w, p0++, ++pixelDepth) {
+          const float w0 = (((p0 - v2[0]) * factor21) - p1Factor0);
+          const float w1 = (((p0 - v3[0]) * factor31) - p1Factor1);
+          const float w2 = (((p0 - v1[0]) * factor11) - p1Factor2);
           
-          // Ignore winding order for now. We need a long term solution to get models in the right order.
-          // Backface culling is handled earlier in the pipeline.
-          if ((w0 <= 0.f && w1 <= 0.f && w2 <= 0.f) || (w0 >= 0.f && w1 >= 0.f && w2 >= 0.f)) {
-            const float invDenominator = 1.f / ((w0 * invV1) + (w1 * invV2) + (w2 * invV3));
+          if (w0 >= 0.f && w1 >= 0.f && w2 >= 0.f) {
+            float weightedV0 = w0 * invV1;
+            float weightedV1 = w1 * invV2;
+            float weightedV2 = w2 * invV3;
 
-            const float u = invDenominator * ((w0 * invV1Attr0) + (w1 * invV2Attr0) + (w2 * invV3Attr0));
-            const float v = invDenominator * ((w0 * invV1Attr1) + (w1 * invV2Attr1) + (w2 * invV3Attr1));
+            float pixelZ = weightedV0 + weightedV1 + weightedV2;
+            if ((*pixelDepth) > pixelZ) {
+              *pixelDepth = pixelZ;
 
-            framebuffer.SetPixel(w, h, texture->Sample(u, v));
+              const float invDenominator = 1.f / (weightedV0 + weightedV1 + weightedV2);
+
+              const float u = invDenominator * ((w0 * invV1Attr0) + (w1 * invV2Attr0) + (w2 * invV3Attr0));
+              const float v = invDenominator * ((w0 * invV1Attr1) + (w1 * invV2Attr1) + (w2 * invV3Attr1));
+
+              framebuffer.SetPixel(w, h, texture->Sample(u, v));
+            }
           }
         }
       }

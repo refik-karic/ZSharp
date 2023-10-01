@@ -89,11 +89,11 @@ void GameInstance::LoadAssets() {
   mWorld.DebugLoadTriangle(v3, v2, v1, order, 7);
 #elif DEBUG_TRIANGLE_TEXTURE
   const float X = 5.f;
-  const float Y = 10.f;
+  const float Y = 5.f;
   const float Z = 0.f;
   const float W = 1.f;
   const float v1[]{ -X, 0.f, Z, W, 1.f, 1.f };
-  const float v2[]{ 0.f, Y, -30.f, W, 0.f, 1.f };
+  const float v2[]{ 0.f, Y, Z, W, 0.f, 1.f };
   const float v3[]{ X, 0.f, Z, W, 0.5f, 0.f };
 
   ShadingModeOrder order;
@@ -294,16 +294,16 @@ void GameInstance::OnKeyDown(uint8 key) {
     mRenderer.ToggleRenderMode(RenderMode::FLAT);
     break;
   case 'W':
-    MoveCamera(ZSharp::GameInstance::Direction::FORWARD);
+    MoveCamera(GameInstance::Direction::FORWARD);
     break;
   case 'S':
-    MoveCamera(ZSharp::GameInstance::Direction::BACK);
+    MoveCamera(GameInstance::Direction::BACK);
     break;
   case 'A':
-    MoveCamera(ZSharp::GameInstance::Direction::LEFT);
+    MoveCamera(GameInstance::Direction::LEFT);
     break;
   case 'D':
-    MoveCamera(ZSharp::GameInstance::Direction::RIGHT);
+    MoveCamera(GameInstance::Direction::RIGHT);
     break;
   case 'Q':
     RotateCamera(Mat4x4::Axis::Y, 1.0F);

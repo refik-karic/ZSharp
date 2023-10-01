@@ -38,6 +38,8 @@ class Asset final {
 
   const MemoryDeserializer& Loader() const;
 
+  AssetType Type() const;
+
   private:
   size_t mSize;
   MemoryDeserializer mDeserializer;

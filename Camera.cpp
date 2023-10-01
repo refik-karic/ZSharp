@@ -3,7 +3,6 @@
 #include <cmath>
 
 #include "Constants.h"
-#include "Triangle.h"
 #include "Win32PlatformApplication.h"
 #include "ZAlgorithm.h"
 #include "ZConfig.h"

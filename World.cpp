@@ -16,38 +16,47 @@ World::World() {
 }
 
 void World::LoadModels() {
-  {
-    Model model;
-    mActiveModels.PushBack(model);
+  Bundle& bundle = Bundle::Get();
+  if (bundle.Assets().Size() == 0) {
+    return;
   }
 
-  {
-    VertexBuffer vertBuffer;
-    mVertexBuffers.PushBack(vertBuffer);
+  for (Asset& asset : bundle.Assets()) {
+    if (asset.Type() == AssetType::Model) {
+      {
+        Model model;
+        mActiveModels.PushBack(model);
+      }
+
+      {
+        VertexBuffer vertBuffer;
+        mVertexBuffers.PushBack(vertBuffer);
+      }
+
+      {
+        IndexBuffer indexBuffer;
+        mIndexBuffers.PushBack(indexBuffer);
+      }
+
+      Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
+      LoadOBJ(cachedModel, asset);
+
+      VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.Size() - 1];
+      IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.Size() - 1];
+
+      size_t indexBufSize = 0;
+      size_t vertBufSize = 0;
+      size_t vertStride = 0;
+      for (Mesh& mesh : cachedModel.GetMeshData()) {
+        indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
+        vertBufSize += mesh.GetVertTable().Size();
+        vertStride = mesh.Stride();
+      }
+
+      cachedIndexBuffer.Resize(indexBufSize);
+      cachedVertBuffer.Resize(vertBufSize, vertStride);
+    }
   }
-
-  {
-    IndexBuffer indexBuffer;
-    mIndexBuffers.PushBack(indexBuffer);
-  }
-  
-  Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
-  LoadOBJ(cachedModel);
-
-  VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.Size() - 1];
-  IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.Size() - 1];
-
-  size_t indexBufSize = 0;
-  size_t vertBufSize = 0;
-  size_t vertStride = 0;
-  for (Mesh& mesh : cachedModel.GetMeshData()) {
-    indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
-    vertBufSize += mesh.GetVertTable().Size();
-    vertStride = mesh.Stride();
-  }
-
-  cachedIndexBuffer.Resize(indexBufSize);
-  cachedVertBuffer.Resize(vertBufSize, vertStride);
 }
 
 void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, size_t stride)
@@ -140,14 +149,8 @@ Array<IndexBuffer>& World::GetIndexBuffers() {
   return mIndexBuffers;
 }
 
-void World::LoadOBJ(Model& model) {
-  Bundle& bundle = Bundle::Get();
-  if (bundle.Assets().Size() == 0) {
-    return;
-  }
-
-  const Asset& objAsset = bundle.Assets()[0];
-  MemoryDeserializer objDeserializer(objAsset.Loader());
+void World::LoadOBJ(Model& model, Asset& asset) {
+  MemoryDeserializer objDeserializer(asset.Loader());
 
   OBJFile objFile;
   OBJLoader objLoader(objDeserializer, objFile);
@@ -158,13 +161,14 @@ void World::LoadOBJ(Model& model) {
   Mesh& mesh = model[0];
 
 #if !DEBUG_FLAT_SHADE_RGB
-  const bool isTextureMapped = objFile.ShadingOrder().Contains(ShadingMode(ShadingModes::UV, 2));
+  bool isTextureMapped = objFile.ShadingOrder().Contains(ShadingMode(ShadingModes::UV, 2));
 #else
-  const bool isTextureMapped = false;
+  bool isTextureMapped = false;
 #endif
   const size_t textureStride = 2;
 
   if (isTextureMapped) {
+    Bundle& bundle = Bundle::Get();
     Asset* pngAsset = bundle.GetAsset(objFile.AlbedoTexture());
 
     if (pngAsset == nullptr) {

@@ -41,4 +41,8 @@ void Asset::SetLoaderOffset(void* memory, size_t size) {
 const MemoryDeserializer& Asset::Loader() const {
   return mDeserializer;
 }
+
+AssetType Asset::Type() const {
+  return mAssetType;
+}
 }

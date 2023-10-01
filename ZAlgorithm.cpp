@@ -69,7 +69,7 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     const size_t numClippedVerts = SutherlandHodgmanClip(clipBuffer, 3, nearEdge, edgeNormal, stride);
 
     if (numClippedVerts > 0) {
-      ZAssert(numClippedVerts < 6);
+      ZAssert(numClippedVerts < 7);
 
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
@@ -96,6 +96,20 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
 
         size_t clippedTriangle[6] = { clip0, clip1, clip2, clip3, clip4, clip5 };
         indexBuffer.AppendClipData(clippedTriangle, 6);
+      }
+      else if (numClippedVerts == 6) {
+        const size_t clip0 = currentClipIndex + 0;
+        const size_t clip1 = currentClipIndex + 2;
+        const size_t clip2 = currentClipIndex + 3;
+        const size_t clip3 = currentClipIndex + 0;
+        const size_t clip4 = currentClipIndex + 3;
+        const size_t clip5 = currentClipIndex + 4;
+        const size_t clip6 = currentClipIndex + 4;
+        const size_t clip7 = currentClipIndex + 5;
+        const size_t clip8 = currentClipIndex + 0;
+
+        size_t clippedTriangle[9] = { clip0, clip1, clip2, clip3, clip4, clip5, clip6, clip7, clip8 };
+        indexBuffer.AppendClipData(clippedTriangle, 9);
       }
     }
   }
@@ -175,7 +189,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 #endif
 
     if (numClippedVerts > 0) {
-      ZAssert(numClippedVerts < 6);
+      ZAssert(numClippedVerts < 7);
 
       size_t currentClipIndex = vertexBuffer.GetClipLength();
 
@@ -202,6 +216,20 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 
         size_t clippedTriangle[6] = { clip0, clip1, clip2, clip3, clip4, clip5 };
         indexBuffer.AppendClipData(clippedTriangle, 6);
+      }
+      else if (numClippedVerts == 6) {
+        const size_t clip0 = currentClipIndex + 0;
+        const size_t clip1 = currentClipIndex + 2;
+        const size_t clip2 = currentClipIndex + 3;
+        const size_t clip3 = currentClipIndex + 0;
+        const size_t clip4 = currentClipIndex + 3;
+        const size_t clip5 = currentClipIndex + 4;
+        const size_t clip6 = currentClipIndex + 4;
+        const size_t clip7 = currentClipIndex + 5;
+        const size_t clip8 = currentClipIndex + 0;
+
+        size_t clippedTriangle[9] = { clip0, clip1, clip2, clip3, clip4, clip5, clip6, clip7, clip8 };
+        indexBuffer.AppendClipData(clippedTriangle, 9);
       }
     }
 #endif

@@ -23,12 +23,17 @@ class WorldObject {
 
   const Vec3& Rotation() const;
 
+  Vec3& Translation();
+
+  const Vec3& Translation() const;
+
   Mat4x4 ObjectTransform() const;
 
   protected:
   Vec3 mPosition;
   Vec3 mScale;
   Vec3 mRotation;
+  Vec3 mTranslation;
 };
 
 }

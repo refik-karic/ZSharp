@@ -12,6 +12,7 @@ target_sources(ZSharp
         Bundle.h
         BundleGeneration.h
         Camera.h
+        CommandLineParser.h
         Common.h
         CommonMath.h
         Constants.h
@@ -82,6 +83,7 @@ target_sources(ZSharp
         Bundle.cpp
         BundleGeneration.cpp
         Camera.cpp
+        CommandLineParser.cpp
         Common.cpp
         CommonMath.cpp
         DebugText.cpp

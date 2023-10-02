@@ -10,9 +10,12 @@
 #include "ZConfig.h"
 #include "ZString.h"
 #include "PlatformTime.h"
+#include "CommandLineParser.h"
 
 #include <synchapi.h>
 #include <timeapi.h>
+#include <processenv.h>
+#include <shellapi.h>
 
 #define DEBUG_TEXTURE 0
 
@@ -20,6 +23,7 @@ static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
 static ZSharp::WideString TimerName(L"MainLoop");
 static constexpr LONG FRAMERATE_60_HZ_MS = 1000 / 60;
 UINT MinTimerPeriod = 0;
+DWORD WindowStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 
 ZSharp::BroadcastDelegate<size_t, size_t> Win32PlatformApplication::OnWindowSizeChangedDelegate;
 
@@ -77,6 +81,8 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
   if (mWindowHandle == nullptr) {
     mInstance = instance;
 
+    ReadCommandLine();
+
     mWindowHandle = SetupWindow();
     if (mWindowHandle == nullptr) {
       DWORD error = GetLastError();
@@ -126,6 +132,34 @@ Win32PlatformApplication::Win32PlatformApplication() {
 Win32PlatformApplication::~Win32PlatformApplication() {
 }
 
+void Win32PlatformApplication::ReadCommandLine() {
+  LPWSTR cmdLine = GetCommandLineW();
+  ZSharp::int32 argC = 0;
+  LPWSTR* argV = CommandLineToArgvW(cmdLine, &argC);
+
+  ZSharp::Array<ZSharp::CLICommand> commands;
+
+  const ZSharp::String fullscreenOption("fullscreen");
+
+  ZSharp::Array<ZSharp::String> globalOptions;
+  globalOptions.PushBack(fullscreenOption);
+
+  ZSharp::CLIParser cliParser(commands, globalOptions);
+  ZSharp::int32 result = cliParser.Evaluate(argC, (const wchar_t**)argV, true); 
+  
+  LocalFree(argV);
+
+  if(result != 0) {
+    return;
+  }
+
+  // TODO: It might be a good idea to break this out into another file since it could be used elsewhere.
+  ZSharp::String isFullscreen = cliParser.GetValue(fullscreenOption);
+  if (isFullscreen.ToInt32() != 0) {
+    WindowStyle |= WS_MAXIMIZE;
+  }
+}
+
 HWND Win32PlatformApplication::SetupWindow() {
   WNDCLASSEXW wc{
     sizeof(WNDCLASSEXW),
@@ -156,7 +190,7 @@ HWND Win32PlatformApplication::SetupWindow() {
     WS_EX_OVERLAPPEDWINDOW,
     WindowClassName.Str(),
     config.GetWindowTitle().ToWide().Str(),
-    WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+    WindowStyle,
     CW_USEDEFAULT,
     CW_USEDEFAULT,
     clientRect.right - clientRect.left,

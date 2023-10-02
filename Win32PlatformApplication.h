@@ -32,6 +32,8 @@ class Win32PlatformApplication {
 
   ~Win32PlatformApplication();
 
+  void ReadCommandLine();
+
   HWND SetupWindow();
 
   // Win32 message loop handlers.

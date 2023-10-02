@@ -63,7 +63,11 @@ class CLIParser final {
 
   CLIParser(const Array<CLICommand>& commands, const Array<String>& globalOptions);
 
-  int32 Evaluate(int argc, const char** argv);
+  int32 Evaluate(int argc, const char** argv, bool justOptions);
+
+  int32 Evaluate(int argc, const wchar_t** argv, bool justOptions);
+
+  String GetValue(const String& option);
 
   private:
   Array<CLICommand> mCommands;

@@ -13,7 +13,8 @@ The core implementation of the 3D Software Renderer.
   * Timing
   * Dynamic dispatch SIMD
 * Rendering interface
-  * Framebuffer
+  * Frame buffer
+  * Depth buffer
   * Camera
   * Vertex/Index buffers
   * World

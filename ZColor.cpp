@@ -54,4 +54,17 @@ uint8 ZColor::B() const {
   return mB;
 }
 
+uint32 ColorFromRGB(uint8 R, uint8 G, uint8 B) {
+  uint32 color = 0xFF00;
+  color |= R;
+  color <<= 8;
+
+  color |= G;
+  color <<= 8;
+
+  color |= B;
+
+  return color;
+}
+
 }

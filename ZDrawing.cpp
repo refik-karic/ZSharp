@@ -29,12 +29,16 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
   // Vertical line
   if (x1 == x2) {
+    float startY = p0[1];
+    float endY = p1[1];
+
     if (y2 < y1) {
       Swap(y1, y2);
+      Swap(startY, endY);
     }
 
     for (; y1 < y2; y1++) {
-      float yT = ParametricSolveForT(static_cast<float>(y1), p1[1], p0[1]);
+      float yT = ParametricSolveForT(static_cast<float>(y1), startY, endY);
       float R = Lerp(p0Attributes[0] * p0[2], p1Attributes[0] * p1[2], yT);
       float G = Lerp(p0Attributes[1] * p0[2], p1Attributes[1] * p1[2], yT);
       float B = Lerp(p0Attributes[2] * p0[2], p1Attributes[2] * p1[2], yT);
@@ -43,12 +47,16 @@ void DrawRunSlice(Framebuffer& framebuffer,
     }
   }
   else if (y1 == y2) { // Horizontal line
+    float startX = p0[0];
+    float endX = p1[0];
+
     if (x2 < x1) {
       Swap(x1, x2);
+      Swap(startX, endX);
     }
 
     for (int32 i = x1; i < x2; ++i) {
-      float xT = ParametricSolveForT(static_cast<float>(i), p1[0], p0[0]);
+      float xT = ParametricSolveForT(static_cast<float>(i), startX, endX);
       float R = Lerp(p0Attributes[0] * p0[2], p1Attributes[0] * p1[2], xT);
       float G = Lerp(p0Attributes[1] * p0[2], p1Attributes[1] * p1[2], xT);
       float B = Lerp(p0Attributes[2] * p0[2], p1Attributes[2] * p1[2], xT);
@@ -81,7 +89,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
         if (x2 <= x1) { // Drawing right to left, writing pixels left to right for cache coherency.
           for (int32 j = x1 - slopeStep; j < x1; ++j) {
-            float xT = ParametricSolveForT(static_cast<float>(j), p1[0], p0[0]);
+            float xT = ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
             float R = Lerp(p0Attributes[0] * p0[2], p1Attributes[0] * p1[2], xT);
             float G = Lerp(p0Attributes[1] * p0[2], p1Attributes[1] * p1[2], xT);
             float B = Lerp(p0Attributes[2] * p0[2], p1Attributes[2] * p1[2], xT);
@@ -93,7 +101,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
         }
         else { // Drawing left to right
           for (int32 j = x1; j < x1 + slopeStep; ++j) {
-            float xT = ParametricSolveForT(static_cast<float>(j), p1[0], p0[0]);
+            float xT = ParametricSolveForT(static_cast<float>(j), p0[0], p1[0]);
             float R = Lerp(p0Attributes[0] * p0[2], p1Attributes[0] * p1[2], xT);
             float G = Lerp(p0Attributes[1] * p0[2], p1Attributes[1] * p1[2], xT);
             float B = Lerp(p0Attributes[2] * p0[2], p1Attributes[2] * p1[2], xT);
@@ -122,7 +130,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
 
         // Draw a vertical span for the current X
         for (int32 j = y1; j < y1 + slopeStep; j++) {
-          float yT = ParametricSolveForT(static_cast<float>(j), p1[1], p0[1]);
+          float yT = ParametricSolveForT(static_cast<float>(j), p0[1], p1[1]);
           float R = Lerp(p0Attributes[0] * p0[2], p1Attributes[0] * p1[2], yT);
           float G = Lerp(p0Attributes[1] * p0[2], p1Attributes[1] * p1[2], yT);
           float B = Lerp(p0Attributes[2] * p0[2], p1Attributes[2] * p1[2], yT);

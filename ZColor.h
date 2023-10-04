@@ -6,6 +6,8 @@
 
 namespace ZSharp {
 
+uint32 ColorFromRGB(uint8 R, uint8 G, uint8 B);
+
 class ZColor {
   public:
 

@@ -38,9 +38,11 @@ class Texture final {
 
   bool IsAssigned() const;
 
-  FORCE_INLINE ZColor Sample(float u, float v) const {
-    Clamp(u, 0.f, 1.f);
-    Clamp(v, 0.f, 1.f);
+  FORCE_INLINE uint32 Sample(float u, float v) const {
+    // TODO: Is there a way we can enforce this elsewhere without taking a performance hit on each pixel?
+    //  Maybe move this earlier in the rendering pipeline?
+    //Clamp(u, 0.f, 1.f);
+    //Clamp(v, 0.f, 1.f);
 
     const size_t x = static_cast<size_t>(u * (mWidth - 1));
     const size_t y = static_cast<size_t>(v * (mHeight - 1));
@@ -50,8 +52,7 @@ class Texture final {
     const uint8 G = mData[pixel + 1];
     const uint8 R = mData[pixel + 2];
 
-    ZColor color(R, G, B);
-    return color;
+    return ColorFromRGB(R, G, B);
   }
 
   private:

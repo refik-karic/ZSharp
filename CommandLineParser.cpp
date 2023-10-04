@@ -100,6 +100,9 @@ int32 CLIParser::Evaluate(int argc, const char** argv, bool justOptions) {
 
       argValue = optionDelimiter;
     }
+    else {
+      argValue.Append("1");
+    }
 
     if (!justOptions) {
       // Break if command-specific options clash with global options.
@@ -217,6 +220,9 @@ int32 CLIParser::Evaluate(int argc, const wchar_t** argv, bool justOptions) {
 
       argValue = optionDelimiter;
     }
+    else {
+      argValue.Append("1");
+    }
 
     // Break if command-specific options clash with global options.
     if (!justOptions) {
@@ -262,6 +268,10 @@ int32 CLIParser::Evaluate(int argc, const wchar_t** argv, bool justOptions) {
     Logger::Log(LogCategory::Error, String::FromFormat("Missing required options for command [{0}].\n", commandPtr->mName.Str()));
     return -1;
   }
+}
+
+bool CLIParser::WasPassed(const String& option) {
+  return mGlobalOptions.HasKey(option) && !mGlobalOptions[option].IsEmpty();
 }
 
 String CLIParser::GetValue(const String& option) {

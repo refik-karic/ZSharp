@@ -380,7 +380,7 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
 
       p0 = _mm_add_ps(p0, _mm_set_ps1(1.f));
 
-      if (weights.m128_f32[3] >= 0.f && weights.m128_f32[2] >= 0.f && weights.m128_f32[1] >= 0.f) {
+      if (weights.m128_f32[3] > 0.f && weights.m128_f32[2] > 0.f && weights.m128_f32[1] > 0.f) {
         __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
         float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
@@ -396,8 +396,7 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
           const float r = weightedAttr0.m128_f32[3] + weightedAttr0.m128_f32[2] + weightedAttr0.m128_f32[1];
           const float g = weightedAttr1.m128_f32[3] + weightedAttr1.m128_f32[2] + weightedAttr1.m128_f32[1];
           const float b = weightedAttr2.m128_f32[3] + weightedAttr2.m128_f32[2] + weightedAttr2.m128_f32[1];
-          ZColor color(r, g, b);
-          *pixels = color.Color();
+          *pixels = ColorFromRGB((uint8)(r * 255.f), (uint8)(g * 255.f), (uint8)(b * 255.f));
         }
       }
     }
@@ -459,7 +458,7 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
 
       p0 = _mm_add_ps(p0, _mm_set_ps1(1.f));
 
-      if (weights.m128_f32[3] >= 0.f && weights.m128_f32[2] >= 0.f && weights.m128_f32[1] >= 0.f) {
+      if (weights.m128_f32[3] > 0.f && weights.m128_f32[2] > 0.f && weights.m128_f32[1] > 0.f) {
         __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
         float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
@@ -474,7 +473,7 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
           const float u = weightedAttr0.m128_f32[3] + weightedAttr0.m128_f32[2] + weightedAttr0.m128_f32[1];
           const float v = weightedAttr1.m128_f32[3] + weightedAttr1.m128_f32[2] + weightedAttr1.m128_f32[1];
 
-          *pixels = texture->Sample(u, v).Color();
+          *pixels = texture->Sample(u, v);
         }
       }
     }

@@ -26,7 +26,7 @@
 
 #define DEBUG_AUDIO 0
 #define DEBUG_TRIANGLE 0
-#define DEBUG_TRIANGLE_TEXTURE 1
+#define DEBUG_TRIANGLE_TEXTURE 0
 #define DISABLE_DEBUG_TRANSFORMS 1
 
 namespace ZSharp {
@@ -64,15 +64,6 @@ void GameInstance::LoadAssets() {
 #endif
 
 #if DEBUG_TRIANGLE
-#if 0
-  const float X = 5.f;
-  const float Y = 5.f;
-  //const float Z = 0.f;
-  const float W = 1.f;
-  const float v1[]{ -X, 0.f, -30.f, W, 0.f, 0.f, 1.f };
-  const float v3[]{ 0.f, Y, 0.f, W, 1.0f, 0.f, 0.f };
-  const float v2[]{ X, -3.f, 10.f, W, 0.0f, 1.f, 0.f };
-#else
   const float X = 5.f;
   const float Y = 5.f;
   const float Z = 0.f;
@@ -80,7 +71,6 @@ void GameInstance::LoadAssets() {
   const float v1[]{ -X, 0.f, Z, W, 1.f, 0.f, 0.f };
   const float v2[]{ 0.f, Y, Z, W, 0.0f, 1.f, 0.f };
   const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
-#endif
 
   ShadingModeOrder order;
   ShadingMode mode(ShadingModes::RGB, 3);

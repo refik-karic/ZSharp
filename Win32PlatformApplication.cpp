@@ -154,8 +154,7 @@ void Win32PlatformApplication::ReadCommandLine() {
   }
 
   // TODO: It might be a good idea to break this out into another file since it could be used elsewhere.
-  ZSharp::String isFullscreen = cliParser.GetValue(fullscreenOption);
-  if (isFullscreen.ToInt32() != 0) {
+  if (cliParser.WasPassed(fullscreenOption)) {
     WindowStyle |= WS_MAXIMIZE;
   }
 }

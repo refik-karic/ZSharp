@@ -53,7 +53,7 @@ class CLICommand final {
   String mName;
   String mHelp;
   CLICallback mCallback;
-  HashTable<String, String> mOptions;
+  CLICommandOptions mOptions;
 
   friend class CLIParser;
 };
@@ -66,6 +66,8 @@ class CLIParser final {
   int32 Evaluate(int argc, const char** argv, bool justOptions);
 
   int32 Evaluate(int argc, const wchar_t** argv, bool justOptions);
+
+  bool WasPassed(const String& option);
 
   String GetValue(const String& option);
 

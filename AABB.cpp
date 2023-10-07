@@ -34,4 +34,24 @@ const Vec3& AABB::MaxBounds() const {
   return mMax;
 }
 
+bool AABB::Intersects(const AABB& rhs) const {
+  /*
+    Test each axis to see if there's an overlap.
+    The AABBs only overlap if all axes overlap at a point.
+  */
+
+  if (mMax[0] < rhs.mMin[0] || mMin[0] > rhs.mMax[0]) {
+    return false;
+  }
+  else if (mMax[1] < rhs.mMin[1] || mMin[1] > rhs.mMax[1]) {
+    return false;
+  }
+  else if (mMax[2] < rhs.mMin[2] || mMin[2] > rhs.mMax[2]) {
+    return false;
+  }
+  else {
+    return true;
+  }
+}
+
 }

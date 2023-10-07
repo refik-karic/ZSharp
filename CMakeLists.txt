@@ -42,6 +42,7 @@ target_sources(ZSharp
         OBJFile.h
         OBJLoader.h
         Pair.h
+        PhysicsObject.h
         PlatformAudio.h
         PlatformDebug.h
         PlatformDefines.h
@@ -104,6 +105,7 @@ target_sources(ZSharp
         MP3.cpp
         OBJFile.cpp
         OBJLoader.cpp
+        PhysicsObject.cpp
         PNG.cpp
         Quaternion.cpp
         Random.cpp

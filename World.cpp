@@ -9,10 +9,28 @@
 
 #include <cstring>
 
-#define DEBUG_FLAT_SHADE_RGB 0
+#define DEBUG_FLAT_SHADE_RGB 1
 
 namespace ZSharp {
 World::World() {
+}
+
+void World::TickPhysics() {
+  /*
+    TODO: Implement this.
+
+    1) Pre-compute AABB's for each model
+    2) Check/Move to next time step
+      2a) Check for possible tunneling
+      2b) Resolve AABB collision and then move on to nearest point test
+    3) Resolve collision if any
+    4) Apply counter force if collision
+  
+  */
+
+  for (Model& model : mActiveModels) {
+
+  }
 }
 
 void World::LoadModels() {

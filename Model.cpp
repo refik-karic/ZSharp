@@ -101,10 +101,10 @@ Texture& Model::GetTexture() {
 }
 
 AABB Model::ComputeBoundingBox() const {
-  NamedScopedTimer(ComputeAABB);
+  NamedScopedTimer(ModelComputeAABB);
 
-  float min[4] = {};
-  float max[4] = {};
+  float min[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
+  float max[4] = { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
 
   for (Mesh& mesh : mData) {
     const size_t stride = mesh.Stride();

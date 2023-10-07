@@ -19,6 +19,8 @@ class AABB final {
 
   const Vec3& MaxBounds() const;
 
+  bool Intersects(const AABB& rhs) const;
+
   private:
   Vec3 mMin;
   Vec3 mMax;

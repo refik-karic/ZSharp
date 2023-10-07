@@ -10,11 +10,11 @@
 #include "Texture.h"
 #include "Vec4.h"
 #include "VertexBuffer.h"
-#include "WorldObject.h"
+#include "PhysicsObject.h"
 
 namespace ZSharp {
 
-class Model final : public WorldObject {
+class Model final : public PhysicsObject {
   public:
 
   Model() = default;

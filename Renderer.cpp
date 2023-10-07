@@ -14,6 +14,8 @@
 
 #include <cmath>
 
+#define VISUALIZE_AABB 1
+
 namespace ZSharp {
 Renderer::Renderer() {
 }
@@ -36,15 +38,28 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     vertexBuffer.ApplyTransform(model.ObjectTransform());
 
-    const AABB aabb(model.ComputeBoundingBox());
+    /* 
+      TODO: It would be significantly more efficient to precompute the AABB once (either at load or from bundle).
+        If the model scales/translates/rotates after the fact, we should transform the AABB and then correct it to be axis aligned again.
+    */
+
+    const AABB aabb(vertexBuffer.ComputeBoundingBox());
     ClipBounds clipBounds;
     {
       VertexBuffer aabbVertexBuffer;
       IndexBuffer aabbIndexBuffer;
       TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer);
-      aabbVertexBuffer.ApplyTransform(model.ObjectTransform());
 
       clipBounds = camera.ClipBoundsCheck(aabbVertexBuffer, aabbIndexBuffer);
+
+#if VISUALIZE_AABB
+      aabbVertexBuffer.Clear();
+      aabbIndexBuffer.Clear();
+      TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer);
+
+      camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds);
+      DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer);
+#endif
     }
 
     camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds);

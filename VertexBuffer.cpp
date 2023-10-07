@@ -1,6 +1,7 @@
 #include "VertexBuffer.h"
 
 #include <cstring>
+#include <cmath>
 
 #include "ZAssert.h"
 #include "CommonMath.h"
@@ -125,4 +126,22 @@ void VertexBuffer::ShuffleClippedData() {
   mClipData = mData + offset;
   mWorkingSize = offset;
 }
+
+AABB VertexBuffer::ComputeBoundingBox() const {
+  NamedScopedTimer(VertexBufferComputeAABB);
+
+  float min[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
+  float max[4] = { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
+
+  const size_t stride = mStride;
+  const float* vertices = mData;
+  const size_t numVertices = mWorkingSize;
+
+  Unaligned_AABB(vertices, numVertices, stride, min, max);
+
+  AABB aabb(min, max);
+
+  return aabb;
+}
+
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Mat4x4.h"
+#include "AABB.h"
 
 namespace ZSharp {
 
@@ -44,6 +45,8 @@ class VertexBuffer final {
   size_t GetClipLength() const;
 
   void ShuffleClippedData();
+
+  AABB ComputeBoundingBox() const;
 
   private:
   float* mData = nullptr;

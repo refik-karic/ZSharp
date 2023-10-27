@@ -46,16 +46,18 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
     const AABB aabb(vertexBuffer.ComputeBoundingBox());
     ClipBounds clipBounds;
     {
+      const ZColor aabbColor(ZColors::GREEN);
+
       VertexBuffer aabbVertexBuffer;
       IndexBuffer aabbIndexBuffer;
-      TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer);
+      TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer, false, aabbColor);
 
       clipBounds = camera.ClipBoundsCheck(aabbVertexBuffer, aabbIndexBuffer);
 
 #if VISUALIZE_AABB
       aabbVertexBuffer.Clear();
       aabbIndexBuffer.Clear();
-      TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer);
+      TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer, true, aabbColor);
 
       camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds);
       DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer);

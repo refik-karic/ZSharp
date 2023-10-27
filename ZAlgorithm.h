@@ -5,6 +5,7 @@
 #include "VertexBuffer.h"
 #include "PlatformDefines.h"
 #include "AABB.h"
+#include "ZColor.h"
 
 namespace ZSharp {
 
@@ -22,6 +23,6 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer);
 
-void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
+void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, bool visualize, const ZColor& color);
 
 }

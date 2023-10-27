@@ -327,63 +327,150 @@ void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& ind
   Aligned_BackfaceCull(indexBuffer, vertexBuffer, view);
 }
 
-void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
-  const size_t aabbStride = 4;
-  vertexBuffer.Resize(8 * aabbStride, aabbStride);
-
-  float aabbVerts[8 * aabbStride];
+void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, bool visualize, const ZColor& color) {
   const float* minVec = *aabb.MinBounds();
   const float* maxVec = *aabb.MaxBounds();
+  
+  if (visualize) {
+    const float R = color.R() / 255.f;
+    const float G = color.G() / 255.f;
+    const float B = color.B() / 255.f;
 
-  // v1
-  aabbVerts[0] = minVec[0];
-  aabbVerts[1] = minVec[1];
-  aabbVerts[2] = minVec[2];
-  aabbVerts[3] = 1.f;
+    const size_t aabbStride = 4 + 3; // XYZW, RGB
+    vertexBuffer.Resize(8 * aabbStride, aabbStride);
 
-  // v2
-  aabbVerts[4] = maxVec[0];
-  aabbVerts[5] = minVec[1];
-  aabbVerts[6] = minVec[2];
-  aabbVerts[7] = 1.f;
+    float aabbVerts[8 * aabbStride];
 
-  // v3
-  aabbVerts[8] = maxVec[0];
-  aabbVerts[9] = maxVec[1];
-  aabbVerts[10] = minVec[2];
-  aabbVerts[11] = 1.f;
+    // v1
+    aabbVerts[0] = minVec[0];
+    aabbVerts[1] = minVec[1];
+    aabbVerts[2] = minVec[2];
+    aabbVerts[3] = 1.f;
+    aabbVerts[4] = R;
+    aabbVerts[5] = G;
+    aabbVerts[6] = B;
 
-  // v4
-  aabbVerts[12] = minVec[0];
-  aabbVerts[13] = maxVec[1];
-  aabbVerts[14] = minVec[2];
-  aabbVerts[15] = 1.f;
+    // v2
+    aabbVerts[7] = maxVec[0];
+    aabbVerts[8] = minVec[1];
+    aabbVerts[9] = minVec[2];
+    aabbVerts[10] = 1.f;
+    aabbVerts[11] = R;
+    aabbVerts[12] = G;
+    aabbVerts[13] = B;
 
-  // v5
-  aabbVerts[16] = minVec[0];
-  aabbVerts[17] = minVec[1];
-  aabbVerts[18] = maxVec[2];
-  aabbVerts[19] = 1.f;
+    // v3
+    aabbVerts[14] = maxVec[0];
+    aabbVerts[15] = maxVec[1];
+    aabbVerts[16] = minVec[2];
+    aabbVerts[17] = 1.f;
+    aabbVerts[18] = R;
+    aabbVerts[19] = G;
+    aabbVerts[20] = B;
 
-  // v6
-  aabbVerts[20] = maxVec[0];
-  aabbVerts[21] = minVec[1];
-  aabbVerts[22] = maxVec[2];
-  aabbVerts[23] = 1.f;
+    // v4
+    aabbVerts[21] = minVec[0];
+    aabbVerts[22] = maxVec[1];
+    aabbVerts[23] = minVec[2];
+    aabbVerts[24] = 1.f;
+    aabbVerts[25] = R;
+    aabbVerts[26] = G;
+    aabbVerts[27] = B;
 
-  // v7
-  aabbVerts[24] = maxVec[0];
-  aabbVerts[25] = maxVec[1];
-  aabbVerts[26] = maxVec[2];
-  aabbVerts[27] = 1.f;
+    // v5
+    aabbVerts[28] = minVec[0];
+    aabbVerts[29] = minVec[1];
+    aabbVerts[30] = maxVec[2];
+    aabbVerts[31] = 1.f;
+    aabbVerts[32] = R;
+    aabbVerts[33] = G;
+    aabbVerts[34] = B;
 
-  // v8
-  aabbVerts[28] = minVec[0];
-  aabbVerts[29] = maxVec[1];
-  aabbVerts[30] = maxVec[2];
-  aabbVerts[31] = 1.f;
+    // v6
+    aabbVerts[35] = maxVec[0];
+    aabbVerts[36] = minVec[1];
+    aabbVerts[37] = maxVec[2];
+    aabbVerts[38] = 1.f;
+    aabbVerts[39] = R;
+    aabbVerts[40] = G;
+    aabbVerts[41] = B;
 
-  vertexBuffer.CopyInputData(aabbVerts, 0, 8 * aabbStride);
+    // v7
+    aabbVerts[42] = maxVec[0];
+    aabbVerts[43] = maxVec[1];
+    aabbVerts[44] = maxVec[2];
+    aabbVerts[45] = 1.f;
+    aabbVerts[46] = R;
+    aabbVerts[47] = G;
+    aabbVerts[48] = B;
+
+    // v8
+    aabbVerts[49] = minVec[0];
+    aabbVerts[50] = maxVec[1];
+    aabbVerts[51] = maxVec[2];
+    aabbVerts[52] = 1.f;
+    aabbVerts[53] = R;
+    aabbVerts[54] = G;
+    aabbVerts[55] = B;
+
+    vertexBuffer.CopyInputData(aabbVerts, 0, 8 * aabbStride);
+  }
+  else {
+    const size_t aabbStride = 4; // XYZW
+    vertexBuffer.Resize(8 * aabbStride, aabbStride);
+
+    float aabbVerts[8 * aabbStride];
+
+    // v1
+    aabbVerts[0] = minVec[0];
+    aabbVerts[1] = minVec[1];
+    aabbVerts[2] = minVec[2];
+    aabbVerts[3] = 1.f;
+
+    // v2
+    aabbVerts[4] = maxVec[0];
+    aabbVerts[5] = minVec[1];
+    aabbVerts[6] = minVec[2];
+    aabbVerts[7] = 1.f;
+
+    // v3
+    aabbVerts[8] = maxVec[0];
+    aabbVerts[9] = maxVec[1];
+    aabbVerts[10] = minVec[2];
+    aabbVerts[11] = 1.f;
+
+    // v4
+    aabbVerts[12] = minVec[0];
+    aabbVerts[13] = maxVec[1];
+    aabbVerts[14] = minVec[2];
+    aabbVerts[15] = 1.f;
+
+    // v5
+    aabbVerts[16] = minVec[0];
+    aabbVerts[17] = minVec[1];
+    aabbVerts[18] = maxVec[2];
+    aabbVerts[19] = 1.f;
+
+    // v6
+    aabbVerts[20] = maxVec[0];
+    aabbVerts[21] = minVec[1];
+    aabbVerts[22] = maxVec[2];
+    aabbVerts[23] = 1.f;
+
+    // v7
+    aabbVerts[24] = maxVec[0];
+    aabbVerts[25] = maxVec[1];
+    aabbVerts[26] = maxVec[2];
+    aabbVerts[27] = 1.f;
+
+    // v8
+    aabbVerts[28] = minVec[0];
+    aabbVerts[29] = maxVec[1];
+    aabbVerts[30] = maxVec[2];
+    aabbVerts[31] = 1.f;
+
+    vertexBuffer.CopyInputData(aabbVerts, 0, 8 * aabbStride);
+  }
 
   size_t indices[12 * 3];
   // Back Face

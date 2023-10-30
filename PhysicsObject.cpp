@@ -2,6 +2,14 @@
 
 namespace ZSharp {
 
+AABB& PhysicsObject::BoundingBox() {
+  return mBoundingBox;
+}
+
+const AABB& PhysicsObject::BoundingBox() const {
+  return mBoundingBox;
+}
+
 Vec3& PhysicsObject::Velocity() {
   return mVelocity;
 }

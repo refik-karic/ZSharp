@@ -38,12 +38,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     vertexBuffer.ApplyTransform(model.ObjectTransform());
 
-    /* 
-      TODO: It would be significantly more efficient to precompute the AABB once (either at load or from bundle).
-        If the model scales/translates/rotates after the fact, we should transform the AABB and then correct it to be axis aligned again.
-    */
-
-    const AABB aabb(vertexBuffer.ComputeBoundingBox());
+    const AABB aabb(AABB::TransformAndRealign(model.BoundingBox(), model.ObjectTransform()));
     ClipBounds clipBounds;
     {
       const ZColor aabbColor(ZColors::GREEN);

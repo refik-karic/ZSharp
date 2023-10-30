@@ -29,7 +29,7 @@ void World::TickPhysics() {
   */
 
   for (Model& model : mActiveModels) {
-
+    (void)model;
   }
 }
 
@@ -58,6 +58,8 @@ void World::LoadModels() {
 
       Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
       LoadOBJ(cachedModel, asset);
+
+      cachedModel.BoundingBox() = cachedModel.ComputeBoundingBox();
 
       VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.Size() - 1];
       IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.Size() - 1];

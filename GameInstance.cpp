@@ -232,6 +232,8 @@ void GameInstance::Tick() {
   }
 #endif
 
+  mCamera.Tick();
+
   mRenderer.RenderNextFrame(mWorld, mCamera);
 
   if (mDrawStats) {

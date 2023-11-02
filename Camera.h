@@ -29,6 +29,8 @@ class Camera final : public WorldObject {
 
   void RotateCamera(const Mat4x4& rotationMatrix);
 
+  void Tick();
+
   void PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds);
 
   ClipBounds ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
@@ -42,6 +44,9 @@ class Camera final : public WorldObject {
   float mFovHoriz;
   float mFovVert;
 
+  float mStandardNearPlane;
+
+  Mat4x4 mPerspectiveTransform;
   Mat2x3 mWindowTransform;
 
   void OnResize(size_t width, size_t height);

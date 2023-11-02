@@ -76,12 +76,8 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
 #endif
 }
 
-void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds) {
-  NamedScopedTimer(PerspectiveProjection);
-
-  if (clipBounds == ClipBounds::Outside) {
-    return;
-  }
+void Camera::Tick() {
+  NamedScopedTimer(CameraTick);
 
   Vec3 w(-mLook);
   w.Normalize();
@@ -108,17 +104,25 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   scale[2][2] = 1.f / mFarPlane;
   scale[3][3] = 1.f;
 
-  const float standardNearPlane = -(mNearPlane / mFarPlane);
+  mStandardNearPlane = -(mNearPlane / mFarPlane);
   const float standardFarPlane = -1.f;
 
   Mat4x4 unhing;
-  unhing[0][0] = standardFarPlane - standardNearPlane;
-  unhing[1][1] = standardFarPlane - standardNearPlane;
+  unhing[0][0] = standardFarPlane - mStandardNearPlane;
+  unhing[1][1] = standardFarPlane - mStandardNearPlane;
   unhing[2][2] = standardFarPlane;
-  unhing[2][3] = standardNearPlane;
-  unhing[3][2] = -(standardFarPlane - standardNearPlane);
+  unhing[2][3] = mStandardNearPlane;
+  unhing[3][2] = -(standardFarPlane - mStandardNearPlane);
 
-  const Mat4x4 perspectiveTransform(unhing * (scale * (uToE * translation)));
+  mPerspectiveTransform = (unhing * (scale * (uToE * translation)));
+}
+
+void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds) {
+  NamedScopedTimer(PerspectiveProjection);
+
+  if (clipBounds == ClipBounds::Outside) {
+    return;
+  }
 
 #if !DISABLE_BACKFACE_CULLING
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
@@ -127,13 +131,13 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   const size_t stride = vertexBuffer.GetStride();
 
   // Apply the perspective projection transform to all input vertices.
-  Aligned_Mat4x4Transform((const float(*) [4])*perspectiveTransform, vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
+  Aligned_Mat4x4Transform((const float(*) [4])*mPerspectiveTransform, vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
 
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.
   // The near clip edge must be > 0, hence we negate the plane.
   if (clipBounds == ClipBounds::ClippedNear) {
-    ClipTrianglesNearPlane(vertexBuffer, indexBuffer, -standardNearPlane);
+    ClipTrianglesNearPlane(vertexBuffer, indexBuffer, -mStandardNearPlane);
   }
 
   // Points at this stage must have Z > 0.
@@ -189,50 +193,13 @@ ClipBounds Camera::ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   const size_t inIndexSize = indexBuffer.GetIndexSize();
 
-  Vec3 w(-mLook);
-  w.Normalize();
-
-  Vec3 v(mUp - (w * (mUp * w)));
-  v.Normalize();
-
-  Vec3 u(v.Cross(w));
-
-  Mat4x4 translation;
-  translation.Identity();
-  translation.SetTranslation(-mPosition);
-
-  Mat4x4 uToE;
-  uToE[0] = u;
-  uToE[1] = v;
-  uToE[2] = w;
-  uToE[3][3] = 1.f;
-
-  const float fovScale = (PI_OVER_180 / 2.f);
-  Mat4x4 scale;
-  scale[0][0] = 1.f / (mFarPlane * (tanf((mFovHoriz * fovScale))));
-  scale[1][1] = 1.f / (mFarPlane * (tanf((mFovVert * fovScale))));
-  scale[2][2] = 1.f / mFarPlane;
-  scale[3][3] = 1.f;
-
-  const float standardNearPlane = -(mNearPlane / mFarPlane);
-  const float standardFarPlane = -1.f;
-
-  Mat4x4 unhing;
-  unhing[0][0] = standardFarPlane - standardNearPlane;
-  unhing[1][1] = standardFarPlane - standardNearPlane;
-  unhing[2][2] = standardFarPlane;
-  unhing[2][3] = standardNearPlane;
-  unhing[3][2] = -(standardFarPlane - standardNearPlane);
-
-  const Mat4x4 perspectiveTransform(unhing * (scale * (uToE * translation)));
-
   // Apply the perspective projection transform to all input vertices.
-  Aligned_Mat4x4Transform((const float(*)[4]) * perspectiveTransform, vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+  Aligned_Mat4x4Transform((const float(*)[4])* mPerspectiveTransform, vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
 
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.
   // The near clip edge must be > 0, hence we negate the plane.
-  ClipTrianglesNearPlane(vertexBuffer, indexBuffer, -standardNearPlane);
+  ClipTrianglesNearPlane(vertexBuffer, indexBuffer, -mStandardNearPlane);
 
   if (indexBuffer.GetIndexSize() == 0) {
     return ClipBounds::Outside;

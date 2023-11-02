@@ -41,6 +41,11 @@ void World::LoadModels() {
 
   for (Asset& asset : bundle.Assets()) {
     if (asset.Type() == AssetType::Model) {
+      // TODO: Remove me.
+      if (asset.Name() == "plane") {
+        continue;
+      }
+
       {
         Model model;
         mActiveModels.PushBack(model);

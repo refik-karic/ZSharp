@@ -1,35 +1,39 @@
 #include "World.h"
 
+#include "CommonMath.h"
 #include "Bundle.h"
+#include "Logger.h"
 #include "OBJFile.h"
 #include "OBJLoader.h"
 #include "PNG.h"
-
-#include "CommonMath.h"
+#include "ScopedTimer.h"
 
 #include <cstring>
 
 #define DEBUG_FLAT_SHADE_RGB 1
+#define DEBUG_PHYSICS 1
 
 namespace ZSharp {
 World::World() {
 }
 
-void World::TickPhysics() {
+void World::TickPhysics(size_t deltaMs) {
+  NamedScopedTimer(WorldTickPhysics);
+
+  Logger::Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
+
   /*
     TODO: Implement this.
 
-    1) Pre-compute AABB's for each model
-    2) Check/Move to next time step
-      2a) Check for possible tunneling
-      2b) Resolve AABB collision and then move on to nearest point test
-    3) Resolve collision if any
-    4) Apply counter force if collision
-  
+    1) Check/Move to next time step
+      1a) Check for possible tunneling
+      1b) Resolve AABB collision and then move on to nearest point test
+    2) Resolve collision if any
+    3) Apply counter force if collision
   */
 
-  for (Model& model : mActiveModels) {
-    (void)model;
+  for (PhysicsObject*& dynamicObject : mDynamicObjects) {
+    dynamicObject->Translation() += dynamicObject->Velocity();
   }
 }
 
@@ -64,7 +68,16 @@ void World::LoadModels() {
       Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
       LoadOBJ(cachedModel, asset);
 
+      /*
+        TODO: Move this stuff to the bundle generation phase.
+          We're only setting them on load right now because we're still trying to figure out how everything will work.
+      */
       cachedModel.BoundingBox() = cachedModel.ComputeBoundingBox();
+      cachedModel.Tag() = PhysicsTag::Dynamic;
+#if DEBUG_PHYSICS
+      // TODO: It's probably better to just assign a gravity value here rather than arbitrary velocity.
+      cachedModel.Velocity() = Vec3(0.f, -0.01f, 0.f);
+#endif
 
       VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.Size() - 1];
       IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.Size() - 1];
@@ -80,6 +93,18 @@ void World::LoadModels() {
 
       cachedIndexBuffer.Resize(indexBufSize);
       cachedVertBuffer.Resize(vertBufSize, vertStride);
+
+      switch (cachedModel.Tag()) {
+        case PhysicsTag::Dynamic:
+          mDynamicObjects.PushBack(&cachedModel);
+          break;
+        case PhysicsTag::Static:
+          mStaticObjects.PushBack(&cachedModel);
+          break;
+        case PhysicsTag::Unbound:
+          Logger::Log(LogCategory::Info, String::FromFormat("Asset {0} will not be considered for physics.\n", asset.Name()));
+          break;
+      }
     }
   }
 }

@@ -7,6 +7,12 @@
 
 namespace ZSharp {
 
+enum class PhysicsTag {
+  Unbound,
+  Dynamic,
+  Static
+};
+
 class PhysicsObject : public WorldObject {
   public:
 
@@ -18,7 +24,12 @@ class PhysicsObject : public WorldObject {
 
   const Vec3& Velocity() const;
 
+  PhysicsTag& Tag();
+
+  const PhysicsTag& Tag() const;
+
   private:
+  PhysicsTag mTag = PhysicsTag::Unbound;
   Vec3 mVelocity;
   AABB mBoundingBox;
 };

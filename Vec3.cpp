@@ -62,6 +62,12 @@ Vec3 Vec3::operator+(const Vec3& vector) const {
   return result;
 }
 
+void Vec3::operator+=(const Vec3& vector) {
+  mData[0] += vector.mData[0];
+  mData[1] += vector.mData[1];
+  mData[2] += vector.mData[2];
+}
+
 Vec3 Vec3::operator-(const Vec3& vector) const {
   Vec3 result(
     mData[0] - vector.mData[0],

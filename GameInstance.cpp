@@ -198,14 +198,14 @@ void GameInstance::Initialize() {
 void GameInstance::Tick() {
   NamedScopedTimer(Render);
 
-  size_t frameDelta = (mLastFrameTime == 0) ? static_cast<size_t>(FRAMERATE_60HZ_MS) : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
+  size_t frameDeltaMs = (mLastFrameTime == 0) ? static_cast<size_t>(FRAMERATE_60HZ_MS) : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
 
   mLastFrameTime = PlatformHighResClock();
 
   const String frameString(String::FromFormat("Frame: {0}\n", mFrameCount));
   Logger::Log(LogCategory::Info, frameString);
 
-  const String deltaString(String::FromFormat("Frame Delta (ms): {0}\n", frameDelta));
+  const String deltaString(String::FromFormat("Frame Delta (ms): {0}\n", frameDeltaMs));
   Logger::Log(LogCategory::Info, deltaString);
 
   const String cameraPosition(String::FromFormat("Camera: {0}\n", mCamera.Position().ToString()));
@@ -233,6 +233,8 @@ void GameInstance::Tick() {
 #endif
 
   mCamera.Tick();
+
+  mWorld.TickPhysics(frameDeltaMs);
 
   mRenderer.RenderNextFrame(mWorld, mCamera);
 

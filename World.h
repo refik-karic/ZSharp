@@ -5,6 +5,7 @@
 #include "FileString.h"
 #include "IndexBuffer.h"
 #include "Model.h"
+#include "PhysicsObject.h"
 #include "ShadingMode.h"
 #include "VertexBuffer.h"
 
@@ -14,7 +15,7 @@ class World final {
 
   World();
 
-  void TickPhysics();
+  void TickPhysics(size_t deltaMs);
 
   void LoadModels();
 
@@ -34,6 +35,9 @@ class World final {
   Array<Model> mActiveModels;
   Array<VertexBuffer> mVertexBuffers;
   Array<IndexBuffer> mIndexBuffers;
+
+  Array<PhysicsObject*> mDynamicObjects;
+  Array<PhysicsObject*> mStaticObjects;
 
   void LoadOBJ(Model& model, Asset& asset);
 };

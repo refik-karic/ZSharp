@@ -36,6 +36,8 @@ public:
 
   Vec3 operator+(const Vec3& vector) const;
 
+  void operator+=(const Vec3& vector);
+
   Vec3 operator-(const Vec3& vector) const;
 
   Vec3 operator-() const;

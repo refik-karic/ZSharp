@@ -18,4 +18,12 @@ const Vec3& PhysicsObject::Velocity() const {
   return mVelocity;
 }
 
+PhysicsTag& PhysicsObject::Tag() {
+  return mTag;
+}
+
+const PhysicsTag& PhysicsObject::Tag() const {
+  return mTag;
+}
+
 }

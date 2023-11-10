@@ -42,6 +42,7 @@ target_sources(ZSharp
         OBJFile.h
         OBJLoader.h
         Pair.h
+        PhysicsAlgorithms.h
         PhysicsObject.h
         PlatformAudio.h
         PlatformDebug.h
@@ -105,6 +106,7 @@ target_sources(ZSharp
         MP3.cpp
         OBJFile.cpp
         OBJLoader.cpp
+        PhysicsAlgorithms.cpp
         PhysicsObject.cpp
         PNG.cpp
         Quaternion.cpp

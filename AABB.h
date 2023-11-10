@@ -26,6 +26,8 @@ class AABB final {
 
   bool Intersects(const AABB& rhs) const;
 
+  Vec3 Centroid() const;
+
   static AABB TransformAndRealign(const AABB& inAABB, const Mat4x4& matrix);
 
   private:

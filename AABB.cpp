@@ -66,6 +66,10 @@ bool AABB::Intersects(const AABB& rhs) const {
   }
 }
 
+Vec3 AABB::Centroid() const {
+  return (mMin + ((mMax - mMin) * 0.5f));
+}
+
 AABB AABB::TransformAndRealign(const AABB& inAABB, const Mat4x4& matrix) {
   /*
     This applies the transform to the input AABB and realigns it to the axes.

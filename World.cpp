@@ -1,10 +1,11 @@
 #include "World.h"
 
-#include "CommonMath.h"
 #include "Bundle.h"
+#include "CommonMath.h"
 #include "Logger.h"
 #include "OBJFile.h"
 #include "OBJLoader.h"
+#include "PhysicsAlgorithms.h"
 #include "PNG.h"
 #include "ScopedTimer.h"
 
@@ -22,6 +23,10 @@ void World::TickPhysics(size_t deltaMs) {
 
   Logger::Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
 
+#if !DEBUG_PHYSICS
+  return;
+#endif
+
   /*
     TODO: Implement this.
 
@@ -32,9 +37,47 @@ void World::TickPhysics(size_t deltaMs) {
     3) Apply counter force if collision
   */
 
-  for (PhysicsObject*& dynamicObject : mDynamicObjects) {
-    dynamicObject->Translation() += dynamicObject->Velocity();
+  // Update forces for all dynamic objects at the start of the time step.
+  for (PhysicsObject*& currentObject : mDynamicObjects) {
+    // Accumulate current forces for this frame.
+    currentObject->Velocity() += Vec3(0.f, GravityPerSecond * (float)deltaMs, 0.f);
   }
+
+  for (PhysicsObject*& currentObject : mDynamicObjects) {
+    for (PhysicsObject*& staticObject : mStaticObjects) {
+      // Check for collision against static objects.
+      float t0 = 0.f;
+      float t1 = 1.f;
+      float timeOfImpact = 0.f;
+
+      if (currentObject->TransformedAABB().Intersects(staticObject->TransformedAABB())) {
+        CorrectOverlappingObjects(*currentObject, *staticObject);
+      }
+      else if (StaticContinuousTest(*currentObject, *staticObject, t0, t1, timeOfImpact)) {
+        //currentObject->OnCollisionStartDelegate(staticObject);
+        CorrectOverlappingObjects(*currentObject, *staticObject);
+        //currentObject->OnCollisionEndDelegate(staticObject);
+      }
+    }
+
+#if 0
+    for (PhysicsObject*& dynamicObject : mDynamicObjects) {
+      // Check for collision against dynamic objects.
+      if (currentObject == dynamicObject) {
+        continue;
+      }
+
+
+    }
+#endif
+  }
+
+#if 1
+  // Update positions for the current timestep.
+  for (PhysicsObject*& currentObject : mDynamicObjects) {
+    currentObject->Position() += currentObject->Velocity();
+  }
+#endif
 }
 
 void World::LoadModels() {
@@ -45,11 +88,6 @@ void World::LoadModels() {
 
   for (Asset& asset : bundle.Assets()) {
     if (asset.Type() == AssetType::Model) {
-      // TODO: Remove me.
-      if (asset.Name() == "plane") {
-        continue;
-      }
-
       {
         Model model;
         mActiveModels.PushBack(model);
@@ -73,11 +111,17 @@ void World::LoadModels() {
           We're only setting them on load right now because we're still trying to figure out how everything will work.
       */
       cachedModel.BoundingBox() = cachedModel.ComputeBoundingBox();
-      cachedModel.Tag() = PhysicsTag::Dynamic;
+
+      // TODO: Remove me.
+      if (asset.Name() == "plane") {
+        cachedModel.Tag() = PhysicsTag::Static;
+      }
+      else {
 #if DEBUG_PHYSICS
-      // TODO: It's probably better to just assign a gravity value here rather than arbitrary velocity.
-      cachedModel.Velocity() = Vec3(0.f, -0.01f, 0.f);
+        cachedModel.Position() += Vec3(0.f, 5.f, 0.f);
 #endif
+        cachedModel.Tag() = PhysicsTag::Dynamic;
+      }
 
       VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.Size() - 1];
       IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.Size() - 1];

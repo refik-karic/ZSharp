@@ -40,7 +40,8 @@ const Vec3& WorldObject::Translation() const {
 }
 
 Mat4x4 WorldObject::ObjectTransform() const {
-  Mat4x4 scale, rotationX, rotationY, rotationZ, translation, resultTransform;
+  Mat4x4 position, scale, rotationX, rotationY, rotationZ, translation, resultTransform;
+  position.Identity();
   scale.Identity();
   rotationX.Identity();
   rotationY.Identity();
@@ -48,6 +49,7 @@ Mat4x4 WorldObject::ObjectTransform() const {
   resultTransform.Identity();
   translation.Identity();
 
+  position.SetTranslation(mPosition);
   scale.SetScale(mScale);
   rotationX.SetRotation(mRotation[0], Mat4x4::Axis::X);
   rotationY.SetRotation(mRotation[1], Mat4x4::Axis::Y);
@@ -55,6 +57,7 @@ Mat4x4 WorldObject::ObjectTransform() const {
 
   translation.SetTranslation(mTranslation);
 
+  resultTransform = resultTransform * position;
   resultTransform = resultTransform * scale;
   resultTransform = resultTransform * rotationX;
   resultTransform = resultTransform * rotationY;

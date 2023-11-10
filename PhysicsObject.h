@@ -1,9 +1,10 @@
 #pragma once
 
 #include "AABB.h"
-#include "ZBaseTypes.h"
+#include "Delegate.h"
 #include "Vec3.h"
 #include "WorldObject.h"
+#include "ZBaseTypes.h"
 
 namespace ZSharp {
 
@@ -16,9 +17,15 @@ enum class PhysicsTag {
 class PhysicsObject : public WorldObject {
   public:
 
+  float& Mass();
+
+  const float& Mass() const;
+
   AABB& BoundingBox();
 
   const AABB& BoundingBox() const;
+
+  AABB TransformedAABB() const;
 
   Vec3& Velocity();
 
@@ -28,10 +35,14 @@ class PhysicsObject : public WorldObject {
 
   const PhysicsTag& Tag() const;
 
+  Delegate<PhysicsObject*> OnCollisionStartDelegate;
+  Delegate<PhysicsObject*> OnCollisionEndDelegate;
+
   private:
   PhysicsTag mTag = PhysicsTag::Unbound;
   Vec3 mVelocity;
   AABB mBoundingBox;
+  float mMass = 1.f;
 };
 
 }

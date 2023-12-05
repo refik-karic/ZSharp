@@ -2,6 +2,7 @@
 
 #include <cmath>
 
+#include "CommonMath.h"
 #include "Constants.h"
 #include "Win32PlatformApplication.h"
 #include "ZAlgorithm.h"

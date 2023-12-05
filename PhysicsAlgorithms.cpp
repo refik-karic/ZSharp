@@ -1,9 +1,12 @@
 #include "PhysicsAlgorithms.h"
 
+#include "Common.h"
+#include "CommonMath.h"
+
 namespace ZSharp {
 
 // TODO: This is arbitrarily assigned. We need a cohesive unit system for this to make sense.
-const float GravityPerSecond = -0.0001f;
+const float GravityPerSecond = -0.01f; //-0.0001f;
 
 // TODO: Does this value make sense?
 const float IntervalEpsilon = 1.0e-4f;
@@ -19,9 +22,33 @@ void CorrectOverlappingObjects(PhysicsObject& a, PhysicsObject& b) {
 }
 
 float MinDistanceForTime(PhysicsObject& a, PhysicsObject& b, float t) {
+  // TODO: We need to calculate the min distance between the two boxes at the current timestep.
+  //  We can't use the MinBounds() function because the min values will be very far from one another because of their size difference.
+
+#if 0
   Vec3 aPos(a.TransformedAABB().MinBounds() + (a.Velocity() * t));
   Vec3 bPos(b.TransformedAABB().MinBounds() + (b.Velocity() * t));
   return (aPos - bPos).Length();
+#else
+  const size_t numAABBVerts = 8;
+
+  Vec3 aPoints[numAABBVerts] = {};
+  Vec3 bPoints[numAABBVerts] = {};
+  size_t simplexIndices[numAABBVerts] = {};
+  GJKTestAABB(a, b, t, aPoints, bPoints, simplexIndices);
+
+  // TODO: Do we need to find the closest points on each line segment here?
+  //  If the vertices are far away from each other there may be points on A or B along a face that are closer.
+  //float length = (aPoints[simplexIndices[4]] - bPoints[simplexIndices[5]]).Length();
+  const Vec3 line[2] = {
+    bPoints[simplexIndices[1]],
+    bPoints[simplexIndices[3]],
+  };
+
+  float parametricT = {};
+  Vec3 length(ClosestPointToLine(aPoints[simplexIndices[4]], line, parametricT));
+  return length.Length();
+#endif
 }
 
 float MaxMovementForTime(PhysicsObject& object, float t0, float t1) {
@@ -85,12 +112,227 @@ bool DynamicDynamicIntersectionTest(PhysicsObject& a, PhysicsObject& b, float& t
   return false;
 }
 
-bool GJKTest(PhysicsObject& a, PhysicsObject& b, float& timeOfImpact) {
-  (void)a;
-  (void)b;
-  (void)timeOfImpact;
+bool GJKTestAABB(PhysicsObject& a, PhysicsObject& b, float t, Vec3 aPoints[8], Vec3 bPoints[8], size_t simplexIndices[8]) {
+  Vec3 simplex[4] = {};
+
+  const size_t numAABBVerts = 8;
+
+  AABB translatedA(a.TransformedAABB());
+  translatedA.Translate(a.Velocity() * t);
+  translatedA.ToPoints(aPoints);
+
+  AABB translatedB(b.TransformedAABB());
+  translatedB.Translate(b.Velocity() * t);
+  translatedB.ToPoints(bPoints);
+
+  // Pick first point.
+  Vec3 nextSearch(1.f, 0.f, 0.f);
+  size_t simplexLength = 0;
+
+  simplex[simplexLength] = (GJKSupportPoint(aPoints, numAABBVerts, nextSearch, simplexIndices[0]) -
+    GJKSupportPoint(bPoints, numAABBVerts, -nextSearch, simplexIndices[1]));
+
+  simplexLength++;
+
+  const size_t maxGJKIterations = 5;
+
+  bool intersection = false;
+
+  // Find the next supporting points for this iteration in the opposite direction.
+  simplex[simplexLength] = (GJKSupportPoint(aPoints, numAABBVerts, -simplex[0], simplexIndices[2]) -
+    GJKSupportPoint(bPoints, numAABBVerts, simplex[0], simplexIndices[3]));
+
+  simplexLength++;
+
+  // We could early out here if the line segment doesn't cross the origin.
+  // Instead, we continue to compute the closest features because we're interested in minimum distance even in the non-overlapping case.
+  const Vec3 origin(0.f);
+
+  GJKHandleSimplex(simplex, simplexIndices, nextSearch, simplexLength);
+
+  for(size_t i = 0; i < maxGJKIterations; ++i) {
+    simplex[simplexLength] = (GJKSupportPoint(aPoints, numAABBVerts, nextSearch, simplexIndices[6]) -
+      GJKSupportPoint(bPoints, numAABBVerts, -nextSearch, simplexIndices[7]));
+
+    const float dotResult = simplex[simplexLength] * nextSearch;
+
+    if (dotResult <= 0.f) {
+      break;
+    }
+
+    simplexLength++;
+
+    intersection = GJKHandleSimplex(simplex, simplexIndices, nextSearch, simplexLength);
+  }
+
+  return intersection;
+}
+
+bool GJKHandleSimplex(Vec3 simplex[4], size_t simplexIndices[8], Vec3& direction, size_t& simplexLength) {
+  switch (simplexLength) {
+    case 2:
+    {
+      const Vec3 ao(-simplex[1]);
+      const Vec3 ab(simplex[0] - simplex[1]);
+
+      const float abaoDot = ab * ao;
+
+      if (abaoDot > 0.f) {
+        direction = ab.TripleCross(ao, ab);
+      }
+      else {
+        direction = ao;
+      }
+    }
+    break;
+    case 3:
+    {
+      const Vec3 nextAO(-simplex[2]);
+      const Vec3 nextAB(simplex[1] - simplex[2]);
+      const Vec3 nextAC(simplex[0] - simplex[2]);
+
+      const Vec3 abacPerp(nextAB.Cross(nextAC));
+
+      Vec3 nextSearchAC(abacPerp.Cross(nextAC));
+      const float nextACDot = nextSearchAC * nextAO;
+
+      if (nextACDot > 0.f) {
+        const float dotResult = nextAC * nextAO;
+        if (dotResult > 0.f) {
+          // Drop B, search in AC perp.
+          simplex[1] = simplex[2];
+          simplexIndices[2] = simplexIndices[4];
+          simplexIndices[3] = simplexIndices[5];
+          simplexLength = 2;
+
+          direction = nextAC.TripleCross(nextAO, nextAC);
+        }
+        else {
+          // Drop C, search for new line.
+          simplexLength = 2;
+          return GJKHandleSimplex(simplex, simplexIndices, direction, simplexLength);
+        }
+      }
+      else {
+        Vec3 nextSearchAB(nextAB.Cross(abacPerp));
+
+        const float dotResult = nextSearchAB * nextAO;
+        if (dotResult > 0.f) {
+          // Drop C, search for new line.
+          simplexLength = 2;
+          return GJKHandleSimplex(simplex, simplexIndices, direction, simplexLength);
+        }
+        else {
+          const float abacPerpDot = abacPerp * nextAO;
+          if (abacPerpDot > 0.f) {
+            direction = abacPerp;
+          }
+          else {
+            // Swap B and C, search in negative direction.
+            Swap(simplex[1], simplex[2]);
+            Swap(simplexIndices[2], simplexIndices[4]);
+            Swap(simplexIndices[3], simplexIndices[5]);
+            direction = -abacPerp;
+          }
+        }
+      }
+    }
+    break;
+    case 4:
+    {
+      const Vec3 nextAO(-simplex[3]);
+      const Vec3 nextAB(simplex[2] - simplex[3]);
+      const Vec3 nextAC(simplex[1] - simplex[3]);
+      const Vec3 nextAD(simplex[0] - simplex[3]);
+      Vec3 nextSearchAB(nextAB.Cross(nextAC));
+      Vec3 nextSearchAC(nextAC.Cross(nextAD));
+      Vec3 nextSearchAD(nextAD.Cross(nextAB));
+
+      const float nextABDot = nextSearchAB * nextAO;
+      const float nextACDot = nextSearchAC * nextAO;
+      const float nextADDot = nextSearchAD * nextAO;
+
+      if (nextABDot > 0.f) {
+        // Drop D, search in ABC.
+        simplex[0] = simplex[1];
+        simplex[1] = simplex[2];
+        simplex[2] = simplex[3];
+
+        simplexIndices[0] = simplexIndices[2];
+        simplexIndices[1] = simplexIndices[3];
+
+        simplexIndices[2] = simplexIndices[4];
+        simplexIndices[3] = simplexIndices[5];
+
+        simplexIndices[4] = simplexIndices[6];
+        simplexIndices[5] = simplexIndices[7];
+
+        simplexLength = 3;
+        return GJKHandleSimplex(simplex, simplexIndices, direction, simplexLength);
+      }
+      else if (nextACDot > 0.f) {
+        // Drop B, search in ACD.
+        simplex[2] = simplex[3];
+
+        simplexIndices[4] = simplexIndices[6];
+        simplexIndices[5] = simplexIndices[7];
+
+        simplexLength = 3;
+        return GJKHandleSimplex(simplex, simplexIndices, direction, simplexLength);
+      }
+      else if (nextADDot > 0.f) {
+        // Drop C, search in ABD.
+        simplex[1] = simplex[2];
+        simplex[2] = simplex[3];
+
+        simplexIndices[2] = simplexIndices[4];
+        simplexIndices[3] = simplexIndices[5];
+
+        simplexIndices[4] = simplexIndices[6];
+        simplexIndices[5] = simplexIndices[7];
+
+        simplexLength = 3;
+        return GJKHandleSimplex(simplex, simplexIndices, direction, simplexLength);
+      }
+      else {
+        return true;
+      }
+    }
+    break;
+    default:
+    {
+      ZAssert(false);
+      return false;
+    }
+      break;
+  }
 
   return false;
+}
+
+Vec3 GJKSupportPoint(const Vec3* verts, size_t length, const Vec3& direction, size_t& index) {
+  float highestDot = 0.f;
+  Vec3 result(verts[0]);
+
+  for (size_t i = 0; i < length; ++i) {
+    float dot = verts[i] * direction;
+    if (dot > highestDot) {
+      highestDot = dot;
+      result = verts[i];
+      index = i;
+    }
+  }
+  
+  return result;
+}
+
+Vec3 ClosestPointToLine(const Vec3& point, const Vec3 line[2], float& t) {
+  Vec3 ab = line[1] - line[0];
+  t = ((point - line[0]) * ab) / (ab * ab);
+
+  Clamp(t, 0.f, 1.f);
+
+  return line[0] + (ab * t);
 }
 
 }

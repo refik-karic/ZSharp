@@ -1,6 +1,7 @@
 #include "AABB.h"
 
 #include "CommonMath.h"
+#include "Mat4x4.h"
 
 #include <cmath>
 
@@ -68,6 +69,44 @@ bool AABB::Intersects(const AABB& rhs) const {
 
 Vec3 AABB::Centroid() const {
   return (mMin + ((mMax - mMin) * 0.5f));
+}
+
+void AABB::Translate(const Vec3& translation) {
+  Mat4x4 transform;
+  transform.Identity();
+  transform.SetTranslation(translation);
+
+  Vec4 min(mMin);
+  Vec4 max(mMax);
+
+  transform.ApplyTransform(min);
+  transform.ApplyTransform(max);
+
+  min.Homogenize();
+  max.Homogenize();
+
+  mMin[0] = min[0];
+  mMin[1] = min[1];
+  mMin[2] = min[2];
+
+  mMax[0] = max[0];
+  mMax[1] = max[1];
+  mMax[2] = max[2];
+}
+
+void AABB::ToPoints(Vec3 points[8]) const {
+  const float* min = *mMin;
+  const float* max = *mMax;
+
+  points[0] = Vec3(min[0], min[1], max[2]);
+  points[1] = Vec3(max[0], min[1], max[2]);
+  points[2] = Vec3(max[0], max[1], max[2]);
+  points[3] = Vec3(min[0], max[1], max[2]);
+
+  points[4] = Vec3(min[0], min[1], min[2]);
+  points[5] = Vec3(max[0], min[1], min[2]);
+  points[6] = Vec3(max[0], max[1], min[2]);
+  points[7] = Vec3(min[0], max[1], min[2]);
 }
 
 AABB AABB::TransformAndRealign(const AABB& inAABB, const Mat4x4& matrix) {

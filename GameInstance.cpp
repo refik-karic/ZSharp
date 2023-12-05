@@ -27,7 +27,7 @@
 #define DEBUG_AUDIO 0
 #define DEBUG_TRIANGLE 0
 #define DEBUG_TRIANGLE_TEXTURE 0
-#define DISABLE_DEBUG_TRANSFORMS 1
+#define DISABLE_DEBUG_TRANSFORMS 0
 
 namespace ZSharp {
 
@@ -184,7 +184,7 @@ void GameInstance::PauseTransforms() {
 void GameInstance::Initialize() {
   LoadAssets();
 
-  mCamera.Position() = Vec3(0.f, 0.f, 40.f);
+  mCamera.Position() = Vec3(0.f, 5.f, 50.f);
   // Clip the model at the origin by moving the camera far away.
   // From there we can see how long the clipping pass takes for a given scene.
   //mCamera.Position() = Vec3(0.f, 0.f, 200.f);
@@ -228,13 +228,19 @@ void GameInstance::Tick() {
   }
 
   for (Model& model : mWorld.GetModels()) {
-    model.Rotation() = rotation;
+    // TODO: Hacking some stuff together real quick for physics.
+    if (model.Tag() == PhysicsTag::Dynamic) {
+      model.Rotation() = rotation;
+    }
   }
 #endif
 
   mCamera.Tick();
 
+  size_t startPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
   mWorld.TickPhysics(frameDeltaMs);
+  size_t endPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
+  const String physicsTime(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics));
 
   mRenderer.RenderNextFrame(mWorld, mCamera);
 
@@ -244,6 +250,7 @@ void GameInstance::Tick() {
     DrawText(deltaString, 10, 20, frameBuffer, ZColors::BLACK);
     DrawText(cameraPosition, 10, 30, frameBuffer, ZColors::BLACK);
     DrawText(cameraView, 10, 40, frameBuffer, ZColors::BLACK);
+    DrawText(physicsTime, 10, 50, frameBuffer, ZColors::BLACK);
   }
 }
 

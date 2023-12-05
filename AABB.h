@@ -28,6 +28,10 @@ class AABB final {
 
   Vec3 Centroid() const;
 
+  void Translate(const Vec3& translation);
+
+  void ToPoints(Vec3 points[8]) const;
+
   static AABB TransformAndRealign(const AABB& inAABB, const Mat4x4& matrix);
 
   private:

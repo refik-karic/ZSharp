@@ -50,14 +50,14 @@ void World::TickPhysics(size_t deltaMs) {
       float t1 = 1.f;
       float timeOfImpact = 0.f;
 
-      if (currentObject->TransformedAABB().Intersects(staticObject->TransformedAABB())) {
-        CorrectOverlappingObjects(*currentObject, *staticObject);
-      }
-      else if (StaticContinuousTest(*currentObject, *staticObject, t0, t1, timeOfImpact)) {
+      if (StaticContinuousTest(*currentObject, *staticObject, t0, t1, timeOfImpact)) {
         //currentObject->OnCollisionStartDelegate(staticObject);
         CorrectOverlappingObjects(*currentObject, *staticObject);
         //currentObject->OnCollisionEndDelegate(staticObject);
       }
+      //else if (currentObject->TransformedAABB().Intersects(staticObject->TransformedAABB())) {
+      //  CorrectOverlappingObjects(*currentObject, *staticObject);
+      //}
     }
 
 #if 0
@@ -118,7 +118,7 @@ void World::LoadModels() {
       }
       else {
 #if DEBUG_PHYSICS
-        cachedModel.Position() += Vec3(0.f, 5.f, 0.f);
+        cachedModel.Position() += Vec3(0.f, 15.f, 0.f);
 #endif
         cachedModel.Tag() = PhysicsTag::Dynamic;
       }

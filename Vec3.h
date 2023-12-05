@@ -6,12 +6,6 @@
 
 namespace ZSharp {
 
-FORCE_INLINE float Dot3(const float lhs[3], const float rhs[3]) {
-  return (lhs[0] * rhs[0]) +
-    (lhs[1] * rhs[1]) +
-    (lhs[2] * rhs[2]);
-}
-
 class Vec3 final {
 public:
   Vec3();
@@ -47,6 +41,8 @@ public:
   float operator*(const Vec3& vector) const;
 
   Vec3 Cross(const Vec3& vec) const;
+
+  Vec3 TripleCross(const Vec3& a, const Vec3& b) const;
 
   float Length() const;
 

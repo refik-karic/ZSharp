@@ -1,5 +1,7 @@
 #include "Vec3.h"
 
+#include "CommonMath.h"
+
 #include <cmath>
 #include <cstring>
 
@@ -101,6 +103,22 @@ Vec3 Vec3::Cross(const Vec3& vec) const {
     (mData[2] * vec.mData[0]) - (mData[0] * vec.mData[2]),
     (mData[0] * vec.mData[1]) - (mData[1] * vec.mData[0])
   );
+  return result;
+}
+
+Vec3 Vec3::TripleCross(const Vec3& a, const Vec3& b) const {
+  const float xyz[3] = {
+    (mData[1] * a.mData[2]) - (mData[2] * a.mData[1]),
+    (mData[2] * a.mData[0]) - (mData[0] * a.mData[2]),
+    (mData[0] * a.mData[1]) - (mData[1] * a.mData[0])
+  };
+
+  Vec3 result(
+    (xyz[1] * b.mData[2]) - (xyz[2] * b.mData[1]),
+    (xyz[2] * b.mData[0]) - (xyz[0] * b.mData[2]),
+    (xyz[0] * b.mData[1]) - (xyz[1] * b.mData[0])
+  );
+
   return result;
 }
 

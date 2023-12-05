@@ -12,10 +12,6 @@
 
 namespace ZSharp {
 
-float BarycentricArea(const float v1[2], const float v2[2], const float v3[2]) {
-  return ((v3[0] - v1[0]) * (v2[1] - v1[1])) - ((v3[1] - v1[1]) * (v2[0] - v1[0]));
-}
-
 void DrawRunSlice(Framebuffer& framebuffer, 
                   const float* p0,
                   const float* p1) {

@@ -28,6 +28,8 @@ Vec3 GJKSupportPoint(const Vec3* verts, size_t length, const Vec3& direction, si
 
 Vec3 ClosestPointToLine(const Vec3& point, const Vec3 line[2], float& t);
 
+Vec3 ClosestPointToTriangle(const Vec3& point, const Vec3 triangle[3]);
+
 // TODO: We need functions for collision handling.
 
 }

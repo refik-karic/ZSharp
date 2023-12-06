@@ -37,9 +37,15 @@ float MinDistanceForTime(PhysicsObject& a, PhysicsObject& b, float t) {
   size_t simplexIndices[numAABBVerts] = {};
   GJKTestAABB(a, b, t, aPoints, bPoints, simplexIndices);
 
+# if 0
   // TODO: Do we need to find the closest points on each line segment here?
   //  If the vertices are far away from each other there may be points on A or B along a face that are closer.
-  //float length = (aPoints[simplexIndices[4]] - bPoints[simplexIndices[5]]).Length();
+
+  // TODO: The way to solve is as follows:
+  //  1) Compute the closest point in the Z direction
+  //  2) Compute the closest point in the X direction
+  //  3) Subtract the vectors in the Y direction
+  //  4) This gives us the closest points on each face after GJK provides us with the closest points to start.
   const Vec3 line[2] = {
     bPoints[simplexIndices[1]],
     bPoints[simplexIndices[3]],
@@ -48,6 +54,37 @@ float MinDistanceForTime(PhysicsObject& a, PhysicsObject& b, float t) {
   float parametricT = {};
   Vec3 length(ClosestPointToLine(aPoints[simplexIndices[4]], line, parametricT));
   return length.Length();
+#else
+  // Take the most recent 3 vertices in simplex and test them against each other to find the closest point.
+
+  Vec3 closestPoints[3];
+
+  const Vec3 bTestTriangle[3] = {
+    bPoints[simplexIndices[3]],
+    bPoints[simplexIndices[5]],
+    bPoints[simplexIndices[7]],
+  };
+
+  closestPoints[0] = ClosestPointToTriangle(aPoints[simplexIndices[0]], bTestTriangle);
+  closestPoints[1] = ClosestPointToTriangle(aPoints[simplexIndices[2]], bTestTriangle);
+  closestPoints[2] = ClosestPointToTriangle(aPoints[simplexIndices[4]], bTestTriangle);
+
+  float distA = closestPoints[0].Length();
+  float distB = closestPoints[1].Length();
+  float distC = closestPoints[2].Length();
+
+  float leastDistance = distA;
+  if (distB <= leastDistance) {
+    leastDistance = distB;
+  }
+
+  if (distC <= leastDistance) {
+    leastDistance = distC;
+  }
+
+  return leastDistance;
+#endif
+
 #endif
 }
 
@@ -129,8 +166,8 @@ bool GJKTestAABB(PhysicsObject& a, PhysicsObject& b, float t, Vec3 aPoints[8], V
   Vec3 nextSearch(1.f, 0.f, 0.f);
   size_t simplexLength = 0;
 
-  simplex[simplexLength] = (GJKSupportPoint(aPoints, numAABBVerts, nextSearch, simplexIndices[0]) -
-    GJKSupportPoint(bPoints, numAABBVerts, -nextSearch, simplexIndices[1]));
+  simplex[simplexLength] = (GJKSupportPoint(aPoints, numAABBVerts, nextSearch, simplexIndices[simplexLength]) -
+    GJKSupportPoint(bPoints, numAABBVerts, -nextSearch, simplexIndices[simplexLength + 1]));
 
   simplexLength++;
 
@@ -139,8 +176,8 @@ bool GJKTestAABB(PhysicsObject& a, PhysicsObject& b, float t, Vec3 aPoints[8], V
   bool intersection = false;
 
   // Find the next supporting points for this iteration in the opposite direction.
-  simplex[simplexLength] = (GJKSupportPoint(aPoints, numAABBVerts, -simplex[0], simplexIndices[2]) -
-    GJKSupportPoint(bPoints, numAABBVerts, simplex[0], simplexIndices[3]));
+  simplex[simplexLength] = (GJKSupportPoint(aPoints, numAABBVerts, -simplex[0], simplexIndices[2 * simplexLength]) -
+    GJKSupportPoint(bPoints, numAABBVerts, simplex[0], simplexIndices[(2 * simplexLength) + 1]));
 
   simplexLength++;
 
@@ -151,16 +188,37 @@ bool GJKTestAABB(PhysicsObject& a, PhysicsObject& b, float t, Vec3 aPoints[8], V
   GJKHandleSimplex(simplex, simplexIndices, nextSearch, simplexLength);
 
   for(size_t i = 0; i < maxGJKIterations; ++i) {
-    simplex[simplexLength] = (GJKSupportPoint(aPoints, numAABBVerts, nextSearch, simplexIndices[6]) -
-      GJKSupportPoint(bPoints, numAABBVerts, -nextSearch, simplexIndices[7]));
+    Vec3 nextSimplexPoint = (GJKSupportPoint(aPoints, numAABBVerts, nextSearch, simplexIndices[2 * simplexLength]) -
+      GJKSupportPoint(bPoints, numAABBVerts, -nextSearch, simplexIndices[(2 * simplexLength) + 1]));
 
-    const float dotResult = simplex[simplexLength] * nextSearch;
+    bool foundSamePoint = false;
 
-    if (dotResult <= 0.f) {
+    if (simplexLength == 2) {
+      foundSamePoint = nextSimplexPoint == simplex[2] ||
+        nextSimplexPoint == simplex[1] ||
+        nextSimplexPoint == simplex[0];
+    }
+    else if (simplexLength == 3) {
+      foundSamePoint = nextSimplexPoint == simplex[3] ||
+        nextSimplexPoint == simplex[2] ||
+        nextSimplexPoint == simplex[1] ||
+        nextSimplexPoint == simplex[0];
+    }
+    else {
+      ZAssert(false);
       break;
     }
 
-    simplexLength++;
+    if (foundSamePoint) {
+      break;
+    }
+    else {
+      simplex[simplexLength] = nextSimplexPoint;
+    }
+
+    if (simplexLength < 3) {
+      simplexLength++;
+    }
 
     intersection = GJKHandleSimplex(simplex, simplexIndices, nextSearch, simplexLength);
   }
@@ -169,8 +227,9 @@ bool GJKTestAABB(PhysicsObject& a, PhysicsObject& b, float t, Vec3 aPoints[8], V
 }
 
 bool GJKHandleSimplex(Vec3 simplex[4], size_t simplexIndices[8], Vec3& direction, size_t& simplexLength) {
-  switch (simplexLength) {
-    case 2:
+  // Using 0 based indexing here to match array index
+  switch (simplexLength - 1) {
+    case 1:
     {
       const Vec3 ao(-simplex[1]);
       const Vec3 ab(simplex[0] - simplex[1]);
@@ -185,7 +244,7 @@ bool GJKHandleSimplex(Vec3 simplex[4], size_t simplexIndices[8], Vec3& direction
       }
     }
     break;
-    case 3:
+    case 2:
     {
       const Vec3 nextAO(-simplex[2]);
       const Vec3 nextAB(simplex[1] - simplex[2]);
@@ -238,7 +297,7 @@ bool GJKHandleSimplex(Vec3 simplex[4], size_t simplexIndices[8], Vec3& direction
       }
     }
     break;
-    case 4:
+    case 3:
     {
       const Vec3 nextAO(-simplex[3]);
       const Vec3 nextAB(simplex[2] - simplex[3]);
@@ -333,6 +392,55 @@ Vec3 ClosestPointToLine(const Vec3& point, const Vec3 line[2], float& t) {
   Clamp(t, 0.f, 1.f);
 
   return line[0] + (ab * t);
+}
+
+Vec3 ClosestPointToTriangle(const Vec3& point, const Vec3 triangle[3]) {
+  Vec3 ab = triangle[1] - triangle[0];
+  Vec3 ac = triangle[2] - triangle[0];
+
+  Vec3 ap = point - triangle[0];
+  float d1 = ab * ap;
+  float d2 = ac * ap;
+  if (d1 <= 0.f && d2 <= 0.f) {
+    return triangle[0];
+  }
+
+  Vec3 bp = point - triangle[1];
+  float d3 = ab * bp;
+  float d4 = ac * bp;
+  if (d3 >= 0.f && d4 <= d3) {
+    return triangle[1];
+  }
+
+  float vc = (d1 * d4) - (d3 * d2);
+  if (vc <= 0.f && d1 >= 0.f && d3 <= 0.f) {
+    float v = d1 / (d1 - d3);
+    return triangle[0] + (ab * v);
+  }
+
+  Vec3 cp = point - triangle[2];
+  float d5 = ab * cp;
+  float d6 = ac * cp;
+  if (d6 >= 0.f && d5 <= d6) {
+    return triangle[2];
+  }
+
+  float vb = (d5 * d2) - (d1 * d6);
+  if (vb <= 0.f && d2 >= 0.f && d6 <= 0.f) {
+    float w = d2 / (d2 - d6);
+    return triangle[0] + (ac * w);
+  }
+
+  float va = (d3 * d6) - (d5 * d4);
+  if (va <= 0.f && (d4 - d3) >= 0.f && (d5 - d6) >= 0.f) {
+    float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
+    return triangle[1] + ((triangle[2] - triangle[1]) * w);
+  }
+
+  float denom = 1.f / (va + vb + vc);
+  float v = vb * denom;
+  float w = vc * denom;
+  return triangle[0] + (ab * v) + (ac * w);
 }
 
 }

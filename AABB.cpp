@@ -1,7 +1,6 @@
 #include "AABB.h"
 
 #include "CommonMath.h"
-#include "Mat4x4.h"
 
 #include <cmath>
 
@@ -72,26 +71,8 @@ Vec3 AABB::Centroid() const {
 }
 
 void AABB::Translate(const Vec3& translation) {
-  Mat4x4 transform;
-  transform.Identity();
-  transform.SetTranslation(translation);
-
-  Vec4 min(mMin);
-  Vec4 max(mMax);
-
-  transform.ApplyTransform(min);
-  transform.ApplyTransform(max);
-
-  min.Homogenize();
-  max.Homogenize();
-
-  mMin[0] = min[0];
-  mMin[1] = min[1];
-  mMin[2] = min[2];
-
-  mMax[0] = max[0];
-  mMax[1] = max[1];
-  mMax[2] = max[2];
+  mMin += translation;
+  mMax += translation;
 }
 
 void AABB::ToPoints(Vec3 points[8]) const {

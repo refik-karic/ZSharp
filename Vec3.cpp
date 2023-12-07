@@ -122,6 +122,14 @@ Vec3 Vec3::TripleCross(const Vec3& a, const Vec3& b) const {
   return result;
 }
 
+Vec3 Vec3::Parametric(const Vec3& rhs, float t) const {
+  Vec3 result((rhs.mData[0] * t) + mData[0],
+    (rhs.mData[1] * t) + mData[1],
+    (rhs.mData[2] * t) + mData[2]);
+  
+  return result;
+}
+
 float Vec3::Length() const {
   return sqrtf((*this) * (*this));
 }

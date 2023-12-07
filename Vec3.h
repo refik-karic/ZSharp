@@ -44,6 +44,8 @@ public:
 
   Vec3 TripleCross(const Vec3& a, const Vec3& b) const;
 
+  Vec3 Parametric(const Vec3& rhs, float t) const;
+
   float Length() const;
 
   void Normalize();

@@ -27,16 +27,6 @@ void World::TickPhysics(size_t deltaMs) {
   return;
 #endif
 
-  /*
-    TODO: Implement this.
-
-    1) Check/Move to next time step
-      1a) Check for possible tunneling
-      1b) Resolve AABB collision and then move on to nearest point test
-    2) Resolve collision if any
-    3) Apply counter force if collision
-  */
-
   // Update forces for all dynamic objects at the start of the time step.
   for (PhysicsObject*& currentObject : mDynamicObjects) {
     // Accumulate current forces for this frame.
@@ -55,9 +45,9 @@ void World::TickPhysics(size_t deltaMs) {
         CorrectOverlappingObjects(*currentObject, *staticObject);
         //currentObject->OnCollisionEndDelegate(staticObject);
       }
-      //else if (currentObject->TransformedAABB().Intersects(staticObject->TransformedAABB())) {
-      //  CorrectOverlappingObjects(*currentObject, *staticObject);
-      //}
+      else if (currentObject->TransformedAABB().Intersects(staticObject->TransformedAABB())) {
+        CorrectOverlappingObjects(*currentObject, *staticObject);
+      }
     }
 
 #if 0

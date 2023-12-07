@@ -6,13 +6,12 @@
 namespace ZSharp {
 
 // TODO: This is arbitrarily assigned. We need a cohesive unit system for this to make sense.
-const float GravityPerSecond = -0.01f; //-0.0001f;
+const float GravityPerSecond = -0.001f; //-0.0001f;
 
 // TODO: Does this value make sense?
 const float IntervalEpsilon = 1.0e-4f;
 
 void CorrectOverlappingObjects(PhysicsObject& a, PhysicsObject& b) {
-  (void)a;
   (void)b;
 
   // TODO: We need to apply a realistic counter force here.
@@ -22,14 +21,6 @@ void CorrectOverlappingObjects(PhysicsObject& a, PhysicsObject& b) {
 }
 
 float MinDistanceForTime(PhysicsObject& a, PhysicsObject& b, float t) {
-  // TODO: We need to calculate the min distance between the two boxes at the current timestep.
-  //  We can't use the MinBounds() function because the min values will be very far from one another because of their size difference.
-
-#if 0
-  Vec3 aPos(a.TransformedAABB().MinBounds() + (a.Velocity() * t));
-  Vec3 bPos(b.TransformedAABB().MinBounds() + (b.Velocity() * t));
-  return (aPos - bPos).Length();
-#else
   const size_t numAABBVerts = 8;
 
   Vec3 aPoints[numAABBVerts] = {};
@@ -37,55 +28,38 @@ float MinDistanceForTime(PhysicsObject& a, PhysicsObject& b, float t) {
   size_t simplexIndices[numAABBVerts] = {};
   GJKTestAABB(a, b, t, aPoints, bPoints, simplexIndices);
 
-# if 0
-  // TODO: Do we need to find the closest points on each line segment here?
-  //  If the vertices are far away from each other there may be points on A or B along a face that are closer.
-
-  // TODO: The way to solve is as follows:
-  //  1) Compute the closest point in the Z direction
-  //  2) Compute the closest point in the X direction
-  //  3) Subtract the vectors in the Y direction
-  //  4) This gives us the closest points on each face after GJK provides us with the closest points to start.
-  const Vec3 line[2] = {
-    bPoints[simplexIndices[1]],
-    bPoints[simplexIndices[3]],
-  };
-
-  float parametricT = {};
-  Vec3 length(ClosestPointToLine(aPoints[simplexIndices[4]], line, parametricT));
-  return length.Length();
-#else
-  // Take the most recent 3 vertices in simplex and test them against each other to find the closest point.
-
-  Vec3 closestPoints[3];
-
   const Vec3 bTestTriangle[3] = {
     bPoints[simplexIndices[3]],
     bPoints[simplexIndices[5]],
     bPoints[simplexIndices[7]],
   };
 
-  closestPoints[0] = ClosestPointToTriangle(aPoints[simplexIndices[0]], bTestTriangle);
-  closestPoints[1] = ClosestPointToTriangle(aPoints[simplexIndices[2]], bTestTriangle);
-  closestPoints[2] = ClosestPointToTriangle(aPoints[simplexIndices[4]], bTestTriangle);
+  const Vec3 closestDistances[4] = {
+    ClosestPointToTriangle(aPoints[simplexIndices[0]], bTestTriangle) - aPoints[simplexIndices[0]],
+    ClosestPointToTriangle(aPoints[simplexIndices[2]], bTestTriangle) - aPoints[simplexIndices[2]],
+    ClosestPointToTriangle(aPoints[simplexIndices[4]], bTestTriangle) - aPoints[simplexIndices[4]],
+    ClosestPointToTriangle(aPoints[simplexIndices[6]], bTestTriangle) - aPoints[simplexIndices[6]],
+  };
 
-  float distA = closestPoints[0].Length();
-  float distB = closestPoints[1].Length();
-  float distC = closestPoints[2].Length();
+  float distA = closestDistances[0].Length();
+  float distB = closestDistances[1].Length();
+  float distC = closestDistances[2].Length();
+  float distD = closestDistances[3].Length();
 
   float leastDistance = distA;
-  if (distB <= leastDistance) {
+  if (distB < leastDistance) {
     leastDistance = distB;
   }
 
-  if (distC <= leastDistance) {
+  if (distC < leastDistance) {
     leastDistance = distC;
   }
 
-  return leastDistance;
-#endif
+  if (distD < leastDistance) {
+    leastDistance = distD;
+  }
 
-#endif
+  return leastDistance;
 }
 
 float MaxMovementForTime(PhysicsObject& object, float t0, float t1) {
@@ -188,8 +162,8 @@ bool GJKTestAABB(PhysicsObject& a, PhysicsObject& b, float t, Vec3 aPoints[8], V
   GJKHandleSimplex(simplex, simplexIndices, nextSearch, simplexLength);
 
   for(size_t i = 0; i < maxGJKIterations; ++i) {
-    Vec3 nextSimplexPoint = (GJKSupportPoint(aPoints, numAABBVerts, nextSearch, simplexIndices[2 * simplexLength]) -
-      GJKSupportPoint(bPoints, numAABBVerts, -nextSearch, simplexIndices[(2 * simplexLength) + 1]));
+    Vec3 nextSimplexPoint((GJKSupportPoint(aPoints, numAABBVerts, nextSearch, simplexIndices[2 * simplexLength]) -
+      GJKSupportPoint(bPoints, numAABBVerts, -nextSearch, simplexIndices[(2 * simplexLength) + 1])));
 
     bool foundSamePoint = false;
 
@@ -370,10 +344,10 @@ bool GJKHandleSimplex(Vec3 simplex[4], size_t simplexIndices[8], Vec3& direction
 }
 
 Vec3 GJKSupportPoint(const Vec3* verts, size_t length, const Vec3& direction, size_t& index) {
-  float highestDot = 0.f;
+  float highestDot = verts[0] * direction;
   Vec3 result(verts[0]);
 
-  for (size_t i = 0; i < length; ++i) {
+  for (size_t i = 1; i < length; ++i) {
     float dot = verts[i] * direction;
     if (dot > highestDot) {
       highestDot = dot;
@@ -386,26 +360,26 @@ Vec3 GJKSupportPoint(const Vec3* verts, size_t length, const Vec3& direction, si
 }
 
 Vec3 ClosestPointToLine(const Vec3& point, const Vec3 line[2], float& t) {
-  Vec3 ab = line[1] - line[0];
+  Vec3 ab(line[1] - line[0]);
   t = ((point - line[0]) * ab) / (ab * ab);
 
   Clamp(t, 0.f, 1.f);
 
-  return line[0] + (ab * t);
+  return line[0].Parametric(ab, t);
 }
 
 Vec3 ClosestPointToTriangle(const Vec3& point, const Vec3 triangle[3]) {
-  Vec3 ab = triangle[1] - triangle[0];
-  Vec3 ac = triangle[2] - triangle[0];
+  Vec3 ab(triangle[1] - triangle[0]);
+  Vec3 ac(triangle[2] - triangle[0]);
 
-  Vec3 ap = point - triangle[0];
+  Vec3 ap(point - triangle[0]);
   float d1 = ab * ap;
   float d2 = ac * ap;
   if (d1 <= 0.f && d2 <= 0.f) {
     return triangle[0];
   }
 
-  Vec3 bp = point - triangle[1];
+  Vec3 bp(point - triangle[1]);
   float d3 = ab * bp;
   float d4 = ac * bp;
   if (d3 >= 0.f && d4 <= d3) {
@@ -415,10 +389,10 @@ Vec3 ClosestPointToTriangle(const Vec3& point, const Vec3 triangle[3]) {
   float vc = (d1 * d4) - (d3 * d2);
   if (vc <= 0.f && d1 >= 0.f && d3 <= 0.f) {
     float v = d1 / (d1 - d3);
-    return triangle[0] + (ab * v);
+    return triangle[0].Parametric(ab, v);
   }
 
-  Vec3 cp = point - triangle[2];
+  Vec3 cp(point - triangle[2]);
   float d5 = ab * cp;
   float d6 = ac * cp;
   if (d6 >= 0.f && d5 <= d6) {
@@ -428,13 +402,13 @@ Vec3 ClosestPointToTriangle(const Vec3& point, const Vec3 triangle[3]) {
   float vb = (d5 * d2) - (d1 * d6);
   if (vb <= 0.f && d2 >= 0.f && d6 <= 0.f) {
     float w = d2 / (d2 - d6);
-    return triangle[0] + (ac * w);
+    return triangle[0].Parametric(ac, w);
   }
 
   float va = (d3 * d6) - (d5 * d4);
   if (va <= 0.f && (d4 - d3) >= 0.f && (d5 - d6) >= 0.f) {
     float w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
-    return triangle[1] + ((triangle[2] - triangle[1]) * w);
+    return triangle[1].Parametric((triangle[2] - triangle[1]), w);
   }
 
   float denom = 1.f / (va + vb + vc);

@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstring>
 
+#include "PlatformIntrinsics.h"
+
 namespace ZSharp {
 
 Mat4x4::Mat4x4() {
@@ -49,29 +51,7 @@ Mat4x4 Mat4x4::operator*(float scalar) {
 
 Mat4x4 Mat4x4::operator*(const Mat4x4& matrix) {
   Mat4x4 result;
-
-  const Mat4x4 rhsTranspose(matrix.Transpose());
-
-  result[0][0] = mData[0] * rhsTranspose[0];
-  result[0][1] = mData[0] * rhsTranspose[1];
-  result[0][2] = mData[0] * rhsTranspose[2];
-  result[0][3] = mData[0] * rhsTranspose[3];
-
-  result[1][0] = mData[1] * rhsTranspose[0];
-  result[1][1] = mData[1] * rhsTranspose[1];
-  result[1][2] = mData[1] * rhsTranspose[2];
-  result[1][3] = mData[1] * rhsTranspose[3];
-
-  result[2][0] = mData[2] * rhsTranspose[0];
-  result[2][1] = mData[2] * rhsTranspose[1];
-  result[2][2] = mData[2] * rhsTranspose[2];
-  result[2][3] = mData[2] * rhsTranspose[3];
-
-  result[3][0] = mData[3] * rhsTranspose[0];
-  result[3][1] = mData[3] * rhsTranspose[1];
-  result[3][2] = mData[3] * rhsTranspose[2];
-  result[3][3] = mData[3] * rhsTranspose[3];
-
+  Unaligned_Mat4x4Mul((const float*)mData, (const float*)matrix.mData, (float*)result.mData);
   return result;
 }
 

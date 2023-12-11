@@ -450,10 +450,17 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
           weightedAttr1 = _mm_mul_ps(weightedAttr1, scaleFactor);
           weightedAttr2 = _mm_mul_ps(weightedAttr2, scaleFactor);
 
-          const float r = weightedAttr0.m128_f32[3] + weightedAttr0.m128_f32[2] + weightedAttr0.m128_f32[1];
-          const float g = weightedAttr1.m128_f32[3] + weightedAttr1.m128_f32[2] + weightedAttr1.m128_f32[1];
-          const float b = weightedAttr2.m128_f32[3] + weightedAttr2.m128_f32[2] + weightedAttr2.m128_f32[1];
-          *pixels = ColorFromRGB((uint8)r, (uint8)g, (uint8)b);
+          __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
+          thirdTerms = _mm_shuffle_ps(weightedAttr2, thirdTerms, 0b11011100);
+
+          __m128 secondTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b10001000);
+          secondTerms = _mm_shuffle_ps(weightedAttr2, secondTerms, 0b11011000);
+
+          __m128 firstTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b01000100);
+          firstTerms = _mm_shuffle_ps(weightedAttr2, firstTerms, 0b11010100);
+
+          __m128 summedTerms = _mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms);
+          *pixels = ColorFromRGB((uint8)summedTerms.m128_f32[3], (uint8)summedTerms.m128_f32[2], (uint8)summedTerms.m128_f32[1]);
         }
       }
     }
@@ -527,10 +534,14 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
           __m128 weightedAttr0 = _mm_div_ps(_mm_mul_ps(weights, invAttr0), denominator);
           __m128 weightedAttr1 = _mm_div_ps(_mm_mul_ps(weights, invAttr1), denominator);
 
-          const float u = weightedAttr0.m128_f32[3] + weightedAttr0.m128_f32[2] + weightedAttr0.m128_f32[1];
-          const float v = weightedAttr1.m128_f32[3] + weightedAttr1.m128_f32[2] + weightedAttr1.m128_f32[1];
+          __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
 
-          *pixels = texture->Sample(u, v);
+          __m128 secondTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b10001000);
+
+          __m128 firstTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b01000100);
+
+          __m128 summedTerms = _mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms);
+          *pixels = texture->Sample(summedTerms.m128_f32[3], summedTerms.m128_f32[1]);
         }
       }
     }

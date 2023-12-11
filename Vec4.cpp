@@ -32,7 +32,7 @@ Vec4::Vec4(const Vec3& copy, float w)
 }
 
 void Vec4::operator=(const Vec3& vector) {
-  memcpy(mData, *vector, sizeof(mData));
+  memcpy(mData, (const float*)(&vector), 3 * sizeof(float));
   mData[3] = 1.f;
 }
 

@@ -445,10 +445,15 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
           __m128 weightedAttr1 = _mm_div_ps(_mm_mul_ps(weights, invAttr1), denominator);
           __m128 weightedAttr2 = _mm_div_ps(_mm_mul_ps(weights, invAttr2), denominator);
 
+          __m128 scaleFactor = _mm_set_ps1(255.f);
+          weightedAttr0 = _mm_mul_ps(weightedAttr0, scaleFactor);
+          weightedAttr1 = _mm_mul_ps(weightedAttr1, scaleFactor);
+          weightedAttr2 = _mm_mul_ps(weightedAttr2, scaleFactor);
+
           const float r = weightedAttr0.m128_f32[3] + weightedAttr0.m128_f32[2] + weightedAttr0.m128_f32[1];
           const float g = weightedAttr1.m128_f32[3] + weightedAttr1.m128_f32[2] + weightedAttr1.m128_f32[1];
           const float b = weightedAttr2.m128_f32[3] + weightedAttr2.m128_f32[2] + weightedAttr2.m128_f32[1];
-          *pixels = ColorFromRGB((uint8)(r * 255.f), (uint8)(g * 255.f), (uint8)(b * 255.f));
+          *pixels = ColorFromRGB((uint8)r, (uint8)g, (uint8)b);
         }
       }
     }

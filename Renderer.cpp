@@ -26,6 +26,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
   const ZColor clearColor(ZColors::ORANGE);
   mFramebuffer.Clear(clearColor);
   mDepthBuffer.Clear();
+  mDepthBufferDirty = false;
 
   for (size_t i = 0; i < world.GetTotalModels(); ++i) {
     Model& model = world.GetModels()[i];
@@ -83,9 +84,17 @@ uint8* Renderer::GetFrame() {
 }
 
 uint8* Renderer::GetDepth() {
+  float* buffer = mDepthBuffer.GetBuffer();
+
+  if (!mDepthBufferDirty) {
+    mDepthBufferDirty = true;
+  }
+  else {
+    return reinterpret_cast<uint8*>(buffer);
+  }
+
   size_t width = mDepthBuffer.GetWidth();
   size_t height = mDepthBuffer.GetHeight();
-  float* buffer = mDepthBuffer.GetBuffer();
 
   ZColor black(ZColors::BLACK);
   ZColor white(ZColors::WHITE);

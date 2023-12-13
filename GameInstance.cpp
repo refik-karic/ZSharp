@@ -245,12 +245,23 @@ void GameInstance::Tick() {
   mRenderer.RenderNextFrame(mWorld, mCamera);
 
   if (mDrawStats) {
-    Framebuffer& frameBuffer = mRenderer.GetFrameBuffer();
-    DrawText(frameString, 10, 10, frameBuffer, ZColors::BLACK);
-    DrawText(deltaString, 10, 20, frameBuffer, ZColors::BLACK);
-    DrawText(cameraPosition, 10, 30, frameBuffer, ZColors::BLACK);
-    DrawText(cameraView, 10, 40, frameBuffer, ZColors::BLACK);
-    DrawText(physicsTime, 10, 50, frameBuffer, ZColors::BLACK);
+    size_t bufferWidth = mRenderer.GetFrameBuffer().GetWidth();
+    uint8* buffer;
+    ZColor color;
+    if (mVisualizeDepth) {
+      buffer = mRenderer.GetDepth();
+      color = ZColors::WHITE;
+    }
+    else {
+      buffer = mRenderer.GetFrameBuffer().GetBuffer();
+      color = ZColors::BLACK;
+    }
+
+    DrawText(frameString, 10, 10, buffer, bufferWidth, color);
+    DrawText(deltaString, 10, 20, buffer, bufferWidth, color);
+    DrawText(cameraPosition, 10, 30, buffer, bufferWidth, color);
+    DrawText(cameraView, 10, 40, buffer, bufferWidth, color);
+    DrawText(physicsTime, 10, 50, buffer, bufferWidth, color);
   }
 }
 

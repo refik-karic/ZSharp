@@ -34,5 +34,7 @@ class Renderer final {
   Framebuffer mFramebuffer;
   DepthBuffer mDepthBuffer;
   RenderMode mRenderMode = RenderMode::FLAT;
+
+  bool mDepthBufferDirty = false;
 };
 }

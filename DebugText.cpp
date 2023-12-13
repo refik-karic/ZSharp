@@ -137,18 +137,22 @@ uint8 BasicFontLUT[128][8] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}    // U+007F
 };
 
-void DrawText(const String& message, size_t x, size_t y, Framebuffer& framebuffer, const ZColor& color) {
+void DrawText(const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color) {
   size_t xOffset = x;
   size_t yOffset = y;
   
   const char* curChar = message.Str();
+
+  const size_t stride = width * sizeof(uint32);
+  const uint32 colorValue = color.Color();
 
   for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
     for (size_t curX = 0; curX < 8; ++curX) {
       for (size_t curY = 0; curY < 8; ++curY) {
         bool isSet = (BasicFontLUT[*curChar][curX] & 1 << curY) != 0;
         if (isSet) {
-          framebuffer.SetPixel(xOffset + curY, yOffset + curX, color);
+          size_t offset = ((xOffset + curY) * sizeof(uint32)) + ((yOffset + curX) * stride);
+          *((uint32*)(buffer + offset)) = colorValue;
         }
       }
     }

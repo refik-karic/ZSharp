@@ -4,6 +4,7 @@
 
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
+#include "PlatformDefines.h"
 
 #include <cstring>
 
@@ -461,7 +462,7 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
 
           __m128i convertedTerms = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms));
 
-          *pixels = ColorFromRGB(convertedTerms.m128i_i32[3], convertedTerms.m128i_i32[2], convertedTerms.m128i_i32[1]);
+          *pixels = ColorFromRGB((uint8)convertedTerms.m128i_i32[3], (uint8)convertedTerms.m128i_i32[2], (uint8)convertedTerms.m128i_i32[1]);
         }
       }
     }

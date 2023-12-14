@@ -11,6 +11,7 @@
 #include "ScopedTimer.h"
 #include "DebugText.h"
 #include "ZAlgorithm.h"
+#include "PlatformIntrinsics.h"
 
 #include <cmath>
 
@@ -96,25 +97,7 @@ uint8* Renderer::GetDepth() {
   size_t width = mDepthBuffer.GetWidth();
   size_t height = mDepthBuffer.GetHeight();
 
-  ZColor black(ZColors::BLACK);
-  ZColor white(ZColors::WHITE);
-
-  // TODO: Find a better way to scale the depth values.
-  //  This is just a good guess.
-  float denominator = -6.f;
-
-  for (size_t h = 0; h < height; ++h) {
-    for (size_t w = 0; w < width; ++w) {
-      float* pixel = buffer + (h * width) + w;
-
-      float numerator = *pixel - 6.f;
-      float t = numerator / denominator;
-
-      ZColor pixelColor(black, white, t);
-      (*((uint32*)pixel)) = pixelColor.Color();
-    }
-  }
-
+  Aligned_DepthBufferVisualize(buffer, width, height);
   return reinterpret_cast<uint8*>(buffer);
 }
 

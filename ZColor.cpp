@@ -38,6 +38,16 @@ void ZColor::FloatToRGB(const float R, const float G, const float B) {
   mB = static_cast<uint8>(B * 255.f);
 }
 
+uint32 ZColor::LerpColors(const ZColor& colorA, const ZColor& colorB, float parametricAmount) {
+  uint32 color = 0xFF00;
+  color |= static_cast<uint8>(Lerp(colorA.mR, colorB.mR, parametricAmount));
+  color <<= 8;
+  color |= static_cast<uint8>(Lerp(colorA.mG, colorB.mG, parametricAmount));
+  color <<= 8;
+  color |= static_cast<uint8>(Lerp(colorA.mB, colorB.mB, parametricAmount));
+  return color;
+}
+
 uint8 ZColor::A() const {
   return mA;
 }

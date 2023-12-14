@@ -48,6 +48,8 @@ void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result);
 
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t stride, size_t length);
 
+void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height);
+
 void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length);
 
 void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]);

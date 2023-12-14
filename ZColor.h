@@ -27,6 +27,8 @@ class ZColor {
 
   void FloatToRGB(const float R, const float G, const float B);
   
+  static uint32 LerpColors(const ZColor& colorA, const ZColor& colorB, float parametricAmount);
+
   uint8 A() const;
   uint8 R() const;
   uint8 G() const;

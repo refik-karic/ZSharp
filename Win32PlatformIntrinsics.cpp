@@ -5,6 +5,7 @@
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
 #include "PlatformDefines.h"
+#include "ZColor.h"
 
 #include <cstring>
 
@@ -75,6 +76,13 @@ int* CPUIDSectionBrand() {
   }
 
   return buffer;
+}
+
+FORCE_INLINE __m128 Lerp128(__m128 x1, __m128 x2, __m128 t) {
+  __m128 mulResult = _mm_mul_ps(t, x2);
+  __m128 subResult = _mm_sub_ps(_mm_set_ps1(1.f), t);
+  __m128 result = _mm_add_ps(mulResult, _mm_mul_ps(subResult, x1));
+  return result;
 }
 
 namespace ZSharp {
@@ -300,6 +308,61 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t strid
 
       memcpy(data + i, xyzw, sizeof(xyzw));
     }
+  }
+}
+
+void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
+  float* pixel = buffer;
+
+  ZColor black(ZColors::BLACK);
+  ZColor white(ZColors::WHITE);
+
+  // TODO: Find a better way to scale the depth values.
+  //  This is just a good guess.
+  float invDenominatorScalar = 1.f / -6.f;
+
+  size_t currentIndex = 0;
+
+  __m128 subFactor = _mm_set_ps1(6.f);
+  __m128 invDenominator = _mm_set_ps1(invDenominatorScalar);
+
+  __m128 rbVec = _mm_set_ps1((float)black.R());
+  __m128 gbVec = _mm_set_ps1((float)black.G());
+  __m128 bbVec = _mm_set_ps1((float)black.B());
+
+  __m128 rwVec = _mm_set_ps1((float)white.R());
+  __m128 gwVec = _mm_set_ps1((float)white.G());
+  __m128 bwVec = _mm_set_ps1((float)white.B());
+
+  for (size_t h = 0; h < height; ++h) {
+    for (size_t w = 0; w < width; w += 4, currentIndex += 4) {
+      __m128 numerator = _mm_load_ps(pixel);
+      numerator = _mm_sub_ps(numerator, subFactor);
+      __m128 parametricT = _mm_mul_ps(numerator, invDenominator);
+
+      __m128 lerpedR = Lerp128(rbVec, rwVec, parametricT);
+      __m128 lerpedG = Lerp128(gbVec, gwVec, parametricT);
+      __m128 lerpedB = Lerp128(bbVec, bwVec, parametricT);
+
+      __m128i convR = _mm_cvtps_epi32(lerpedR);
+      __m128i convG = _mm_cvtps_epi32(lerpedG);
+      __m128i convB = _mm_cvtps_epi32(lerpedB);
+
+      (*((uint32*)pixel++)) = ColorFromRGB((uint8)convR.m128i_i32[0], (uint8)convG.m128i_i32[0], (uint8)convB.m128i_i32[0]);
+      (*((uint32*)pixel++)) = ColorFromRGB((uint8)convR.m128i_i32[1], (uint8)convG.m128i_i32[1], (uint8)convB.m128i_i32[1]);
+      (*((uint32*)pixel++)) = ColorFromRGB((uint8)convR.m128i_i32[2], (uint8)convG.m128i_i32[2], (uint8)convB.m128i_i32[2]);
+      (*((uint32*)pixel++)) = ColorFromRGB((uint8)convR.m128i_i32[3], (uint8)convG.m128i_i32[3], (uint8)convB.m128i_i32[3]);
+    }
+  }
+
+  size_t endBuffer = width * height;
+
+  for (size_t w = currentIndex; w < endBuffer; ++w) {
+    float numerator = *pixel - 6.f;
+    float t = numerator * invDenominatorScalar;
+
+    (*((uint32*)pixel)) = ZColor::LerpColors(black, white, t);
+    ++pixel;
   }
 }
 

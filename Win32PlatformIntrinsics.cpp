@@ -485,6 +485,21 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
 
   __m128 p1 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[2]), yValues);
 
+  const uint32 pixelOffset = (minX + (minY * sMaxWidth));
+  const uint32 remainingStride = sMaxWidth - (maxX - minX);
+
+  uint32* pixels = ((uint32*)(framebuffer)) + pixelOffset;
+  float* pixelDepth = depthBuffer + pixelOffset;
+
+  pixels -= remainingStride;
+  pixelDepth -= remainingStride;
+
+  __m128i pixelShuffleMask = _mm_set_epi8(
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 12, 8, 4);
+
   for (int32 h = minY; h < maxY; ++h) {
     __m128 p0 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[3]), xValues);
 
@@ -492,8 +507,9 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
 
     p1 = _mm_add_ps(p1, _mm_set_ps1(1.f));
 
-    uint32* pixels = reinterpret_cast<uint32*>(framebuffer) + (minX + (h * sMaxWidth));
-    float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+    pixels += remainingStride;
+    pixelDepth += remainingStride;
+
     for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
       __m128 weights = _mm_sub_ps(_mm_mul_ps(p0, factors1), p1Factor);
 
@@ -528,7 +544,8 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
 
           __m128i convertedTerms = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms));
 
-          *pixels = ColorFromRGB((uint8)convertedTerms.m128i_i32[3], (uint8)convertedTerms.m128i_i32[2], (uint8)convertedTerms.m128i_i32[1]);
+          __m128i shuffledPixel = _mm_shuffle_epi8(convertedTerms, pixelShuffleMask);
+          *pixels = shuffledPixel.m128i_i32[0] | 0xFF000000;
         }
       }
     }

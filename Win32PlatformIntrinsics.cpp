@@ -467,6 +467,13 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
   __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), invArea);
   __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), invArea);
 
+  // We want the RGB values to be scaled by 255 in the end.
+  // Doing that here saves us from having to apply the scale at each pixel.
+  __m128 scaleFactor = _mm_set_ps1(255.f);
+  invAttr0 = _mm_mul_ps(invAttr0, scaleFactor);
+  invAttr1 = _mm_mul_ps(invAttr1, scaleFactor);
+  invAttr2 = _mm_mul_ps(invAttr2, scaleFactor);
+
   __m128i intMin = _mm_cvtps_epi32(min);
   __m128i intMax = _mm_cvtps_epi32(max);
   int32 minX = intMin.m128i_i32[3];
@@ -527,11 +534,6 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
           __m128 weightedAttr0 = _mm_div_ps(_mm_mul_ps(weights, invAttr0), denominator);
           __m128 weightedAttr1 = _mm_div_ps(_mm_mul_ps(weights, invAttr1), denominator);
           __m128 weightedAttr2 = _mm_div_ps(_mm_mul_ps(weights, invAttr2), denominator);
-
-          __m128 scaleFactor = _mm_set_ps1(255.f);
-          weightedAttr0 = _mm_mul_ps(weightedAttr0, scaleFactor);
-          weightedAttr1 = _mm_mul_ps(weightedAttr1, scaleFactor);
-          weightedAttr2 = _mm_mul_ps(weightedAttr2, scaleFactor);
 
           __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
           thirdTerms = _mm_shuffle_ps(weightedAttr2, thirdTerms, 0b11011100);

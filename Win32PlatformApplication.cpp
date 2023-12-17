@@ -139,10 +139,8 @@ void Win32PlatformApplication::ReadCommandLine() {
 
   ZSharp::Array<ZSharp::CLICommand> commands;
 
-  const ZSharp::String fullscreenOption("fullscreen");
-
   ZSharp::Array<ZSharp::String> globalOptions;
-  globalOptions.PushBack(fullscreenOption);
+  globalOptions.EmplaceBack("fullscreen");
 
   ZSharp::CLIParser cliParser(commands, globalOptions);
   ZSharp::int32 result = cliParser.Evaluate(argC, (const wchar_t**)argV, true); 
@@ -154,7 +152,7 @@ void Win32PlatformApplication::ReadCommandLine() {
   }
 
   // TODO: It might be a good idea to break this out into another file since it could be used elsewhere.
-  if (cliParser.WasPassed(fullscreenOption)) {
+  if (cliParser.WasPassed("fullscreen")) {
     WindowStyle |= WS_MAXIMIZE;
   }
 }

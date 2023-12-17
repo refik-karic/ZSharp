@@ -78,62 +78,47 @@ void World::LoadModels() {
 
   for (Asset& asset : bundle.Assets()) {
     if (asset.Type() == AssetType::Model) {
-      {
-        Model model;
-        mActiveModels.PushBack(model);
-      }
+      Model& model = mActiveModels.EmplaceBack();
+      VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
+      IndexBuffer& indexBuffer = mIndexBuffers.EmplaceBack();
 
-      {
-        VertexBuffer vertBuffer;
-        mVertexBuffers.PushBack(vertBuffer);
-      }
-
-      {
-        IndexBuffer indexBuffer;
-        mIndexBuffers.PushBack(indexBuffer);
-      }
-
-      Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
-      LoadOBJ(cachedModel, asset);
+      LoadOBJ(model, asset);
 
       /*
         TODO: Move this stuff to the bundle generation phase.
           We're only setting them on load right now because we're still trying to figure out how everything will work.
       */
-      cachedModel.BoundingBox() = cachedModel.ComputeBoundingBox();
+      model.BoundingBox() = model.ComputeBoundingBox();
 
       // TODO: Remove me.
       if (asset.Name() == "plane") {
-        cachedModel.Tag() = PhysicsTag::Static;
+        model.Tag() = PhysicsTag::Static;
       }
       else {
 #if DEBUG_PHYSICS
-        cachedModel.Position() += Vec3(0.f, 15.f, 0.f);
+        model.Position() += Vec3(0.f, 15.f, 0.f);
 #endif
-        cachedModel.Tag() = PhysicsTag::Dynamic;
+        model.Tag() = PhysicsTag::Dynamic;
       }
-
-      VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.Size() - 1];
-      IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.Size() - 1];
 
       size_t indexBufSize = 0;
       size_t vertBufSize = 0;
       size_t vertStride = 0;
-      for (Mesh& mesh : cachedModel.GetMeshData()) {
+      for (Mesh& mesh : model.GetMeshData()) {
         indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
         vertBufSize += mesh.GetVertTable().Size();
         vertStride = mesh.Stride();
       }
 
-      cachedIndexBuffer.Resize(indexBufSize);
-      cachedVertBuffer.Resize(vertBufSize, vertStride);
+      indexBuffer.Resize(indexBufSize);
+      vertBuffer.Resize(vertBufSize, vertStride);
 
-      switch (cachedModel.Tag()) {
+      switch (model.Tag()) {
         case PhysicsTag::Dynamic:
-          mDynamicObjects.PushBack(&cachedModel);
+          mDynamicObjects.PushBack(&model);
           break;
         case PhysicsTag::Static:
-          mStaticObjects.PushBack(&cachedModel);
+          mStaticObjects.PushBack(&model);
           break;
         case PhysicsTag::Unbound:
           Logger::Log(LogCategory::Info, String::FromFormat("Asset {0} will not be considered for physics.\n", asset.Name()));
@@ -145,23 +130,11 @@ void World::LoadModels() {
 
 void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, size_t stride)
 {
-  {
-    Model model(order, stride);
-    mActiveModels.PushBack(model);
-  }
+  Model& model = mActiveModels.EmplaceBack(order, stride);
+  VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
+  IndexBuffer& indexBuffer = mIndexBuffers.EmplaceBack();
 
-  {
-    VertexBuffer vertBuffer;
-    mVertexBuffers.PushBack(vertBuffer);
-  }
-
-  {
-    IndexBuffer indexBuffer;
-    mIndexBuffers.PushBack(indexBuffer);
-  }
-
-  Model& cachedModel = mActiveModels[mActiveModels.Size() - 1];
-  cachedModel.CreateNewMesh();
+  model.CreateNewMesh();
 
   const bool isTextureMapped = order.Contains(ShadingMode(ShadingModes::UV, 2));
 
@@ -186,13 +159,13 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
     size_t width = texture.GetWidth();
     size_t height = texture.GetHeight();
     size_t channels = texture.GetNumChannels();
-    cachedModel.BindTexture(pngData, width, height, channels);
+    model.BindTexture(pngData, width, height, channels);
   }
   
 
   {
     const size_t strideBytes = stride * sizeof(float);
-    Mesh& firstMesh = cachedModel[0];
+    Mesh& firstMesh = model[0];
     size_t vertSize = 3 * stride;
     size_t faceSize = 1;
     firstMesh.Resize(vertSize, faceSize);
@@ -203,18 +176,15 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
     firstMesh.SetTriangle(triangle, 0);
   }
 
-  VertexBuffer& cachedVertBuffer = mVertexBuffers[mVertexBuffers.Size() - 1];
-  IndexBuffer& cachedIndexBuffer = mIndexBuffers[mIndexBuffers.Size() - 1];
-
   size_t indexBufSize = 0;
   size_t vertBufSize = 0;
-  for (Mesh& mesh : cachedModel.GetMeshData()) {
+  for (Mesh& mesh : model.GetMeshData()) {
     indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
     vertBufSize += mesh.GetVertTable().Size();
   }
 
-  cachedIndexBuffer.Resize(indexBufSize);
-  cachedVertBuffer.Resize(vertBufSize, stride);
+  indexBuffer.Resize(indexBufSize);
+  vertBuffer.Resize(vertBufSize, stride);
 }
 
 size_t World::GetTotalModels() const {

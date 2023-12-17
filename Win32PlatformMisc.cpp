@@ -46,13 +46,16 @@ BOOL MonitorCallback(
   (void)unnamedParam3;
   Array<String>& monitors = *reinterpret_cast<Array<String>*>(addressParam);
 
-  String monitorInfo(String::FromFormat("Display {0}: \n", monitors.Size()));
-  monitorInfo.Appendf("\tWidth: {0}\n", GetDeviceCaps(hdc, HORZRES));
-  monitorInfo.Appendf("\tHeight: {0}\n", GetDeviceCaps(hdc, VERTRES));
-  monitorInfo.Appendf("\tBits per pixel: {0}\n", GetDeviceCaps(hdc, BITSPIXEL));
-  monitorInfo.Appendf("\tRefresh rate: {0}\n", GetDeviceCaps(hdc, VREFRESH));
-
-  monitors.PushBack(monitorInfo);
+  monitors.EmplaceBack(String::FromFormat("Display {0}: \n"
+    "\tWidth: {1}\n"
+    "\tHeight: {2}\n"
+    "\tBits per pixel: {3}\n"
+    "\tRefresh rate: {4}\n",
+    monitors.Size(),
+    GetDeviceCaps(hdc, HORZRES),
+    GetDeviceCaps(hdc, VERTRES),
+    GetDeviceCaps(hdc, BITSPIXEL),
+    GetDeviceCaps(hdc, VREFRESH)));
 
   return true;
 }

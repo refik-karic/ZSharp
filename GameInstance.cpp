@@ -73,8 +73,7 @@ void GameInstance::LoadAssets() {
   const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
 
   ShadingModeOrder order;
-  ShadingMode mode(ShadingModes::RGB, 3);
-  order.PushBack(mode);
+  order.EmplaceBack(ShadingModes::RGB, 3);
 
   mWorld.DebugLoadTriangle(v3, v2, v1, order, 7);
 #elif DEBUG_TRIANGLE_TEXTURE
@@ -87,8 +86,7 @@ void GameInstance::LoadAssets() {
   const float v3[]{ X, 0.f, Z, W, 0.5f, 0.f };
 
   ShadingModeOrder order;
-  ShadingMode mode(ShadingModes::UV, 2);
-  order.PushBack(mode);
+  order.EmplaceBack(ShadingModes::UV, 2);
 
   mWorld.DebugLoadTriangle(v3, v2, v1, order, 6);
 #else
@@ -108,8 +106,7 @@ void GameInstance::LoadAssets() {
     const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f , 1.f };
 
     ShadingModeOrder order;
-    ShadingMode mode(ShadingModes::RGB, 3);
-    order.PushBack(mode);
+    order.EmplaceBack(ShadingModes::RGB, 3);
 
     mWorld.DebugLoadTriangle(v3, v2, v1, order, 7);
   }

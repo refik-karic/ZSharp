@@ -71,10 +71,7 @@ void IniFile::ParseFile() {
       if (endSection != nullptr) {
         size_t sectionLength = endSection - currentLine.Str();
         String sectionString(currentLine.SubStr(1, sectionLength));
-
-        IniSection section(sectionString);
-        mSections.PushBack(section);
-        activeSection = &mSections[mSections.Size() - 1];
+        activeSection = &mSections.EmplaceBack(sectionString);
       }
     }
       break;
@@ -89,8 +86,7 @@ void IniFile::ParseFile() {
         String value(currentLine.SubStr(keyLength + 1, currentLine.Length()));
 
         if (activeSection != nullptr) {
-          StringPair kvp(key, value);
-          activeSection->mPairs.PushBack(kvp);
+          activeSection->mPairs.EmplaceBack(key, value);
         }
       }
       break;

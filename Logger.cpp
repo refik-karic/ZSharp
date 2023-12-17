@@ -26,30 +26,31 @@ void Logger::InternalLog(LogCategory category, const String& message) {
   String logMessage;
 
   bool logStdOutput = true;
+  const char* logCategory;
 
   switch (category) {
     case LogCategory::Warning:
-      logMessage.Append("[Warning] ");
+      logCategory = "[Warning]";
       break;
     case LogCategory::Error:
-      logMessage.Append("[Error] ");
+      logCategory = "[Error]";
       break;
     case LogCategory::Info:
-      logMessage.Append("[Info] ");
+      logCategory = "[Info]";
       break;
     case LogCategory::Debug:
-      logMessage.Append("[Debug] ");
+      logCategory = "[Debug]";
       break;
     case LogCategory::Perf:
-      logMessage.Append("[Perf] ");
+      logCategory = "[Perf]";
       break;
     case LogCategory::System:
-      logMessage.Append("[System] ");
+      logCategory = "[System]";
       logStdOutput = false;
       break;
   }
 
-  logMessage.Appendf("[{0}] {1}", PlatformSystemTimeFormat(), message);
+  logMessage.Appendf("{0} [{1}] {2}", logCategory, PlatformSystemTimeFormat(), message);
 
   // Log to 3 locations:
   //  1) Console (if process contains one)

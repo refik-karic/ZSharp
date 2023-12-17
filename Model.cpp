@@ -37,8 +37,7 @@ size_t Model::MeshCount() const {
 }
 
 void Model::CreateNewMesh() {
-  Mesh mesh(mStride);
-  mData.PushBack(mesh);
+  mData.EmplaceBack(mStride);
 }
 
 Array<Mesh>& Model::GetMeshData() {

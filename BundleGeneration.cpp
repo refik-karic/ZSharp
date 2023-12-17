@@ -31,7 +31,7 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
   OBJLoader objloader(filename, objfile);
 
   // TODO: Replace this with real data in the future.
-  objfile.ShadingOrder().PushBack(ShadingMode(ShadingModes::UV, 2));
+  objfile.ShadingOrder().EmplaceBack(ShadingModes::UV, 2);
   objfile.AlbedoTexture() = "wall_256";
 
   Array<Vec3>& UVs = objfile.UVs();
@@ -60,14 +60,12 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
   MemorySerializer objSerializer;
   objloader.Serialize(objSerializer);
 
-  Asset bundledAsset(objSerializer.Size(),
+  bundleAssets.EmplaceBack(objSerializer.Size(),
     filename.GetFilename(),
     filename.GetExtension(),
     false,
     FileString(""),
     AssetType::Model);
-
-  bundleAssets.PushBack(bundledAsset);
   const size_t objSerializerSize = objSerializer.Size();
   bundleMemory.Serialize(&objSerializerSize, sizeof(objSerializerSize));
   bundleMemory.Serialize(objSerializer.Data(), objSerializerSize);
@@ -78,14 +76,12 @@ void SerializeTexture(const FileString& filename, Array<Asset>& bundleAssets, Me
   MemorySerializer pngSerializer;
   png.Serialize(pngSerializer);
 
-  Asset bundledAsset(pngSerializer.Size(),
+  bundleAssets.EmplaceBack(pngSerializer.Size(),
     filename.GetFilename(),
     filename.GetExtension(),
     false,
     FileString(""),
     AssetType::Texture);
-
-  bundleAssets.PushBack(bundledAsset);
 
   const size_t pngSerializerSize = pngSerializer.Size();
   bundleMemory.Serialize(&pngSerializerSize, sizeof(pngSerializerSize));

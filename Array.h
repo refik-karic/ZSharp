@@ -159,15 +159,36 @@ class Array final : public ISerializable {
     }
   }
 
-  void PushBack(const T& data) {
+  T& PushBack(const T& data) {
+    T* result;
+
     if (mCapacity <= mSize) {
       Resize(mSize + 1);
       mData[mSize - 1] = data;
+      result = mData + mSize - 1;
     }
     else {
-      new(mData + mSize) T(data);
+      result = new(mData + mSize) T(data);
       ++mSize;
     }
+
+    return *result;
+  }
+
+  template<typename... Args>
+  T& EmplaceBack(Args&&... args) {
+    T* result;
+
+    if (mCapacity <= mSize) {
+      Resize(mSize + 1);
+      result = new(mData + mSize - 1) T(args...);
+    }
+    else {
+      result = new(mData + mSize) T(args...);
+      ++mSize;
+    }
+
+    return *result;
   }
 
   /*

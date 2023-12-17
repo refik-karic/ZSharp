@@ -463,16 +463,13 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
   __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
 
   __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
-  __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), invArea);
-  __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), invArea);
-  __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), invArea);
 
   // We want the RGB values to be scaled by 255 in the end.
   // Doing that here saves us from having to apply the scale at each pixel.
-  __m128 scaleFactor = _mm_set_ps1(255.f);
-  invAttr0 = _mm_mul_ps(invAttr0, scaleFactor);
-  invAttr1 = _mm_mul_ps(invAttr1, scaleFactor);
-  invAttr2 = _mm_mul_ps(invAttr2, scaleFactor);
+  __m128 scaleFactor = _mm_mul_ps(invArea, _mm_set_ps1(255.f));
+  __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), scaleFactor);
+  __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), scaleFactor);
+  __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), scaleFactor);
 
   __m128i intMin = _mm_cvtps_epi32(min);
   __m128i intMax = _mm_cvtps_epi32(max);

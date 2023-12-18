@@ -8,8 +8,8 @@
 
 namespace ZSharp {
 
-ScopedTimer::ScopedTimer(const char* name, int32 line, const char* file, const char* function)
-  : mName(name), mLine(line), mFile(file), mFunction(function), mTime(PlatformHighResClock()) {
+ScopedTimer::ScopedTimer(const char* name)
+  : mName(name), mTime(PlatformHighResClock()) {
 
 }
 

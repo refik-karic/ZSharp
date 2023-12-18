@@ -202,7 +202,7 @@ void GameInstance::Tick() {
   const String frameString(String::FromFormat("Frame: {0}\n", mFrameCount));
   Logger::Log(LogCategory::Info, frameString);
 
-  const String deltaString(String::FromFormat("Frame Delta (ms): {0}\n", frameDeltaMs));
+  const String deltaString(String::FromFormat("Frame Delta: {0}ms\n", frameDeltaMs));
   Logger::Log(LogCategory::Info, deltaString);
 
   const String cameraPosition(String::FromFormat("Camera: {0}\n", mCamera.Position().ToString()));

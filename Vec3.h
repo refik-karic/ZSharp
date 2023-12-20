@@ -10,6 +10,8 @@ class Vec3 final {
 public:
   Vec3();
 
+  Vec3(float* values);
+
   Vec3(float value);
 
   Vec3(float x, float y, float z);

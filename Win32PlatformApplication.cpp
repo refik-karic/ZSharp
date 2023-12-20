@@ -27,13 +27,13 @@ DWORD WindowStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 
 ZSharp::BroadcastDelegate<size_t, size_t> Win32PlatformApplication::OnWindowSizeChangedDelegate;
 
-Win32PlatformApplication& Win32PlatformApplication::GetInstance() {
+Win32PlatformApplication& Win32PlatformApplication::Get() {
   static Win32PlatformApplication ZSharpApp;
   return ZSharpApp;
 }
 
 LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-  Win32PlatformApplication& app = GetInstance();
+  Win32PlatformApplication& app = Win32PlatformApplication::Get();
 
   switch (uMsg) {
   case WM_CREATE:
@@ -177,7 +177,7 @@ HWND Win32PlatformApplication::SetupWindow() {
     return nullptr;
   }
 
-  const ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
+  const ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
 
   DWORD windowStyle = WS_BORDER | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
   RECT clientRect{ 0L, 0L, static_cast<long>(config.GetViewportWidth().Value()), static_cast<long>(config.GetViewportHeight().Value()) };
@@ -241,7 +241,7 @@ void Win32PlatformApplication::OnTimer() {
 
   RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
-    ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
+    ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
 
     bool dirtySize = false;
 
@@ -305,18 +305,18 @@ void Win32PlatformApplication::OnPaint() {
 }
 
 void Win32PlatformApplication::OnLButtonDown(ZSharp::int32 x, ZSharp::int32 y) {
-  ZSharp::InputManager& inputManager = ZSharp::InputManager::GetInstance();
+  ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
   inputManager.UpdateMousePosition(x, y);
   inputManager.UpdateMouseState(true);
 }
 
 void Win32PlatformApplication::OnLButtonUp() {
-  ZSharp::InputManager& inputManager = ZSharp::InputManager::GetInstance();
+  ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
   inputManager.ResetMouse();
 }
 
 void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
-  ZSharp::InputManager& inputManager = ZSharp::InputManager::GetInstance();
+  ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
   inputManager.UpdateMousePosition(x, y);
 }
 
@@ -330,7 +330,7 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
     break;
   default:
   {
-    ZSharp::InputManager& inputManager = ZSharp::InputManager::GetInstance();
+    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
     inputManager.Update(key, ZSharp::InputManager::KeyState::Down);
   }
   break;
@@ -338,20 +338,20 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
 }
 
 void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
-  ZSharp::InputManager& inputManager = ZSharp::InputManager::GetInstance();
+  ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
   inputManager.Update(key, ZSharp::InputManager::KeyState::Up);
 }
 
 void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
-  const ZSharp::ZConfig& config = ZSharp::ZConfig::GetInstance();
+  const ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
 
   const ZSharp::GameSetting<size_t> width = config.GetViewportWidth();
   const ZSharp::GameSetting<size_t> height = config.GetViewportHeight();
 
-  ZSharp::Clamp(info->ptMinTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
-  ZSharp::Clamp(info->ptMaxTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
-  ZSharp::Clamp(info->ptMinTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
-  ZSharp::Clamp(info->ptMaxTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
+  info->ptMinTrackSize.x = ZSharp::Clamp(info->ptMinTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
+  info->ptMaxTrackSize.x = ZSharp::Clamp(info->ptMaxTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
+  info->ptMinTrackSize.y = ZSharp::Clamp(info->ptMinTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
+  info->ptMaxTrackSize.y = ZSharp::Clamp(info->ptMaxTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
 }
 
 void Win32PlatformApplication::OnClose() {

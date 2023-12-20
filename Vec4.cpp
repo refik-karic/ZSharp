@@ -11,6 +11,10 @@ Vec4::Vec4() {
   Clear();
 }
 
+Vec4::Vec4(float* values)
+  : mData{values[0], values[1], values[2], values[3]} {
+}
+
 Vec4::Vec4(float value)
   : mData{value, value, value, value} {
 }
@@ -76,8 +80,6 @@ Vec4 Vec4::operator+(const Vec4& vector) const {
 
 Vec4 Vec4::operator-(const Vec4& vector) const {
   Vec4 result;
-  // TODO: Figure out why this crashes even though it's aligned.
-  //Aligned_128Sub(mData, vector.mData, result.mData);
   Unaligned_128Sub(mData, vector.mData, result.mData);
   return result;
 }
@@ -113,8 +115,6 @@ void Vec4::Normalize() {
 
 void Vec4::Homogenize() {
   const float invDivisor = 1.f / mData[3];
-  // TODO: Figure out why the aligned version fails in release builds.
-  // This class and the vertex buffer are both aligned to 16-bytes.
   Unaligned_128MulByValue(mData, invDivisor, mData);
 }
 

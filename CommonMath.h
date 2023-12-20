@@ -34,14 +34,17 @@ FORCE_INLINE float Dot3(const float lhs[3], const float rhs[3]) {
 }
 
 template<typename T>
-FORCE_INLINE void Clamp(T& value, const T& min, const T& max) {
+FORCE_INLINE const T& Clamp(const T& value, const T& min, const T& max) {
   ZAssert(min <= max);
   
   if (value < min) {
-    value = min;
+    return min;
   }
   else if (value > max) {
-    value = max;
+    return max;
+  }
+  else {
+    return value;
   }
 }
 

@@ -20,10 +20,10 @@ class Logger {
 
   static void Log(LogCategory category, const String& message);
 
+  ~Logger();
+
   private:
   Logger();
-
-  ~Logger();
 
   static Logger& GetInstance();
 

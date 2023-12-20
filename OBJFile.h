@@ -8,6 +8,9 @@
 #include "Vec3.h"
 #include "Vec4.h"
 #include "ZString.h"
+#include "Serializer.h"
+#include "FileString.h"
+#include "ZString.h"
 
 #include "ShadingMode.h"
 
@@ -26,8 +29,11 @@ class OBJFile final {
   public:
   OBJFile();
 
-  // Load loose or serialized asset from bundle.
-  OBJFile(const Asset& asset);
+  void LoadFromFile(const FileString& path);
+
+  void Serialize(MemorySerializer& serializer);
+
+  void Deserialize(MemoryDeserializer& deserializer);
 
   Array<Vec4>& Verts();
 
@@ -55,5 +61,15 @@ class OBJFile final {
   String mAlbedoTexture;
 
   ShadingModeOrder mShadingOrder;
+
+  void ParseRaw(const FileString& objFilePath);
+
+  void ParseLine(const char* currentLine, size_t length);
+
+  void ParseVec3(float fillVec[3], String& line, float fallback);
+
+  void ParseVec4(float fillVec[4], String& line, float fallback);
+
+  void ParseFace(OBJFace& fillFace, String& line);
 };
 }

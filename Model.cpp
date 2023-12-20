@@ -1,12 +1,8 @@
 #include "Model.h"
 
 #include "ZAssert.h"
-#include "Triangle.h"
-#include "PNG.h"
 #include "ScopedTimer.h"
 #include "PlatformIntrinsics.h"
-
-#define FAST_LOAD 1
 
 namespace ZSharp {
 Model::Model(const ShadingModeOrder& order, size_t stride)
@@ -74,29 +70,13 @@ void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) co
       continue;
     }
 
-#if FAST_LOAD
     indexBuffer.CopyInputData(reinterpret_cast<const size_t*>(mesh.GetTriangleFaceTable().GetData()), 0, mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
     vertexBuffer.CopyInputData(mesh.GetVertTable().GetData(), 0, mesh.GetVertTable().Size());
-#else
-    for (size_t i = 0; i < mesh.GetTriangleFaceTable().size(); ++i) {
-      const Triangle& triangle = mesh.GetTriangleFaceTable()[i];
-      indexBuffer.CopyInputData(triangle.GetData(), i * TRI_VERTS, TRI_VERTS);
-    }
-
-    for (size_t i = 0; i < mesh.GetVertTable().size(); ++i) {
-      float vert = mesh.GetVertTable()[i];
-      vertexBuffer.CopyInputData(&vert, i, 1);
-    }
-#endif
   }
 }
 
-void Model::BindTexture(uint8* data, size_t width, size_t height, size_t channels) {
-  mTexture.Assign(data, channels, width, height);
-}
-
-Texture& Model::GetTexture() {
-  return mTexture;
+int32& Model::TextureId() {
+  return mTextureId;
 }
 
 AABB Model::ComputeBoundingBox() const {

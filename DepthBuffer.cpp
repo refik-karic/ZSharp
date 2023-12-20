@@ -13,7 +13,7 @@
 namespace ZSharp {
 
 DepthBuffer::DepthBuffer() {
-  const ZConfig& config = ZConfig::GetInstance();
+  const ZConfig& config = ZConfig::Get();
   OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
 
   Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<DepthBuffer, &DepthBuffer::OnResize>(this));

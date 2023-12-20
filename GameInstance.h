@@ -63,7 +63,7 @@ class GameInstance final {
 
   void RotateCamera(Mat4x4::Axis direction, const float angleDegrees);
 
-  void RotateTrackball(Quaternion quat);
+  void RotateTrackball(const Quaternion& quat);
 
   Vec3 ProjectClick(float x, float y);
 

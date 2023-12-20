@@ -40,7 +40,6 @@ target_sources(ZSharp
         Model.h
         MP3.h
         OBJFile.h
-        OBJLoader.h
         Pair.h
         PhysicsAlgorithms.h
         PhysicsObject.h
@@ -62,6 +61,7 @@ target_sources(ZSharp
         ShadingMode.h
         Stack.h
         Texture.h
+        TexturePool.h
         Tree.h
         Triangle.h
         Vec3.h
@@ -105,7 +105,6 @@ target_sources(ZSharp
         Model.cpp
         MP3.cpp
         OBJFile.cpp
-        OBJLoader.cpp
         PhysicsAlgorithms.cpp
         PhysicsObject.cpp
         PNG.cpp
@@ -115,6 +114,7 @@ target_sources(ZSharp
         Serializer.cpp
         ScopedTimer.cpp
         Texture.cpp
+        TexturePool.cpp
         Triangle.cpp
         Vec3.cpp
         Vec4.cpp

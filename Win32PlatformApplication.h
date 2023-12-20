@@ -11,7 +11,9 @@
 class Win32PlatformApplication {
   public:
   
-  static Win32PlatformApplication& GetInstance();
+  static Win32PlatformApplication& Get();
+
+  ~Win32PlatformApplication();
 
   static LRESULT CALLBACK MessageLoop(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -29,8 +31,6 @@ class Win32PlatformApplication {
   ZSharp::GameInstance mGameInstance;
 
   Win32PlatformApplication();
-
-  ~Win32PlatformApplication();
 
   void ReadCommandLine();
 

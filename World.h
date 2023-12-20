@@ -2,7 +2,6 @@
 
 #include "Array.h"
 #include "Asset.h"
-#include "FileString.h"
 #include "IndexBuffer.h"
 #include "Model.h"
 #include "PhysicsObject.h"

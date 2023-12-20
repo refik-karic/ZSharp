@@ -14,7 +14,7 @@ Bundle::Bundle(const FileString& filename) : mHandle(filename) {
 }
 
 Bundle& Bundle::Get() {
-  ZConfig& config = ZConfig::GetInstance();
+  ZConfig& config = ZConfig::Get();
   static Bundle bundle(config.GetAssetPath());
   return bundle;
 }

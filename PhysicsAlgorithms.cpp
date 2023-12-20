@@ -363,7 +363,7 @@ Vec3 ClosestPointToLine(const Vec3& point, const Vec3 line[2], float& t) {
   Vec3 ab(line[1] - line[0]);
   t = ((point - line[0]) * ab) / (ab * ab);
 
-  Clamp(t, 0.f, 1.f);
+  t = Clamp(t, 0.f, 1.f);
 
   return line[0].Parametric(ab, t);
 }

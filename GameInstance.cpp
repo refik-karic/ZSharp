@@ -1,26 +1,18 @@
 #include "GameInstance.h"
 
-// TODO: Clean this up
-#include "Constants.h"
-#include "InputManager.h"
+#include "Bundle.h"
 #include "CommonMath.h"
+#include "Constants.h"
+#include "DebugText.h"
+#include "InputManager.h"
 #include "Logger.h"
+#include "PlatformTime.h"
+#include "PlatformMemory.h"
+#include "PlatformAudio.h"
 #include "ScopedTimer.h"
 #include "ShadingMode.h"
 #include "ZConfig.h"
 #include "ZString.h"
-#include "PlatformTime.h"
-#include "PlatformMemory.h"
-
-#include "PNG.h"
-#include "PlatformFile.h"
-#include "PlatformMemory.h"
-#include "PlatformAudio.h"
-#include "DebugText.h"
-
-#include "Bundle.h"
-
-#include "MP3.h"
 
 #include <cmath>
 
@@ -36,7 +28,7 @@ GameInstance::GameInstance() {
 }
 
 GameInstance::~GameInstance() {
-  InputManager& inputManager = InputManager::GetInstance();
+  InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
   inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
@@ -90,7 +82,7 @@ void GameInstance::LoadAssets() {
 
   mWorld.DebugLoadTriangle(v3, v2, v1, order, 6);
 #else
-  ZConfig& config = ZConfig::GetInstance();
+  ZConfig& config = ZConfig::Get();
   if (!config.GetAssetPath().GetAbsolutePath().IsEmpty()) {
     mWorld.LoadModels();
   }
@@ -157,7 +149,7 @@ void GameInstance::RotateCamera(Mat4x4::Axis direction, const float angleDegrees
   mCamera.RotateCamera(rotation);
 }
 
-void GameInstance::RotateTrackball(Quaternion quat) {
+void GameInstance::RotateTrackball(const Quaternion& quat) {
   Mat4x4 rotation(quat.GetRotationMatrix());
   mCamera.RotateCamera(rotation);
 }
@@ -186,7 +178,7 @@ void GameInstance::Initialize() {
   // From there we can see how long the clipping pass takes for a given scene.
   //mCamera.Position() = Vec3(0.f, 0.f, 200.f);
 
-  InputManager& inputManager = InputManager::GetInstance();
+  InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
   inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
@@ -195,7 +187,7 @@ void GameInstance::Initialize() {
 void GameInstance::Tick() {
   NamedScopedTimer(Render);
 
-  size_t frameDeltaMs = (mLastFrameTime == 0) ? static_cast<size_t>(FRAMERATE_60HZ_MS) : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
+  size_t frameDeltaMs = (mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
 
   mLastFrameTime = PlatformHighResClock();
 
@@ -213,7 +205,7 @@ void GameInstance::Tick() {
 
   ++mFrameCount;
 
-  InputManager& inputManager = InputManager::GetInstance();
+  InputManager& inputManager = InputManager::Get();
   inputManager.Process();
 
 #if !DISABLE_DEBUG_TRANSFORMS
@@ -234,8 +226,10 @@ void GameInstance::Tick() {
 
   mCamera.Tick();
 
+  size_t physicsTickTime = Clamp(frameDeltaMs, (size_t)0, FRAMERATE_60HZ_MS);
+
   size_t startPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
-  mWorld.TickPhysics(frameDeltaMs);
+  mWorld.TickPhysics(physicsTickTime);
   size_t endPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
   const String physicsTime(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics));
 
@@ -353,7 +347,7 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
 }
 
 Vec3 GameInstance::ProjectClick(float x, float y) {
-  ZConfig& config = ZConfig::GetInstance();
+  ZConfig& config = ZConfig::Get();
   float width = (float)config.GetViewportWidth().Value();
   float height = (float)config.GetViewportHeight().Value();
 

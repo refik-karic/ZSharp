@@ -12,7 +12,7 @@
 namespace ZSharp {
 
 template<typename T>
-class Array final : public ISerializable {
+class alignas(32) Array final : public ISerializable {
   public:
 
   class Iterator {
@@ -262,7 +262,6 @@ class Array final : public ISerializable {
   T* mData = nullptr;
   size_t mSize = 0;
   size_t mCapacity = 0;
-  size_t mPadding = 0; // TODO: Makes sure this can align on a 16 byte boundary.
 
   void FreshAlloc(size_t size) {
     const size_t slack = size * 2;

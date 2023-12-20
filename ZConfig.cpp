@@ -5,7 +5,7 @@
 
 namespace ZSharp {
 
-ZConfig& ZConfig::GetInstance() {
+ZConfig& ZConfig::Get() {
   static ZConfig singleton;
   return singleton;
 }

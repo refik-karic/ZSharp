@@ -7,7 +7,6 @@
 #include "IndexBuffer.h"
 #include "Mesh.h"
 #include "ShadingMode.h"
-#include "Texture.h"
 #include "Vec4.h"
 #include "VertexBuffer.h"
 #include "PhysicsObject.h"
@@ -45,9 +44,7 @@ class Model final : public PhysicsObject {
 
   void FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const;
 
-  void BindTexture(uint8* data, size_t width, size_t height, size_t channels);
-
-  Texture& GetTexture();
+  int32& TextureId();
 
   AABB ComputeBoundingBox() const;
 
@@ -55,7 +52,7 @@ class Model final : public PhysicsObject {
   ShadingModeOrder mShadingOrder;
   size_t mStride;
   Array<Mesh> mData;
-  Texture mTexture;
+  int32 mTextureId = -1;
 };
 
 }

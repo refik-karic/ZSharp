@@ -1166,16 +1166,7 @@ WideString WideString::VariableArg::ToString() const {
   break;
   case Type::FLOAT:
   {
-#if 0
-    const size_t bufferSize = 64;
-    wchar_t buffer[bufferSize];
-    buffer[0] = '\0';
-    const int32 digits = FLT_DECIMAL_DIG;
-    const float val = mData.float_value;
-    const wchar_t* str = _gcvt(val, digits, buffer);
-    result.Append(str);
-#endif
-    ZAssert(false); // TODO: Is this even necessary?
+    ZAssert(false); // Not implemented.
   }
   break;
   case Type::DOUBLE:

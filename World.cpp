@@ -4,15 +4,15 @@
 #include "CommonMath.h"
 #include "Logger.h"
 #include "OBJFile.h"
-#include "OBJLoader.h"
 #include "PhysicsAlgorithms.h"
-#include "PNG.h"
 #include "ScopedTimer.h"
+#include "TexturePool.h"
 
 #include <cstring>
 
 #define DEBUG_FLAT_SHADE_RGB 1
-#define DEBUG_PHYSICS 1
+#define PHYSICS_ENABLE 1
+#define PHYSICS_DISABLE_FORCES 0
 
 namespace ZSharp {
 World::World() {
@@ -23,7 +23,7 @@ void World::TickPhysics(size_t deltaMs) {
 
   Logger::Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
 
-#if !DEBUG_PHYSICS
+#if !PHYSICS_ENABLE
   return;
 #endif
 
@@ -62,7 +62,7 @@ void World::TickPhysics(size_t deltaMs) {
 #endif
   }
 
-#if 1
+#if !PHYSICS_DISABLE_FORCES
   // Update positions for the current timestep.
   for (PhysicsObject*& currentObject : mDynamicObjects) {
     currentObject->Position() += currentObject->Velocity();
@@ -95,7 +95,7 @@ void World::LoadModels() {
         model.Tag() = PhysicsTag::Static;
       }
       else {
-#if DEBUG_PHYSICS
+#if PHYSICS_ENABLE
         model.Position() += Vec3(0.f, 15.f, 0.f);
 #endif
         model.Tag() = PhysicsTag::Dynamic;
@@ -144,24 +144,15 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
       return;
     }
 
-    Asset* pngAsset = bundle.GetAsset("wall_256");
+    Asset* textureAsset = bundle.GetAsset("wall_256");
 
-    if (pngAsset == nullptr) {
+    if (textureAsset == nullptr) {
       ZAssert(false);
       return;
     }
 
-    MemoryDeserializer pngDeserializer(pngAsset->Loader());
-
-    PNG texture;
-    texture.Deserialize(pngDeserializer);
-    uint8* pngData = texture.Decompress(ChannelOrder::BGR);
-    size_t width = texture.GetWidth();
-    size_t height = texture.GetHeight();
-    size_t channels = texture.GetNumChannels();
-    model.BindTexture(pngData, width, height, channels);
+    model.TextureId() = TexturePool::Get().LoadTexture(*textureAsset);
   }
-  
 
   {
     const size_t strideBytes = stride * sizeof(float);
@@ -207,7 +198,7 @@ void World::LoadOBJ(Model& model, Asset& asset) {
   MemoryDeserializer objDeserializer(asset.Loader());
 
   OBJFile objFile;
-  OBJLoader objLoader(objDeserializer, objFile);
+  objFile.Deserialize(objDeserializer);
 
   model.CreateNewMesh();
   model.SetShadingOrder(objFile.ShadingOrder());
@@ -223,27 +214,18 @@ void World::LoadOBJ(Model& model, Asset& asset) {
 
   if (isTextureMapped) {
     Bundle& bundle = Bundle::Get();
-    Asset* pngAsset = bundle.GetAsset(objFile.AlbedoTexture());
+    Asset* textureAsset = bundle.GetAsset(objFile.AlbedoTexture());
 
-    if (pngAsset == nullptr) {
+    if (textureAsset == nullptr) {
       ZAssert(false);
       return;
     }
 
-    MemoryDeserializer pngDeserializer(pngAsset->Loader());
-
-    PNG texture;
-    texture.Deserialize(pngDeserializer);
-    uint8* pngData = texture.Decompress(ChannelOrder::BGR);
-    size_t width = texture.GetWidth();
-    size_t height = texture.GetHeight();
-    size_t channels = texture.GetNumChannels();
-    model.BindTexture(pngData, width, height, channels);
+    model.TextureId() = TexturePool::Get().LoadTexture(*textureAsset);
   }
   else {
     objFile.ShadingOrder().Clear();
-    ShadingMode mode(ShadingModes::RGB, 3);
-    objFile.ShadingOrder().PushBack(mode);
+    objFile.ShadingOrder().EmplaceBack(ShadingModes::RGB, 3);
     model.SetShadingOrder(objFile.ShadingOrder());
     model.SetStride(7);
   }
@@ -255,22 +237,33 @@ void World::LoadOBJ(Model& model, Asset& asset) {
 
   mesh.Resize(vertSize, indexSize);
 
-  for (size_t i = 0, triIndex = 0; i < objFile.Verts().Size(); ++i) {
-    const Vec4& vector = objFile.Verts()[i];
-    ZAssert(FloatEqual(vector[3], 1.f));
-
-    const size_t scratchSize = 64;
+  if (isTextureMapped) {
+    const size_t scratchSize = 6;
     float vertex[scratchSize];
-    memcpy(vertex, reinterpret_cast<const float*>(&vector), sizeof(Vec4));
 
-    if (isTextureMapped) {
+    for (size_t i = 0; i < objFile.Verts().Size(); ++i) {
+      const Vec4& vector = objFile.Verts()[i];
+      ZAssert(FloatEqual(vector[3], 1.f));
+
+      memcpy(vertex, reinterpret_cast<const float*>(&vector), sizeof(Vec4));
       memcpy(vertex + 4, &objFile.UVs()[i], textureStride * sizeof(float));
+
+      mesh.SetData(vertex, i * stride, stride * sizeof(float));
     }
-    else {
-      // Assign 
-      const float R[] = { 1.f, 0.f, 0.f };
-      const float G[] = { 0.f, 1.f, 0.f };
-      const float B[] = { 0.f, 0.f, 1.f };
+  }
+  else {
+    const size_t scratchSize = 7;
+    float vertex[scratchSize];
+
+    // Assign 
+    const float R[] = { 1.f, 0.f, 0.f };
+    const float G[] = { 0.f, 1.f, 0.f };
+    const float B[] = { 0.f, 0.f, 1.f };
+    for (size_t i = 0, triIndex = 0; i < objFile.Verts().Size(); ++i) {
+      const Vec4& vector = objFile.Verts()[i];
+      ZAssert(FloatEqual(vector[3], 1.f));
+
+      memcpy(vertex, reinterpret_cast<const float*>(&vector), sizeof(Vec4));
 
       switch (triIndex % 3) {
         case 0:
@@ -285,11 +278,11 @@ void World::LoadOBJ(Model& model, Asset& asset) {
         default:
           break;
       }
+
+      triIndex++;
+
+      mesh.SetData(vertex, i * stride, stride * sizeof(float));
     }
-
-    triIndex++;
-
-    mesh.SetData(vertex, i * stride, stride * sizeof(float));
   }
 
   const Array<OBJFace>& faceList = objFile.Faces();

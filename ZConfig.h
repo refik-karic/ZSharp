@@ -29,7 +29,7 @@ class GameSetting final {
   void operator=(const T& value) {
     mValue = value;
     if (mShouldClamp) {
-      Clamp(mValue, mMin, mMax);
+      mValue = Clamp(mValue, mMin, mMax);
     }
   }
 
@@ -56,7 +56,7 @@ class ZConfig final {
   ZConfig(const ZConfig&) = delete;
   void operator=(const ZConfig&) = delete;
 
-  static ZConfig& GetInstance();
+  static ZConfig& Get();
 
   GameSetting<size_t> GetViewportWidth() const;
 

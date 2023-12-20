@@ -337,8 +337,6 @@ String PlatformGetNameFromSearchHandle(PlatformFileSearchHandle* handle) {
   return filename;
 }
 
-
-
 }
 
 #endif

@@ -23,6 +23,7 @@ Texture::Texture(uint8* data,
 Texture::~Texture() {
   if (mData != nullptr) {
     PlatformFree(mData);
+    mData = nullptr;
   }
 }
 

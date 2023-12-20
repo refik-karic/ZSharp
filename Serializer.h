@@ -7,12 +7,6 @@
 
 namespace ZSharp {
 
-/*
-TODO:
-  1) CRC checksum?
-  2) Endian swap?
-*/
-
 // File Serialization
 class FileSerializer : public ISerializer {
   public:

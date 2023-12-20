@@ -5,7 +5,7 @@ InputManager::InputManager() {
   mKeyboard.Fill(KeyState::Clear);
 }
 
-InputManager& InputManager::GetInstance() {
+InputManager& InputManager::Get() {
   static InputManager inputManager;
   return inputManager;
 }

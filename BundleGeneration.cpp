@@ -1,7 +1,6 @@
 #include "BundleGeneration.h"
 
 #include "OBJFile.h"
-#include "OBJLoader.h"
 #include "PNG.h"
 #include "Bundle.h"
 
@@ -28,7 +27,7 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
   // Save an asset object in the header of the bundle.
   // Append this serialized block of memory to main bundle memory block.
   OBJFile objfile;
-  OBJLoader objloader(filename, objfile);
+  objfile.LoadFromFile(filename);
 
   // TODO: Replace this with real data in the future.
   objfile.ShadingOrder().EmplaceBack(ShadingModes::UV, 2);
@@ -58,7 +57,7 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
   }
 
   MemorySerializer objSerializer;
-  objloader.Serialize(objSerializer);
+  objfile.Serialize(objSerializer);
 
   bundleAssets.EmplaceBack(objSerializer.Size(),
     filename.GetFilename(),

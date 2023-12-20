@@ -12,6 +12,7 @@
 #include "DebugText.h"
 #include "ZAlgorithm.h"
 #include "PlatformIntrinsics.h"
+#include "TexturePool.h"
 
 #include <cmath>
 
@@ -63,15 +64,25 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds);
 
-    // TODO: This is a little hacky for now. We want a cleaner solution to handle missing textures.
-    Texture* texture = &model.GetTexture();
-    if (!texture->IsAssigned()) {
-      texture = nullptr;
-    }
-
     switch (mRenderMode) {
       case RenderMode::FLAT:
-        DrawTrianglesFlat(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, model.ShadingOrder(), texture);
+      {
+        switch (model.ShadingOrder()[0].mode) {
+          case ShadingModes::RGB:
+          {
+            DrawTrianglesFlatRGB(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer);
+          }
+            break;
+          case ShadingModes::UV:
+          {
+            Texture* texture = TexturePool::Get().GetTexture(model.TextureId());
+            DrawTrianglesFlatUV(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, texture);
+          }
+          break;
+          default:
+            break;
+        }
+      }
         break;
       case RenderMode::WIREFRAME:
         DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer);

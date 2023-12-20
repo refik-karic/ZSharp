@@ -11,6 +11,10 @@ Vec3::Vec3() {
   Clear();
 }
 
+Vec3::Vec3(float* values) 
+  : mData{values[0], values[1], values[2]} {
+}
+
 Vec3::Vec3(float value) 
   : mData{value, value, value} {
 }

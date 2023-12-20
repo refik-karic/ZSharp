@@ -30,6 +30,4 @@ Vec3 ClosestPointToLine(const Vec3& point, const Vec3 line[2], float& t);
 
 Vec3 ClosestPointToTriangle(const Vec3& point, const Vec3 triangle[3]);
 
-// TODO: We need functions for collision handling.
-
 }

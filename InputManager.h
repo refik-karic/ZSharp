@@ -22,7 +22,7 @@ class InputManager final {
     Up
   };
 
-  static InputManager& GetInstance();
+  static InputManager& Get();
 
   InputManager(const InputManager&) = delete;
 

@@ -39,11 +39,10 @@ class Texture final {
   bool IsAssigned() const;
 
   FORCE_INLINE uint32 Sample(float u, float v) const {
-    // TODO: Is there a way we can enforce this elsewhere without taking a performance hit on each pixel?
-    //  Maybe move this earlier in the rendering pipeline?
-    //Clamp(u, 0.f, 1.f);
-    //Clamp(v, 0.f, 1.f);
-
+    /*
+      Note that we don't do any kind of check/clamp to make sure U,V are within a valid range.
+      This can easily be checked in the raster loop by making sure all attributes are in the proper range.
+    */
     const size_t x = static_cast<size_t>(u * (mWidth - 1));
     const size_t y = static_cast<size_t>(v * (mHeight - 1));
     const size_t pixel = (y * mStride) + (x * mNumChannels);

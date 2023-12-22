@@ -52,6 +52,8 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height);
 
 void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length);
 
+void Unaligned_BlendDevConsole(float* devBuffer, float* frameBuffer, size_t width, size_t height, float opacity);
+
 void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]);
 
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);

@@ -386,6 +386,38 @@ void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
   }
 }
 
+void Unaligned_BlendDevConsole(float* devBuffer, float* frameBuffer, size_t width, size_t height, float opacity) {
+  // TODO: We need to scale the individual channels in each pixel so we need to unpack this a bit more.
+#if 0
+  __m128 devOpacity = _mm_set_ps(255.f, opacity, opacity, opacity);
+  __m128 bufferOpacity = _mm_set_ps(255.f, 1.f - opacity, 1.f - opacity, 1.f - opacity);
+
+  for (size_t y = 0; y < height; ++y) {
+    for (size_t x = 0; x < width; x += 4) {
+      size_t index = (y * width) + x;
+
+      __m128 devColor = _mm_loadu_ps(devBuffer + index);
+      __m128 bufferColor = _mm_loadu_ps(frameBuffer + index);
+
+      devColor = _mm_mul_ps(devColor, devOpacity);
+      bufferColor = _mm_mul_ps(bufferColor, bufferOpacity);
+
+      __m128 result = _mm_add_ps(devColor, bufferColor);
+
+      __m128i convertedResult = _mm_cvtps_epi32(result);
+      //convertedResult.m128i_i32[3] = 0xFF;
+
+      _mm_storeu_epi32(frameBuffer + index, convertedResult);
+    }
+  }
+#endif
+  (void)devBuffer;
+  (void)frameBuffer;
+  (void)width;
+  (void)height;
+  (void)opacity;
+}
+
 void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]) {
   __m128 view = _mm_loadu_ps(viewer);
   

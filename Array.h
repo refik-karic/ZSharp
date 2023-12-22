@@ -9,6 +9,8 @@
 
 #include <initializer_list>
 
+#pragma warning(disable : 4324)
+
 namespace ZSharp {
 
 template<typename T>

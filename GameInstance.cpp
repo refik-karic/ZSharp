@@ -254,6 +254,10 @@ void GameInstance::Tick() {
     DrawText(cameraView, 10, 40, buffer, bufferWidth, color);
     DrawText(physicsTime, 10, 50, buffer, bufferWidth, color);
   }
+
+  if (mDevConsole.IsOpen()) {
+    mDevConsole.Draw((uint32*)mRenderer.GetFrameBuffer().GetBuffer());
+  }
 }
 
 void GameInstance::TickAudio() {
@@ -285,7 +289,15 @@ uint8* GameInstance::GetCurrentFrame() {
   }
 }
 
+bool GameInstance::IsDevConsoleOpen() const {
+  return mDevConsole.IsOpen();
+}
+
 void GameInstance::OnKeyDown(uint8 key) {
+  if (mDevConsole.IsOpen()) {
+    return;
+  }
+
   switch (key) {
   case 'P':
     PauseTransforms();

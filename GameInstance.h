@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Camera.h"
+#include "DevConsole.h"
 #include "Mat4x4.h"
 #include "Quaternion.h"
 #include "Renderer.h"
@@ -36,6 +37,8 @@ class GameInstance final {
 
   uint8* GetCurrentFrame();
 
+  bool IsDevConsoleOpen() const;
+
   private:
   Camera mCamera;
   World mWorld;
@@ -54,6 +57,9 @@ class GameInstance final {
   bool mPauseTransforms = false;
   bool mDrawStats = true;
   bool mVisualizeDepth = false;
+
+  // TODO: ifdef this out in release builds at some point.
+  DevConsole mDevConsole;
 
   void PauseTransforms();
 

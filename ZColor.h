@@ -64,6 +64,7 @@ enum ZColors : uint32 {
   GREEN = 0xFF00FF00,
   ORANGE = 0xFFFF8000,
   BLACK = 0x0,
+  GRAY = 0xFF808080,
   WHITE = 0xFFFFFFFF,
 };
 

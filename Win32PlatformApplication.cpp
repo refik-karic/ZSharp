@@ -17,6 +17,8 @@
 #include <processenv.h>
 #include <shellapi.h>
 
+#include <ctype.h>
+
 #define DEBUG_TEXTURE 0
 
 static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
@@ -53,11 +55,26 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
   case WM_MOUSEMOVE:
     app.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
     return 0;
-  case WM_KEYDOWN:
+  case WM_CHAR:
+  {
+    // TODO: WM_CHAR doesn't tell us when the key is down or up.
+    //  Revisit in the future in case we actually need key down/up for something.
     app.OnKeyDown(static_cast<ZSharp::uint8>(wParam));
+  }
+    break;
+  case WM_KEYDOWN:
+  {
+    if (!isalpha((int)wParam) && !isspace((int)wParam)) {
+      app.OnKeyDown(static_cast<ZSharp::uint8>(wParam));
+    }
+  }
     return 0;
   case WM_KEYUP:
-    app.OnKeyUp(static_cast<ZSharp::uint8>(wParam));
+  {
+    if (!isalpha((int)wParam) && !isspace((int)wParam)) {
+      app.OnKeyUp(static_cast<ZSharp::uint8>(wParam));
+    }
+  }
     return 0;
   case WM_GETMINMAXINFO:
     app.OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
@@ -323,7 +340,15 @@ void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
 void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
   switch (key) {
   case VK_SPACE:
-    mPaused = !mPaused;
+  {
+    if (!mGameInstance.IsDevConsoleOpen()) {
+       mPaused = !mPaused;
+    }
+    else {
+      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+      inputManager.Update(key, ZSharp::InputManager::KeyState::Down);
+    }
+  }
     break;
   case VK_ESCAPE:
     DestroyWindow(mWindowHandle);

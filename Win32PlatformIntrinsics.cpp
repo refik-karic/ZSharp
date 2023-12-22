@@ -386,36 +386,49 @@ void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
   }
 }
 
-void Unaligned_BlendDevConsole(float* devBuffer, float* frameBuffer, size_t width, size_t height, float opacity) {
-  // TODO: We need to scale the individual channels in each pixel so we need to unpack this a bit more.
-#if 0
-  __m128 devOpacity = _mm_set_ps(255.f, opacity, opacity, opacity);
-  __m128 bufferOpacity = _mm_set_ps(255.f, 1.f - opacity, 1.f - opacity, 1.f - opacity);
+void Unaligned_BlendBuffers(float* devBuffer, float* frameBuffer, size_t width, size_t height, float opacity) {
+  __m128i devOpacity = _mm_set1_epi16((short)(255.f * opacity));
+  __m128i bufferOpacity = _mm_set1_epi16((short)(255.f * (1.f - opacity)));
+
+  // Need this to clear high 8 bits of the 16 unpacked value
+  __m128i zero = _mm_setzero_si128();
 
   for (size_t y = 0; y < height; ++y) {
     for (size_t x = 0; x < width; x += 4) {
       size_t index = (y * width) + x;
 
-      __m128 devColor = _mm_loadu_ps(devBuffer + index);
-      __m128 bufferColor = _mm_loadu_ps(frameBuffer + index);
+      // Load 4 pixels at a time
+      // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
+      // The best we can do is 16bit arithmetic
+      __m128i devColor = _mm_loadu_si128((__m128i*)(devBuffer + index));
+      __m128i bufferColor = _mm_loadu_si128((__m128i*)(frameBuffer + index));
 
-      devColor = _mm_mul_ps(devColor, devOpacity);
-      bufferColor = _mm_mul_ps(bufferColor, bufferOpacity);
+      __m128i devLo16 = _mm_unpacklo_epi8(devColor, zero); // 2x 32bit BGRA, [0,1]
+      __m128i devHi16 = _mm_unpackhi_epi8(devColor, zero); // 2x 32bit BGRA, [2,3]
 
-      __m128 result = _mm_add_ps(devColor, bufferColor);
+      __m128i bufLo16 = _mm_unpacklo_epi8(bufferColor, zero);
+      __m128i bufHi16 = _mm_unpackhi_epi8(bufferColor, zero);
 
-      __m128i convertedResult = _mm_cvtps_epi32(result);
-      //convertedResult.m128i_i32[3] = 0xFF;
+      devLo16 = _mm_mullo_epi16(devLo16, devOpacity);
+      devHi16 = _mm_mullo_epi16(devHi16, devOpacity);
 
-      _mm_storeu_epi32(frameBuffer + index, convertedResult);
+      bufLo16 = _mm_mullo_epi16(bufLo16, bufferOpacity);
+      bufHi16 = _mm_mullo_epi16(bufHi16, bufferOpacity);
+
+      // Divide by 256
+      devLo16 = _mm_srli_epi16(devLo16, 8);
+      devHi16 = _mm_srli_epi16(devHi16, 8);
+
+      bufLo16 = _mm_srli_epi16(bufLo16, 8);
+      bufHi16 = _mm_srli_epi16(bufHi16, 8);
+
+      __m128i loResult = _mm_add_epi16(devLo16, bufLo16);
+      __m128i hiResult = _mm_add_epi16(devHi16, bufHi16);
+
+      // Pack the 16bit results into 8bit values and store it back to memory
+      _mm_storeu_si128((__m128i*)(frameBuffer + index), _mm_packus_epi16(loResult, hiResult));
     }
   }
-#endif
-  (void)devBuffer;
-  (void)frameBuffer;
-  (void)width;
-  (void)height;
-  (void)opacity;
 }
 
 void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]) {

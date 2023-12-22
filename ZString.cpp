@@ -200,7 +200,7 @@ size_t String::Length() const {
   return IsMarkedShort() ? GetShortLength() : GetLongLength();
 }
 
-String String::SubStr(size_t start, size_t end) {
+String String::SubStr(size_t start, size_t end) const {
   String temp(*this);
   char* subStr = temp.GetMutableString() + start;
   if (end > Length()) {

@@ -130,7 +130,7 @@ class String final : public ISerializable {
 
   size_t Length() const;
 
-  String SubStr(size_t start, size_t end);
+  String SubStr(size_t start, size_t end) const;
 
   const char* FindFirst(char value) const;
 

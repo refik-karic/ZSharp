@@ -15,6 +15,7 @@ target_sources(ZSharp
         CommandLineParser.h
         Common.h
         CommonMath.h
+        ConsoleVariable.h
         Constants.h
         DebugText.h
         Delegate.h
@@ -89,6 +90,7 @@ target_sources(ZSharp
         CommandLineParser.cpp
         Common.cpp
         CommonMath.cpp
+        ConsoleVariable.cpp
         DebugText.cpp
         DepthBuffer.cpp
         DevConsole.cpp

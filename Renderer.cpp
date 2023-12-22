@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 
+#include "ConsoleVariable.h"
 #include "IndexBuffer.h"
 #include "Mat4x4.h"
 #include "Model.h"
@@ -19,11 +20,20 @@
 #define VISUALIZE_AABB 1
 
 namespace ZSharp {
+ConsoleVariable<int32> DevRenderMode("RenderMode", 1);
+
 Renderer::Renderer() {
 }
 
 void Renderer::RenderNextFrame(World& world, Camera& camera) {
   NamedScopedTimer(RenderFrame);
+
+  if (*DevRenderMode) {
+    mRenderMode = RenderMode::FLAT;
+  }
+  else {
+    mRenderMode = RenderMode::WIREFRAME;
+  }
 
   const ZColor clearColor(ZColors::ORANGE);
   mFramebuffer.Clear(clearColor);

@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "DevConsole.h"
+#include "InputManager.h"
 #include "Mat4x4.h"
 #include "Quaternion.h"
 #include "Renderer.h"
@@ -78,6 +79,10 @@ class GameInstance final {
   void OnKeyDown(uint8 key);
 
   void OnKeyUp(uint8 key);
+
+  void OnMiscKeyDown(MiscKey key);
+
+  void OnMiscKeyUp(MiscKey key);
 
   void OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y);
 

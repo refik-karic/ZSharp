@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZBaseTypes.h"
+#include "InputManager.h"
 #include "List.h"
 #include "ZString.h"
 
@@ -27,10 +28,15 @@ class DevConsole final {
   size_t mCaret = 0;
   int8 mActiveBuffer[512];
   List<String> mHistory;
+  size_t mHistoryPos = 0;
 
   void OnKeyDown(uint8 key);
 
   void OnKeyUp(uint8 key);
+
+  void OnMiscKeyDown(MiscKey key);
+
+  void OnMiscKeyUp(MiscKey key);
 
   void OnResize(size_t width, size_t height);
 };

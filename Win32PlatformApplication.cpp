@@ -353,6 +353,42 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
   case VK_ESCAPE:
     DestroyWindow(mWindowHandle);
     break;
+  case VK_UP:
+  {
+    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+    inputManager.UpdateMiscKey(ZSharp::MiscKey::UP_ARROW, ZSharp::InputManager::KeyState::Down);
+  }
+    break;
+  case VK_LEFT:
+  {
+    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+    inputManager.UpdateMiscKey(ZSharp::MiscKey::LEFT_ARROW, ZSharp::InputManager::KeyState::Down);
+  }
+  break;
+  case VK_RIGHT:
+  {
+    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+    inputManager.UpdateMiscKey(ZSharp::MiscKey::RIGHT_ARROW, ZSharp::InputManager::KeyState::Down);
+  }
+  break;
+  case VK_DOWN:
+  {
+    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+    inputManager.UpdateMiscKey(ZSharp::MiscKey::DOWN_ARROW, ZSharp::InputManager::KeyState::Down);
+  }
+  break;
+  case VK_RETURN:
+  {
+    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+    inputManager.UpdateMiscKey(ZSharp::MiscKey::ENTER, ZSharp::InputManager::KeyState::Down);
+  }
+  break;
+  case VK_BACK:
+  {
+    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+    inputManager.UpdateMiscKey(ZSharp::MiscKey::BACKSPACE, ZSharp::InputManager::KeyState::Down);
+  }
+  break;
   default:
   {
     ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
@@ -363,8 +399,50 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
 }
 
 void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
-  ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-  inputManager.Update(key, ZSharp::InputManager::KeyState::Up);
+  switch (key) {
+    case VK_UP:
+    {
+      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+      inputManager.UpdateMiscKey(ZSharp::MiscKey::UP_ARROW, ZSharp::InputManager::KeyState::Up);
+    }
+    break;
+    case VK_LEFT:
+    {
+      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+      inputManager.UpdateMiscKey(ZSharp::MiscKey::LEFT_ARROW, ZSharp::InputManager::KeyState::Up);
+    }
+    break;
+    case VK_RIGHT:
+    {
+      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+      inputManager.UpdateMiscKey(ZSharp::MiscKey::RIGHT_ARROW, ZSharp::InputManager::KeyState::Up);
+    }
+    break;
+    case VK_DOWN:
+    {
+      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+      inputManager.UpdateMiscKey(ZSharp::MiscKey::DOWN_ARROW, ZSharp::InputManager::KeyState::Up);
+    }
+    break;
+    case VK_RETURN:
+    {
+      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+      inputManager.UpdateMiscKey(ZSharp::MiscKey::ENTER, ZSharp::InputManager::KeyState::Up);
+    }
+    break;
+    case VK_BACK:
+    {
+      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+      inputManager.UpdateMiscKey(ZSharp::MiscKey::BACKSPACE, ZSharp::InputManager::KeyState::Up);
+    }
+    break;
+    default:
+    {
+      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
+      inputManager.Update(key, ZSharp::InputManager::KeyState::Up);
+    }
+      break;
+  }
 }
 
 void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {

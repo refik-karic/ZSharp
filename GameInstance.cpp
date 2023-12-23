@@ -4,7 +4,6 @@
 #include "CommonMath.h"
 #include "Constants.h"
 #include "DebugText.h"
-#include "InputManager.h"
 #include "Logger.h"
 #include "PlatformTime.h"
 #include "PlatformMemory.h"
@@ -31,6 +30,8 @@ GameInstance::~GameInstance() {
   InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
+  inputManager.OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
+  inputManager.OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
   inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 
   if (mAmbientTrack.data != nullptr) {
@@ -181,6 +182,8 @@ void GameInstance::Initialize() {
   InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
+  inputManager.OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
+  inputManager.OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
   inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
@@ -332,19 +335,33 @@ void GameInstance::OnKeyDown(uint8 key) {
   case 'Z':
     mVisualizeDepth = !mVisualizeDepth;
     break;
-    // TODO: Come up with a better system for mapping non trivial keys.
-  case 0x26: // VK_UP Windows
-    ChangeSpeed(1);
-    break;
-  case 0x28:
-    ChangeSpeed(-1);
-    break;
   default:
     break;
   }
 }
 
 void GameInstance::OnKeyUp(uint8 key) {
+  (void)key;
+}
+
+void GameInstance::OnMiscKeyDown(MiscKey key) {
+  if (mDevConsole.IsOpen()) {
+    return;
+  }
+
+  switch (key) {
+    case MiscKey::UP_ARROW:
+      ChangeSpeed(1);
+      break;
+    case MiscKey::DOWN_ARROW:
+      ChangeSpeed(-1);
+      break;
+    default:
+      break;
+  }
+}
+
+void GameInstance::OnMiscKeyUp(MiscKey key) {
   (void)key;
 }
 

@@ -7,12 +7,27 @@
 #include "FixedArray.h"
 
 namespace ZSharp {
+
+enum class MiscKey : size_t {
+  UP_ARROW,
+  LEFT_ARROW,
+  DOWN_ARROW,
+  RIGHT_ARROW,
+  ENTER,
+  BACKSPACE,
+  NUM_KEYS
+};
+
 class InputManager final {
   public:
 
   BroadcastDelegate<uint8> OnKeyDownDelegate;
 
   BroadcastDelegate<uint8> OnKeyUpDelegate;
+
+  BroadcastDelegate<MiscKey> OnMiscKeyDownDelegate;
+
+  BroadcastDelegate<MiscKey> OnMiscKeyUpDelegate;
 
   BroadcastDelegate<int32, int32, int32, int32> OnMouseMoveDelegate;
 
@@ -28,6 +43,8 @@ class InputManager final {
 
   void Update(uint8 key, KeyState state);
 
+  void UpdateMiscKey(MiscKey key, KeyState state);
+
   void UpdateMousePosition(int32 x, int32 y);
 
   void UpdateMouseState(bool pressedDown);
@@ -42,6 +59,7 @@ class InputManager final {
   InputManager();
 
   FixedArray<KeyState, max_uint8> mKeyboard;
+  FixedArray<KeyState, static_cast<size_t>(MiscKey::NUM_KEYS)> mMiscKeys;
 
   bool mMousePressed = false;
   int32 mOldMouseX = 0;

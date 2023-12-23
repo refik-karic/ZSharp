@@ -3,7 +3,6 @@
 #include "ConsoleVariable.h"
 #include "DebugText.h"
 #include "Delegate.h"
-#include "InputManager.h"
 #include "PlatformMemory.h"
 #include "PlatformIntrinsics.h"
 #include "ZConfig.h"
@@ -22,6 +21,8 @@ DevConsole::DevConsole() {
   InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));
+  inputManager.OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyDown>(this));
+  inputManager.OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyUp>(this));
 
   ZConfig& config = ZConfig::Get();
   OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
@@ -33,6 +34,8 @@ DevConsole::~DevConsole() {
   InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));
+  inputManager.OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyDown>(this));
+  inputManager.OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyUp>(this));
 
   Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<DevConsole, &DevConsole::OnResize>(this));
 
@@ -81,8 +84,17 @@ void DevConsole::OnKeyDown(uint8 key) {
     return;
   }
 
-  // Backspace
-  if (key == 8) {
+  if (isalpha(key) || isdigit(key) || isspace(key) || key == ',' || key == '.') {
+    mActiveBuffer[mCaret++] = key;
+  }
+}
+
+void DevConsole::OnKeyUp(uint8 key) {
+  (void)key;
+}
+
+void DevConsole::OnMiscKeyDown(MiscKey key) {
+  if (key == MiscKey::BACKSPACE) {
     if (mCaret > 0) {
       --mCaret;
     }
@@ -90,21 +102,24 @@ void DevConsole::OnKeyDown(uint8 key) {
     return;
   }
 
-  // TODO: Make the InputManager smarter about arrow keys and such.
-  //  HACK: VK_UP Windows, aka Up Arrow
-  if (key == 0x26) {
+  if (key == MiscKey::UP_ARROW) {
     if (mHistory.Size() > 0) {
       List<String>::Iterator iter = mHistory.rbegin();
+
+      for (size_t i = 0; i < mHistoryPos; ++i) {
+        --iter;
+      }
+
       const String& lastCommand = *iter;
       size_t caretPos = lastCommand.Length();
       memcpy(mActiveBuffer, lastCommand.Str(), caretPos);
       mCaret = caretPos;
+      mHistoryPos = (mHistoryPos + 1) % mHistory.Size();
       return;
     }
   }
 
-  // Enter
-  if (key == 10 || key == 13) {
+  if (key == MiscKey::ENTER) {
     const String message(mActiveBuffer, 0, mCaret);
     if (mHistory.Size() > 10) {
       mHistory.RemoveFront();
@@ -123,15 +138,12 @@ void DevConsole::OnKeyDown(uint8 key) {
 
     mHistory.Add(message);
     mCaret = 0;
+    mHistoryPos = 0;
     return;
-  }
-
-  if (isalpha(key) || isdigit(key) || isspace(key) || key == ',' || key == '.') {
-    mActiveBuffer[mCaret++] = key;
   }
 }
 
-void DevConsole::OnKeyUp(uint8 key) {
+void DevConsole::OnMiscKeyUp(MiscKey key) {
   (void)key;
 }
 

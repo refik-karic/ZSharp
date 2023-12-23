@@ -3,6 +3,7 @@
 namespace ZSharp {
 InputManager::InputManager() {
   mKeyboard.Fill(KeyState::Clear);
+  mMiscKeys.Fill(KeyState::Clear);
 }
 
 InputManager& InputManager::Get() {
@@ -12,6 +13,10 @@ InputManager& InputManager::Get() {
 
 void InputManager::Update(uint8 key, InputManager::KeyState state) {
   mKeyboard[key] = state;
+}
+
+void InputManager::UpdateMiscKey(MiscKey key, InputManager::KeyState state) {
+  mMiscKeys[static_cast<size_t>(key)] = state;
 }
 
 void InputManager::UpdateMousePosition(int32 x, int32 y) {
@@ -53,12 +58,26 @@ void InputManager::Process() {
     }
   }
 
+  for (uint8 i = 0; i < mMiscKeys.Size(); ++i) {
+    switch (mMiscKeys[i]) {
+      case KeyState::Clear:
+        break;
+      case KeyState::Down:
+        OnMiscKeyDownDelegate.Broadcast(static_cast<MiscKey>(i));
+        break;
+      case KeyState::Up:
+        OnMiscKeyUpDelegate.Broadcast(static_cast<MiscKey>(i));
+        break;
+    }
+  }
+
   if (mMousePressed) {
     OnMouseMoveDelegate.Broadcast(mOldMouseX, mOldMouseY, mCurrentMouseX, mCurrentMouseY);
     UpdateMousePosition(mCurrentMouseX, mCurrentMouseY);
   }
 
   mKeyboard.Fill(KeyState::Clear);
+  mMiscKeys.Fill(KeyState::Clear);
 }
 
 bool InputManager::IsMousePressed() const {

@@ -386,7 +386,7 @@ void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
   }
 }
 
-void Unaligned_BlendBuffers(float* devBuffer, float* frameBuffer, size_t width, size_t height, float opacity) {
+void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width, size_t height, float opacity) {
   __m128i devOpacity = _mm_set1_epi16((short)(255.f * opacity));
   __m128i bufferOpacity = _mm_set1_epi16((short)(255.f * (1.f - opacity)));
 

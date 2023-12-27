@@ -24,6 +24,13 @@ struct ConsoleVariableConverter<int32> {
   }
 };
 
+template<>
+struct ConsoleVariableConverter<bool> {
+  void operator()(const String& str, bool& var) const {
+    var = (str.ToInt32() != 0);
+  }
+};
+
 template<typename T>
 class ConsoleVariable {
   public:

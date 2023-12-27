@@ -73,14 +73,20 @@ void DevConsole::Draw(uint32* buffer) {
   }
 
   const String message(mActiveBuffer, 0, mCaret);
-  DrawText(message, 10, mHeight - 15, (uint8*)mScreen, mWidth, textColor);
 
-  Unaligned_BlendBuffers((float*)mScreen, (float*)buffer, mWidth, mHeight, mOpacity);
+  const String formattedMessage(String::FromFormat("> {0}_", message));
+  DrawText(formattedMessage, 10, mHeight - 15, (uint8*)mScreen, mWidth, textColor);
+
+  Unaligned_BlendBuffers(mScreen, buffer, mWidth, mHeight, mOpacity);
 }
 
 void DevConsole::OnKeyDown(uint8 key) {
   if (key == '`') {
     mOpen = !mOpen;
+    return;
+  }
+
+  if (!mOpen) {
     return;
   }
 
@@ -94,6 +100,10 @@ void DevConsole::OnKeyUp(uint8 key) {
 }
 
 void DevConsole::OnMiscKeyDown(MiscKey key) {
+  if (!mOpen) {
+    return;
+  }
+
   if (key == MiscKey::BACKSPACE) {
     if (mCaret > 0) {
       --mCaret;

@@ -259,7 +259,8 @@ void GameInstance::Tick() {
   }
 
   if (mDevConsole.IsOpen()) {
-    mDevConsole.Draw((uint32*)mRenderer.GetFrameBuffer().GetBuffer());
+    uint8* buffer = mVisualizeDepth ? mRenderer.GetDepth() : mRenderer.GetFrameBuffer().GetBuffer();
+    mDevConsole.Draw((uint32*)buffer);
   }
 }
 
@@ -302,37 +303,37 @@ void GameInstance::OnKeyDown(uint8 key) {
   }
 
   switch (key) {
-  case 'P':
+  case 'p':
     PauseTransforms();
     break;
-  case 'R':
+  case 'r':
     mRenderer.ToggleRenderMode(RenderMode::WIREFRAME);
     break;
-  case 'F':
+  case 'f':
     mRenderer.ToggleRenderMode(RenderMode::FLAT);
     break;
-  case 'W':
+  case 'w':
     MoveCamera(GameInstance::Direction::FORWARD);
     break;
-  case 'S':
+  case 's':
     MoveCamera(GameInstance::Direction::BACK);
     break;
-  case 'A':
+  case 'a':
     MoveCamera(GameInstance::Direction::LEFT);
     break;
-  case 'D':
+  case 'd':
     MoveCamera(GameInstance::Direction::RIGHT);
     break;
-  case 'Q':
+  case 'q':
     RotateCamera(Mat4x4::Axis::Y, 1.0F);
     break;
-  case 'E':
+  case 'e':
     RotateCamera(Mat4x4::Axis::Y, -1.0F);
     break;
-  case 'I':
+  case 'i':
     mDrawStats = !mDrawStats;
     break;
-  case 'Z':
+  case 'z':
     mVisualizeDepth = !mVisualizeDepth;
     break;
   default:

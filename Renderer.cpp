@@ -17,10 +17,10 @@
 
 #include <cmath>
 
-#define VISUALIZE_AABB 1
-
 namespace ZSharp {
 ConsoleVariable<int32> DevRenderMode("RenderMode", 1);
+
+ConsoleVariable<bool> VisualizeAABB("VizAABB", true);
 
 Renderer::Renderer() {
 }
@@ -60,16 +60,16 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
       clipBounds = camera.ClipBoundsCheck(aabbVertexBuffer, aabbIndexBuffer);
 
-#if VISUALIZE_AABB
-      const ZColor aabbColor(ZColors::GREEN);
+      if (*VisualizeAABB) {
+        const ZColor aabbColor(ZColors::GREEN);
 
-      aabbVertexBuffer.Clear();
-      aabbIndexBuffer.Clear();
-      TriangulateAABBWithColor(aabb, aabbVertexBuffer, aabbIndexBuffer, aabbColor);
+        aabbVertexBuffer.Clear();
+        aabbIndexBuffer.Clear();
+        TriangulateAABBWithColor(aabb, aabbVertexBuffer, aabbIndexBuffer, aabbColor);
 
-      camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds);
-      DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer);
-#endif
+        camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds);
+        DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer);
+      }
     }
 
     camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds);
@@ -123,7 +123,12 @@ uint8* Renderer::GetDepth() {
 }
 
 void Renderer::ToggleRenderMode(RenderMode mode) {
-  mRenderMode = mode;
+  if (mode == RenderMode::FLAT) {
+    *DevRenderMode = 1;
+  }
+  else {
+    *DevRenderMode = 0;
+  }
 }
 
 Framebuffer& Renderer::GetFrameBuffer() {

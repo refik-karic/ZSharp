@@ -540,29 +540,22 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
   uint32* pixels = ((uint32*)(framebuffer)) + pixelOffset;
   float* pixelDepth = depthBuffer + pixelOffset;
 
-  pixels -= remainingStride;
-  pixelDepth -= remainingStride;
-
   __m128i pixelShuffleMask = _mm_set_epi8(
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 12, 8, 4);
 
-  for (int32 h = minY; h < maxY; ++h) {
-    __m128 p0 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[3]), xValues);
+  __m128 minValues = _mm_set_ps1(min.m128_f32[3]);
+  __m128 oneValue = _mm_set_ps1(1.f);
+  __m128 p0StartValue = _mm_sub_ps(minValues, xValues);
 
+  for (int32 h = minY; h < maxY; ++h) {
+    __m128 p0 = p0StartValue;
     __m128 p1Factor = _mm_mul_ps(p1, factors0);
 
-    p1 = _mm_add_ps(p1, _mm_set_ps1(1.f));
-
-    pixels += remainingStride;
-    pixelDepth += remainingStride;
-
     for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
-      __m128 weights = _mm_sub_ps(_mm_mul_ps(p0, factors1), p1Factor);
-
-      p0 = _mm_add_ps(p0, _mm_set_ps1(1.f));
+      __m128 weights = _mm_fmsub_ps(p0, factors1, p1Factor);
 
       if (_mm_movemask_ps(weights) == 0) {
         __m128 weightedVerts = _mm_mul_ps(weights, invVert);
@@ -571,11 +564,11 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
         if ((*pixelDepth) > pixelZ) {
           *pixelDepth = pixelZ;
 
-          __m128 denominator = _mm_set_ps1(weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1]);
+          __m128 invDenominator = _mm_set_ps1(1.f / pixelZ);
 
-          __m128 weightedAttr0 = _mm_div_ps(_mm_mul_ps(weights, invAttr0), denominator);
-          __m128 weightedAttr1 = _mm_div_ps(_mm_mul_ps(weights, invAttr1), denominator);
-          __m128 weightedAttr2 = _mm_div_ps(_mm_mul_ps(weights, invAttr2), denominator);
+          __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
+          __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
+          __m128 weightedAttr2 = _mm_mul_ps(_mm_mul_ps(weights, invAttr2), invDenominator);
 
           __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
           thirdTerms = _mm_shuffle_ps(weightedAttr2, thirdTerms, 0b11011100);
@@ -592,7 +585,13 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
           *pixels = shuffledPixel.m128i_i32[0] | 0xFF000000;
         }
       }
+
+      p0 = _mm_add_ps(p0, oneValue);
     }
+
+    p1 = _mm_add_ps(p1, oneValue);
+    pixels += remainingStride;
+    pixelDepth += remainingStride;
   }
 }
 
@@ -640,19 +639,23 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
 
   __m128 p1 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[2]), yValues);
 
+  __m128 minValues = _mm_set_ps1(min.m128_f32[3]);
+  __m128 oneValue = _mm_set_ps1(1.f);
+  __m128 p0StartValue = _mm_sub_ps(minValues, xValues);
+
   for (int32 h = minY; h < maxY; ++h) {
-    __m128 p0 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[3]), xValues);
+    __m128 p0 = p0StartValue;
 
     __m128 p1Factor = _mm_mul_ps(p1, factors0);
 
-    p1 = _mm_add_ps(p1, _mm_set_ps1(1.f));
+    p1 = _mm_add_ps(p1, oneValue);
 
     uint32* pixels = reinterpret_cast<uint32*>(framebuffer) + (minX + (h * sMaxWidth));
     float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
     for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
-      __m128 weights = _mm_sub_ps(_mm_mul_ps(p0, factors1), p1Factor);
+      __m128 weights = _mm_fmsub_ps(p0, factors1, p1Factor);
 
-      p0 = _mm_add_ps(p0, _mm_set_ps1(1.f));
+      p0 = _mm_add_ps(p0, oneValue);
 
       if (_mm_movemask_ps(weights) == 0) {
         __m128 weightedVerts = _mm_mul_ps(weights, invVert);
@@ -661,10 +664,10 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
         if ((*pixelDepth) > pixelZ) {
           *pixelDepth = pixelZ;
 
-          __m128 denominator = _mm_set_ps1(weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1]);
+          __m128 invDenominator = _mm_set_ps1(1.f / pixelZ);
 
-          __m128 weightedAttr0 = _mm_div_ps(_mm_mul_ps(weights, invAttr0), denominator);
-          __m128 weightedAttr1 = _mm_div_ps(_mm_mul_ps(weights, invAttr1), denominator);
+          __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
+          __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
 
           __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
 

@@ -15,7 +15,6 @@
 
 namespace ZSharp {
 
-HashTable<String, Delegate<const String&>> GlobalConsoleCommands;
 
 DevConsole::DevConsole() {
   InputManager& inputManager = InputManager::Get();
@@ -140,8 +139,8 @@ void DevConsole::OnMiscKeyDown(MiscKey key) {
       size_t offset = commandSplit - message.Str();
       const String commandName(message.SubStr(0, offset));
       const String commandValue(message.Str(), offset + 1, message.Length() - offset);
-      if (GlobalConsoleCommands.HasKey(commandName)) {
-        Delegate<const String&>& func = GlobalConsoleCommands[commandName];
+      if (GlobalConsoleCommands().HasKey(commandName)) {
+        Delegate<const String&>& func = GlobalConsoleCommands()[commandName];
         func(commandValue);
       }
     }

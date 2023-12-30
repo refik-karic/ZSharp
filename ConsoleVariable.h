@@ -7,7 +7,7 @@
 
 namespace ZSharp {
 
-extern HashTable<String, Delegate<const String&>> GlobalConsoleCommands;
+HashTable<String, Delegate<const String&>>& GlobalConsoleCommands();
 
 template<typename T>
 struct ConsoleVariableConverter {
@@ -36,21 +36,21 @@ class ConsoleVariable {
   public:
 
   ConsoleVariable(const String& name) {
-    if (!GlobalConsoleCommands.HasKey(name)) {
-      GlobalConsoleCommands.Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
+    if (!GlobalConsoleCommands().HasKey(name)) {
+      GlobalConsoleCommands().Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
     }
   }
 
   ConsoleVariable(const String& name, const T& value)
     : mName(name), mValue(value) {
-    if (!GlobalConsoleCommands.HasKey(name)) {
-      GlobalConsoleCommands.Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
+    if (!GlobalConsoleCommands().HasKey(name)) {
+      GlobalConsoleCommands().Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
     }
   }
 
   ~ConsoleVariable() {
-    if (GlobalConsoleCommands.HasKey(mName)) {
-      GlobalConsoleCommands.Remove(mName);
+    if (GlobalConsoleCommands().HasKey(mName)) {
+      GlobalConsoleCommands().Remove(mName);
     }
   }
 

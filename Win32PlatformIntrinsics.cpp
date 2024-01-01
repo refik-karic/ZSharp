@@ -6,6 +6,7 @@
 #include "ZAssert.h"
 #include "PlatformDefines.h"
 #include "ZColor.h"
+#include "CommonMath.h"
 
 #include <cstring>
 
@@ -506,7 +507,6 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
   max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
 
   __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
-
   __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
 
   // We want the RGB values to be scaled by 255 in the end.
@@ -523,17 +523,17 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
   int32 maxX = intMax.m128i_i32[3];
   int32 maxY = intMax.m128i_i32[2];
 
+  // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
+  float boundingBoxMin[2] = { (float)minX, (float)minY };
+  __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
+    BarycentricArea2D(v3, v1, boundingBoxMin),
+    BarycentricArea2D(v1, v2, boundingBoxMin),
+    0.f);
+
+  __m128 xStep = _mm_set_ps(v2[1] - v3[1], v3[1] - v1[1], v1[1] - v2[1], 0.f);
+  __m128 yStep = _mm_set_ps(v3[0] - v2[0], v1[0] - v3[0], v2[0] - v1[0], 0.f);
+
   const int32 sMaxWidth = (int32)maxWidth;
-
-  __m128 xValues = _mm_set_ps(v2[0], v3[0], v1[0], 0.f);
-  __m128 yValues = _mm_set_ps(v2[1], v3[1], v1[1], 0.f);
-
-  // Factor out some of the BarycentricArea equation that's constant for each vertex.
-  __m128 factors0 = _mm_sub_ps(_mm_set_ps(v3[0], v1[0], v2[0], 0.f), xValues);
-  __m128 factors1 = _mm_sub_ps(_mm_set_ps(v3[1], v1[1], v2[1], 0.f), yValues);
-
-  __m128 p1 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[2]), yValues);
-
   const uint32 pixelOffset = (minX + (minY * sMaxWidth));
   const uint32 remainingStride = sMaxWidth - (maxX - minX);
 
@@ -546,18 +546,11 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
     0, 0, 0, 0,
     0, 12, 8, 4);
 
-  __m128 minValues = _mm_set_ps1(min.m128_f32[3]);
-  __m128 oneValue = _mm_set_ps1(1.f);
-  __m128 p0StartValue = _mm_sub_ps(minValues, xValues);
-
   for (int32 h = minY; h < maxY; ++h) {
-    __m128 p0 = p0StartValue;
-    __m128 p1Factor = _mm_mul_ps(p1, factors0);
+    __m128 weights = weightInit;
 
     for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
-      __m128 weights = _mm_fmsub_ps(p0, factors1, p1Factor);
-
-      if (_mm_movemask_ps(weights) == 0) {
+      if (!_mm_movemask_ps(weights)) {
         __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
         float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
@@ -586,10 +579,10 @@ void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, c
         }
       }
 
-      p0 = _mm_add_ps(p0, oneValue);
+      weights = _mm_sub_ps(weights, xStep);
     }
 
-    p1 = _mm_add_ps(p1, oneValue);
+    weightInit = _mm_sub_ps(weightInit, yStep);
     pixels += remainingStride;
     pixelDepth += remainingStride;
   }
@@ -628,35 +621,24 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
   int32 maxX = intMax.m128i_i32[3];
   int32 maxY = intMax.m128i_i32[2];
 
+  // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
+  float boundingBoxMin[2] = { (float)minX, (float)minY };
+  __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
+    BarycentricArea2D(v3, v1, boundingBoxMin),
+    BarycentricArea2D(v1, v2, boundingBoxMin),
+    0.f);
+
+  __m128 xStep = _mm_set_ps(v2[1] - v3[1], v3[1] - v1[1], v1[1] - v2[1], 0.f);
+  __m128 yStep = _mm_set_ps(v3[0] - v2[0], v1[0] - v3[0], v2[0] - v1[0], 0.f);
+
   const size_t sMaxWidth = (size_t)maxWidth;
 
-  __m128 xValues = _mm_set_ps(v2[0], v3[0], v1[0], 0.f);
-  __m128 yValues = _mm_set_ps(v2[1], v3[1], v1[1], 0.f);
-
-  // Factor out some of the BarycentricArea equation that's constant for each vertex.
-  __m128 factors0 = _mm_sub_ps(_mm_set_ps(v3[0], v1[0], v2[0], 0.f), xValues);
-  __m128 factors1 = _mm_sub_ps(_mm_set_ps(v3[1], v1[1], v2[1], 0.f), yValues);
-
-  __m128 p1 = _mm_sub_ps(_mm_set_ps1(min.m128_f32[2]), yValues);
-
-  __m128 minValues = _mm_set_ps1(min.m128_f32[3]);
-  __m128 oneValue = _mm_set_ps1(1.f);
-  __m128 p0StartValue = _mm_sub_ps(minValues, xValues);
-
   for (int32 h = minY; h < maxY; ++h) {
-    __m128 p0 = p0StartValue;
-
-    __m128 p1Factor = _mm_mul_ps(p1, factors0);
-
-    p1 = _mm_add_ps(p1, oneValue);
+    __m128 weights = weightInit;
 
     uint32* pixels = reinterpret_cast<uint32*>(framebuffer) + (minX + (h * sMaxWidth));
     float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
     for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
-      __m128 weights = _mm_fmsub_ps(p0, factors1, p1Factor);
-
-      p0 = _mm_add_ps(p0, oneValue);
-
       if (_mm_movemask_ps(weights) == 0) {
         __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
@@ -679,7 +661,11 @@ void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3, c
           *pixels = texture->Sample(summedTerms.m128_f32[3], summedTerms.m128_f32[1]);
         }
       }
+
+      weights = _mm_sub_ps(weights, xStep);
     }
+
+    weightInit = _mm_sub_ps(weightInit, yStep);
   }
 }
 

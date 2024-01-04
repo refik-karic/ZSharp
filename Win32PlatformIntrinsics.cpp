@@ -486,105 +486,460 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
-void Unaligned_FlatShadeRGB(const float* v1, const float* v2, const float* v3, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
-  __m128 min = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-  __m128 min1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-  __m128 min2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
-
-  __m128 max = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-  __m128 max1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-  __m128 max2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
-
-  min = _mm_min_ps(_mm_min_ps(min, min1), min2);
-  max = _mm_max_ps(_mm_max_ps(max, max1), max2);
-
-  min = _mm_floor_ps(min);
-  max = _mm_ceil_ps(max);
-
-  min = _mm_max_ps(min, _mm_set_ps1(0.f));
-  min = _mm_min_ps(min, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
-  max = _mm_max_ps(max, _mm_set_ps1(0.f));
-  max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
-
-  __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
-  __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
-
-  // We want the RGB values to be scaled by 255 in the end.
-  // Doing that here saves us from having to apply the scale at each pixel.
-  __m128 scaleFactor = _mm_mul_ps(invArea, _mm_set_ps1(255.f));
-  __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), scaleFactor);
-  __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), scaleFactor);
-  __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), scaleFactor);
-
-  __m128i intMin = _mm_cvtps_epi32(min);
-  __m128i intMax = _mm_cvtps_epi32(max);
-  int32 minX = intMin.m128i_i32[3];
-  int32 minY = intMin.m128i_i32[2];
-  int32 maxX = intMax.m128i_i32[3];
-  int32 maxY = intMax.m128i_i32[2];
-
-  // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-  float boundingBoxMin[2] = { (float)minX, (float)minY };
-  __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
-    BarycentricArea2D(v3, v1, boundingBoxMin),
-    BarycentricArea2D(v1, v2, boundingBoxMin),
-    0.f);
-
-  __m128 xStep = _mm_set_ps(v2[1] - v3[1], v3[1] - v1[1], v1[1] - v2[1], 0.f);
-  __m128 yStep = _mm_set_ps(v3[0] - v2[0], v1[0] - v3[0], v2[0] - v1[0], 0.f);
-
+void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const size_t stride, const size_t end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
-  const uint32 pixelOffset = (minX + (minY * sMaxWidth));
-  const uint32 remainingStride = sMaxWidth - (maxX - minX);
+  
+  for (size_t i = 0; i < end; i += 3) {
+    const float* v1 = vertices + (indices[i] * stride);
+    const float* v2 = vertices + (indices[i + 1] * stride);
+    const float* v3 = vertices + (indices[i + 2] * stride);
 
-  uint32* pixels = ((uint32*)(framebuffer)) + pixelOffset;
-  float* pixelDepth = depthBuffer + pixelOffset;
+    __m128 min = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
+    __m128 min1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
+    __m128 min2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
 
-  __m128i pixelShuffleMask = _mm_set_epi8(
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 0, 0, 0,
-    0, 12, 8, 4);
+    __m128 max = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
+    __m128 max1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
+    __m128 max2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
 
-  for (int32 h = minY; h < maxY; ++h) {
-    __m128 weights = weightInit;
+    min = _mm_min_ps(_mm_min_ps(min, min1), min2);
+    max = _mm_max_ps(_mm_max_ps(max, max1), max2);
 
-    for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
-      if (!_mm_movemask_ps(weights)) {
-        __m128 weightedVerts = _mm_mul_ps(weights, invVert);
+    min = _mm_floor_ps(min);
+    max = _mm_ceil_ps(max);
 
-        float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
-        if ((*pixelDepth) > pixelZ) {
-          *pixelDepth = pixelZ;
+    min = _mm_max_ps(min, _mm_set_ps1(0.f));
+    min = _mm_min_ps(min, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
+    max = _mm_max_ps(max, _mm_set_ps1(0.f));
+    max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
 
-          __m128 invDenominator = _mm_set_ps1(1.f / pixelZ);
+    __m128i intMin = _mm_cvtps_epi32(min);
+    __m128i intMax = _mm_cvtps_epi32(max);
+    int32 minX = intMin.m128i_i32[3];
+    int32 minY = intMin.m128i_i32[2];
+    int32 maxX = intMax.m128i_i32[3];
+    int32 maxY = intMax.m128i_i32[2];
 
-          __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
-          __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
-          __m128 weightedAttr2 = _mm_mul_ps(_mm_mul_ps(weights, invAttr2), invDenominator);
+    // Two different render paths are used:
+    //  1) For small triangles we step one pixel at a time
+    //  2) For larger triangles we step SIMD width at a time
+    if ((maxX - minX) < 16) {
+      __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+      __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
 
-          __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
-          thirdTerms = _mm_shuffle_ps(weightedAttr2, thirdTerms, 0b11011100);
+      // We want the RGB values to be scaled by 255 in the end.
+      // Doing that here saves us from having to apply the scale at each pixel.
+      __m128 scaleFactor = _mm_mul_ps(invArea, _mm_set_ps1(255.f));
+      __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), scaleFactor);
+      __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), scaleFactor);
+      __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), scaleFactor);
 
-          __m128 secondTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b10001000);
-          secondTerms = _mm_shuffle_ps(weightedAttr2, secondTerms, 0b11011000);
+      // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
+      float boundingBoxMin[2] = { (float)minX, (float)minY };
+      __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
+        BarycentricArea2D(v3, v1, boundingBoxMin),
+        BarycentricArea2D(v1, v2, boundingBoxMin),
+        0.f);
 
-          __m128 firstTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b01000100);
-          firstTerms = _mm_shuffle_ps(weightedAttr2, firstTerms, 0b11010100);
+      __m128 xStep = _mm_set_ps(v2[1] - v3[1], v3[1] - v1[1], v1[1] - v2[1], 0.f);
+      __m128 yStep = _mm_set_ps(v3[0] - v2[0], v1[0] - v3[0], v2[0] - v1[0], 0.f);
 
-          __m128i convertedTerms = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms));
+      const uint32 pixelOffset = (minX + (minY * sMaxWidth));
+      const uint32 remainingStride = sMaxWidth - (maxX - minX);
 
-          __m128i shuffledPixel = _mm_shuffle_epi8(convertedTerms, pixelShuffleMask);
-          *pixels = shuffledPixel.m128i_i32[0] | 0xFF000000;
+      uint32* pixels = ((uint32*)(framebuffer)) + pixelOffset;
+      float* pixelDepth = depthBuffer + pixelOffset;
+
+      __m128i pixelShuffleMask = _mm_set_epi8(
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 12, 8, 4);
+
+      for (int32 h = minY; h < maxY; ++h) {
+        __m128 weights = weightInit;
+
+        for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
+          if (!_mm_movemask_ps(weights)) {
+            __m128 weightedVerts = _mm_mul_ps(weights, invVert);
+
+            float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
+            if ((*pixelDepth) > pixelZ) {
+              *pixelDepth = pixelZ;
+
+              __m128 invDenominator = _mm_set_ps1(1.f / pixelZ);
+
+              __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
+              __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
+              __m128 weightedAttr2 = _mm_mul_ps(_mm_mul_ps(weights, invAttr2), invDenominator);
+
+              __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
+              thirdTerms = _mm_shuffle_ps(weightedAttr2, thirdTerms, 0b11011100);
+
+              __m128 secondTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b10001000);
+              secondTerms = _mm_shuffle_ps(weightedAttr2, secondTerms, 0b11011000);
+
+              __m128 firstTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b01000100);
+              firstTerms = _mm_shuffle_ps(weightedAttr2, firstTerms, 0b11010100);
+
+              __m128i convertedTerms = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms));
+
+              __m128i shuffledPixel = _mm_shuffle_epi8(convertedTerms, pixelShuffleMask);
+              *pixels = shuffledPixel.m128i_i32[0] | 0xFF000000;
+            }
+          }
+
+          weights = _mm_sub_ps(weights, xStep);
+        }
+
+        weightInit = _mm_sub_ps(weightInit, yStep);
+        pixels += remainingStride;
+        pixelDepth += remainingStride;
+      }
+    }
+    else {
+      if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+        __m256 invArea = _mm256_set1_ps(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+        __m256 invVert0 = _mm256_mul_ps(_mm256_set1_ps(v1[3]), invArea);
+        __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
+        __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
+
+        // We want the RGB values to be scaled by 255 in the end.
+        // Doing that here saves us from having to apply the scale at each pixel.
+        __m256 scaleFactor = _mm256_mul_ps(invArea, _mm256_set1_ps(255.f));
+        __m256 invAttr00 = _mm256_mul_ps(_mm256_set1_ps(v1[4]), scaleFactor);
+        __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), scaleFactor);
+        __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), scaleFactor);
+
+        __m256 invAttr10 = _mm256_mul_ps(_mm256_set1_ps(v1[5]), scaleFactor);
+        __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), scaleFactor);
+        __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), scaleFactor);
+
+        __m256 invAttr20 = _mm256_mul_ps(_mm256_set1_ps(v1[6]), scaleFactor);
+        __m256 invAttr21 = _mm256_mul_ps(_mm256_set1_ps(v2[6]), scaleFactor);
+        __m256 invAttr22 = _mm256_mul_ps(_mm256_set1_ps(v3[6]), scaleFactor);
+
+        // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
+        float boundingBoxMin[2] = { (float)minX, (float)minY };
+        __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
+        __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
+        __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
+
+        __m256 xStep0 = _mm256_set1_ps(v2[1] - v3[1]);
+        __m256 xStep1 = _mm256_set1_ps(v3[1] - v1[1]);
+        __m256 xStep2 = _mm256_set1_ps(v1[1] - v2[1]);
+
+        __m256 yStep0 = _mm256_set1_ps(v3[0] - v2[0]);
+        __m256 yStep1 = _mm256_set1_ps(v1[0] - v3[0]);
+        __m256 yStep2 = _mm256_set1_ps(v2[0] - v1[0]);
+
+        __m256 initMultiplier = _mm256_set_ps(0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f);
+        __m256 stepMultiplier = _mm256_set1_ps(8.f);
+
+        weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
+        weightInit1 = _mm256_sub_ps(weightInit1, _mm256_mul_ps(initMultiplier, xStep1));
+        weightInit2 = _mm256_sub_ps(weightInit2, _mm256_mul_ps(initMultiplier, xStep2));
+
+        xStep0 = _mm256_mul_ps(stepMultiplier, xStep0);
+        xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
+        xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
+
+        __m256 oneValue = _mm256_set1_ps(1.f);
+
+        for (int32 h = minY; h < maxY; ++h) {
+          __m256 weights0 = weightInit0;
+          __m256 weights1 = weightInit1;
+          __m256 weights2 = weightInit2;
+
+          uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
+          float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+
+          for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
+            // OR all weights and fetch the sign bits
+            int32 combinedMask = _mm256_movemask_ps(_mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2));
+
+            // If all mask bits are set then none of these pixels are inside the triangle.
+            if ((combinedMask & 0xFF) != 0xFF) {
+              __m256 weightedVerts0 = _mm256_mul_ps(weights0, invVert0);
+              __m256 weightedVerts1 = _mm256_mul_ps(weights1, invVert1);
+              __m256 weightedVerts2 = _mm256_mul_ps(weights2, invVert2);
+
+              __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
+              __m256 invZValues = _mm256_div_ps(oneValue, zValues);
+
+              __m256 weightedAttr00 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr00), invZValues);
+              __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr01), invZValues);
+              __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, invAttr02), invZValues);
+
+              __m256 weightedAttr10 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr10), invZValues);
+              __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr11), invZValues);
+              __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, invAttr12), invZValues);
+
+              __m256 weightedAttr20 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr20), invZValues);
+              __m256 weightedAttr21 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr21), invZValues);
+              __m256 weightedAttr22 = _mm256_mul_ps(_mm256_mul_ps(weights2, invAttr22), invZValues);
+
+              __m256i rValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02));
+              __m256i gValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
+              __m256i bValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
+
+              // TODO: Pack the RGB channels into vector registers, shift them, mask with the existing color, and store them back.
+
+              uint32 pixel0 = 0xFF00;
+              uint32 pixel1 = 0xFF00;
+              uint32 pixel2 = 0xFF00;
+              uint32 pixel3 = 0xFF00;
+              uint32 pixel4 = 0xFF00;
+              uint32 pixel5 = 0xFF00;
+              uint32 pixel6 = 0xFF00;
+              uint32 pixel7 = 0xFF00;
+
+              pixel0 |= rValues.m256i_i32[7];
+              pixel0 <<= 8;
+              pixel0 |= gValues.m256i_i32[7];
+              pixel0 <<= 8;
+              pixel0 |= bValues.m256i_i32[7];
+
+              pixel1 |= rValues.m256i_i32[6];
+              pixel1 <<= 8;
+              pixel1 |= gValues.m256i_i32[6];
+              pixel1 <<= 8;
+              pixel1 |= bValues.m256i_i32[6];
+
+              pixel2 |= rValues.m256i_i32[5];
+              pixel2 <<= 8;
+              pixel2 |= gValues.m256i_i32[5];
+              pixel2 <<= 8;
+              pixel2 |= bValues.m256i_i32[5];
+
+              pixel3 |= rValues.m256i_i32[4];
+              pixel3 <<= 8;
+              pixel3 |= gValues.m256i_i32[4];
+              pixel3 <<= 8;
+              pixel3 |= bValues.m256i_i32[4];
+
+              pixel4 |= rValues.m256i_i32[3];
+              pixel4 <<= 8;
+              pixel4 |= gValues.m256i_i32[3];
+              pixel4 <<= 8;
+              pixel4 |= bValues.m256i_i32[3];
+
+              pixel5 |= rValues.m256i_i32[2];
+              pixel5 <<= 8;
+              pixel5 |= gValues.m256i_i32[2];
+              pixel5 <<= 8;
+              pixel5 |= bValues.m256i_i32[2];
+
+              pixel6 |= rValues.m256i_i32[1];
+              pixel6 <<= 8;
+              pixel6 |= gValues.m256i_i32[1];
+              pixel6 <<= 8;
+              pixel6 |= bValues.m256i_i32[1];
+
+              pixel7 |= rValues.m256i_i32[0];
+              pixel7 <<= 8;
+              pixel7 |= gValues.m256i_i32[0];
+              pixel7 <<= 8;
+              pixel7 |= bValues.m256i_i32[0];
+
+              if (((combinedMask & 0x80) == 0) && ((*(pixelDepth + 0)) > zValues.m256_f32[7])) {
+                *(pixelDepth + 0) = zValues.m256_f32[7];
+                *(pixels + 0) = pixel0;
+              }
+
+              if (((combinedMask & 0x40) == 0) && ((*(pixelDepth + 1)) > zValues.m256_f32[6])) {
+                *(pixelDepth + 1) = zValues.m256_f32[6];
+                *(pixels + 1) = pixel1;
+              }
+
+              if (((combinedMask & 0x20) == 0) && ((*(pixelDepth + 2)) > zValues.m256_f32[5])) {
+                *(pixelDepth + 2) = zValues.m256_f32[5];
+                *(pixels + 2) = pixel2;
+              }
+
+              if (((combinedMask & 0x10) == 0) && ((*(pixelDepth + 3)) > zValues.m256_f32[4])) {
+                *(pixelDepth + 3) = zValues.m256_f32[4];
+                *(pixels + 3) = pixel3;
+              }
+
+              if (((combinedMask & 0x08) == 0) && ((*(pixelDepth + 4)) > zValues.m256_f32[3])) {
+                *(pixelDepth + 4) = zValues.m256_f32[3];
+                *(pixels + 4) = pixel4;
+              }
+
+              if (((combinedMask & 0x04) == 0) && ((*(pixelDepth + 5)) > zValues.m256_f32[2])) {
+                *(pixelDepth + 5) = zValues.m256_f32[2];
+                *(pixels + 5) = pixel5;
+              }
+
+              if (((combinedMask & 0x02) == 0) && ((*(pixelDepth + 6)) > zValues.m256_f32[1])) {
+                *(pixelDepth + 6) = zValues.m256_f32[1];
+                *(pixels + 6) = pixel6;
+              }
+
+              if (((combinedMask & 0x01) == 0) && ((*(pixelDepth + 7)) > zValues.m256_f32[0])) {
+                *(pixelDepth + 7) = zValues.m256_f32[0];
+                *(pixels + 7) = pixel7;
+              }
+
+            }
+
+            weights0 = _mm256_sub_ps(weights0, xStep0);
+            weights1 = _mm256_sub_ps(weights1, xStep1);
+            weights2 = _mm256_sub_ps(weights2, xStep2);
+          }
+
+          weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
+          weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
+          weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
         }
       }
+      else {
+        __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+        __m128 invVert0 = _mm_mul_ps(_mm_set_ps1(v1[3]), invArea);
+        __m128 invVert1 = _mm_mul_ps(_mm_set_ps1(v2[3]), invArea);
+        __m128 invVert2 = _mm_mul_ps(_mm_set_ps1(v3[3]), invArea);
 
-      weights = _mm_sub_ps(weights, xStep);
+        // We want the RGB values to be scaled by 255 in the end.
+        // Doing that here saves us from having to apply the scale at each pixel.
+        __m128 scaleFactor = _mm_mul_ps(invArea, _mm_set_ps1(255.f));
+        __m128 invAttr00 = _mm_mul_ps(_mm_set_ps1(v1[4]), scaleFactor);
+        __m128 invAttr01 = _mm_mul_ps(_mm_set_ps1(v2[4]), scaleFactor);
+        __m128 invAttr02 = _mm_mul_ps(_mm_set_ps1(v3[4]), scaleFactor);
+
+        __m128 invAttr10 = _mm_mul_ps(_mm_set_ps1(v1[5]), scaleFactor);
+        __m128 invAttr11 = _mm_mul_ps(_mm_set_ps1(v2[5]), scaleFactor);
+        __m128 invAttr12 = _mm_mul_ps(_mm_set_ps1(v3[5]), scaleFactor);
+
+        __m128 invAttr20 = _mm_mul_ps(_mm_set_ps1(v1[6]), scaleFactor);
+        __m128 invAttr21 = _mm_mul_ps(_mm_set_ps1(v2[6]), scaleFactor);
+        __m128 invAttr22 = _mm_mul_ps(_mm_set_ps1(v3[6]), scaleFactor);
+
+        // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
+        float boundingBoxMin[2] = { (float)minX, (float)minY };
+        __m128 weightInit0 = _mm_set_ps1(BarycentricArea2D(v2, v3, boundingBoxMin));
+        __m128 weightInit1 = _mm_set_ps1(BarycentricArea2D(v3, v1, boundingBoxMin));
+        __m128 weightInit2 = _mm_set_ps1(BarycentricArea2D(v1, v2, boundingBoxMin));
+
+        __m128 xStep0 = _mm_set_ps1(v2[1] - v3[1]);
+        __m128 xStep1 = _mm_set_ps1(v3[1] - v1[1]);
+        __m128 xStep2 = _mm_set_ps1(v1[1] - v2[1]);
+
+        __m128 yStep0 = _mm_set_ps1(v3[0] - v2[0]);
+        __m128 yStep1 = _mm_set_ps1(v1[0] - v3[0]);
+        __m128 yStep2 = _mm_set_ps1(v2[0] - v1[0]);
+
+        __m128 initMultiplier = _mm_set_ps(0.f, 1.f, 2.f, 3.f);
+        __m128 stepMultiplier = _mm_set_ps1(4.f);
+
+        weightInit0 = _mm_sub_ps(weightInit0, _mm_mul_ps(initMultiplier, xStep0));
+        weightInit1 = _mm_sub_ps(weightInit1, _mm_mul_ps(initMultiplier, xStep1));
+        weightInit2 = _mm_sub_ps(weightInit2, _mm_mul_ps(initMultiplier, xStep2));
+
+        xStep0 = _mm_mul_ps(stepMultiplier, xStep0);
+        xStep1 = _mm_mul_ps(stepMultiplier, xStep1);
+        xStep2 = _mm_mul_ps(stepMultiplier, xStep2);
+
+        __m128 oneValue = _mm_set_ps1(1.f);
+
+        for (int32 h = minY; h < maxY; ++h) {
+          __m128 weights0 = weightInit0;
+          __m128 weights1 = weightInit1;
+          __m128 weights2 = weightInit2;
+
+          uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
+          float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+
+          for (int32 w = minX; w < maxX; w += 4, pixels += 4, pixelDepth += 4) {
+            // Fetch all sign bits and OR them together
+            int32 combinedMask = _mm_movemask_ps(_mm_or_ps(_mm_or_ps(weights0, weights1), weights2));
+
+            // If all mask bits are set then none of these pixels are inside the triangle.
+            if ((combinedMask & 0x0F) != 0x0F) {
+              __m128 weightedVerts0 = _mm_mul_ps(weights0, invVert0);
+              __m128 weightedVerts1 = _mm_mul_ps(weights1, invVert1);
+              __m128 weightedVerts2 = _mm_mul_ps(weights2, invVert2);
+
+              __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
+              __m128 invZValues = _mm_div_ps(oneValue, zValues);
+
+              __m128 weightedAttr00 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr00), invZValues);
+              __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr01), invZValues);
+              __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, invAttr02), invZValues);
+
+              __m128 weightedAttr10 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr10), invZValues);
+              __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr11), invZValues);
+              __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, invAttr12), invZValues);
+
+              __m128 weightedAttr20 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr20), invZValues);
+              __m128 weightedAttr21 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr21), invZValues);
+              __m128 weightedAttr22 = _mm_mul_ps(_mm_mul_ps(weights2, invAttr22), invZValues);
+
+              __m128i rValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr00, weightedAttr01), weightedAttr02));
+              __m128i gValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
+              __m128i bValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
+
+              uint32 pixel0 = 0xFF00;
+              uint32 pixel1 = 0xFF00;
+              uint32 pixel2 = 0xFF00;
+              uint32 pixel3 = 0xFF00;
+
+              pixel0 |= rValues.m128i_i32[3];
+              pixel0 <<= 8;
+              pixel0 |= gValues.m128i_i32[3];
+              pixel0 <<= 8;
+              pixel0 |= bValues.m128i_i32[3];
+
+              pixel1 |= rValues.m128i_i32[2];
+              pixel1 <<= 8;
+              pixel1 |= gValues.m128i_i32[2];
+              pixel1 <<= 8;
+              pixel1 |= bValues.m128i_i32[2];
+
+              pixel2 |= rValues.m128i_i32[1];
+              pixel2 <<= 8;
+              pixel2 |= gValues.m128i_i32[1];
+              pixel2 <<= 8;
+              pixel2 |= bValues.m128i_i32[1];
+
+              pixel3 |= rValues.m128i_i32[0];
+              pixel3 <<= 8;
+              pixel3 |= gValues.m128i_i32[0];
+              pixel3 <<= 8;
+              pixel3 |= bValues.m128i_i32[0];
+
+              if (((combinedMask & 0x08) == 0) && ((*(pixelDepth + 0)) > zValues.m128_f32[3])) {
+                *(pixelDepth + 0) = zValues.m128_f32[3];
+                *(pixels + 0) = pixel0;
+              }
+
+              if (((combinedMask & 0x04) == 0) && ((*(pixelDepth + 1)) > zValues.m128_f32[2])) {
+                *(pixelDepth + 1) = zValues.m128_f32[2];
+                *(pixels + 1) = pixel1;
+              }
+
+              if (((combinedMask & 0x02) == 0) && ((*(pixelDepth + 2)) > zValues.m128_f32[1])) {
+                *(pixelDepth + 2) = zValues.m128_f32[1];
+                *(pixels + 2) = pixel2;
+              }
+
+              if (((combinedMask & 0x01) == 0) && ((*(pixelDepth + 3)) > zValues.m128_f32[0])) {
+                *(pixelDepth + 3) = zValues.m128_f32[0];
+                *(pixels + 3) = pixel3;
+              }
+            }
+
+            weights0 = _mm_sub_ps(weights0, xStep0);
+            weights1 = _mm_sub_ps(weights1, xStep1);
+            weights2 = _mm_sub_ps(weights2, xStep2);
+          }
+
+          weightInit0 = _mm_sub_ps(weightInit0, yStep0);
+          weightInit1 = _mm_sub_ps(weightInit1, yStep1);
+          weightInit2 = _mm_sub_ps(weightInit2, yStep2);
+        }
+      }
     }
-
-    weightInit = _mm_sub_ps(weightInit, yStep);
-    pixels += remainingStride;
-    pixelDepth += remainingStride;
   }
 }
 

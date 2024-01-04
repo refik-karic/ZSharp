@@ -154,12 +154,12 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
   const size_t* indexClipData = indexBuffer.GetClipData(0);
   const size_t end = indexBuffer.GetClipLength();
   
+#if 0
   for (size_t i = 0; i < end; i += TRI_VERTS) {
     const float* v1 = vertexClipData + (indexClipData[i] * vertexStride);
     const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
     const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
 
-#if 0
     const float* v1Attr = v1 + 4;
     const float* v2Attr = v2 + 4;
     const float* v3Attr = v3 + 4;
@@ -241,10 +241,10 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
         }
       }
     }
-#else
-    Unaligned_FlatShadeRGB(v1, v2, v3, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
-#endif
   }
+#else
+  Unaligned_FlatShadeRGB(vertexClipData, indexClipData, vertexStride, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
+#endif
 }
 
 void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const Texture* texture) {

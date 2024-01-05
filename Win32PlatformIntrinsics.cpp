@@ -645,6 +645,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
         __m256 oneValue = _mm256_set1_ps(1.f);
+        __m256i initialColor = _mm256_set1_epi32(0xFF00);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m256 weights0 = weightInit0;
@@ -683,103 +684,51 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
               __m256i gValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
               __m256i bValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
 
-              // TODO: Pack the RGB channels into vector registers, shift them, mask with the existing color, and store them back.
-
-              uint32 pixel0 = 0xFF00;
-              uint32 pixel1 = 0xFF00;
-              uint32 pixel2 = 0xFF00;
-              uint32 pixel3 = 0xFF00;
-              uint32 pixel4 = 0xFF00;
-              uint32 pixel5 = 0xFF00;
-              uint32 pixel6 = 0xFF00;
-              uint32 pixel7 = 0xFF00;
-
-              pixel0 |= rValues.m256i_i32[7];
-              pixel0 <<= 8;
-              pixel0 |= gValues.m256i_i32[7];
-              pixel0 <<= 8;
-              pixel0 |= bValues.m256i_i32[7];
-
-              pixel1 |= rValues.m256i_i32[6];
-              pixel1 <<= 8;
-              pixel1 |= gValues.m256i_i32[6];
-              pixel1 <<= 8;
-              pixel1 |= bValues.m256i_i32[6];
-
-              pixel2 |= rValues.m256i_i32[5];
-              pixel2 <<= 8;
-              pixel2 |= gValues.m256i_i32[5];
-              pixel2 <<= 8;
-              pixel2 |= bValues.m256i_i32[5];
-
-              pixel3 |= rValues.m256i_i32[4];
-              pixel3 <<= 8;
-              pixel3 |= gValues.m256i_i32[4];
-              pixel3 <<= 8;
-              pixel3 |= bValues.m256i_i32[4];
-
-              pixel4 |= rValues.m256i_i32[3];
-              pixel4 <<= 8;
-              pixel4 |= gValues.m256i_i32[3];
-              pixel4 <<= 8;
-              pixel4 |= bValues.m256i_i32[3];
-
-              pixel5 |= rValues.m256i_i32[2];
-              pixel5 <<= 8;
-              pixel5 |= gValues.m256i_i32[2];
-              pixel5 <<= 8;
-              pixel5 |= bValues.m256i_i32[2];
-
-              pixel6 |= rValues.m256i_i32[1];
-              pixel6 <<= 8;
-              pixel6 |= gValues.m256i_i32[1];
-              pixel6 <<= 8;
-              pixel6 |= bValues.m256i_i32[1];
-
-              pixel7 |= rValues.m256i_i32[0];
-              pixel7 <<= 8;
-              pixel7 |= gValues.m256i_i32[0];
-              pixel7 <<= 8;
-              pixel7 |= bValues.m256i_i32[0];
+              __m256i finalColor = initialColor;
+              finalColor = _mm256_or_epi32(finalColor, rValues);
+              finalColor = _mm256_slli_epi32(finalColor, 0x08);
+              finalColor = _mm256_or_epi32(finalColor, gValues);
+              finalColor = _mm256_slli_epi32(finalColor, 0x08);
+              finalColor = _mm256_or_epi32(finalColor, bValues);
 
               if (((combinedMask & 0x80) == 0) && ((*(pixelDepth + 0)) > zValues.m256_f32[7])) {
                 *(pixelDepth + 0) = zValues.m256_f32[7];
-                *(pixels + 0) = pixel0;
+                *(pixels + 0) = finalColor.m256i_u32[7];
               }
 
               if (((combinedMask & 0x40) == 0) && ((*(pixelDepth + 1)) > zValues.m256_f32[6])) {
                 *(pixelDepth + 1) = zValues.m256_f32[6];
-                *(pixels + 1) = pixel1;
+                *(pixels + 1) = finalColor.m256i_u32[6];
               }
 
               if (((combinedMask & 0x20) == 0) && ((*(pixelDepth + 2)) > zValues.m256_f32[5])) {
                 *(pixelDepth + 2) = zValues.m256_f32[5];
-                *(pixels + 2) = pixel2;
+                *(pixels + 2) = finalColor.m256i_u32[5];
               }
 
               if (((combinedMask & 0x10) == 0) && ((*(pixelDepth + 3)) > zValues.m256_f32[4])) {
                 *(pixelDepth + 3) = zValues.m256_f32[4];
-                *(pixels + 3) = pixel3;
+                *(pixels + 3) = finalColor.m256i_u32[4];
               }
 
               if (((combinedMask & 0x08) == 0) && ((*(pixelDepth + 4)) > zValues.m256_f32[3])) {
                 *(pixelDepth + 4) = zValues.m256_f32[3];
-                *(pixels + 4) = pixel4;
+                *(pixels + 4) = finalColor.m256i_u32[3];
               }
 
               if (((combinedMask & 0x04) == 0) && ((*(pixelDepth + 5)) > zValues.m256_f32[2])) {
                 *(pixelDepth + 5) = zValues.m256_f32[2];
-                *(pixels + 5) = pixel5;
+                *(pixels + 5) = finalColor.m256i_u32[2];
               }
 
               if (((combinedMask & 0x02) == 0) && ((*(pixelDepth + 6)) > zValues.m256_f32[1])) {
                 *(pixelDepth + 6) = zValues.m256_f32[1];
-                *(pixels + 6) = pixel6;
+                *(pixels + 6) = finalColor.m256i_u32[1];
               }
 
               if (((combinedMask & 0x01) == 0) && ((*(pixelDepth + 7)) > zValues.m256_f32[0])) {
                 *(pixelDepth + 7) = zValues.m256_f32[0];
-                *(pixels + 7) = pixel7;
+                *(pixels + 7) = finalColor.m256i_u32[0];
               }
 
             }
@@ -841,6 +790,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         xStep2 = _mm_mul_ps(stepMultiplier, xStep2);
 
         __m128 oneValue = _mm_set_ps1(1.f);
+        __m128i initialColor = _mm_set1_epi32(0xFF00);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m128 weights0 = weightInit0;
@@ -879,53 +829,31 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
               __m128i gValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
               __m128i bValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
 
-              uint32 pixel0 = 0xFF00;
-              uint32 pixel1 = 0xFF00;
-              uint32 pixel2 = 0xFF00;
-              uint32 pixel3 = 0xFF00;
-
-              pixel0 |= rValues.m128i_i32[3];
-              pixel0 <<= 8;
-              pixel0 |= gValues.m128i_i32[3];
-              pixel0 <<= 8;
-              pixel0 |= bValues.m128i_i32[3];
-
-              pixel1 |= rValues.m128i_i32[2];
-              pixel1 <<= 8;
-              pixel1 |= gValues.m128i_i32[2];
-              pixel1 <<= 8;
-              pixel1 |= bValues.m128i_i32[2];
-
-              pixel2 |= rValues.m128i_i32[1];
-              pixel2 <<= 8;
-              pixel2 |= gValues.m128i_i32[1];
-              pixel2 <<= 8;
-              pixel2 |= bValues.m128i_i32[1];
-
-              pixel3 |= rValues.m128i_i32[0];
-              pixel3 <<= 8;
-              pixel3 |= gValues.m128i_i32[0];
-              pixel3 <<= 8;
-              pixel3 |= bValues.m128i_i32[0];
+              __m128i finalColor = initialColor;
+              finalColor = _mm_or_epi32(finalColor, rValues);
+              finalColor = _mm_slli_epi32(finalColor, 0x08);
+              finalColor = _mm_or_epi32(finalColor, gValues);
+              finalColor = _mm_slli_epi32(finalColor, 0x08);
+              finalColor = _mm_or_epi32(finalColor, bValues);
 
               if (((combinedMask & 0x08) == 0) && ((*(pixelDepth + 0)) > zValues.m128_f32[3])) {
                 *(pixelDepth + 0) = zValues.m128_f32[3];
-                *(pixels + 0) = pixel0;
+                *(pixels + 0) = finalColor.m128i_u32[3];
               }
 
               if (((combinedMask & 0x04) == 0) && ((*(pixelDepth + 1)) > zValues.m128_f32[2])) {
                 *(pixelDepth + 1) = zValues.m128_f32[2];
-                *(pixels + 1) = pixel1;
+                *(pixels + 1) = finalColor.m128i_u32[2];
               }
 
               if (((combinedMask & 0x02) == 0) && ((*(pixelDepth + 2)) > zValues.m128_f32[1])) {
                 *(pixelDepth + 2) = zValues.m128_f32[1];
-                *(pixels + 2) = pixel2;
+                *(pixels + 2) = finalColor.m128i_u32[1];
               }
 
               if (((combinedMask & 0x01) == 0) && ((*(pixelDepth + 3)) > zValues.m128_f32[0])) {
                 *(pixelDepth + 3) = zValues.m128_f32[0];
-                *(pixels + 3) = pixel3;
+                *(pixels + 3) = finalColor.m128i_u32[0];
               }
             }
 

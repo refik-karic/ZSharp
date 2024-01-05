@@ -646,6 +646,8 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
         __m256 oneValue = _mm256_set1_ps(1.f);
         __m256i initialColor = _mm256_set1_epi32(0xFF00);
+        __m256i permuteReverse = _mm256_set_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+        __m256i andMask = _mm256_set1_epi32(0x80000000);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m256 weights0 = weightInit0;
@@ -661,12 +663,20 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
             // If all mask bits are set then none of these pixels are inside the triangle.
             if ((combinedMask & 0xFF) != 0xFF) {
+              __m256i pixelVec = _mm256_load_si256((__m256i*)pixels);
+              __m256 depthVec = _mm256_load_ps(pixelDepth);
+              pixelVec = _mm256_permutevar8x32_epi32(pixelVec, permuteReverse);
+              depthVec = _mm256_permutevar8x32_ps(depthVec, permuteReverse);
+
               __m256 weightedVerts0 = _mm256_mul_ps(weights0, invVert0);
               __m256 weightedVerts1 = _mm256_mul_ps(weights1, invVert1);
               __m256 weightedVerts2 = _mm256_mul_ps(weights2, invVert2);
 
               __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m256 invZValues = _mm256_div_ps(oneValue, zValues);
+
+              __m256 depthMask = _mm256_cmp_ps(depthVec, zValues, _CMP_LT_OQ);
+              int32 finalDepthMask = _mm256_movemask_ps(depthMask);
 
               __m256 weightedAttr00 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr00), invZValues);
               __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr01), invZValues);
@@ -691,46 +701,24 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
               finalColor = _mm256_slli_epi32(finalColor, 0x08);
               finalColor = _mm256_or_epi32(finalColor, bValues);
 
-              if (((combinedMask & 0x80) == 0) && ((*(pixelDepth + 0)) > zValues.m256_f32[7])) {
-                *(pixelDepth + 0) = zValues.m256_f32[7];
-                *(pixels + 0) = finalColor.m256i_u32[7];
-              }
+              int32 finalCombinedMask = combinedMask | finalDepthMask;
 
-              if (((combinedMask & 0x40) == 0) && ((*(pixelDepth + 1)) > zValues.m256_f32[6])) {
-                *(pixelDepth + 1) = zValues.m256_f32[6];
-                *(pixels + 1) = finalColor.m256i_u32[6];
-              }
+              __m256 variableBlendMask = _mm256_castsi256_ps(
+                _mm256_and_epi32(_mm256_set_epi32(
+                (finalCombinedMask << 24), (finalCombinedMask << 25),
+                (finalCombinedMask << 26), (finalCombinedMask << 27),
+                (finalCombinedMask << 28), (finalCombinedMask << 29),
+                (finalCombinedMask << 30), (finalCombinedMask << 31)), 
+                  andMask));
 
-              if (((combinedMask & 0x20) == 0) && ((*(pixelDepth + 2)) > zValues.m256_f32[5])) {
-                *(pixelDepth + 2) = zValues.m256_f32[5];
-                *(pixels + 2) = finalColor.m256i_u32[5];
-              }
+              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(finalColor), _mm256_castsi256_ps(pixelVec), variableBlendMask));
+              __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, variableBlendMask);
 
-              if (((combinedMask & 0x10) == 0) && ((*(pixelDepth + 3)) > zValues.m256_f32[4])) {
-                *(pixelDepth + 3) = zValues.m256_f32[4];
-                *(pixels + 3) = finalColor.m256i_u32[4];
-              }
+              writebackColor = _mm256_permutevar8x32_epi32(writebackColor, permuteReverse);
+              writebackDepth = _mm256_permutevar8x32_ps(writebackDepth, permuteReverse);
 
-              if (((combinedMask & 0x08) == 0) && ((*(pixelDepth + 4)) > zValues.m256_f32[3])) {
-                *(pixelDepth + 4) = zValues.m256_f32[3];
-                *(pixels + 4) = finalColor.m256i_u32[3];
-              }
-
-              if (((combinedMask & 0x04) == 0) && ((*(pixelDepth + 5)) > zValues.m256_f32[2])) {
-                *(pixelDepth + 5) = zValues.m256_f32[2];
-                *(pixels + 5) = finalColor.m256i_u32[2];
-              }
-
-              if (((combinedMask & 0x02) == 0) && ((*(pixelDepth + 6)) > zValues.m256_f32[1])) {
-                *(pixelDepth + 6) = zValues.m256_f32[1];
-                *(pixels + 6) = finalColor.m256i_u32[1];
-              }
-
-              if (((combinedMask & 0x01) == 0) && ((*(pixelDepth + 7)) > zValues.m256_f32[0])) {
-                *(pixelDepth + 7) = zValues.m256_f32[0];
-                *(pixels + 7) = finalColor.m256i_u32[0];
-              }
-
+              _mm256_store_si256((__m256i*)pixels, writebackColor);
+              _mm256_store_ps(pixelDepth, writebackDepth);
             }
 
             weights0 = _mm256_sub_ps(weights0, xStep0);
@@ -791,6 +779,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
         __m128 oneValue = _mm_set_ps1(1.f);
         __m128i initialColor = _mm_set1_epi32(0xFF00);
+        __m128i andMask = _mm_set1_epi32(0x80000000);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m128 weights0 = weightInit0;
@@ -806,12 +795,21 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
             // If all mask bits are set then none of these pixels are inside the triangle.
             if ((combinedMask & 0x0F) != 0x0F) {
+              // Our 4-wide alignment doesn't match at the moment. Possibly revisit in the future.
+              __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
+              __m128 depthVec = _mm_loadu_ps(pixelDepth);
+              pixelVec = _mm_shuffle_epi32(pixelVec, 0b00011011);
+              depthVec = _mm_shuffle_ps(depthVec, depthVec, 0b00011011);
+
               __m128 weightedVerts0 = _mm_mul_ps(weights0, invVert0);
               __m128 weightedVerts1 = _mm_mul_ps(weights1, invVert1);
               __m128 weightedVerts2 = _mm_mul_ps(weights2, invVert2);
 
               __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m128 invZValues = _mm_div_ps(oneValue, zValues);
+
+              __m128 depthMask = _mm_cmp_ps(depthVec, zValues, _CMP_LT_OQ);
+              int32 finalDepthMask = _mm_movemask_ps(depthMask);
 
               __m128 weightedAttr00 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr00), invZValues);
               __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr01), invZValues);
@@ -836,25 +834,22 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
               finalColor = _mm_slli_epi32(finalColor, 0x08);
               finalColor = _mm_or_epi32(finalColor, bValues);
 
-              if (((combinedMask & 0x08) == 0) && ((*(pixelDepth + 0)) > zValues.m128_f32[3])) {
-                *(pixelDepth + 0) = zValues.m128_f32[3];
-                *(pixels + 0) = finalColor.m128i_u32[3];
-              }
+              int32 finalCombinedMask = combinedMask | finalDepthMask;
 
-              if (((combinedMask & 0x04) == 0) && ((*(pixelDepth + 1)) > zValues.m128_f32[2])) {
-                *(pixelDepth + 1) = zValues.m128_f32[2];
-                *(pixels + 1) = finalColor.m128i_u32[2];
-              }
+              __m128 variableBlendMask = _mm_castsi128_ps(
+                _mm_and_epi32(_mm_set_epi32(
+                  (finalCombinedMask << 28), (finalCombinedMask << 29),
+                  (finalCombinedMask << 30), (finalCombinedMask << 31)),
+                  andMask));
 
-              if (((combinedMask & 0x02) == 0) && ((*(pixelDepth + 2)) > zValues.m128_f32[1])) {
-                *(pixelDepth + 2) = zValues.m128_f32[1];
-                *(pixels + 2) = finalColor.m128i_u32[1];
-              }
+              __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(finalColor), _mm_castsi128_ps(pixelVec), variableBlendMask));
+              __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, variableBlendMask);
 
-              if (((combinedMask & 0x01) == 0) && ((*(pixelDepth + 3)) > zValues.m128_f32[0])) {
-                *(pixelDepth + 3) = zValues.m128_f32[0];
-                *(pixels + 3) = finalColor.m128i_u32[0];
-              }
+              writebackColor = _mm_shuffle_epi32(writebackColor, 0b00011011);
+              writebackDepth = _mm_shuffle_ps(writebackDepth, writebackDepth, 0b00011011);
+
+              _mm_storeu_si128((__m128i*)pixels, writebackColor);
+              _mm_storeu_ps(pixelDepth, writebackDepth);
             }
 
             weights0 = _mm_sub_ps(weights0, xStep0);

@@ -633,7 +633,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         __m256 yStep1 = _mm256_set1_ps(v1[0] - v3[0]);
         __m256 yStep2 = _mm256_set1_ps(v2[0] - v1[0]);
 
-        __m256 initMultiplier = _mm256_set_ps(0.f, 1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f);
+        __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
         __m256 stepMultiplier = _mm256_set1_ps(8.f);
 
         weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
@@ -646,7 +646,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
         __m256 oneValue = _mm256_set1_ps(1.f);
         __m256i initialColor = _mm256_set1_epi32(0xFF00);
-        __m256i permuteReverse = _mm256_set_epi32(0, 1, 2, 3, 4, 5, 6, 7);
         __m256i andMask = _mm256_set1_epi32(0x80000000);
 
         for (int32 h = minY; h < maxY; ++h) {
@@ -665,8 +664,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
             if ((combinedMask & 0xFF) != 0xFF) {
               __m256i pixelVec = _mm256_load_si256((__m256i*)pixels);
               __m256 depthVec = _mm256_load_ps(pixelDepth);
-              pixelVec = _mm256_permutevar8x32_epi32(pixelVec, permuteReverse);
-              depthVec = _mm256_permutevar8x32_ps(depthVec, permuteReverse);
 
               __m256 weightedVerts0 = _mm256_mul_ps(weights0, invVert0);
               __m256 weightedVerts1 = _mm256_mul_ps(weights1, invVert1);
@@ -713,9 +710,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
               __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(finalColor), _mm256_castsi256_ps(pixelVec), variableBlendMask));
               __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, variableBlendMask);
-
-              writebackColor = _mm256_permutevar8x32_epi32(writebackColor, permuteReverse);
-              writebackDepth = _mm256_permutevar8x32_ps(writebackDepth, permuteReverse);
 
               _mm256_store_si256((__m256i*)pixels, writebackColor);
               _mm256_store_ps(pixelDepth, writebackDepth);
@@ -766,7 +760,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         __m128 yStep1 = _mm_set_ps1(v1[0] - v3[0]);
         __m128 yStep2 = _mm_set_ps1(v2[0] - v1[0]);
 
-        __m128 initMultiplier = _mm_set_ps(0.f, 1.f, 2.f, 3.f);
+        __m128 initMultiplier = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
         __m128 stepMultiplier = _mm_set_ps1(4.f);
 
         weightInit0 = _mm_sub_ps(weightInit0, _mm_mul_ps(initMultiplier, xStep0));
@@ -798,8 +792,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
               // Our 4-wide alignment doesn't match at the moment. Possibly revisit in the future.
               __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
               __m128 depthVec = _mm_loadu_ps(pixelDepth);
-              pixelVec = _mm_shuffle_epi32(pixelVec, 0b00011011);
-              depthVec = _mm_shuffle_ps(depthVec, depthVec, 0b00011011);
 
               __m128 weightedVerts0 = _mm_mul_ps(weights0, invVert0);
               __m128 weightedVerts1 = _mm_mul_ps(weights1, invVert1);
@@ -844,9 +836,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
               __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(finalColor), _mm_castsi128_ps(pixelVec), variableBlendMask));
               __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, variableBlendMask);
-
-              writebackColor = _mm_shuffle_epi32(writebackColor, 0b00011011);
-              writebackDepth = _mm_shuffle_ps(writebackDepth, writebackDepth, 0b00011011);
 
               _mm_storeu_si128((__m128i*)pixels, writebackColor);
               _mm_storeu_ps(pixelDepth, writebackDepth);

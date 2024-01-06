@@ -44,4 +44,20 @@ bool Texture::IsAssigned() const {
   return mData != nullptr;
 }
 
+size_t Texture::Width() const {
+  return mWidth;
+}
+
+size_t Texture::Height() const {
+  return mHeight;
+}
+
+size_t Texture::Channels() const {
+  return mNumChannels;
+}
+
+uint8* Texture::Data() const {
+  return mData;
+}
+
 }

@@ -54,6 +54,14 @@ class Texture final {
     return ColorFromRGB(R, G, B);
   }
 
+  size_t Width() const;
+
+  size_t Height() const;
+
+  size_t Channels() const;
+
+  uint8* Data() const;
+
   private:
   size_t mNumChannels = 0;
   size_t mWidth = 0;

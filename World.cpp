@@ -10,7 +10,7 @@
 
 #include <cstring>
 
-#define DEBUG_FLAT_SHADE_RGB 1
+#define DEBUG_FLAT_SHADE_RGB 0
 #define PHYSICS_ENABLE 1
 #define PHYSICS_DISABLE_FORCES 0
 

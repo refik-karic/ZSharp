@@ -61,7 +61,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
 void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const size_t stride, const size_t end,
   const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer);
 
-void Unaligned_FlatShadeUVs(const float* v1, const float* v2, const float* v3,
+void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const size_t stride, const size_t end,
   const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture);
 
 }

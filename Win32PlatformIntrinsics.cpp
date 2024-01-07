@@ -1303,11 +1303,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
         // We must still multiply the stride and channels separately because of rounding error.
         size_t texWidth = texture->Width();
         size_t texHeight = texture->Height();
-        size_t texChannels = texture->Channels();
-        size_t texStride = texWidth * texChannels;
 
-        __m128 yStride = _mm_set_ps1((float)(texStride));
-        __m128 xChannels = _mm_set_ps1((float)(texChannels));
+        __m128 yStride = _mm_set_ps1((float)(texHeight));
 
         __m128 maxUValue = _mm_set_ps1((float)(texWidth - 1));
         __m128 maxVValue = _mm_set_ps1((float)(texHeight - 1));
@@ -1350,12 +1347,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
 
         __m128 minValue = _mm_setzero_ps();
         __m128 oneValue = _mm_set_ps1(1.f);
-        __m128i oneValueInt = _mm_set1_epi32(1);
-        __m128i twoValueInt = _mm_set1_epi32(2);
         __m128i andMask = _mm_set1_epi32(0x80000000);
-        __m128i initialColor = _mm_set1_epi32(0xFF00);
 
-        uint8* textureData = texture->Data();
+        uint32* textureData = (uint32*)texture->Data();
 
         for (int32 h = minY; h < maxY; ++h) {
           __m128 weights0 = weightInit0;
@@ -1404,29 +1398,16 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
 
               // We must round prior to multiplying the stride and channels.
               // If this isn't done, we may jump to a completely different set of pixels because of rounding.
-              uValues = _mm_round_ps(uValues, _MM_ROUND_MODE_DOWN);
               vValues = _mm_round_ps(vValues, _MM_ROUND_MODE_DOWN);
 
-              uValues = _mm_mul_ps(uValues, xChannels);
               vValues = _mm_mul_ps(vValues, yStride);
 
               __m128i uIntValues = _mm_cvtps_epi32(uValues);
               __m128i vIntValues = _mm_cvtps_epi32(vValues);
 
-              __m128i bValues = _mm_add_epi32(vIntValues, uIntValues);
-              __m128i gValues = _mm_add_epi32(bValues, oneValueInt);
-              __m128i rValues = _mm_add_epi32(bValues, twoValueInt);
+              __m128i colorValues = _mm_add_epi32(vIntValues, uIntValues);
 
-              __m128i loadedR = _mm_set_epi32(textureData[rValues.m128i_u32[3]], textureData[rValues.m128i_u32[2]], textureData[rValues.m128i_u32[1]], textureData[rValues.m128i_u32[0]]);
-              __m128i loadedG = _mm_set_epi32(textureData[gValues.m128i_u32[3]], textureData[gValues.m128i_u32[2]], textureData[gValues.m128i_u32[1]], textureData[gValues.m128i_u32[0]]);
-              __m128i loadedB = _mm_set_epi32(textureData[bValues.m128i_u32[3]], textureData[bValues.m128i_u32[2]], textureData[bValues.m128i_u32[1]], textureData[bValues.m128i_u32[0]]);
-
-              __m128i finalColor = initialColor;
-              finalColor = _mm_or_epi32(finalColor, loadedR);
-              finalColor = _mm_slli_epi32(finalColor, 0x08);
-              finalColor = _mm_or_epi32(finalColor, loadedG);
-              finalColor = _mm_slli_epi32(finalColor, 0x08);
-              finalColor = _mm_or_epi32(finalColor, loadedB);
+              __m128i loadedColors = _mm_set_epi32(textureData[colorValues.m128i_u32[3]], textureData[colorValues.m128i_u32[2]], textureData[colorValues.m128i_u32[1]], textureData[colorValues.m128i_u32[0]]);
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 
@@ -1436,7 +1417,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
                   (finalCombinedMask << 30), (finalCombinedMask << 31)),
                   andMask));
 
-              __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(finalColor), _mm_castsi128_ps(pixelVec), variableBlendMask));
+              __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(loadedColors), _mm_castsi128_ps(pixelVec), variableBlendMask));
               __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, variableBlendMask);
 
               _mm_storeu_si128((__m128i*)pixels, writebackColor);

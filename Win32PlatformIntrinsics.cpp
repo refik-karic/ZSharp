@@ -1067,11 +1067,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
         // We must still multiply the stride and channels separately because of rounding error.
         size_t texWidth = texture->Width();
         size_t texHeight = texture->Height();
-        size_t texChannels = texture->Channels();
-        size_t texStride = texWidth * texChannels;
 
-        __m256 yStride = _mm256_set1_ps((float)(texStride));
-        __m256 xChannels = _mm256_set1_ps((float)(texChannels));
+        __m256 yStride = _mm256_set1_ps((float)(texHeight));
 
         __m256 maxUValue = _mm256_set1_ps((float)(texWidth - 1));
         __m256 maxVValue = _mm256_set1_ps((float)(texHeight - 1));
@@ -1114,12 +1111,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
 
         __m256 minValue = _mm256_setzero_ps();
         __m256 oneValue = _mm256_set1_ps(1.f);
-        __m256i oneValueInt = _mm256_set1_epi32(1);
-        __m256i twoValueInt = _mm256_set1_epi32(2);
         __m256i andMask = _mm256_set1_epi32(0x80000000);
-        __m256i initialColor = _mm256_set1_epi32(0xFF00);
 
-        uint8* textureData = texture->Data();
+        uint32* textureData = (uint32*)texture->Data();
 
         for (int32 h = minY; h < maxY; ++h) {
           __m256 weights0 = weightInit0;
@@ -1167,32 +1161,20 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
 
               // We must round prior to multiplying the stride and channels.
               // If this isn't done, we may jump to a completely different set of pixels because of rounding.
-              uValues = _mm256_round_ps(uValues, _MM_ROUND_MODE_DOWN);
               vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);
 
-              uValues = _mm256_mul_ps(uValues, xChannels);
               vValues = _mm256_mul_ps(vValues, yStride);
 
               __m256i uIntValues = _mm256_cvtps_epi32(uValues);
               __m256i vIntValues = _mm256_cvtps_epi32(vValues);
 
-              __m256i bValues = _mm256_add_epi32(vIntValues, uIntValues);
-              __m256i gValues = _mm256_add_epi32(bValues, oneValueInt);
-              __m256i rValues = _mm256_add_epi32(bValues, twoValueInt);
+              __m256i colorValues = _mm256_add_epi32(vIntValues, uIntValues);
 
-              __m256i loadedR = _mm256_set_epi32(textureData[rValues.m256i_u32[7]], textureData[rValues.m256i_u32[6]], textureData[rValues.m256i_u32[5]], textureData[rValues.m256i_u32[4]],
-                textureData[rValues.m256i_u32[3]], textureData[rValues.m256i_u32[2]], textureData[rValues.m256i_u32[1]], textureData[rValues.m256i_u32[0]]);
-              __m256i loadedG = _mm256_set_epi32(textureData[gValues.m256i_u32[7]], textureData[gValues.m256i_u32[6]], textureData[gValues.m256i_u32[5]], textureData[gValues.m256i_u32[4]],
-                textureData[gValues.m256i_u32[3]], textureData[gValues.m256i_u32[2]], textureData[gValues.m256i_u32[1]], textureData[gValues.m256i_u32[0]]);
-              __m256i loadedB = _mm256_set_epi32(textureData[bValues.m256i_u32[7]], textureData[bValues.m256i_u32[6]], textureData[bValues.m256i_u32[5]], textureData[bValues.m256i_u32[4]],
-                textureData[bValues.m256i_u32[3]], textureData[bValues.m256i_u32[2]], textureData[bValues.m256i_u32[1]], textureData[bValues.m256i_u32[0]]);
-
-              __m256i finalColor = initialColor;
-              finalColor = _mm256_or_epi32(finalColor, loadedR);
-              finalColor = _mm256_slli_epi32(finalColor, 0x08);
-              finalColor = _mm256_or_epi32(finalColor, loadedG);
-              finalColor = _mm256_slli_epi32(finalColor, 0x08);
-              finalColor = _mm256_or_epi32(finalColor, loadedB);
+              // Note: we're assuming texture data is stored in ARGB format.
+              // If it isn't, we need to shuffle and handle alpha here as well.
+              // This can be handled outside of the render loop in the texture loading code.
+              __m256i loadedColors = _mm256_set_epi32(textureData[colorValues.m256i_u32[7]], textureData[colorValues.m256i_u32[6]], textureData[colorValues.m256i_u32[5]], textureData[colorValues.m256i_u32[4]],
+                textureData[colorValues.m256i_u32[3]], textureData[colorValues.m256i_u32[2]], textureData[colorValues.m256i_u32[1]], textureData[colorValues.m256i_u32[0]]);
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 
@@ -1204,7 +1186,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
                   (finalCombinedMask << 30), (finalCombinedMask << 31)),
                   andMask));
 
-              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(finalColor), _mm256_castsi256_ps(pixelVec), variableBlendMask));
+              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(loadedColors), _mm256_castsi256_ps(pixelVec), variableBlendMask));
               __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, variableBlendMask);
 
               _mm256_store_si256((__m256i*)pixels, writebackColor);

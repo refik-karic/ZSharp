@@ -1113,7 +1113,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
         __m256 oneValue = _mm256_set1_ps(1.f);
         __m256i andMask = _mm256_set1_epi32(0x80000000);
 
-        uint32* textureData = (uint32*)texture->Data();
+        int32* textureData = (int32*)texture->Data();
 
         for (int32 h = minY; h < maxY; ++h) {
           __m256 weights0 = weightInit0;
@@ -1173,8 +1173,11 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
               // Note: we're assuming texture data is stored in ARGB format.
               // If it isn't, we need to shuffle and handle alpha here as well.
               // This can be handled outside of the render loop in the texture loading code.
-              __m256i loadedColors = _mm256_set_epi32(textureData[colorValues.m256i_u32[7]], textureData[colorValues.m256i_u32[6]], textureData[colorValues.m256i_u32[5]], textureData[colorValues.m256i_u32[4]],
-                textureData[colorValues.m256i_u32[3]], textureData[colorValues.m256i_u32[2]], textureData[colorValues.m256i_u32[1]], textureData[colorValues.m256i_u32[0]]);
+
+              // NOTE: Gathers are faster in the general case except on some early HW that didn't optimize for it!
+              //  If we plan on optimizing for all cases, we will need to take this into account.
+              //  This memory read is by far the biggest bottleneck here.
+              __m256i loadedColors = _mm256_i32gather_epi32(textureData, colorValues, 4);
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 

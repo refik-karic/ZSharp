@@ -1001,6 +1001,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
       int32 maxX = intMax.m128i_i32[3];
       int32 maxY = intMax.m128i_i32[2];
 
+      float boundingBoxMin[2] = { (float)minX, (float)minY };
+
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
       //  2) For larger triangles we step SIMD width at a time
@@ -1012,7 +1014,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
         __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), invArea);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        float boundingBoxMin[2] = { (float)minX, (float)minY };
         __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
           BarycentricArea2D(v3, v1, boundingBoxMin),
           BarycentricArea2D(v1, v2, boundingBoxMin),
@@ -1085,7 +1086,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
         __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), vScaleFactor);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        float boundingBoxMin[2] = { (float)minX, (float)minY };
         __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
         __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
         __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
@@ -1112,6 +1112,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
         __m256 minValue = _mm256_setzero_ps();
         __m256 oneValue = _mm256_set1_ps(1.f);
         __m256i andMask = _mm256_set1_epi32(0x80000000);
+        __m256i blendMaskShift = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
 
         int32* textureData = (int32*)texture->Data();
 
@@ -1181,13 +1182,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 
-              __m256 variableBlendMask = _mm256_castsi256_ps(
-                _mm256_and_epi32(_mm256_set_epi32(
-                  (finalCombinedMask << 24), (finalCombinedMask << 25),
-                  (finalCombinedMask << 26), (finalCombinedMask << 27),
-                  (finalCombinedMask << 28), (finalCombinedMask << 29),
-                  (finalCombinedMask << 30), (finalCombinedMask << 31)),
-                  andMask));
+              __m256 variableBlendMask = _mm256_castsi256_ps(_mm256_sllv_epi32(_mm256_set1_epi32(finalCombinedMask), blendMaskShift));
 
               __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(loadedColors), _mm256_castsi256_ps(pixelVec), variableBlendMask));
               __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, variableBlendMask);

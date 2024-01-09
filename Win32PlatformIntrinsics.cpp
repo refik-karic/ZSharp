@@ -521,10 +521,12 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
       int32 maxX = intMax.m128i_i32[3];
       int32 maxY = intMax.m128i_i32[2];
 
+      float boundingBoxMin[2] = { (float)minX, (float)minY };
+
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
       //  2) For larger triangles we step SIMD width at a time
-      if ((maxX - minX) < 16) {
+      if ((maxX - minX) < 8) {
         __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
         __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
 
@@ -536,7 +538,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), scaleFactor);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        float boundingBoxMin[2] = { (float)minX, (float)minY };
         __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
           BarycentricArea2D(v3, v1, boundingBoxMin),
           BarycentricArea2D(v1, v2, boundingBoxMin),
@@ -620,7 +621,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         __m256 invAttr22 = _mm256_mul_ps(_mm256_set1_ps(v3[6]), scaleFactor);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        float boundingBoxMin[2] = { (float)minX, (float)minY };
         __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
         __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
         __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
@@ -646,7 +646,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
         __m256 oneValue = _mm256_set1_ps(1.f);
         __m256i initialColor = _mm256_set1_epi32(0xFF00);
-        __m256i andMask = _mm256_set1_epi32(0x80000000);
+        __m256i blendMaskShift = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m256 weights0 = weightInit0;
@@ -700,13 +700,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 
-              __m256 variableBlendMask = _mm256_castsi256_ps(
-                _mm256_and_epi32(_mm256_set_epi32(
-                  (finalCombinedMask << 24), (finalCombinedMask << 25),
-                  (finalCombinedMask << 26), (finalCombinedMask << 27),
-                  (finalCombinedMask << 28), (finalCombinedMask << 29),
-                  (finalCombinedMask << 30), (finalCombinedMask << 31)),
-                  andMask));
+              __m256 variableBlendMask = _mm256_castsi256_ps(_mm256_sllv_epi32(_mm256_set1_epi32(finalCombinedMask), blendMaskShift));
 
               __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(finalColor), _mm256_castsi256_ps(pixelVec), variableBlendMask));
               __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, variableBlendMask);
@@ -762,7 +756,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
       //  2) For larger triangles we step SIMD width at a time
-      if ((maxX - minX) < 16) {
+      if ((maxX - minX) < 4) {
         __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
         __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
 
@@ -1006,7 +1000,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
       //  2) For larger triangles we step SIMD width at a time
-      if ((maxX - minX) < 16) {
+      if ((maxX - minX) < 8) {
         __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
 
         __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
@@ -1111,7 +1105,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
 
         __m256 minValue = _mm256_setzero_ps();
         __m256 oneValue = _mm256_set1_ps(1.f);
-        __m256i andMask = _mm256_set1_epi32(0x80000000);
         __m256i blendMaskShift = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
 
         int32* textureData = (int32*)texture->Data();
@@ -1238,7 +1231,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
       //  2) For larger triangles we step SIMD width at a time
-      if ((maxX - minX) < 16) {
+      if ((maxX - minX) < 4) {
         __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
 
         __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);

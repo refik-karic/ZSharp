@@ -495,33 +495,36 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
       const float* v2 = vertices + (indices[i + 1] * stride);
       const float* v3 = vertices + (indices[i + 2] * stride);
 
-      __m128 min = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-      __m128 min1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-      __m128 min2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+      float x0 = v1[0];
+      float x1 = v2[0];
+      float x2 = v3[0];
 
-      __m128 max = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-      __m128 max1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-      __m128 max2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+      float y0 = v1[1];
+      float y1 = v2[1];
+      float y2 = v3[1];
 
-      min = _mm_min_ps(_mm_min_ps(min, min1), min2);
-      max = _mm_max_ps(_mm_max_ps(max, max1), max2);
+      float fminX = Min(Min(x0, x1), x2);
+      float fminY = Min(Min(y0, y1), y2);
+      float fmaxX = Max(Max(x0, x1), x2);
+      float fmaxY = Max(Max(y0, y1), y2);
 
-      min = _mm_floor_ps(min);
-      max = _mm_ceil_ps(max);
+      fminX = floorf(fminX);
+      fminY = floorf(fminY);
 
-      min = _mm_max_ps(min, _mm_set_ps1(0.f));
-      min = _mm_min_ps(min, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
-      max = _mm_max_ps(max, _mm_set_ps1(0.f));
-      max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
+      fmaxX = ceilf(fmaxX);
+      fmaxY = ceilf(fmaxY);
 
-      __m128i intMin = _mm_cvtps_epi32(min);
-      __m128i intMax = _mm_cvtps_epi32(max);
-      int32 minX = intMin.m128i_i32[3];
-      int32 minY = intMin.m128i_i32[2];
-      int32 maxX = intMax.m128i_i32[3];
-      int32 maxY = intMax.m128i_i32[2];
+      fminX = Clamp(fminX, 0.f, maxWidth);
+      fmaxX = Clamp(fmaxX, 0.f, maxWidth);
+      fminY = Clamp(fminY, 0.f, maxHeight);
+      fmaxY = Clamp(fmaxY, 0.f, maxHeight);
 
-      float boundingBoxMin[2] = { (float)minX, (float)minY };
+      int32 minX = (int32)fminX;
+      int32 maxX = (int32)fmaxX;
+      int32 minY = (int32)fminY;
+      int32 maxY = (int32)fmaxY;
+
+      float boundingBoxMin[2] = { fminX, fminY };
 
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
@@ -727,31 +730,36 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
       const float* v2 = vertices + (indices[i + 1] * stride);
       const float* v3 = vertices + (indices[i + 2] * stride);
 
-      __m128 min = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-      __m128 min1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-      __m128 min2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+      float x0 = v1[0];
+      float x1 = v2[0];
+      float x2 = v3[0];
 
-      __m128 max = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-      __m128 max1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-      __m128 max2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+      float y0 = v1[1];
+      float y1 = v2[1];
+      float y2 = v3[1];
 
-      min = _mm_min_ps(_mm_min_ps(min, min1), min2);
-      max = _mm_max_ps(_mm_max_ps(max, max1), max2);
+      float fminX = Min(Min(x0, x1), x2);
+      float fminY = Min(Min(y0, y1), y2);
+      float fmaxX = Max(Max(x0, x1), x2);
+      float fmaxY = Max(Max(y0, y1), y2);
 
-      min = _mm_floor_ps(min);
-      max = _mm_ceil_ps(max);
+      fminX = floorf(fminX);
+      fminY = floorf(fminY);
 
-      min = _mm_max_ps(min, _mm_set_ps1(0.f));
-      min = _mm_min_ps(min, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
-      max = _mm_max_ps(max, _mm_set_ps1(0.f));
-      max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
+      fmaxX = ceilf(fmaxX);
+      fmaxY = ceilf(fmaxY);
 
-      __m128i intMin = _mm_cvtps_epi32(min);
-      __m128i intMax = _mm_cvtps_epi32(max);
-      int32 minX = intMin.m128i_i32[3];
-      int32 minY = intMin.m128i_i32[2];
-      int32 maxX = intMax.m128i_i32[3];
-      int32 maxY = intMax.m128i_i32[2];
+      fminX = Clamp(fminX, 0.f, maxWidth);
+      fmaxX = Clamp(fmaxX, 0.f, maxWidth);
+      fminY = Clamp(fminY, 0.f, maxHeight);
+      fmaxY = Clamp(fmaxY, 0.f, maxHeight);
+
+      int32 minX = (int32)fminX;
+      int32 maxX = (int32)fmaxX;
+      int32 minY = (int32)fminY;
+      int32 maxY = (int32)fmaxY;
+
+      float boundingBoxMin[2] = { fminX, fminY };
 
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
@@ -969,33 +977,36 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
       const float* v2 = vertices + (indices[i + 1] * stride);
       const float* v3 = vertices + (indices[i + 2] * stride);
 
-      __m128 min = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-      __m128 min1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-      __m128 min2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+      float x0 = v1[0];
+      float x1 = v2[0];
+      float x2 = v3[0];
 
-      __m128 max = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-      __m128 max1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-      __m128 max2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+      float y0 = v1[1];
+      float y1 = v2[1];
+      float y2 = v3[1];
 
-      min = _mm_min_ps(_mm_min_ps(min, min1), min2);
-      max = _mm_max_ps(_mm_max_ps(max, max1), max2);
+      float fminX = Min(Min(x0, x1), x2);
+      float fminY = Min(Min(y0, y1), y2);
+      float fmaxX = Max(Max(x0, x1), x2);
+      float fmaxY = Max(Max(y0, y1), y2);
 
-      min = _mm_floor_ps(min);
-      max = _mm_ceil_ps(max);
+      fminX = floorf(fminX);
+      fminY = floorf(fminY);
 
-      min = _mm_max_ps(min, _mm_set_ps1(0.f));
-      min = _mm_min_ps(min, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
-      max = _mm_max_ps(max, _mm_set_ps1(0.f));
-      max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
+      fmaxX = ceilf(fmaxX);
+      fmaxY = ceilf(fmaxY);
 
-      __m128i intMin = _mm_cvtps_epi32(min);
-      __m128i intMax = _mm_cvtps_epi32(max);
-      int32 minX = intMin.m128i_i32[3];
-      int32 minY = intMin.m128i_i32[2];
-      int32 maxX = intMax.m128i_i32[3];
-      int32 maxY = intMax.m128i_i32[2];
+      fminX = Clamp(fminX, 0.f, maxWidth);
+      fmaxX = Clamp(fmaxX, 0.f, maxWidth);
+      fminY = Clamp(fminY, 0.f, maxHeight);
+      fmaxY = Clamp(fmaxY, 0.f, maxHeight);
 
-      float boundingBoxMin[2] = { (float)minX, (float)minY };
+      int32 minX = (int32)fminX;
+      int32 maxX = (int32)fmaxX;
+      int32 minY = (int32)fminY;
+      int32 maxY = (int32)fmaxY;
+
+      float boundingBoxMin[2] = { fminX, fminY };
 
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
@@ -1202,31 +1213,36 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
       const float* v2 = vertices + (indices[i + 1] * stride);
       const float* v3 = vertices + (indices[i + 2] * stride);
 
-      __m128 min = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-      __m128 min1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-      __m128 min2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+      float x0 = v1[0];
+      float x1 = v2[0];
+      float x2 = v3[0];
 
-      __m128 max = _mm_set_ps(v1[0], v1[1], 0.f, 0.f);
-      __m128 max1 = _mm_set_ps(v2[0], v2[1], 0.f, 0.f);
-      __m128 max2 = _mm_set_ps(v3[0], v3[1], 0.f, 0.f);
+      float y0 = v1[1];
+      float y1 = v2[1];
+      float y2 = v3[1];
 
-      min = _mm_min_ps(_mm_min_ps(min, min1), min2);
-      max = _mm_max_ps(_mm_max_ps(max, max1), max2);
+      float fminX = Min(Min(x0, x1), x2);
+      float fminY = Min(Min(y0, y1), y2);
+      float fmaxX = Max(Max(x0, x1), x2);
+      float fmaxY = Max(Max(y0, y1), y2);
 
-      min = _mm_floor_ps(min);
-      max = _mm_ceil_ps(max);
+      fminX = floorf(fminX);
+      fminY = floorf(fminY);
 
-      min = _mm_max_ps(min, _mm_set_ps1(0.f));
-      min = _mm_min_ps(min, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
-      max = _mm_max_ps(max, _mm_set_ps1(0.f));
-      max = _mm_min_ps(max, _mm_set_ps(maxWidth, maxHeight, 0.f, 0.f));
+      fmaxX = ceilf(fmaxX);
+      fmaxY = ceilf(fmaxY);
 
-      __m128i intMin = _mm_cvtps_epi32(min);
-      __m128i intMax = _mm_cvtps_epi32(max);
-      int32 minX = intMin.m128i_i32[3];
-      int32 minY = intMin.m128i_i32[2];
-      int32 maxX = intMax.m128i_i32[3];
-      int32 maxY = intMax.m128i_i32[2];
+      fminX = Clamp(fminX, 0.f, maxWidth);
+      fmaxX = Clamp(fmaxX, 0.f, maxWidth);
+      fminY = Clamp(fminY, 0.f, maxHeight);
+      fmaxY = Clamp(fmaxY, 0.f, maxHeight);
+
+      int32 minX = (int32)fminX;
+      int32 maxX = (int32)fmaxX;
+      int32 minY = (int32)fminY;
+      int32 maxY = (int32)fmaxY;
+
+      float boundingBoxMin[2] = { fminX, fminY };
 
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time

@@ -20,7 +20,7 @@
 namespace ZSharp {
 ConsoleVariable<int32> DevRenderMode("RenderMode", 1);
 
-ConsoleVariable<bool> VisualizeAABB("VizAABB", true);
+ConsoleVariable<bool> VisualizeAABB("VizAABB", false);
 
 Renderer::Renderer() {
 }

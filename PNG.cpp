@@ -3,8 +3,9 @@
 #include "ZAssert.h"
 #include "Common.h"
 #include "CommonMath.h"
-
+#include "ScopedTimer.h"
 #include "PlatformMemory.h"
+#include "PlatformIntrinsics.h"
 
 #include <cstring>
 
@@ -196,16 +197,10 @@ uint8* PNG::Decompress(ChannelOrder order) {
     case ChannelOrder::RGB: // Native order per spec.
       break;
     case ChannelOrder::BGR:
-      for (size_t y = 0; y < mHeight; ++y) {
-        for (size_t x = 0; x < mStride; x+=mChannels) {
-          const size_t redChannel = (y * mStride) + x;
-          const size_t blueChannel = (y * mStride) + x + 2;
-          uint8 blueValue = outputImage[blueChannel];
-          uint8 redValue = outputImage[redChannel];
-          outputImage[blueChannel] = redValue;
-          outputImage[redChannel] = blueValue;
-        }
-      }
+    {
+      NamedScopedTimer(RGBAToBGRA);
+      Unaligned_RGBAToBGRA((uint32*)outputImage, mWidth, mHeight);
+    }
       break;
   }
 

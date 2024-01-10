@@ -263,6 +263,33 @@ void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result) {
   _mm_store_ps(result + 12, _mm_add_ps(_mm_add_ps(_mm_add_ps(result12, result13), result14), result15));
 }
 
+void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
+  __m128i shuffleOrder = _mm_set_epi8(
+    15, 12, 13, 14,
+    11, 8, 9, 10,
+    7, 4, 5, 6,
+    3, 0, 1, 2);
+  
+  for (size_t h = 0; h < height; ++h) {
+    uint32* currentPixels = image + (h * width);
+
+    size_t w = 0;
+    for (; w < width; w += 4, currentPixels += 4) {
+      __m128i pixels = _mm_loadu_si128((__m128i*)(currentPixels));
+      pixels = _mm_shuffle_epi8(pixels, shuffleOrder);
+      _mm_storeu_si128((__m128i*)(currentPixels), pixels);
+    }
+
+    for (; w < width; ++w, ++currentPixels) {
+      uint8* channels = (uint8*)currentPixels;
+      uint8 blueValue = channels[2];
+      uint8 redValue = channels[0];
+      channels[0] = blueValue;
+      channels[2] = redValue;
+    }
+  }
+}
+
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t stride, size_t length) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
     /*
@@ -648,7 +675,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
         __m256 oneValue = _mm256_set1_ps(1.f);
-        __m256i initialColor = _mm256_set1_epi32(0xFF00);
+        __m256i initialColor = _mm256_set1_epi32(0xFF000000);
         __m256i blendMaskShift = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
 
         for (int32 h = minY; h < maxY; ++h) {
@@ -694,11 +721,12 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
               __m256i gValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
               __m256i bValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
 
+              rValues = _mm256_slli_epi32(rValues, 16);
+              gValues = _mm256_slli_epi32(gValues, 8);
+
               __m256i finalColor = initialColor;
               finalColor = _mm256_or_epi32(finalColor, rValues);
-              finalColor = _mm256_slli_epi32(finalColor, 0x08);
               finalColor = _mm256_or_epi32(finalColor, gValues);
-              finalColor = _mm256_slli_epi32(finalColor, 0x08);
               finalColor = _mm256_or_epi32(finalColor, bValues);
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
@@ -776,7 +804,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), scaleFactor);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        float boundingBoxMin[2] = { (float)minX, (float)minY };
         __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
           BarycentricArea2D(v3, v1, boundingBoxMin),
           BarycentricArea2D(v1, v2, boundingBoxMin),
@@ -860,7 +887,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
         __m128 invAttr22 = _mm_mul_ps(_mm_set_ps1(v3[6]), scaleFactor);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        float boundingBoxMin[2] = { (float)minX, (float)minY };
         __m128 weightInit0 = _mm_set_ps1(BarycentricArea2D(v2, v3, boundingBoxMin));
         __m128 weightInit1 = _mm_set_ps1(BarycentricArea2D(v3, v1, boundingBoxMin));
         __m128 weightInit2 = _mm_set_ps1(BarycentricArea2D(v1, v2, boundingBoxMin));
@@ -1255,7 +1281,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
         __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), invArea);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        float boundingBoxMin[2] = { (float)minX, (float)minY };
         __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
           BarycentricArea2D(v3, v1, boundingBoxMin),
           BarycentricArea2D(v1, v2, boundingBoxMin),
@@ -1328,7 +1353,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
         __m128 invAttr12 = _mm_mul_ps(_mm_set_ps1(v3[5]), vScaleFactor);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        float boundingBoxMin[2] = { (float)minX, (float)minY };
         __m128 weightInit0 = _mm_set_ps1(BarycentricArea2D(v2, v3, boundingBoxMin));
         __m128 weightInit1 = _mm_set_ps1(BarycentricArea2D(v3, v1, boundingBoxMin));
         __m128 weightInit2 = _mm_set_ps1(BarycentricArea2D(v1, v2, boundingBoxMin));

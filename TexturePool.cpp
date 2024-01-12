@@ -30,7 +30,7 @@ int32 TexturePool::LoadTexture(Asset& asset) {
 
   PNG png;
   png.Deserialize(pngDeserializer);
-  uint8* pngData = png.Decompress(ChannelOrder::BGR);
+  uint8* pngData = png.Decompress(ChannelOrderPNG::BGR);
   size_t width = png.GetWidth();
   size_t height = png.GetHeight();
   size_t channels = png.GetNumChannels();

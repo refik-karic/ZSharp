@@ -69,7 +69,7 @@ void PNG::Deserialize(MemoryDeserializer& deserializer) {
   ReadHeader();
 }
 
-uint8* PNG::Decompress(ChannelOrder order) {
+uint8* PNG::Decompress(ChannelOrderPNG order) {
   if (mDataPtr == nullptr) {
     return nullptr;
   }
@@ -194,9 +194,9 @@ uint8* PNG::Decompress(ChannelOrder order) {
   uint8* outputImage = FilterDeflatedImage(buffer);
 
   switch (order) {
-    case ChannelOrder::RGB: // Native order per spec.
+    case ChannelOrderPNG::RGB: // Native order per spec.
       break;
-    case ChannelOrder::BGR:
+    case ChannelOrderPNG::BGR:
     {
       NamedScopedTimer(RGBAToBGRA);
       Unaligned_RGBAToBGRA((uint32*)outputImage, mWidth, mHeight);

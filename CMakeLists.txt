@@ -33,6 +33,7 @@ target_sources(ZSharp
         IniFile.h
         InputManager.h
         ISerializable.h
+        JPEG.h
         List.h
         Logger.h
         Mat2x3.h
@@ -101,6 +102,7 @@ target_sources(ZSharp
         IndexBuffer.cpp
         IniFile.cpp
         InputManager.cpp
+        JPEG.cpp
         Logger.cpp
         Mat2x3.cpp
         Mat3x3.cpp

@@ -6,6 +6,7 @@
 #include "InputManager.h"
 #include "PlatformMemory.h"
 #include "PNG.h"
+#include "JPEG.h"
 #include "ScopedTimer.h"
 #include "ZConfig.h"
 #include "ZString.h"
@@ -19,7 +20,8 @@
 
 #include <ctype.h>
 
-#define DEBUG_TEXTURE 0
+#define DEBUG_TEXTURE_PNG 0
+#define DEBUG_TEXTURE_JPG 1
 
 static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
 static ZSharp::WideString TimerName(L"MainLoop");
@@ -298,7 +300,7 @@ void Win32PlatformApplication::OnTimer() {
 }
 
 void Win32PlatformApplication::OnPaint() {
-#if DEBUG_TEXTURE
+#if DEBUG_TEXTURE_PNG
   ZSharp::NamedScopedTimer(SplatTexture);
 
   ZSharp::FileString texturePath(ZSharp::PlatformGetUserDesktopPath());
@@ -311,11 +313,27 @@ void Win32PlatformApplication::OnPaint() {
   ZSharp::size_t bitsPerPixel = png.GetBitsPerPixel();
 
   SplatTexture(pngData, width, height, bitsPerPixel);
-#if 0
+
   if (pngData != nullptr) {
     ZSharp::PlatformFree(pngData);
   }
-#endif
+#elif DEBUG_TEXTURE_JPG
+  ZSharp::NamedScopedTimer(SplatTexture);
+
+  ZSharp::FileString texturePath(ZSharp::PlatformGetUserDesktopPath());
+  texturePath.SetFilename("diffuse.jpg");
+
+  ZSharp::JPEG jpg(texturePath);
+  ZSharp::uint8* jpgData = jpg.Decompress(ZSharp::ChannelOrderJPG::BGR);
+  ZSharp::size_t width = jpg.GetWidth();
+  ZSharp::size_t height = jpg.GetHeight();
+  ZSharp::size_t bitsPerPixel = jpg.GetNumChannels() * 8;
+
+  SplatTexture(jpgData, width, height, bitsPerPixel);
+
+  if (jpgData != nullptr) {
+    ZSharp::PlatformFree(jpgData);
+  }
 #else
   UpdateFrame(mGameInstance.GetCurrentFrame());
 #endif

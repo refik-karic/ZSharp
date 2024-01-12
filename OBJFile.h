@@ -64,12 +64,16 @@ class OBJFile final {
 
   void ParseRaw(const FileString& objFilePath);
 
-  void ParseLine(const char* currentLine, size_t length);
+  void ParseOBJLine(const char* currentLine, size_t length, const FileString& objFilePath);
+
+  void ParseMTLLine(const char* currentLine, size_t length, const FileString& objFilePath);
 
   void ParseVec3(float fillVec[3], String& line, float fallback);
 
   void ParseVec4(float fillVec[4], String& line, float fallback);
 
   void ParseFace(OBJFace& fillFace, String& line);
+
+  void ParseMaterial(String& line, const FileString& objFilePath);
 };
 }

@@ -12,6 +12,6 @@ bool GenerateBundle(const FileString& filename, Array<Asset>& assets, MemorySeri
 
 void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, MemorySerializer& bundleMemory);
 
-void SerializeTexture(const FileString& filename, Array<Asset>& bundleAssets, MemorySerializer& bundleMemory);
+void SerializeTexturePNG(const FileString& filename, Array<Asset>& bundleAssets, MemorySerializer& bundleMemory);
 
 }

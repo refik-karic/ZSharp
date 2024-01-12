@@ -32,6 +32,7 @@
 #include "ZAssert.h"
 
 #include <string.h>
+#include <algorithm>
 
 #include <intrin.h>
 #include <immintrin.h>
@@ -3428,6 +3429,34 @@ JPEG::JPEG(const FileString& filename)
 }
 
 JPEG::~JPEG() {
+}
+
+void JPEG::Serialize(MemorySerializer& serializer) {
+  if (!mReader.IsOpen()) {
+    ZAssert(false);
+    return;
+  }
+
+  serializer.Serialize(&mFileSize, sizeof(mFileSize));
+  serializer.Serialize(mDataPtr, mFileSize);
+}
+
+void JPEG::Deserialize(MemoryDeserializer& deserializer) {
+  if (mReader.IsOpen()) {
+    ZAssert(false);
+    return;
+  }
+
+  size_t fileSize = 0;
+  if (!deserializer.Deserialize(&fileSize, sizeof(fileSize))) {
+    ZAssert(false);
+    return;
+  }
+
+  const size_t padding = sizeof(size_t);
+
+  mFileSize = fileSize;
+  mDataPtr = deserializer.BaseAddress() + deserializer.Offset() + padding;
 }
 
 uint8* JPEG::Decompress(ChannelOrderJPG order) {

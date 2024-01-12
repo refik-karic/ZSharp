@@ -78,13 +78,13 @@ void OBJFile::ParseRaw(const FileString& objFilePath) {
   for (size_t offset = 0; offset < fileSize; ++offset) {
     if (fileBuffer[offset] == '\n') {
       size_t lineLength = offset - lastLineIndex;
-      ParseLine(fileBuffer + lastLineIndex, lineLength);
+      ParseOBJLine(fileBuffer + lastLineIndex, lineLength, objFilePath);
       lastLineIndex = offset + 1;
     }
   }
 }
 
-void OBJFile::ParseLine(const char* currentLine, size_t length) {
+void OBJFile::ParseOBJLine(const char* currentLine, size_t length, const FileString& objFilePath) {
   const char* rawLine = currentLine;
 
   // All lines in the input file must be terminated with a newline.
@@ -134,6 +134,112 @@ void OBJFile::ParseLine(const char* currentLine, size_t length) {
       // Line.
       String choppedLine(rawLine, 0, length);
       Logger::Log(LogCategory::Info, String::FromFormat("Line: [{0}]\n", choppedLine));
+    }
+    break;
+    case 'm':
+    {
+      String choppedLine(rawLine + 7, 0, length);
+      ParseMaterial(choppedLine, objFilePath);
+    }
+      break;
+    default:
+    {
+      String choppedLine(rawLine, 0, length);
+      Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
+    }
+    break;
+  }
+}
+
+void OBJFile::ParseMTLLine(const char* currentLine, size_t length, const FileString& objFilePath) {
+  const char* rawLine = currentLine;
+
+  // All lines in the input file must be terminated with a newline.
+  // The parser will fail to read the last line properly if this is the case.
+
+  switch (rawLine[0]) {
+    case 'N':
+    {
+      if (rawLine[1] == 's') {
+        // Specular component weight.
+        String choppedLine(rawLine + 3, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Specular Weight: [{0}]\n", choppedLine));
+      }
+      else if (rawLine[1] == 'i') {
+        // Refraction.
+        String choppedLine(rawLine + 3, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Refraction: [{0}]\n", choppedLine));
+      }
+      else {
+        String choppedLine(rawLine + 3, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
+      }
+    }
+      break;
+    case 'K':
+    {
+      if (rawLine[1] == 'a') {
+        // Ambient.
+        String choppedLine(rawLine + 3, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Ambient: [{0}]\n", choppedLine));
+      }
+      else if (rawLine[1] == 'd') {
+        // Diffuse.
+        String choppedLine(rawLine + 3, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Diffuse: [{0}]\n", choppedLine));
+      }
+      else if (rawLine[1] == 's') {
+        // Specular.
+        String choppedLine(rawLine + 3, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Specular: [{0}]\n", choppedLine));
+      }
+      else if (rawLine[1] == 'e') {
+        // Emissive.
+        String choppedLine(rawLine + 3, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Emissive: [{0}]\n", choppedLine));
+      }
+      else {
+        String choppedLine(rawLine, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
+      }
+      break;
+    }
+    break;
+    case 'd':
+    {
+      // Dissolve.
+      String choppedLine(rawLine + 2, 0, length);
+      Logger::Log(LogCategory::Info, String::FromFormat("Dissolve: [{0}]\n", choppedLine));
+    }
+    break;
+    case 'i':
+    {
+      // Illumination Mode.
+      String choppedLine(rawLine + 6, 0, length);
+      Logger::Log(LogCategory::Info, String::FromFormat("Illumination Mode: [{0}]\n", choppedLine));
+    }
+    break;
+    case 'm':
+    {
+      // Texture map file.
+      String choppedLine(rawLine, 0, length);
+
+      if (choppedLine.FindString("map_Kd") != nullptr) {
+        String filename(rawLine + 7, 0, length);
+        mAlbedoTexture = filename;
+      }
+      else if (choppedLine.FindString("map_Bump") != nullptr) {
+        String filename(rawLine + 7, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Bump map: [{0}]\n", filename));
+      }
+      else if (choppedLine.FindString("map_Ks") != nullptr) {
+        String filename(rawLine + 7, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Specular map: [{0}]\n", filename));
+      }
+      else {
+        String filename(rawLine, 0, length);
+        Logger::Log(LogCategory::Info, String::FromFormat("Unknown map: [{0}]\n", filename));
+      }
     }
     break;
     default:
@@ -243,6 +349,29 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
     }
     else {
       break;
+    }
+  }
+}
+
+void OBJFile::ParseMaterial(String& line, const FileString& objFilePath) {
+  FileString materialPath(objFilePath);
+  materialPath.SetFilename(line);
+
+  MemoryMappedFileReader reader(materialPath);
+  if (!reader.IsOpen()) {
+    Logger::Log(LogCategory::Info, String::FromFormat("Material file doesn't exist: [{0}]\n", materialPath.GetAbsolutePath()));
+    return;
+  }
+
+  const char* fileBuffer = reader.GetBuffer();
+  size_t fileSize = reader.GetSize();
+  size_t lastLineIndex = 0;
+
+  for (size_t offset = 0; offset < fileSize; ++offset) {
+    if (fileBuffer[offset] == '\n') {
+      size_t lineLength = offset - lastLineIndex;
+      ParseMTLLine(fileBuffer + lastLineIndex, lineLength, materialPath);
+      lastLineIndex = offset + 1;
     }
   }
 }

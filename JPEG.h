@@ -4,6 +4,7 @@
 
 #include "FileString.h"
 #include "ZFile.h"
+#include "Serializer.h"
 
 #include <setjmp.h>
 
@@ -31,6 +32,10 @@ class JPEG final {
   JPEG(const JPEG& rhs) = delete;
 
   ~JPEG();
+
+  void Serialize(MemorySerializer& serializer);
+
+  void Deserialize(MemoryDeserializer& deserializer);
 
   uint8* Decompress(ChannelOrderJPG order);
 

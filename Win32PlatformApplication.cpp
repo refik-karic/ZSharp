@@ -21,7 +21,7 @@
 #include <ctype.h>
 
 #define DEBUG_TEXTURE_PNG 0
-#define DEBUG_TEXTURE_JPG 1
+#define DEBUG_TEXTURE_JPG 0
 
 static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
 static ZSharp::WideString TimerName(L"MainLoop");

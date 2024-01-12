@@ -227,7 +227,7 @@ void OBJFile::ParseMTLLine(const char* currentLine, size_t length, const FileStr
 
       if (choppedLine.FindString("map_Kd") != nullptr) {
         String filename(rawLine + 7, 0, length - 7);
-        mAlbedoTexture = filename;
+        mAlbedoTexture = filename.SubStr(0, filename.Length() - 4);
       }
       else if (choppedLine.FindString("map_Bump") != nullptr) {
         String filename(rawLine + 9, 0, length - 9);

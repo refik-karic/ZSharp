@@ -59,6 +59,8 @@ String FileString::GetAbsolutePath() const {
 }
 
 void FileString::SetFilename(const String& filename) {
+  bool changingFilename = HasFilename();
+
   size_t totalFilenameLength = mFilenameLength;
   if (HasExtension()) {
     totalFilenameLength += (1 + mExtensionLength);
@@ -74,9 +76,11 @@ void FileString::SetFilename(const String& filename) {
 
   const char* extension = filename.FindFirst('.');
   if (extension != nullptr) {
-    mDirs[mDirectoryLength] = PlatformDirectorySeparator;
-    mDirectoryLength++;
-    mPathLength++;
+    if (!changingFilename) {
+      mDirs[mDirectoryLength] = PlatformDirectorySeparator;
+      mDirectoryLength++;
+      mPathLength++;
+    }
 
     size_t length = extension - filename.Str();
 

@@ -3465,7 +3465,7 @@ uint8* JPEG::Decompress(ChannelOrderJPG order) {
     return nullptr;
   }
 
-  jpeg_decoder_mem_stream mem_stream(mDataPtr, mFileSize);
+  jpeg_decoder_mem_stream mem_stream(mDataPtr, (uint32)mFileSize);
   return decompress_jpeg_image_from_stream(&mem_stream, &mWidth, &mHeight, &mChannels, 3, order, 0);
 }
 

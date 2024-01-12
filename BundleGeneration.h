@@ -14,4 +14,6 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
 
 void SerializeTexturePNG(const FileString& filename, Array<Asset>& bundleAssets, MemorySerializer& bundleMemory);
 
+void SerializeTextureJPG(const FileString& filename, Array<Asset>& bundleAssets, MemorySerializer& bundleMemory);
+
 }

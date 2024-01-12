@@ -2,6 +2,7 @@
 
 #include "OBJFile.h"
 #include "PNG.h"
+#include "JPEG.h"
 #include "Bundle.h"
 
 namespace ZSharp {
@@ -51,6 +52,23 @@ void SerializeTexturePNG(const FileString& filename, Array<Asset>& bundleAssets,
   PNG png(filename);
   MemorySerializer pngSerializer;
   png.Serialize(pngSerializer);
+
+  bundleAssets.EmplaceBack(pngSerializer.Size(),
+    filename.GetFilename(),
+    filename.GetExtension(),
+    false,
+    FileString(""),
+    AssetType::Texture);
+
+  const size_t pngSerializerSize = pngSerializer.Size();
+  bundleMemory.Serialize(&pngSerializerSize, sizeof(pngSerializerSize));
+  bundleMemory.Serialize(pngSerializer.Data(), pngSerializerSize);
+}
+
+void SerializeTextureJPG(const FileString& filename, Array<Asset>& bundleAssets, MemorySerializer& bundleMemory) {
+  JPEG jpg(filename);
+  MemorySerializer pngSerializer;
+  jpg.Serialize(pngSerializer);
 
   bundleAssets.EmplaceBack(pngSerializer.Size(),
     filename.GetFilename(),

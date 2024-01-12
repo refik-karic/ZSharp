@@ -30,6 +30,8 @@ class Asset final {
 
   const String& Name() const;
 
+  const String& Extension() const;
+
   bool IsLoose() const;
 
   const FileString& LoosePath() const;

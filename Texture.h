@@ -7,6 +7,8 @@
 
 namespace ZSharp {
 
+uint8* InsertAlphaChannel(uint8* data, size_t width, size_t height);
+
 /*
 A 2D texture that owns its memory. The idea is to load some kind of standardized image/material format into an agnostic class.
 The renderer can then sample from this texture using U,V's.

@@ -23,6 +23,10 @@ const String& Asset::Name() const {
   return mName;
 }
 
+const String& Asset::Extension() const {
+  return mExtension;
+}
+
 bool Asset::IsLoose() const {
   return mLoose;
 }

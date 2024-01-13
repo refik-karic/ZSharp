@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ZBaseTypes.h"
 #include "Mat4x4.h"
 #include "AABB.h"
 
@@ -16,23 +17,23 @@ class VertexBuffer final {
 
   void operator=(const VertexBuffer& rhs);
 
-  float* operator[](size_t index) const;
+  float* operator[](int32 index) const;
 
-  float* operator[](size_t index);
+  float* operator[](int32 index);
 
-  const float* GetClipData(size_t index) const;
+  const float* GetClipData(int32 index) const;
 
-  float* GetClipData(size_t index);
+  float* GetClipData(int32 index);
 
-  size_t GetTotalSize() const;
+  int32 GetTotalSize() const;
 
-  size_t GetVertSize() const;
+  int32 GetVertSize() const;
 
-  size_t GetStride() const;
+  int32 GetStride() const;
 
-  void CopyInputData(const float* data, size_t index, size_t length);
+  void CopyInputData(const float* data, int32 index, int32 length);
 
-  void Resize(size_t vertexSize, size_t stride);
+  void Resize(int32 vertexSize, int32 stride);
 
   void Clear();
 
@@ -40,9 +41,9 @@ class VertexBuffer final {
 
   void ApplyTransform(const Mat4x4& transform);
 
-  void AppendClipData(const float* data, size_t lengthBytes, size_t numVertices);
+  void AppendClipData(const float* data, int32 lengthBytes, int32 numVertices);
 
-  size_t GetClipLength() const;
+  int32 GetClipLength() const;
 
   void ShuffleClippedData();
 
@@ -51,11 +52,11 @@ class VertexBuffer final {
   private:
   float* mData = nullptr;
   float* mClipData = nullptr;
-  size_t mInputSize = 0;
-  size_t mAllocatedSize = 0;
-  size_t mWorkingSize = 0;
-  size_t mClipLength = 0;
-  size_t mStride = 0;
+  int32 mInputSize = 0;
+  int32 mAllocatedSize = 0;
+  int32 mWorkingSize = 0;
+  int32 mClipLength = 0;
+  int32 mStride = 0;
 };
 
 }

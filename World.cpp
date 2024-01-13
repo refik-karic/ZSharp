@@ -101,13 +101,13 @@ void World::LoadModels() {
         model.Tag() = PhysicsTag::Dynamic;
       }
 
-      size_t indexBufSize = 0;
-      size_t vertBufSize = 0;
-      size_t vertStride = 0;
+      int32 indexBufSize = 0;
+      int32 vertBufSize = 0;
+      int32 vertStride = 0;
       for (Mesh& mesh : model.GetMeshData()) {
-        indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
-        vertBufSize += mesh.GetVertTable().Size();
-        vertStride = mesh.Stride();
+        indexBufSize += (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
+        vertBufSize += (int32)mesh.GetVertTable().Size();
+        vertStride = (int32)mesh.Stride();
       }
 
       indexBuffer.Resize(indexBufSize);
@@ -128,7 +128,7 @@ void World::LoadModels() {
   }
 }
 
-void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, size_t stride)
+void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride)
 {
   Model& model = mActiveModels.EmplaceBack(order, stride);
   VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
@@ -155,23 +155,23 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
   }
 
   {
-    const size_t strideBytes = stride * sizeof(float);
+    const int32 strideBytes = stride * sizeof(float);
     Mesh& firstMesh = model[0];
-    size_t vertSize = 3 * stride;
-    size_t faceSize = 1;
+    int32 vertSize = 3 * stride;
+    int32 faceSize = 1;
     firstMesh.Resize(vertSize, faceSize);
     firstMesh.SetData(v1, 0, strideBytes);
     firstMesh.SetData(v2, stride, strideBytes);
     firstMesh.SetData(v3, stride * 2, strideBytes);
-    Triangle triangle(0, 1, 2);
+    Triangle triangle(0 * stride, 1 * stride, 2 * stride);
     firstMesh.SetTriangle(triangle, 0);
   }
 
-  size_t indexBufSize = 0;
-  size_t vertBufSize = 0;
+  int32 indexBufSize = 0;
+  int32 vertBufSize = 0;
   for (Mesh& mesh : model.GetMeshData()) {
-    indexBufSize += (mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
-    vertBufSize += mesh.GetVertTable().Size();
+    indexBufSize += (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
+    vertBufSize += (int32)mesh.GetVertTable().Size();
   }
 
   indexBuffer.Resize(indexBufSize);
@@ -210,7 +210,7 @@ void World::LoadOBJ(Model& model, Asset& asset) {
 #else
   bool isTextureMapped = false;
 #endif
-  const size_t textureStride = 2;
+  const int32 textureStride = 2;
 
   if (isTextureMapped) {
     Bundle& bundle = Bundle::Get();
@@ -230,18 +230,18 @@ void World::LoadOBJ(Model& model, Asset& asset) {
     model.SetStride(7);
   }
 
-  const size_t stride = objFile.Stride();
+  const int32 stride = objFile.Stride();
 
-  size_t vertSize = objFile.Verts().Size() * stride;
-  size_t indexSize = objFile.Faces().Size();
+  int32 vertSize = (int32)objFile.Verts().Size() * stride;
+  int32 indexSize = (int32)objFile.Faces().Size();
 
   mesh.Resize(vertSize, indexSize);
 
   if (isTextureMapped) {
-    const size_t scratchSize = 6;
+    const int32 scratchSize = 6;
     float vertex[scratchSize];
 
-    for (size_t i = 0; i < objFile.Verts().Size(); ++i) {
+    for (int32 i = 0; i < objFile.Verts().Size(); ++i) {
       const Vec4& vector = objFile.Verts()[i];
       ZAssert(FloatEqual(vector[3], 1.f));
 
@@ -252,14 +252,14 @@ void World::LoadOBJ(Model& model, Asset& asset) {
     }
   }
   else {
-    const size_t scratchSize = 7;
+    const int32 scratchSize = 7;
     float vertex[scratchSize];
 
     // Assign 
     const float R[] = { 1.f, 0.f, 0.f };
     const float G[] = { 0.f, 1.f, 0.f };
     const float B[] = { 0.f, 0.f, 1.f };
-    for (size_t i = 0, triIndex = 0; i < objFile.Verts().Size(); ++i) {
+    for (int32 i = 0, triIndex = 0; i < objFile.Verts().Size(); ++i) {
       const Vec4& vector = objFile.Verts()[i];
       ZAssert(FloatEqual(vector[3], 1.f));
 
@@ -287,9 +287,9 @@ void World::LoadOBJ(Model& model, Asset& asset) {
 
   const Array<OBJFace>& faceList = objFile.Faces();
   for (size_t triIndex = 0; triIndex < indexSize; ++triIndex) {
-    Triangle triangle(static_cast<size_t>(faceList[triIndex].triangleFace[0].vertexIndex),
-      static_cast<size_t>(faceList[triIndex].triangleFace[1].vertexIndex),
-      static_cast<size_t>(faceList[triIndex].triangleFace[2].vertexIndex)
+    Triangle triangle(static_cast<int32>(faceList[triIndex].triangleFace[0].vertexIndex) * stride,
+      static_cast<int32>(faceList[triIndex].triangleFace[1].vertexIndex) * stride,
+      static_cast<int32>(faceList[triIndex].triangleFace[2].vertexIndex) * stride
     );
     mesh.SetTriangle(triangle, triIndex);
   }

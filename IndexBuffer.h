@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ZBaseTypes.h"
+
 namespace ZSharp {
 
 class IndexBuffer final {
@@ -13,41 +15,41 @@ class IndexBuffer final {
 
   void operator=(const IndexBuffer& rhs);
 
-  size_t operator[](size_t index) const;
+  int32 operator[](int32 index) const;
 
-  size_t& operator[](size_t index);
+  int32& operator[](int32 index);
 
-  size_t GetIndexSize() const;
+  int32 GetIndexSize() const;
 
-  void CopyInputData(const size_t* data, size_t index, size_t length);
+  void CopyInputData(const int32* data, int32 index, int32 length);
 
-  size_t* GetInputData();
+  int32* GetInputData();
 
-  void Resize(size_t size);
+  void Resize(int32 size);
 
   void Clear();
 
   void Reset();
 
-  void RemoveTriangle(size_t index);
+  void RemoveTriangle(int32 index);
 
-  void AppendClipData(const size_t* data, const size_t length);
+  void AppendClipData(const int32* data, const int32 length);
 
-  size_t GetClipLength() const;
+  int32 GetClipLength() const;
 
-  const size_t* GetClipData(size_t index) const;
+  const int32* GetClipData(int32 index) const;
 
-  size_t* GetClipData(size_t index);
+  int32* GetClipData(int32 index);
 
   void ShuffleClippedData();
 
   private:
-  size_t* mData = nullptr;
-  size_t* mClipData = nullptr;
-  size_t mInputSize = 0;
-  size_t mAllocatedSize = 0;
-  size_t mWorkingSize = 0;
-  size_t mClipLength = 0;
+  int32* mData = nullptr;
+  int32* mClipData = nullptr;
+  int32 mInputSize = 0;
+  int32 mAllocatedSize = 0;
+  int32 mWorkingSize = 0;
+  int32 mClipLength = 0;
 };
 
 }

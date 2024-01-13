@@ -10,7 +10,7 @@
 #include "PlatformIntrinsics.h"
 #include "ScopedTimer.h"
 
-static constexpr size_t MAX_INDICIES_AFTER_CLIP = 12;
+static constexpr ZSharp::int32 MAX_INDICIES_AFTER_CLIP = 12;
 
 namespace ZSharp {
 
@@ -39,42 +39,42 @@ void VertexBuffer::operator=(const VertexBuffer& rhs) {
   memcpy(mData, rhs.mData, rhs.mAllocatedSize);
 }
 
-float* VertexBuffer::operator[](size_t index) const {
+float* VertexBuffer::operator[](int32 index) const {
   ZAssert((index * mStride) < mAllocatedSize);
   return mData + (index * mStride);
 }
 
-float* VertexBuffer::operator[](size_t index) {
+float* VertexBuffer::operator[](int32 index) {
   ZAssert((index * mStride) < mAllocatedSize);
   return mData + (index * mStride);
 }
 
-size_t VertexBuffer::GetTotalSize() const {
+int32 VertexBuffer::GetTotalSize() const {
   return mAllocatedSize;
 }
 
-size_t VertexBuffer::GetVertSize() const {
+int32 VertexBuffer::GetVertSize() const {
   return mWorkingSize / mStride;
 }
 
-size_t VertexBuffer::GetStride() const {
+int32 VertexBuffer::GetStride() const {
   return mStride;
 }
 
-void VertexBuffer::CopyInputData(const float* data, size_t index, size_t length) {
+void VertexBuffer::CopyInputData(const float* data, int32 index, int32 length) {
   memcpy(mData + index, data, length * sizeof(float));
   mWorkingSize += length;
 }
 
-float* VertexBuffer::GetClipData(size_t index) {
+float* VertexBuffer::GetClipData(int32 index) {
   return mClipData + (index * mStride);
 }
 
-const float* VertexBuffer::GetClipData(size_t index) const {
+const float* VertexBuffer::GetClipData(int32 index) const {
   return mClipData + (index * mStride);
 }
 
-void VertexBuffer::Resize(size_t vertexSize, size_t stride) {
+void VertexBuffer::Resize(int32 vertexSize, int32 stride) {
   if (mData != nullptr) {
     PlatformAlignedFree(mData);
   }
@@ -82,7 +82,7 @@ void VertexBuffer::Resize(size_t vertexSize, size_t stride) {
   mInputSize = vertexSize;
   mAllocatedSize = ((vertexSize * sizeof(float)) + (vertexSize * MAX_INDICIES_AFTER_CLIP * sizeof(float)));
   mStride = stride;
-  mAllocatedSize = RoundUpNearestMultiple(mAllocatedSize, 16);
+  mAllocatedSize = (int32)RoundUpNearestMultiple(mAllocatedSize, 16);
   mData = static_cast<float*>(PlatformAlignedMalloc(mAllocatedSize, 16));
   mClipData = mData + mInputSize;
   mWorkingSize = 0;
@@ -104,8 +104,8 @@ void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
   Aligned_Mat4x4Transform((const float(*)[4])*transform, mData, mStride, mWorkingSize);
 }
 
-void VertexBuffer::AppendClipData(const float* data, size_t lengthBytes, size_t numVertices) {
-  size_t usedBytes = (mInputSize + (mClipLength * mStride)) * sizeof(float);
+void VertexBuffer::AppendClipData(const float* data, int32 lengthBytes, int32 numVertices) {
+  int32 usedBytes = (mInputSize + (mClipLength * mStride)) * sizeof(float);
   if ((usedBytes + lengthBytes) > mAllocatedSize) {
     return;
   }
@@ -114,13 +114,13 @@ void VertexBuffer::AppendClipData(const float* data, size_t lengthBytes, size_t 
   mClipLength += numVertices;
 }
 
-size_t VertexBuffer::GetClipLength() const {
+int32 VertexBuffer::GetClipLength() const {
   return mClipLength;
 }
 
 void VertexBuffer::ShuffleClippedData() {
-  const size_t offset = mClipLength * mStride;
-  const size_t totalBytes = offset * sizeof(float);
+  const int32 offset = mClipLength * mStride;
+  const int32 totalBytes = offset * sizeof(float);
   memmove(mData, mClipData, totalBytes); // Clip data and input data may overlap.
   mClipLength = 0;
   mClipData = mData + offset;
@@ -133,9 +133,9 @@ AABB VertexBuffer::ComputeBoundingBox() const {
   float min[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
   float max[4] = { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
 
-  const size_t stride = mStride;
+  const int32 stride = mStride;
   const float* vertices = mData;
-  const size_t numVertices = mWorkingSize;
+  const int32 numVertices = mWorkingSize;
 
   Unaligned_AABB(vertices, numVertices, stride, min, max);
 

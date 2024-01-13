@@ -129,10 +129,10 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
 #endif
 
-  const size_t stride = vertexBuffer.GetStride();
+  const int32 stride = vertexBuffer.GetStride();
 
   // Apply the perspective projection transform to all input vertices.
-  Aligned_Mat4x4Transform((const float(*) [4])*mPerspectiveTransform, vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
+  Aligned_Mat4x4Transform((const float(*)[4]) * mPerspectiveTransform, vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
 
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.
@@ -154,12 +154,12 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     ClipTriangles(vertexBuffer, indexBuffer);
   }
 
-  const size_t vertClipLength = vertexBuffer.GetClipLength();
+  const int32 vertClipLength = vertexBuffer.GetClipLength();
   const float* windowTransformVec0 = *mWindowTransform[0];
   const float* windowTransformVec1 = *mWindowTransform[1];
   float* vertexClipData = vertexBuffer.GetClipData(0);
 
-  for (size_t i = 0; i < vertClipLength; ++i) {
+  for (int32 i = 0; i < vertClipLength; ++i) {
     float* vertexData = vertexClipData + (i * stride);
 
     const float perspectiveZ = vertexData[3];
@@ -186,13 +186,6 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     for (size_t j = 4; j < stride; ++j) {
       vertexData[j] *= invPerspectiveZ;
     }
-  }
-
-  const size_t indexClipLength = indexBuffer.GetClipLength();
-  size_t* indexClipData = indexBuffer.GetClipData(0);
-
-  for (size_t i = 0; i < indexClipLength; ++i) {
-    indexClipData[i] *= stride;
   }
 }
 

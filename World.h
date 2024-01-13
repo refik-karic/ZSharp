@@ -18,7 +18,7 @@ class World final {
 
   void LoadModels();
 
-  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, size_t stride);
+  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride);
 
   size_t GetTotalModels() const;
 

@@ -274,7 +274,7 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
     uint32* currentPixels = image + (h * width);
 
     size_t w = 0;
-    for (; w < width; w += 4, currentPixels += 4) {
+    for (; (w + 4) < width; w += 4, currentPixels += 4) {
       __m128i pixels = _mm_loadu_si128((__m128i*)(currentPixels));
       pixels = _mm_shuffle_epi8(pixels, shuffleOrder);
       _mm_storeu_si128((__m128i*)(currentPixels), pixels);
@@ -290,7 +290,7 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
   }
 }
 
-void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t stride, size_t length) {
+void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride, int32 length) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
     /*
       We preload 4 registers with all of the matrix X, Y, Z, W values.
@@ -325,7 +325,7 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, size_t strid
     }
   }
   else {
-    for (size_t i = 0; i < length; i += stride) {
+    for (int32 i = 0; i < length; i += stride) {
       float* vec = (data + i);
 
       float xyzw[4];
@@ -394,9 +394,9 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
   }
 }
 
-void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
+void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
-    for (size_t i = 0; i < length; i += stride) {
+    for (int32 i = 0; i < length; i += stride) {
       float* nextVec = data + i;
       float perspectiveTerm = nextVec[3];
       _mm_store_ps(nextVec, _mm_div_ps(_mm_load_ps(nextVec), _mm_set_ps1(perspectiveTerm)));
@@ -404,7 +404,7 @@ void Aligned_Vec4Homogenize(float* data, size_t stride, size_t length) {
     }
   }
   else {
-    for (size_t i = 0; i < length; i += stride) {
+    for (int32 i = 0; i < length; i += stride) {
       float* vec = data + i;
       const float invDivisor = 1.f / vec[3];
       vec[0] *= invDivisor;
@@ -462,14 +462,13 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
 void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]) {
   __m128 view = _mm_loadu_ps(viewer);
   
-  size_t* indexData = indexBuffer.GetInputData();
+  int32* indexData = indexBuffer.GetInputData();
   const float* vertexData = vertexBuffer[0];
-  const size_t vertexStride = vertexBuffer.GetStride();
 
-  for (size_t i = indexBuffer.GetIndexSize(); i >= 3; i -= 3) {
-    size_t i1 = indexData[i - 3] * vertexStride;
-    size_t i2 = indexData[i - 2] * vertexStride;
-    size_t i3 = indexData[i - 1] * vertexStride;
+  for (int32 i = indexBuffer.GetIndexSize(); i >= 3; i -= 3) {
+    int32 i1 = indexData[i - 3];
+    int32 i2 = indexData[i - 2];
+    int32 i3 = indexData[i - 1];
     __m128 v1 = _mm_load_ps(vertexData + i1);
     __m128 v2 = _mm_load_ps(vertexData + i2);
     __m128 v3 = _mm_load_ps(vertexData + i3);
@@ -513,11 +512,11 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
-void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const size_t end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
+void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    for (size_t i = 0; i < end; i += 3) {
+    for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
       const float* v2 = vertices + indices[i + 1];
       const float* v3 = vertices + indices[i + 2];
@@ -753,7 +752,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
     }
   }
   else {
-    for (size_t i = 0; i < end; i += 3) {
+    for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
       const float* v2 = vertices + indices[i + 1];
       const float* v3 = vertices + indices[i + 2];
@@ -994,11 +993,11 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
   }
 }
 
-void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const size_t end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture) {
+void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    for (size_t i = 0; i < end; i += 3) {
+    for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
       const float* v2 = vertices + indices[i + 1];
       const float* v3 = vertices + indices[i + 2];
@@ -1234,7 +1233,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
     }
   }
   else {
-    for (size_t i = 0; i < end; i += 3) {
+    for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
       const float* v2 = vertices + indices[i + 1];
       const float* v3 = vertices + indices[i + 2];

@@ -6,7 +6,7 @@
 
 #include "Constants.h"
 
-static constexpr size_t MAX_INDICIES_AFTER_CLIP = 4;
+static constexpr ZSharp::int32 MAX_INDICIES_AFTER_CLIP = 4;
 
 namespace ZSharp {
 
@@ -34,35 +34,35 @@ void IndexBuffer::operator=(const IndexBuffer& rhs) {
   memcpy(mData, rhs.mData, rhs.mAllocatedSize);
 }
 
-size_t IndexBuffer::operator[](size_t index) const {
+int32 IndexBuffer::operator[](int32 index) const {
   return mData[index];
 }
 
-size_t& IndexBuffer::operator[](size_t index) {
+int32& IndexBuffer::operator[](int32 index) {
   return mData[index];
 }
 
-size_t IndexBuffer::GetIndexSize() const {
+int32 IndexBuffer::GetIndexSize() const {
   return mWorkingSize;
 }
 
-void IndexBuffer::CopyInputData(const size_t* data, size_t index, size_t length) {
-  memcpy(mData + index, data, length * sizeof(size_t));
+void IndexBuffer::CopyInputData(const int32* data, int32 index, int32 length) {
+  memcpy(mData + index, data, length * sizeof(int32));
   mWorkingSize += length;
 }
 
-size_t* IndexBuffer::GetInputData() {
+int32* IndexBuffer::GetInputData() {
   return mData;
 }
 
-void IndexBuffer::Resize(size_t size) {
+void IndexBuffer::Resize(int32 size) {
   if (mData != nullptr) {
     PlatformAlignedFree(mData);
   }
 
   mInputSize = size;
-  mAllocatedSize = size * MAX_INDICIES_AFTER_CLIP * sizeof(size_t);
-  mData = static_cast<size_t*>(PlatformAlignedMalloc(mAllocatedSize, 16));
+  mAllocatedSize = size * MAX_INDICIES_AFTER_CLIP * sizeof(int32);
+  mData = static_cast<int32*>(PlatformAlignedMalloc(mAllocatedSize, 16));
   mClipData = mData + mInputSize;
   mClipLength = 0;
   mWorkingSize = 0;
@@ -79,12 +79,12 @@ void IndexBuffer::Reset() {
   mClipData = mData + mInputSize;
 }
 
-void IndexBuffer::RemoveTriangle(size_t index) {
+void IndexBuffer::RemoveTriangle(int32 index) {
   ZAssert(index <= mWorkingSize);
 
-  size_t* srcAddr = mData + (mWorkingSize - TRI_VERTS);
-  size_t* destAddr = mData + index;
-  memcpy(destAddr, srcAddr, TRI_VERTS * sizeof(size_t));
+  int32* srcAddr = mData + (mWorkingSize - TRI_VERTS);
+  int32* destAddr = mData + index;
+  memcpy(destAddr, srcAddr, TRI_VERTS * sizeof(int32));
   
   if (mWorkingSize < TRI_VERTS) {
     mWorkingSize = 0;
@@ -96,7 +96,7 @@ void IndexBuffer::RemoveTriangle(size_t index) {
   ZAssert((mWorkingSize % TRI_VERTS) == 0);
 }
 
-void IndexBuffer::AppendClipData(const size_t* data, const size_t length) {
+void IndexBuffer::AppendClipData(const int32* data, const int32 length) {
   if (mWorkingSize + mClipLength + length > mAllocatedSize) {
     return;
   }
@@ -105,21 +105,21 @@ void IndexBuffer::AppendClipData(const size_t* data, const size_t length) {
   mClipLength += length;
 }
 
-size_t IndexBuffer::GetClipLength() const {
+int32 IndexBuffer::GetClipLength() const {
   return mClipLength;
 }
 
-const size_t* IndexBuffer::GetClipData(size_t index) const {
+const int32* IndexBuffer::GetClipData(int32 index) const {
   return mClipData + index;
 }
 
-size_t* IndexBuffer::GetClipData(size_t index) {
+int32* IndexBuffer::GetClipData(int32 index) {
   return mClipData + index;
 }
 
 void IndexBuffer::ShuffleClippedData() {
-  const size_t offset = mClipLength;
-  const size_t totalBytes = offset * sizeof(size_t);
+  const int32 offset = mClipLength;
+  const int32 totalBytes = offset * sizeof(int32);
   memmove(mData, mClipData, totalBytes); // Clip data and input data may overlap.
   mClipLength = 0;
   mClipData = mData + offset;

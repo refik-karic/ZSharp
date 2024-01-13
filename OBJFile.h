@@ -43,7 +43,7 @@ class OBJFile final {
 
   Array<OBJFace>& Faces();
 
-  size_t Stride() const;
+  int32 Stride() const;
 
   ShadingModeOrder& ShadingOrder();
 

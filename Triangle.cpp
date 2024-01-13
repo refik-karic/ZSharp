@@ -4,7 +4,7 @@ namespace ZSharp {
 Triangle::Triangle() {
 }
 
-Triangle::Triangle(size_t p1, size_t p2, size_t p3)
+Triangle::Triangle(int32 p1, int32 p2, int32 p3)
   : mIndicies{ p1, p2, p3 } {
 }
 
@@ -22,19 +22,19 @@ void Triangle::operator=(const Triangle& rhs) {
   mIndicies[2] = rhs[2];
 }
 
-size_t Triangle::operator[](size_t index) const {
+int32 Triangle::operator[](int32 index) const {
   return mIndicies[index];
 }
 
-size_t& Triangle::operator[](size_t index) {
+int32& Triangle::operator[](int32 index) {
   return mIndicies[index];
 }
 
-const size_t* Triangle::GetData() {
+const int32* Triangle::GetData() {
   return mIndicies;
 }
 
-const size_t* Triangle::GetData() const {
+const int32* Triangle::GetData() const {
   return mIndicies;
 }
 }

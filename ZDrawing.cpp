@@ -150,8 +150,8 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
   const float maxWidth = (float)frameWidth;
 
   const float* vertexClipData = vertexBuffer.GetClipData(0);
-  const size_t* indexClipData = indexBuffer.GetClipData(0);
-  const size_t end = indexBuffer.GetClipLength();
+  const int32* indexClipData = indexBuffer.GetClipData(0);
+  const int32 end = indexBuffer.GetClipLength();
   
 #if 0
   for (size_t i = 0; i < end; i += TRI_VERTS) {
@@ -255,8 +255,8 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
   const float maxWidth = (float)frameWidth;
 
   const float* vertexClipData = vertexBuffer.GetClipData(0);
-  const size_t* indexClipData = indexBuffer.GetClipData(0);
-  const size_t end = indexBuffer.GetClipLength();
+  const int32* indexClipData = indexBuffer.GetClipData(0);
+  const int32 end = indexBuffer.GetClipLength();
 
 #if 0
   for (size_t i = 0; i < end; i += TRI_VERTS) {
@@ -358,9 +358,9 @@ void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertex
   NamedScopedTimer(DrawWireframeTriangles);
   
   const float* vertexClipData = vertexBuffer.GetClipData(0);
-  const size_t* indexClipData = indexBuffer.GetClipData(0);
-  const size_t end = indexBuffer.GetClipLength();
-  for (size_t i = 0; i < end; i += TRI_VERTS) {
+  const int32* indexClipData = indexBuffer.GetClipData(0);
+  const int32 end = indexBuffer.GetClipLength();
+  for (int32 i = 0; i < end; i += TRI_VERTS) {
     const float* v1 = vertexClipData + indexClipData[i];
     const float* v2 = vertexClipData + indexClipData[i + 1];
     const float* v3 = vertexClipData + indexClipData[i + 2];

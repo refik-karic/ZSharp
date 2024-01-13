@@ -48,10 +48,10 @@ Array<OBJFace>& OBJFile::Faces() {
   return mFaces;
 }
 
-size_t OBJFile::Stride() const {
-  size_t stride = 4;
+int32 OBJFile::Stride() const {
+  int32 stride = 4;
   for (ShadingMode& mode : mShadingOrder) {
-    stride += mode.length;
+    stride += (int32)mode.length;
   }
 
   return stride;

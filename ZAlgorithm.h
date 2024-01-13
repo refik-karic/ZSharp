@@ -19,7 +19,7 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
 
 void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 
-size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, const float clipEdge[3], const float edgeNormal[3], size_t stride);
+int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const float clipEdge[3], const float edgeNormal[3], int32 stride);
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer);
 

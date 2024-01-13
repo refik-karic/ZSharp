@@ -49,16 +49,18 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
   const float nearEdge[3] = { 0.f, 0.f, nearClipZ };
   const float edgeNormal[3] = { 0.f, 0.f, -1.f };
 
-  const size_t stride = vertexBuffer.GetStride();
-  const size_t vertByteSize = stride * sizeof(float);
+  const int32 stride = vertexBuffer.GetStride();
+  const int32 vertByteSize = stride * sizeof(float);
 
-  for (size_t i = 0; i < indexBuffer.GetIndexSize(); i += TRI_VERTS) {
-    const size_t i1 = indexBuffer[i];
-    const size_t i2 = indexBuffer[i + 1];
-    const size_t i3 = indexBuffer[i + 2];
-    const float* v1 = vertexBuffer[i1];
-    const float* v2 = vertexBuffer[i2];
-    const float* v3 = vertexBuffer[i3];
+  const float* vertexBufferData = vertexBuffer[0];
+
+  for (int32 i = 0; i < indexBuffer.GetIndexSize(); i += TRI_VERTS) {
+    const int32 i1 = indexBuffer[i];
+    const int32 i2 = indexBuffer[i + 1];
+    const int32 i3 = indexBuffer[i + 2];
+    const float* v1 = vertexBufferData + i1;
+    const float* v2 = vertexBufferData + i2;
+    const float* v3 = vertexBufferData + i3;
 
     float clipBuffer[ScatchSize];
     memset(clipBuffer, 0, sizeof(clipBuffer));
@@ -66,49 +68,49 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     memcpy(clipBuffer + stride, v2, vertByteSize);
     memcpy(clipBuffer + (stride * 2), v3, vertByteSize);
 
-    const size_t numClippedVerts = SutherlandHodgmanClip(clipBuffer, 3, nearEdge, edgeNormal, stride);
+    const int32 numClippedVerts = SutherlandHodgmanClip(clipBuffer, 3, nearEdge, edgeNormal, stride);
 
     if (numClippedVerts > 0) {
       ZAssert(numClippedVerts < 7);
 
-      size_t currentClipIndex = vertexBuffer.GetClipLength();
+      int32 currentClipIndex = vertexBuffer.GetClipLength();
 
       vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * vertByteSize, numClippedVerts);
 
-      size_t nextTriangle[3] = { currentClipIndex, currentClipIndex + 1, currentClipIndex + 2 };
+      int32 nextTriangle[3] = { currentClipIndex * stride, (currentClipIndex + 1) * stride, (currentClipIndex + 2) * stride };
       indexBuffer.AppendClipData(nextTriangle, 3);
 
       if (numClippedVerts == 4) {
-        const size_t clip0 = currentClipIndex + 0;
-        const size_t clip1 = currentClipIndex + 2;
-        const size_t clip2 = currentClipIndex + 3;
+        const int32 clip0 = (currentClipIndex + 0) * stride;
+        const int32 clip1 = (currentClipIndex + 2) * stride;
+        const int32 clip2 = (currentClipIndex + 3) * stride;
 
-        size_t clippedTriangle[3] = { clip0, clip1, clip2 };
+        int32 clippedTriangle[3] = { clip0, clip1, clip2 };
         indexBuffer.AppendClipData(clippedTriangle, 3);
       }
       else if (numClippedVerts == 5) {
-        const size_t clip0 = currentClipIndex + 0;
-        const size_t clip1 = currentClipIndex + 2;
-        const size_t clip2 = currentClipIndex + 3;
-        const size_t clip3 = currentClipIndex + 3;
-        const size_t clip4 = currentClipIndex + 4;
-        const size_t clip5 = currentClipIndex + 0;
+        const int32 clip0 = (currentClipIndex + 0) * stride;
+        const int32 clip1 = (currentClipIndex + 2) * stride;
+        const int32 clip2 = (currentClipIndex + 3) * stride;
+        const int32 clip3 = (currentClipIndex + 3) * stride;
+        const int32 clip4 = (currentClipIndex + 4) * stride;
+        const int32 clip5 = (currentClipIndex + 0) * stride;
 
-        size_t clippedTriangle[6] = { clip0, clip1, clip2, clip3, clip4, clip5 };
+        int32 clippedTriangle[6] = { clip0, clip1, clip2, clip3, clip4, clip5 };
         indexBuffer.AppendClipData(clippedTriangle, 6);
       }
       else if (numClippedVerts == 6) {
-        const size_t clip0 = currentClipIndex + 0;
-        const size_t clip1 = currentClipIndex + 2;
-        const size_t clip2 = currentClipIndex + 3;
-        const size_t clip3 = currentClipIndex + 0;
-        const size_t clip4 = currentClipIndex + 3;
-        const size_t clip5 = currentClipIndex + 4;
-        const size_t clip6 = currentClipIndex + 4;
-        const size_t clip7 = currentClipIndex + 5;
-        const size_t clip8 = currentClipIndex + 0;
+        const int32 clip0 = (currentClipIndex + 0) * stride;
+        const int32 clip1 = (currentClipIndex + 2) * stride;
+        const int32 clip2 = (currentClipIndex + 3) * stride;
+        const int32 clip3 = (currentClipIndex + 0) * stride;
+        const int32 clip4 = (currentClipIndex + 3) * stride;
+        const int32 clip5 = (currentClipIndex + 4) * stride;
+        const int32 clip6 = (currentClipIndex + 4) * stride;
+        const int32 clip7 = (currentClipIndex + 5) * stride;
+        const int32 clip8 = (currentClipIndex + 0) * stride;
 
-        size_t clippedTriangle[9] = { clip0, clip1, clip2, clip3, clip4, clip5, clip6, clip7, clip8 };
+        int32 clippedTriangle[9] = { clip0, clip1, clip2, clip3, clip4, clip5, clip6, clip7, clip8 };
         indexBuffer.AppendClipData(clippedTriangle, 9);
       }
     }
@@ -121,24 +123,26 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
 void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   NamedScopedTimer(NDC_Clip);
 
-  const size_t stride = vertexBuffer.GetStride();
-  const size_t vertByteSize = stride * sizeof(float);
-  const size_t indexBufferSize = indexBuffer.GetIndexSize();
+  const int32 stride = vertexBuffer.GetStride();
+  const int32 vertByteSize = stride * sizeof(float);
+  const int32 indexBufferSize = indexBuffer.GetIndexSize();
 
-  for (size_t i = 0; i < indexBufferSize; i += TRI_VERTS) {
-    const size_t i1 = indexBuffer[i];
-    const size_t i2 = indexBuffer[i + 1];
-    const size_t i3 = indexBuffer[i + 2];
-    const float* v1 = vertexBuffer[i1];
-    const float* v2 = vertexBuffer[i2];
-    const float* v3 = vertexBuffer[i3];
+  const float* vertexBufferData = vertexBuffer[0];
+
+  for (int32 i = 0; i < indexBufferSize; i += TRI_VERTS) {
+    const int32 i1 = indexBuffer[i];
+    const int32 i2 = indexBuffer[i + 1];
+    const int32 i3 = indexBuffer[i + 2];
+    const float* v1 = vertexBufferData + i1;
+    const float* v2 = vertexBufferData + i2;
+    const float* v3 = vertexBufferData + i3;
 
     float clipBuffer[ScatchSize] = {};
     memcpy(clipBuffer, v1, vertByteSize);
     memcpy(clipBuffer + stride, v2, vertByteSize);
     memcpy(clipBuffer + (stride * 2), v3, vertByteSize);
 
-    size_t numClippedVerts = 3;
+    int32 numClippedVerts = 3;
 
 #if DEBUG_CLIPPING
     size_t currentClipIndex = vertexBuffer.GetClipLength();
@@ -191,44 +195,44 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     if (numClippedVerts > 0) {
       ZAssert(numClippedVerts < 7);
 
-      size_t currentClipIndex = vertexBuffer.GetClipLength();
+      int32 currentClipIndex = vertexBuffer.GetClipLength();
 
       vertexBuffer.AppendClipData(clipBuffer, numClippedVerts * vertByteSize, numClippedVerts);
 
-      size_t nextTriangle[3] = { currentClipIndex, currentClipIndex + 1, currentClipIndex + 2 };
+      int32 nextTriangle[3] = { currentClipIndex * stride, (currentClipIndex + 1) * stride, (currentClipIndex + 2) * stride };
       indexBuffer.AppendClipData(nextTriangle, 3);
 
       if (numClippedVerts == 4) {
-        const size_t clip0 = currentClipIndex + 0;
-        const size_t clip1 = currentClipIndex + 2;
-        const size_t clip2 = currentClipIndex + 3;
+        const int32 clip0 = (currentClipIndex + 0) * stride;
+        const int32 clip1 = (currentClipIndex + 2) * stride;
+        const int32 clip2 = (currentClipIndex + 3) * stride;
 
-        size_t clippedTriangle[3] = { clip0, clip1, clip2 };
+        int32 clippedTriangle[3] = { clip0, clip1, clip2 };
         indexBuffer.AppendClipData(clippedTriangle, 3);
       }
       else if (numClippedVerts == 5) {
-        const size_t clip0 = currentClipIndex + 0;
-        const size_t clip1 = currentClipIndex + 2;
-        const size_t clip2 = currentClipIndex + 3;
-        const size_t clip3 = currentClipIndex + 3;
-        const size_t clip4 = currentClipIndex + 4;
-        const size_t clip5 = currentClipIndex + 0;
+        const int32 clip0 = (currentClipIndex + 0) * stride;
+        const int32 clip1 = (currentClipIndex + 2) * stride;
+        const int32 clip2 = (currentClipIndex + 3) * stride;
+        const int32 clip3 = (currentClipIndex + 3) * stride;
+        const int32 clip4 = (currentClipIndex + 4) * stride;
+        const int32 clip5 = (currentClipIndex + 0) * stride;
 
-        size_t clippedTriangle[6] = { clip0, clip1, clip2, clip3, clip4, clip5 };
+        int32 clippedTriangle[6] = { clip0, clip1, clip2, clip3, clip4, clip5 };
         indexBuffer.AppendClipData(clippedTriangle, 6);
       }
       else if (numClippedVerts == 6) {
-        const size_t clip0 = currentClipIndex + 0;
-        const size_t clip1 = currentClipIndex + 2;
-        const size_t clip2 = currentClipIndex + 3;
-        const size_t clip3 = currentClipIndex + 0;
-        const size_t clip4 = currentClipIndex + 3;
-        const size_t clip5 = currentClipIndex + 4;
-        const size_t clip6 = currentClipIndex + 4;
-        const size_t clip7 = currentClipIndex + 5;
-        const size_t clip8 = currentClipIndex + 0;
+        const int32 clip0 = (currentClipIndex + 0) * stride;
+        const int32 clip1 = (currentClipIndex + 2) * stride;
+        const int32 clip2 = (currentClipIndex + 3) * stride;
+        const int32 clip3 = (currentClipIndex + 0) * stride;
+        const int32 clip4 = (currentClipIndex + 3) * stride;
+        const int32 clip5 = (currentClipIndex + 4) * stride;
+        const int32 clip6 = (currentClipIndex + 4) * stride;
+        const int32 clip7 = (currentClipIndex + 5) * stride;
+        const int32 clip8 = (currentClipIndex + 0) * stride;
 
-        size_t clippedTriangle[9] = { clip0, clip1, clip2, clip3, clip4, clip5, clip6, clip7, clip8 };
+        int32 clippedTriangle[9] = { clip0, clip1, clip2, clip3, clip4, clip5, clip6, clip7, clip8 };
         indexBuffer.AppendClipData(clippedTriangle, 9);
       }
     }
@@ -236,13 +240,13 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   }
 }
 
-size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, const float clipEdge[3], const float edgeNormal[3], size_t stride) {
-  size_t numOutputVerts = 0;
-  const size_t vertByteSize = stride * sizeof(float);
+int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const float clipEdge[3], const float edgeNormal[3], int32 stride) {
+  int32 numOutputVerts = 0;
+  const int32 vertByteSize = stride * sizeof(float);
   float clipBuffer[ScatchSize];
 
-  for (size_t i = 0; i < numInputVerts; ++i) {
-    const size_t nextIndex = (i + 1) % numInputVerts;
+  for (int32 i = 0; i < numInputVerts; ++i) {
+    const int32 nextIndex = (i + 1) % numInputVerts;
 
     const float* currentOffset = inputVerts + (i * stride);
     const float* nextOffset = inputVerts + (nextIndex * stride);
@@ -281,7 +285,7 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
 
         // Clipped attributes.
         float* attributeOffset = (clipBuffer + (numOutputVerts * stride)) + 4;
-        for (size_t j = 0; j < stride - 4; ++j) {
+        for (int32 j = 0; j < stride - 4; ++j) {
           attributeOffset[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
         }
         ++numOutputVerts;
@@ -300,7 +304,7 @@ size_t SutherlandHodgmanClip(float* inputVerts, const size_t numInputVerts, cons
 
         // Clipped attributes.
         float* attributeOffset = (clipBuffer + (numOutputVerts * stride)) + 4;
-        for (size_t j = 0; j < stride - 4; ++j) {
+        for (int32 j = 0; j < stride - 4; ++j) {
           attributeOffset[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
         }
         ++numOutputVerts;
@@ -331,7 +335,7 @@ void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& 
   const float* minVec = *aabb.MinBounds();
   const float* maxVec = *aabb.MaxBounds();
   
-  const size_t aabbStride = 4; // XYZW
+  const int32 aabbStride = 4; // XYZW
   vertexBuffer.Resize(8 * aabbStride, aabbStride);
 
   float aabbVerts[8 * aabbStride];
@@ -386,60 +390,60 @@ void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& 
 
   vertexBuffer.CopyInputData(aabbVerts, 0, 8 * aabbStride);
 
-  size_t indices[12 * 3];
+  int32 indices[12 * 3];
   // Front Face
-  indices[0] = 2;
-  indices[1] = 0;
-  indices[2] = 1;
+  indices[0] = 2 * aabbStride;
+  indices[1] = 0 * aabbStride;
+  indices[2] = 1 * aabbStride;
 
-  indices[3] = 2;
-  indices[4] = 3;
-  indices[5] = 0;
+  indices[3] = 2 * aabbStride;
+  indices[4] = 3 * aabbStride;
+  indices[5] = 0 * aabbStride;
 
   // Right Face
-  indices[6] = 6;
-  indices[7] = 1;
-  indices[8] = 5;
+  indices[6] = 6 * aabbStride;
+  indices[7] = 1 * aabbStride;
+  indices[8] = 5 * aabbStride;
 
-  indices[9] = 6;
-  indices[10] = 2;
-  indices[11] = 1;
+  indices[9] = 6 * aabbStride;
+  indices[10] = 2 * aabbStride;
+  indices[11] = 1 * aabbStride;
 
   // Back Face
-  indices[12] = 7;
-  indices[13] = 5;
-  indices[14] = 4;
+  indices[12] = 7 * aabbStride;
+  indices[13] = 5 * aabbStride;
+  indices[14] = 4 * aabbStride;
 
-  indices[15] = 7;
-  indices[16] = 6;
-  indices[17] = 5;
+  indices[15] = 7 * aabbStride;
+  indices[16] = 6 * aabbStride;
+  indices[17] = 5 * aabbStride;
 
   // Left Face
-  indices[18] = 3;
-  indices[19] = 4;
-  indices[20] = 0;
+  indices[18] = 3 * aabbStride;
+  indices[19] = 4 * aabbStride;
+  indices[20] = 0 * aabbStride;
 
-  indices[21] = 3;
-  indices[22] = 7;
-  indices[23] = 4;
+  indices[21] = 3 * aabbStride;
+  indices[22] = 7 * aabbStride;
+  indices[23] = 4 * aabbStride;
 
   // Top Face
-  indices[24] = 6;
-  indices[25] = 3;
-  indices[26] = 2;
+  indices[24] = 6 * aabbStride;
+  indices[25] = 3 * aabbStride;
+  indices[26] = 2 * aabbStride;
 
-  indices[27] = 6;
-  indices[28] = 7;
-  indices[29] = 3;
+  indices[27] = 6 * aabbStride;
+  indices[28] = 7 * aabbStride;
+  indices[29] = 3 * aabbStride;
 
   // Bottom Face
-  indices[30] = 1;
-  indices[31] = 4;
-  indices[32] = 5;
+  indices[30] = 1 * aabbStride;
+  indices[31] = 4 * aabbStride;
+  indices[32] = 5 * aabbStride;
 
-  indices[33] = 1;
-  indices[34] = 0;
-  indices[35] = 4;
+  indices[33] = 1 * aabbStride;
+  indices[34] = 0 * aabbStride;
+  indices[35] = 4 * aabbStride;
 
   indexBuffer.Resize(12 * 3);
   indexBuffer.CopyInputData(indices, 0, 12 * 3);
@@ -453,7 +457,7 @@ void TriangulateAABBWithColor(const AABB& aabb, VertexBuffer& vertexBuffer, Inde
   const float G = color.G() / 255.f;
   const float B = color.B() / 255.f;
 
-  const size_t aabbStride = 4 + 3; // XYZW, RGB
+  const int32 aabbStride = 4 + 3; // XYZW, RGB
   vertexBuffer.Resize(8 * aabbStride, aabbStride);
 
   float aabbVerts[8 * aabbStride];
@@ -532,60 +536,60 @@ void TriangulateAABBWithColor(const AABB& aabb, VertexBuffer& vertexBuffer, Inde
 
   vertexBuffer.CopyInputData(aabbVerts, 0, 8 * aabbStride);
 
-  size_t indices[12 * 3];
+  int32 indices[12 * 3];
   // Front Face
-  indices[0] = 2;
-  indices[1] = 0;
-  indices[2] = 1;
+  indices[0] = 2 * aabbStride;
+  indices[1] = 0 * aabbStride;
+  indices[2] = 1 * aabbStride;
 
-  indices[3] = 2;
-  indices[4] = 3;
-  indices[5] = 0;
+  indices[3] = 2 * aabbStride;
+  indices[4] = 3 * aabbStride;
+  indices[5] = 0 * aabbStride;
 
   // Right Face
-  indices[6] = 6;
-  indices[7] = 1;
-  indices[8] = 5;
+  indices[6] = 6 * aabbStride;
+  indices[7] = 1 * aabbStride;
+  indices[8] = 5 * aabbStride;
 
-  indices[9] = 6;
-  indices[10] = 2;
-  indices[11] = 1;
+  indices[9] = 6 * aabbStride;
+  indices[10] = 2 * aabbStride;
+  indices[11] = 1 * aabbStride;
 
   // Back Face
-  indices[12] = 7;
-  indices[13] = 5;
-  indices[14] = 4;
+  indices[12] = 7 * aabbStride;
+  indices[13] = 5 * aabbStride;
+  indices[14] = 4 * aabbStride;
 
-  indices[15] = 7;
-  indices[16] = 6;
-  indices[17] = 5;
+  indices[15] = 7 * aabbStride;
+  indices[16] = 6 * aabbStride;
+  indices[17] = 5 * aabbStride;
 
   // Left Face
-  indices[18] = 3;
-  indices[19] = 4;
-  indices[20] = 0;
+  indices[18] = 3 * aabbStride;
+  indices[19] = 4 * aabbStride;
+  indices[20] = 0 * aabbStride;
 
-  indices[21] = 3;
-  indices[22] = 7;
-  indices[23] = 4;
+  indices[21] = 3 * aabbStride;
+  indices[22] = 7 * aabbStride;
+  indices[23] = 4 * aabbStride;
 
   // Top Face
-  indices[24] = 6;
-  indices[25] = 3;
-  indices[26] = 2;
+  indices[24] = 6 * aabbStride;
+  indices[25] = 3 * aabbStride;
+  indices[26] = 2 * aabbStride;
 
-  indices[27] = 6;
-  indices[28] = 7;
-  indices[29] = 3;
+  indices[27] = 6 * aabbStride;
+  indices[28] = 7 * aabbStride;
+  indices[29] = 3 * aabbStride;
 
   // Bottom Face
-  indices[30] = 1;
-  indices[31] = 4;
-  indices[32] = 5;
+  indices[30] = 1 * aabbStride;
+  indices[31] = 4 * aabbStride;
+  indices[32] = 5 * aabbStride;
 
-  indices[33] = 1;
-  indices[34] = 0;
-  indices[35] = 4;
+  indices[33] = 1 * aabbStride;
+  indices[34] = 0 * aabbStride;
+  indices[35] = 4 * aabbStride;
 
   indexBuffer.Resize(12 * 3);
   indexBuffer.CopyInputData(indices, 0, 12 * 3);

@@ -11,22 +11,22 @@ class Triangle final {
 
   Triangle();
 
-  Triangle(size_t p1, size_t p2, size_t p3);
+  Triangle(int32 p1, int32 p2, int32 p3);
 
   Triangle(const Triangle& copy);
 
   void operator=(const Triangle& rhs);
 
-  size_t operator[](size_t index) const;
+  int32 operator[](int32 index) const;
 
-  size_t& operator[](size_t index);
+  int32& operator[](int32 index);
 
-  const size_t* GetData();
+  const int32* GetData();
 
-  const size_t* GetData() const;
+  const int32* GetData() const;
 
   private:
-  size_t mIndicies[TRI_VERTS] = {0, 0, 0};
+  int32 mIndicies[TRI_VERTS] = {0, 0, 0};
 };
 
 }

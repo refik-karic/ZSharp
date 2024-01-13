@@ -70,8 +70,8 @@ void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) co
       continue;
     }
 
-    indexBuffer.CopyInputData(reinterpret_cast<const size_t*>(mesh.GetTriangleFaceTable().GetData()), 0, mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
-    vertexBuffer.CopyInputData(mesh.GetVertTable().GetData(), 0, mesh.GetVertTable().Size());
+    indexBuffer.CopyInputData(reinterpret_cast<const int32*>(mesh.GetTriangleFaceTable().GetData()), 0, (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS));
+    vertexBuffer.CopyInputData(mesh.GetVertTable().GetData(), 0, (int32)(mesh.GetVertTable().Size()));
   }
 }
 

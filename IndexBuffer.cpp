@@ -113,6 +113,10 @@ const size_t* IndexBuffer::GetClipData(size_t index) const {
   return mClipData + index;
 }
 
+size_t* IndexBuffer::GetClipData(size_t index) {
+  return mClipData + index;
+}
+
 void IndexBuffer::ShuffleClippedData() {
   const size_t offset = mClipLength;
   const size_t totalBytes = offset * sizeof(size_t);

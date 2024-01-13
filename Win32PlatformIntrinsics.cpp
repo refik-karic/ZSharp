@@ -513,14 +513,14 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
-void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const size_t stride, const size_t end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
+void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const size_t end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     for (size_t i = 0; i < end; i += 3) {
-      const float* v1 = vertices + (indices[i] * stride);
-      const float* v2 = vertices + (indices[i + 1] * stride);
-      const float* v3 = vertices + (indices[i + 2] * stride);
+      const float* v1 = vertices + indices[i];
+      const float* v2 = vertices + indices[i + 1];
+      const float* v3 = vertices + indices[i + 2];
 
       float x0 = v1[0];
       float x1 = v2[0];
@@ -754,9 +754,9 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
   }
   else {
     for (size_t i = 0; i < end; i += 3) {
-      const float* v1 = vertices + (indices[i] * stride);
-      const float* v2 = vertices + (indices[i + 1] * stride);
-      const float* v3 = vertices + (indices[i + 2] * stride);
+      const float* v1 = vertices + indices[i];
+      const float* v2 = vertices + indices[i + 1];
+      const float* v3 = vertices + indices[i + 2];
 
       float x0 = v1[0];
       float x1 = v2[0];
@@ -994,14 +994,14 @@ void Unaligned_FlatShadeRGB(const float* vertices, const size_t* indices, const 
   }
 }
 
-void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const size_t stride, const size_t end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture) {
+void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const size_t end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     for (size_t i = 0; i < end; i += 3) {
-      const float* v1 = vertices + (indices[i] * stride);
-      const float* v2 = vertices + (indices[i + 1] * stride);
-      const float* v3 = vertices + (indices[i + 2] * stride);
+      const float* v1 = vertices + indices[i];
+      const float* v2 = vertices + indices[i + 1];
+      const float* v3 = vertices + indices[i + 2];
 
       float x0 = v1[0];
       float x1 = v2[0];
@@ -1235,9 +1235,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const size_t* indices, const 
   }
   else {
     for (size_t i = 0; i < end; i += 3) {
-      const float* v1 = vertices + (indices[i] * stride);
-      const float* v2 = vertices + (indices[i + 1] * stride);
-      const float* v3 = vertices + (indices[i + 2] * stride);
+      const float* v1 = vertices + indices[i];
+      const float* v2 = vertices + indices[i + 1];
+      const float* v3 = vertices + indices[i + 2];
 
       float x0 = v1[0];
       float x1 = v2[0];

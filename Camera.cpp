@@ -18,7 +18,7 @@ Camera::Camera() {
   mLook[2] = -1.f;
   mUp[1] = 1.f;
 
-  mFovHoriz = 45.f;
+  mFovHoriz = 70.f;
   mFovVert = 45.f;
 
   //mNearPlane = 0.02f;
@@ -154,12 +154,12 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     ClipTriangles(vertexBuffer, indexBuffer);
   }
 
-  const size_t clipLength = vertexBuffer.GetClipLength();
+  const size_t vertClipLength = vertexBuffer.GetClipLength();
   const float* windowTransformVec0 = *mWindowTransform[0];
   const float* windowTransformVec1 = *mWindowTransform[1];
   float* vertexClipData = vertexBuffer.GetClipData(0);
 
-  for (size_t i = 0; i < clipLength; ++i) {
+  for (size_t i = 0; i < vertClipLength; ++i) {
     float* vertexData = vertexClipData + (i * stride);
 
     const float perspectiveZ = vertexData[3];
@@ -186,6 +186,13 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     for (size_t j = 4; j < stride; ++j) {
       vertexData[j] *= invPerspectiveZ;
     }
+  }
+
+  const size_t indexClipLength = indexBuffer.GetClipLength();
+  size_t* indexClipData = indexBuffer.GetClipData(0);
+
+  for (size_t i = 0; i < indexClipLength; ++i) {
+    indexClipData[i] *= stride;
   }
 }
 

@@ -149,7 +149,6 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
   const float maxHeight = (float)frameHeight;
   const float maxWidth = (float)frameWidth;
 
-  const size_t vertexStride = vertexBuffer.GetStride();
   const float* vertexClipData = vertexBuffer.GetClipData(0);
   const size_t* indexClipData = indexBuffer.GetClipData(0);
   const size_t end = indexBuffer.GetClipLength();
@@ -243,7 +242,7 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
     }
   }
 #else
-  Unaligned_FlatShadeRGB(vertexClipData, indexClipData, vertexStride, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
+  Unaligned_FlatShadeRGB(vertexClipData, indexClipData, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
 #endif
 }
 
@@ -255,7 +254,6 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
   const float maxHeight = (float)frameHeight;
   const float maxWidth = (float)frameWidth;
 
-  const size_t vertexStride = vertexBuffer.GetStride();
   const float* vertexClipData = vertexBuffer.GetClipData(0);
   const size_t* indexClipData = indexBuffer.GetClipData(0);
   const size_t end = indexBuffer.GetClipLength();
@@ -352,21 +350,20 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
     }
   }
 #else
-  Unaligned_FlatShadeUVs(vertexClipData, indexClipData, vertexStride, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture);
+  Unaligned_FlatShadeUVs(vertexClipData, indexClipData, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture);
 #endif
 }
 
 void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {
   NamedScopedTimer(DrawWireframeTriangles);
   
-  const size_t vertexStride = vertexBuffer.GetStride();
   const float* vertexClipData = vertexBuffer.GetClipData(0);
   const size_t* indexClipData = indexBuffer.GetClipData(0);
   const size_t end = indexBuffer.GetClipLength();
   for (size_t i = 0; i < end; i += TRI_VERTS) {
-    const float* v1 = vertexClipData + (indexClipData[i] * vertexStride);
-    const float* v2 = vertexClipData + (indexClipData[i + 1] * vertexStride);
-    const float* v3 = vertexClipData + (indexClipData[i + 2] * vertexStride);
+    const float* v1 = vertexClipData + indexClipData[i];
+    const float* v2 = vertexClipData + indexClipData[i + 1];
+    const float* v3 = vertexClipData + indexClipData[i + 2];
     DrawRunSlice(framebuffer, v1, v2);
     DrawRunSlice(framebuffer, v2, v3);
     DrawRunSlice(framebuffer, v3, v1);

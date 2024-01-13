@@ -37,6 +37,8 @@ class IndexBuffer final {
 
   const size_t* GetClipData(size_t index) const;
 
+  size_t* GetClipData(size_t index);
+
   void ShuffleClippedData();
 
   private:

@@ -87,6 +87,7 @@ void VertexBuffer::Resize(int32 vertexSize, int32 stride) {
   mClipData = mData + mInputSize;
   mWorkingSize = 0;
   mClipLength = 0;
+  mWasClipped = false;
 }
 
 void VertexBuffer::Clear() {
@@ -98,6 +99,7 @@ void VertexBuffer::Reset() {
   mWorkingSize = 0;
   mClipLength = 0;
   mClipData = mData + mInputSize;
+  mWasClipped = false;
 }
 
 void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
@@ -142,6 +144,10 @@ AABB VertexBuffer::ComputeBoundingBox() const {
   AABB aabb(min, max);
 
   return aabb;
+}
+
+bool& VertexBuffer::WasClipped() {
+  return mWasClipped;
 }
 
 }

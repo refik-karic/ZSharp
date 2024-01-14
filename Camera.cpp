@@ -146,18 +146,26 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   // If Z = 0, divide by 0 occurs and trashes the results.
   Aligned_Vec4Homogenize(vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
 
-  if (clipBounds == ClipBounds::Inside) {
-    vertexBuffer.AppendClipData(vertexBuffer[0], vertexBuffer.GetVertSize() * stride * sizeof(float), vertexBuffer.GetVertSize());
-    indexBuffer.AppendClipData(indexBuffer.GetInputData(), indexBuffer.GetIndexSize());
-  }
-  else {
+  if (clipBounds != ClipBounds::Inside) {
     ClipTriangles(vertexBuffer, indexBuffer);
+    vertexBuffer.WasClipped() = true;
+    indexBuffer.WasClipped() = true;
   }
 
-  const int32 vertClipLength = vertexBuffer.GetClipLength();
   const float* windowTransformVec0 = *mWindowTransform[0];
   const float* windowTransformVec1 = *mWindowTransform[1];
-  float* vertexClipData = vertexBuffer.GetClipData(0);
+
+  int32 vertClipLength = 0;
+  float* vertexClipData = nullptr;
+
+  if (vertexBuffer.WasClipped()) {
+    vertClipLength = vertexBuffer.GetClipLength();
+    vertexClipData = vertexBuffer.GetClipData(0);
+  }
+  else {
+    vertClipLength = vertexBuffer.GetVertSize();
+    vertexClipData = vertexBuffer[0];
+  }
 
   for (int32 i = 0; i < vertClipLength; ++i) {
     float* vertexData = vertexClipData + (i * stride);

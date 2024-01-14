@@ -55,6 +55,10 @@ int32* IndexBuffer::GetInputData() {
   return mData;
 }
 
+const int32* IndexBuffer::GetInputData() const {
+  return mData;
+}
+
 void IndexBuffer::Resize(int32 size) {
   if (mData != nullptr) {
     PlatformAlignedFree(mData);
@@ -66,6 +70,7 @@ void IndexBuffer::Resize(int32 size) {
   mClipData = mData + mInputSize;
   mClipLength = 0;
   mWorkingSize = 0;
+  mWasClipped = false;
 }
 
 void IndexBuffer::Clear() {
@@ -77,6 +82,7 @@ void IndexBuffer::Reset() {
   mClipLength = 0;
   mWorkingSize = 0;
   mClipData = mData + mInputSize;
+  mWasClipped = false;
 }
 
 void IndexBuffer::RemoveTriangle(int32 index) {
@@ -124,6 +130,10 @@ void IndexBuffer::ShuffleClippedData() {
   mClipLength = 0;
   mClipData = mData + offset;
   mWorkingSize = offset;
+}
+
+bool& IndexBuffer::WasClipped() {
+  return mWasClipped;
 }
 
 }

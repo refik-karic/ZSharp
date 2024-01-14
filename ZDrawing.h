@@ -12,19 +12,22 @@
 namespace ZSharp {
 
 void DrawTrianglesFlatRGB(Framebuffer& framebuffer,
-    DepthBuffer& depthBuffer,
-    const VertexBuffer& vertexBuffer,
-    const IndexBuffer& indexBuffer);
+  DepthBuffer& depthBuffer,
+  const VertexBuffer& vertexBuffer,
+  const IndexBuffer& indexBuffer,
+  bool wasClipped);
 
 void DrawTrianglesFlatUV(Framebuffer& framebuffer,
   DepthBuffer& depthBuffer,
   const VertexBuffer& vertexBuffer,
   const IndexBuffer& indexBuffer,
+  bool wasClipped,
   const Texture* texture);
 
 void DrawTrianglesWireframe(Framebuffer& framebuffer,
-    const VertexBuffer& vertexBuffer,
-    const IndexBuffer& indexBuffer);
+  const VertexBuffer& vertexBuffer,
+  const IndexBuffer& indexBuffer,
+  bool wasClipped);
 
 void DrawRunSlice(Framebuffer& framebuffer,
     const float* p0,

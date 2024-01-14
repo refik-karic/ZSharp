@@ -141,7 +141,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
   }
 }
 
-void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {
+void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped) {
   NamedScopedTimer(DrawFlatTrianglesRGB);
   
   const size_t frameHeight = framebuffer.GetHeight();
@@ -149,9 +149,20 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
   const float maxHeight = (float)frameHeight;
   const float maxWidth = (float)frameWidth;
 
-  const float* vertexClipData = vertexBuffer.GetClipData(0);
-  const int32* indexClipData = indexBuffer.GetClipData(0);
-  const int32 end = indexBuffer.GetClipLength();
+  const float* vertexClipData;
+  const int32* indexClipData;
+  int32 end;
+
+  if (wasClipped) {
+    vertexClipData = vertexBuffer.GetClipData(0);
+    indexClipData = indexBuffer.GetClipData(0);
+    end = indexBuffer.GetClipLength();
+  }
+  else {
+    vertexClipData = vertexBuffer[0];
+    indexClipData = indexBuffer.GetInputData();
+    end = indexBuffer.GetIndexSize();
+  }
   
 #if 0
   for (size_t i = 0; i < end; i += TRI_VERTS) {
@@ -246,7 +257,7 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
 #endif
 }
 
-void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, const Texture* texture) {
+void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped, const Texture* texture) {
   NamedScopedTimer(DrawFlatTrianglesUV);
 
   const size_t frameHeight = framebuffer.GetHeight();
@@ -254,9 +265,20 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
   const float maxHeight = (float)frameHeight;
   const float maxWidth = (float)frameWidth;
 
-  const float* vertexClipData = vertexBuffer.GetClipData(0);
-  const int32* indexClipData = indexBuffer.GetClipData(0);
-  const int32 end = indexBuffer.GetClipLength();
+  const float* vertexClipData;
+  const int32* indexClipData;
+  int32 end;
+
+  if (wasClipped) {
+    vertexClipData = vertexBuffer.GetClipData(0);
+    indexClipData = indexBuffer.GetClipData(0);
+    end = indexBuffer.GetClipLength();
+  }
+  else {
+    vertexClipData = vertexBuffer[0];
+    indexClipData = indexBuffer.GetInputData();
+    end = indexBuffer.GetIndexSize();
+  }
 
 #if 0
   for (size_t i = 0; i < end; i += TRI_VERTS) {
@@ -354,12 +376,24 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
 #endif
 }
 
-void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer) {
+void DrawTrianglesWireframe(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped) {
   NamedScopedTimer(DrawWireframeTriangles);
   
-  const float* vertexClipData = vertexBuffer.GetClipData(0);
-  const int32* indexClipData = indexBuffer.GetClipData(0);
-  const int32 end = indexBuffer.GetClipLength();
+  const float* vertexClipData;
+  const int32* indexClipData;
+  int32 end;
+
+  if (wasClipped) {
+    vertexClipData = vertexBuffer.GetClipData(0);
+    indexClipData = indexBuffer.GetClipData(0);
+    end = indexBuffer.GetClipLength();
+  }
+  else {
+    vertexClipData = vertexBuffer[0];
+    indexClipData = indexBuffer.GetInputData();
+    end = indexBuffer.GetIndexSize();
+  }
+
   for (int32 i = 0; i < end; i += TRI_VERTS) {
     const float* v1 = vertexClipData + indexClipData[i];
     const float* v2 = vertexClipData + indexClipData[i + 1];

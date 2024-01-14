@@ -68,7 +68,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
         TriangulateAABBWithColor(aabb, aabbVertexBuffer, aabbIndexBuffer, aabbColor);
 
         camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds);
-        DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer);
+        DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer, aabbVertexBuffer.WasClipped());
       }
     }
 
@@ -80,13 +80,13 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
         switch (model.ShadingOrder()[0].mode) {
           case ShadingModes::RGB:
           {
-            DrawTrianglesFlatRGB(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer);
+            DrawTrianglesFlatRGB(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
           }
             break;
           case ShadingModes::UV:
           {
             Texture* texture = TexturePool::Get().GetTexture(model.TextureId());
-            DrawTrianglesFlatUV(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, texture);
+            DrawTrianglesFlatUV(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), texture);
           }
           break;
           default:
@@ -95,7 +95,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
       }
         break;
       case RenderMode::WIREFRAME:
-        DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer);
+        DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
         break;
     }
   }

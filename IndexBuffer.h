@@ -25,6 +25,8 @@ class IndexBuffer final {
 
   int32* GetInputData();
 
+  const int32* GetInputData() const;
+
   void Resize(int32 size);
 
   void Clear();
@@ -43,6 +45,8 @@ class IndexBuffer final {
 
   void ShuffleClippedData();
 
+  bool& WasClipped();
+
   private:
   int32* mData = nullptr;
   int32* mClipData = nullptr;
@@ -50,6 +54,7 @@ class IndexBuffer final {
   int32 mAllocatedSize = 0;
   int32 mWorkingSize = 0;
   int32 mClipLength = 0;
+  bool mWasClipped = false;
 };
 
 }

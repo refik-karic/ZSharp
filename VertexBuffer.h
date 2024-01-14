@@ -49,6 +49,8 @@ class VertexBuffer final {
 
   AABB ComputeBoundingBox() const;
 
+  bool& WasClipped();
+
   private:
   float* mData = nullptr;
   float* mClipData = nullptr;
@@ -57,6 +59,7 @@ class VertexBuffer final {
   int32 mWorkingSize = 0;
   int32 mClipLength = 0;
   int32 mStride = 0;
+  bool mWasClipped = false;
 };
 
 }

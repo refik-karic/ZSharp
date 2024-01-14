@@ -1,5 +1,7 @@
 #include "Mesh.h"
 
+#include "PlatformIntrinsics.h"
+
 #include <cstring>
 
 namespace ZSharp {
@@ -34,7 +36,7 @@ void Mesh::Resize(size_t vertexLength, size_t faceTableLength) {
 }
 
 void Mesh::SetData(const float* vertData, size_t index, size_t numBytes) {
-  memcpy(mVertTable.GetData() + index, vertData, numBytes);
+  Aligned_Memcpy(mVertTable.GetData() + index, vertData, numBytes);
 }
 
 void Mesh::SetTriangle(const Triangle& triangle, size_t index) {

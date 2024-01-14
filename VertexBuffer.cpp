@@ -36,7 +36,7 @@ void VertexBuffer::operator=(const VertexBuffer& rhs) {
   }
 
   Resize(rhs.mInputSize, rhs.mStride);
-  memcpy(mData, rhs.mData, rhs.mAllocatedSize);
+  Aligned_Memcpy(mData, rhs.mData, rhs.mAllocatedSize);
 }
 
 float* VertexBuffer::operator[](int32 index) const {
@@ -62,7 +62,7 @@ int32 VertexBuffer::GetStride() const {
 }
 
 void VertexBuffer::CopyInputData(const float* data, int32 index, int32 length) {
-  memcpy(mData + index, data, length * sizeof(float));
+  Aligned_Memcpy(mData + index, data, length * sizeof(float));
   mWorkingSize += length;
 }
 

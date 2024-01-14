@@ -1,10 +1,11 @@
 #include "IndexBuffer.h"
 
-#include "PlatformMemory.h"
-#include "ZAssert.h"
-#include <cstring>
-
 #include "Constants.h"
+#include "PlatformMemory.h"
+#include "PlatformIntrinsics.h"
+#include "ZAssert.h"
+
+#include <cstring>
 
 static constexpr ZSharp::int32 MAX_INDICIES_AFTER_CLIP = 4;
 
@@ -31,7 +32,7 @@ void IndexBuffer::operator=(const IndexBuffer& rhs) {
   }
 
   Resize(rhs.mInputSize);
-  memcpy(mData, rhs.mData, rhs.mAllocatedSize);
+  Aligned_Memcpy(mData, rhs.mData, rhs.mAllocatedSize);
 }
 
 int32 IndexBuffer::operator[](int32 index) const {
@@ -47,7 +48,7 @@ int32 IndexBuffer::GetIndexSize() const {
 }
 
 void IndexBuffer::CopyInputData(const int32* data, int32 index, int32 length) {
-  memcpy(mData + index, data, length * sizeof(int32));
+  Aligned_Memcpy(mData + index, data, length * sizeof(int32));
   mWorkingSize += length;
 }
 

@@ -192,6 +192,10 @@ void Aligned_Memset(void* __restrict dest, uint32 value, const size_t numBytes) 
 #endif
 }
 
+void Aligned_Memcpy(void* __restrict dest, const void* __restrict src, size_t numBytes) {
+  __movsb((unsigned char*)dest, (const unsigned char*)src, numBytes);
+}
+
 void Unaligned_128Add(const float* a, const float* b, float* dest) {
   _mm_storeu_ps(dest, _mm_add_ps(_mm_loadu_ps(a), _mm_loadu_ps(b)));
 }

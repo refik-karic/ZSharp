@@ -36,6 +36,11 @@ NOTE: This does NOT behave like C's memset() which casts value to a byte.
 */
 void Aligned_Memset(void* __restrict dest, uint32 value, const size_t numBytes);
 
+/*
+This attempts to use the fastest available uArch routine for copying large blocks of data.
+*/
+void Aligned_Memcpy(void* __restrict dest, const void* __restrict src, size_t numBytes);
+
 void Unaligned_128Add(const float* a, const float* b, float* dest);
 
 void Unaligned_128Sub(const float* a, const float* b, float* dest);

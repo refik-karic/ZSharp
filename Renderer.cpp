@@ -16,6 +16,7 @@
 #include "TexturePool.h"
 
 #include <cmath>
+#include <cstring>
 
 namespace ZSharp {
 ConsoleVariable<int32> DevRenderMode("RenderMode", 1);

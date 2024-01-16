@@ -83,7 +83,7 @@ void VertexBuffer::Resize(int32 vertexSize, int32 stride) {
   mAllocatedSize = ((vertexSize * sizeof(float)) + (vertexSize * MAX_INDICIES_AFTER_CLIP * sizeof(float)));
   mStride = stride;
   mAllocatedSize = (int32)RoundUpNearestMultiple(mAllocatedSize, 16);
-  mData = static_cast<float*>(PlatformAlignedMalloc(mAllocatedSize, 16));
+  mData = static_cast<float*>(PlatformAlignedMalloc(mAllocatedSize, PlatformAlignmentGranularity()));
   mClipData = mData + mInputSize;
   mWorkingSize = 0;
   mClipLength = 0;

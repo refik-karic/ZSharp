@@ -122,6 +122,22 @@ bool PlatformSupportsSIMDLanes(SIMDLaneWidth width) {
   return false;
 }
 
+size_t PlatformAlignmentGranularity() {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Sixteen)) {
+    return 64;
+  }
+  else if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    return 32;
+  } 
+  else if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
+    return 16;
+  }
+  else {
+    ZAssert(false);
+    return 0;
+  }
+}
+
 String PlatformCPUVendor() {
   String vendor;
 

@@ -18,6 +18,8 @@ enum class SIMDLaneWidth {
 
 bool PlatformSupportsSIMDLanes(SIMDLaneWidth width);
 
+size_t PlatformAlignmentGranularity();
+
 String PlatformCPUVendor();
 
 String PlatformCPUBrand();

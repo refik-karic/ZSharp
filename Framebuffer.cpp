@@ -109,7 +109,7 @@ void Framebuffer::OnResize(size_t width, size_t height) {
   mHeight = height;
   mStride = mWidth * 4;
   mTotalSize = mStride * mHeight;
-  mPixelBuffer = static_cast<uint8*>(PlatformAlignedMalloc(mTotalSize, 64));
+  mPixelBuffer = static_cast<uint8*>(PlatformAlignedMalloc(mTotalSize, PlatformAlignmentGranularity()));
 }
 
 }

@@ -163,7 +163,7 @@ void DevConsole::OnResize(size_t width, size_t height) {
 
   mWidth = width;
   mHeight = height / 3;
-  mScreen = (uint32*)PlatformAlignedMalloc(mWidth * mHeight * sizeof(uint32), 64);
+  mScreen = (uint32*)PlatformAlignedMalloc(mWidth * mHeight * sizeof(uint32), PlatformAlignmentGranularity());
 }
 
 }

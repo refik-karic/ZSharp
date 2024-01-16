@@ -59,7 +59,7 @@ void DepthBuffer::OnResize(size_t width, size_t height) {
   mWidth = width;
   mHeight = height;
   const size_t totalSize = width * height * sizeof(float);
-  mData = static_cast<float*>(PlatformAlignedMalloc(totalSize, 64));
+  mData = static_cast<float*>(PlatformAlignedMalloc(totalSize, PlatformAlignmentGranularity()));
 }
 
 }

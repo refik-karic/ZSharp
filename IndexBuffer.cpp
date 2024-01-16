@@ -67,7 +67,7 @@ void IndexBuffer::Resize(int32 size) {
 
   mInputSize = size;
   mAllocatedSize = size * MAX_INDICIES_AFTER_CLIP * sizeof(int32);
-  mData = static_cast<int32*>(PlatformAlignedMalloc(mAllocatedSize, 16));
+  mData = static_cast<int32*>(PlatformAlignedMalloc(mAllocatedSize, PlatformAlignmentGranularity()));
   mClipData = mData + mInputSize;
   mClipLength = 0;
   mWorkingSize = 0;

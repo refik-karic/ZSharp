@@ -206,6 +206,26 @@ void GameInstance::Tick() {
   const String cameraView(String::FromFormat("Camera View: {0}\n", mCamera.GetLook().ToString()));
   Logger::Log(LogCategory::Info, cameraView);
 
+  size_t numModels = mWorld.GetModels().Size();
+  size_t numVerts = 0;
+  size_t numTriangles = 0;
+
+  for (Model& model : mWorld.GetModels()) {
+    for (Mesh& mesh : model.GetMeshData()) {
+      numVerts += (mesh.GetVertTable().Size() / mesh.Stride());
+      numTriangles += mesh.GetTriangleFaceTable().Size();
+    }
+  }
+
+  const String modelString(String::FromFormat("Num Models: {0}\n", numModels));
+  Logger::Log(LogCategory::Info, modelString);
+
+  const String vertString(String::FromFormat("Num Verts: {0}\n", numVerts));
+  Logger::Log(LogCategory::Info, vertString);
+
+  const String triangleString(String::FromFormat("Num Triangles: {0}\n", numTriangles));
+  Logger::Log(LogCategory::Info, triangleString);
+
   ++mFrameCount;
 
   InputManager& inputManager = InputManager::Get();
@@ -238,6 +258,20 @@ void GameInstance::Tick() {
 
   mRenderer.RenderNextFrame(mWorld, mCamera);
 
+  size_t remainingTriangles = 0;
+  for (IndexBuffer& indexBuffer : mWorld.GetIndexBuffers()) {
+    if (indexBuffer.WasClipped()) {
+      remainingTriangles += indexBuffer.GetClipLength() / 3;
+    }
+    else {
+      remainingTriangles += indexBuffer.GetIndexSize() / 3;
+    }
+  }
+
+  float cullRatio = (float)remainingTriangles / (float)numTriangles;
+  const String remainingTriangleString(String::FromFormat("Post Clip/Cull Triangles: {0}, {1}%\n", remainingTriangles, cullRatio));
+  Logger::Log(LogCategory::Info, remainingTriangleString);
+
   if (mDrawStats) {
     size_t bufferWidth = mRenderer.GetFrameBuffer().GetWidth();
     uint8* buffer;
@@ -256,6 +290,10 @@ void GameInstance::Tick() {
     DrawText(cameraPosition, 10, 30, buffer, bufferWidth, color);
     DrawText(cameraView, 10, 40, buffer, bufferWidth, color);
     DrawText(physicsTime, 10, 50, buffer, bufferWidth, color);
+    DrawText(modelString, 10, 60, buffer, bufferWidth, color);
+    DrawText(vertString, 10, 70, buffer, bufferWidth, color);
+    DrawText(triangleString, 10, 80, buffer, bufferWidth, color);
+    DrawText(remainingTriangleString, 10, 90, buffer, bufferWidth, color);
   }
 
   if (mDevConsole.IsOpen()) {

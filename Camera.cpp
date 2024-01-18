@@ -4,16 +4,18 @@
 
 #include "CommonMath.h"
 #include "Constants.h"
+#include "ConsoleVariable.h"
 #include "Win32PlatformApplication.h"
 #include "ZAlgorithm.h"
 #include "ZConfig.h"
 #include "PlatformIntrinsics.h"
 #include "ScopedTimer.h"
 
-#define DISABLE_BACKFACE_CULLING 0
 #define ROTATE_CAMERA_WORLD_CENTER 1
 
 namespace ZSharp {
+ConsoleVariable<bool> BackfaceCull("BackfaceCull", true);
+
 Camera::Camera() {
   mLook[2] = -1.f;
   mUp[1] = 1.f;
@@ -125,9 +127,9 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     return;
   }
 
-#if !DISABLE_BACKFACE_CULLING
-  CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
-#endif
+  if (*BackfaceCull) {
+    CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
+  }
 
   const int32 stride = vertexBuffer.GetStride();
 

@@ -96,7 +96,21 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
       }
         break;
       case RenderMode::WIREFRAME:
-        DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
+      {
+        switch (model.ShadingOrder()[0].mode) {
+          case ShadingModes::RGB:
+          {
+            DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
+          }
+          break;
+          default:
+          {
+            ZColor wireframeColor(ZColors::BLUE);
+            DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), wireframeColor);
+          }
+            break;
+        }
+      }
         break;
     }
   }

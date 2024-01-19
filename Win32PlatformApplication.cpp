@@ -3,6 +3,7 @@
 #include "Win32PlatformApplication.h"
 
 #include "Common.h"
+#include "ConsoleVariable.h"
 #include "InputManager.h"
 #include "PlatformMemory.h"
 #include "PNG.h"
@@ -25,11 +26,13 @@
 
 static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
 static ZSharp::WideString TimerName(L"MainLoop");
-static constexpr LONG FRAMERATE_60_HZ_MS = 1000 / 60;
 UINT MinTimerPeriod = 0;
 DWORD WindowStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 
 ZSharp::BroadcastDelegate<size_t, size_t> Win32PlatformApplication::OnWindowSizeChangedDelegate;
+
+ZSharp::ConsoleVariable<bool> UncappedFPS("UncappedFPS", false);
+ZSharp::ConsoleVariable<ZSharp::int32> LockedFPS("LockedFPS", 60);
 
 Win32PlatformApplication& Win32PlatformApplication::Get() {
   static Win32PlatformApplication ZSharpApp;
@@ -288,12 +291,17 @@ void Win32PlatformApplication::OnTimer() {
 
   // Sleep if we have some time left in the frame, otherwise start again immediately.
   frameDeltaTime = ZSharp::PlatformHighResClockDelta(frameDeltaTime, ZSharp::ClockUnits::Milliseconds);
-  if (frameDeltaTime >= FRAMERATE_60_HZ_MS) {
+  if (frameDeltaTime >= (1000 / (*LockedFPS))) {
     frameDeltaTime = 1;
   }
   else {
-    frameDeltaTime = FRAMERATE_60_HZ_MS - frameDeltaTime;
-    frameDeltaTime = (frameDeltaTime * 10000);
+    if (*UncappedFPS) {
+      frameDeltaTime = 1;
+    }
+    else {
+      frameDeltaTime = (1000 / (*LockedFPS)) - frameDeltaTime;
+      frameDeltaTime = (frameDeltaTime * 10000);
+    }
   }
 
   StartTimer((ZSharp::int64)frameDeltaTime);
@@ -568,7 +576,7 @@ void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds) {
 
   SetWaitableTimer(mHighPrecisionTimer,
     &dueTime,
-    FRAMERATE_60_HZ_MS - 2,
+    (1000 / (*LockedFPS)) - 2,
     &Win32PlatformApplication::OnTimerThunk,
     this,
     true);

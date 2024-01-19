@@ -8,6 +8,7 @@
 #include "Texture.h"
 #include "VertexBuffer.h"
 #include "PlatformDefines.h"
+#include "ZColor.h"
 
 namespace ZSharp {
 
@@ -29,8 +30,19 @@ void DrawTrianglesWireframe(Framebuffer& framebuffer,
   const IndexBuffer& indexBuffer,
   bool wasClipped);
 
-void DrawRunSlice(Framebuffer& framebuffer,
+void DrawTrianglesWireframe(Framebuffer& framebuffer,
+  const VertexBuffer& vertexBuffer,
+  const IndexBuffer& indexBuffer,
+  bool wasClipped,
+  ZColor color);
+
+void DrawRunSliceLerp(Framebuffer& framebuffer,
     const float* p0,
     const float* p1);
+
+void DrawRunSlice(Framebuffer& framebuffer,
+  const float* p0,
+  const float* p1,
+  ZColor color);
 
 }

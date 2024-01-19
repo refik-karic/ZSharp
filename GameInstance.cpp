@@ -3,6 +3,7 @@
 #include "Bundle.h"
 #include "CommonMath.h"
 #include "Constants.h"
+#include "ConsoleVariable.h"
 #include "DebugText.h"
 #include "Logger.h"
 #include "PlatformTime.h"
@@ -18,9 +19,9 @@
 #define DEBUG_AUDIO 0
 #define DEBUG_TRIANGLE 0
 #define DEBUG_TRIANGLE_TEXTURE 0
-#define DISABLE_DEBUG_TRANSFORMS 0
 
 namespace ZSharp {
+ConsoleVariable<bool> DebugTransforms("DebugTransforms", true);
 
 GameInstance::GameInstance() {
 
@@ -231,21 +232,21 @@ void GameInstance::Tick() {
   InputManager& inputManager = InputManager::Get();
   inputManager.Process();
 
-#if !DISABLE_DEBUG_TRANSFORMS
-  Vec3 rotation;
-  rotation[1] = DegreesToRadians(static_cast<float>(mRotationAmount % 360));
+  if (*DebugTransforms) {
+    Vec3 rotation;
+    rotation[1] = DegreesToRadians(static_cast<float>(mRotationAmount % 360));
 
-  if (!mPauseTransforms) {
-    mRotationAmount += mRotationSpeed;
-  }
+    if (!mPauseTransforms) {
+      mRotationAmount += mRotationSpeed;
+    }
 
-  for (Model& model : mWorld.GetModels()) {
-    // TODO: Hacking some stuff together real quick for physics.
-    if (model.Tag() == PhysicsTag::Dynamic) {
-      model.Rotation() = rotation;
+    for (Model& model : mWorld.GetModels()) {
+      // TODO: Hacking some stuff together real quick for physics.
+      if (model.Tag() == PhysicsTag::Dynamic) {
+        model.Rotation() = rotation;
+      }
     }
   }
-#endif
 
   mCamera.Tick();
 

@@ -9,8 +9,6 @@
 #include "Vec3.h"
 #include "World.h"
 #include "ZColor.h"
-#include "PlatformAudio.h"
-#include "MP3.h"
 
 namespace ZSharp {
 
@@ -44,9 +42,6 @@ class GameInstance final {
   Camera mCamera;
   World mWorld;
   Renderer mRenderer;
-  PlatformAudioDevice* mAudioDevice = nullptr;
-  MP3::PCMAudioFloat mAmbientTrack;
-  size_t mAudioPosition = 0;
 
   size_t mLastFrameTime = 0;
   size_t mLastAudioTime = 0;
@@ -64,7 +59,7 @@ class GameInstance final {
 
   void PauseTransforms();
 
-  void LoadAssets();
+  void LoadWorld();
 
   void MoveCamera(Direction direction);
 

@@ -16,10 +16,6 @@
 
 #include <cmath>
 
-#define DEBUG_AUDIO 0
-#define DEBUG_TRIANGLE 0
-#define DEBUG_TRIANGLE_TEXTURE 0
-
 namespace ZSharp {
 ConsoleVariable<bool> DebugTransforms("DebugTransforms", true);
 
@@ -34,77 +30,10 @@ GameInstance::~GameInstance() {
   inputManager.OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
   inputManager.OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
   inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
-
-  if (mAmbientTrack.data != nullptr) {
-    PlatformFree(mAmbientTrack.data);
-  }
-
-  if (mAudioDevice != nullptr) {
-    PlatformReleaseAudioDevice(mAudioDevice);
-  }
 }
 
-void GameInstance::LoadAssets() {
-#if DEBUG_AUDIO
-  FileString audioPath(PlatformGetUserDesktopPath());
-  audioPath.SetFilename("AmbientTest.mp3");
-  MP3 audioFile(audioPath);
-
-  mAmbientTrack = audioFile.DecompressFloat();
-  if (mAmbientTrack.data != nullptr) {
-    mAudioDevice = PlatformInitializeAudioDevice(mAmbientTrack.samplesPerSecond, mAmbientTrack.channels, 10);
-    ZAssert(mAudioDevice != nullptr);
-  }
-#endif
-
-#if DEBUG_TRIANGLE
-  const float X = 5.f;
-  const float Y = 5.f;
-  const float Z = 0.f;
-  const float W = 1.f;
-  const float v1[]{ -X, 0.f, Z, W, 1.f, 0.f, 0.f };
-  const float v2[]{ 0.f, Y, Z, W, 0.0f, 1.f, 0.f };
-  const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
-
-  ShadingModeOrder order;
-  order.EmplaceBack(ShadingModes::RGB, 3);
-
-  mWorld.DebugLoadTriangle(v3, v2, v1, order, 7);
-#elif DEBUG_TRIANGLE_TEXTURE
-  const float X = 5.f;
-  const float Y = 5.f;
-  const float Z = 0.f;
-  const float W = 1.f;
-  const float v1[]{ -X, 0.f, Z, W, 1.f, 1.f };
-  const float v2[]{ 0.f, Y, Z, W, 0.f, 1.f };
-  const float v3[]{ X, 0.f, Z, W, 0.5f, 0.f };
-
-  ShadingModeOrder order;
-  order.EmplaceBack(ShadingModes::UV, 2);
-
-  mWorld.DebugLoadTriangle(v3, v2, v1, order, 6);
-#else
-  ZConfig& config = ZConfig::Get();
-  if (!config.GetAssetPath().GetAbsolutePath().IsEmpty()) {
-    mWorld.LoadModels();
-  }
-  else {
-    Logger::Log(LogCategory::Warning, "Asset path was empty. Loading debug triangle.\n");
-
-    const float X = 5.f;
-    const float Y = 5.f;
-    const float Z = 0.f;
-    const float W = 1.f;
-    const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f, 0.f };
-    const float v2[]{ 0.f, Y, Z, W, 1.0f, 0.f, 0.f };
-    const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f , 1.f };
-
-    ShadingModeOrder order;
-    order.EmplaceBack(ShadingModes::RGB, 3);
-
-    mWorld.DebugLoadTriangle(v3, v2, v1, order, 7);
-  }
-#endif
+void GameInstance::LoadWorld() {
+  mWorld.Load();
 }
 
 void GameInstance::MoveCamera(Direction direction) {
@@ -173,7 +102,7 @@ void GameInstance::PauseTransforms() {
 }
 
 void GameInstance::Initialize() {
-  LoadAssets();
+  LoadWorld();
 
   mCamera.Position() = Vec3(0.f, 5.f, 50.f);
   // Clip the model at the origin by moving the camera far away.
@@ -312,15 +241,7 @@ void GameInstance::TickAudio() {
 
   mLastAudioTime = PlatformHighResClock();
 
-  if (mAudioDevice != nullptr && mAmbientTrack.data != nullptr) {
-    // TODO: This forces the track to loop.
-    if (mAudioPosition >= mAmbientTrack.length) {
-      mAudioPosition = 0;
-    }
-
-    // TODO: Audio is still a little choppy, fix this.
-    mAudioPosition += PlatformPlayAudio(mAudioDevice, mAmbientTrack.data, mAudioPosition, mAmbientTrack.length, audioDelta);
-  }
+  mWorld.TickAudio(audioDelta);
 }
 
 uint8* GameInstance::GetCurrentFrame() {

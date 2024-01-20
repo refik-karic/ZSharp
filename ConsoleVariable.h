@@ -9,6 +9,8 @@ namespace ZSharp {
 
 HashTable<String, Delegate<const String&>>& GlobalConsoleCommands();
 
+HashTable<String, Delegate<void>>& GlobalConsoleCommandsValueless();
+
 template<typename T>
 struct ConsoleVariableConverter {
   void operator()(const String& str, T& var) const {
@@ -35,7 +37,8 @@ template<typename T>
 class ConsoleVariable {
   public:
 
-  ConsoleVariable(const String& name) {
+  ConsoleVariable(const String& name, Delegate<void>& callback) 
+    : mName(name), mCallback(callback) {
     if (!GlobalConsoleCommands().HasKey(name)) {
       GlobalConsoleCommands().Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
     }
@@ -43,6 +46,13 @@ class ConsoleVariable {
 
   ConsoleVariable(const String& name, const T& value)
     : mName(name), mValue(value) {
+    if (!GlobalConsoleCommands().HasKey(name)) {
+      GlobalConsoleCommands().Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
+    }
+  }
+
+  ConsoleVariable(const String& name, const T& value, Delegate<void>& callback)
+    : mName(name), mValue(value), mCallback(callback) {
     if (!GlobalConsoleCommands().HasKey(name)) {
       GlobalConsoleCommands().Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
     }
@@ -61,11 +71,51 @@ class ConsoleVariable {
   void Set(const String& value) {
     ConsoleVariableConverter<T> converter;
     converter(value, mValue);
+
+    if (mCallback.IsBound()) {
+      mCallback();
+    }
   }
 
   private:
   T mValue;
   String mName;
+  Delegate<void> mCallback;
+};
+
+template<>
+class ConsoleVariable<void> {
+  public:
+
+  ConsoleVariable(const String& name, Delegate<void>& callback)
+    : mName(name), mCallback(callback) {
+    if (!GlobalConsoleCommandsValueless().HasKey(name)) {
+      GlobalConsoleCommandsValueless().Add(name, Delegate<void>::FromMember<ConsoleVariable, &ConsoleVariable::Invoke>(this));
+    }
+  }
+
+  ConsoleVariable(const String& name, Delegate<void> callback)
+    : mName(name), mCallback(callback) {
+    if (!GlobalConsoleCommandsValueless().HasKey(name)) {
+      GlobalConsoleCommandsValueless().Add(name, Delegate<void>::FromMember<ConsoleVariable, &ConsoleVariable::Invoke>(this));
+    }
+  }
+
+  ~ConsoleVariable() {
+    if (GlobalConsoleCommandsValueless().HasKey(mName)) {
+      GlobalConsoleCommandsValueless().Remove(mName);
+    }
+  }
+
+  void Invoke() {
+    if (mCallback.IsBound()) {
+      mCallback();
+    }
+  }
+
+  private:
+  String mName;
+  Delegate<void> mCallback;
 };
 
 }

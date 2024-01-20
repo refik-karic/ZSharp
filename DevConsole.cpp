@@ -144,6 +144,12 @@ void DevConsole::OnMiscKeyDown(MiscKey key) {
         func(commandValue);
       }
     }
+    else {
+      if (GlobalConsoleCommandsValueless().HasKey(message)) {
+        Delegate<void>& func = GlobalConsoleCommandsValueless()[message];
+        func();
+      }
+    }
 
     mHistory.Add(message);
     mCaret = 0;

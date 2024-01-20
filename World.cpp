@@ -5,17 +5,120 @@
 #include "Logger.h"
 #include "OBJFile.h"
 #include "PhysicsAlgorithms.h"
+#include "PlatformMemory.h"
 #include "ScopedTimer.h"
 #include "TexturePool.h"
+#include "ZConfig.h"
 
 #include <cstring>
 
-#define DEBUG_FLAT_SHADE_RGB 0
-#define PHYSICS_ENABLE 1
-#define PHYSICS_DISABLE_FORCES 0
-
 namespace ZSharp {
-World::World() {
+ConsoleVariable<bool> PhysicsEnabled("PhysicsEnabled", true);
+ConsoleVariable<bool> PhysicsForcesEnabled("PhysicsForcesEnabled", true);
+
+ConsoleVariable<bool> DebugModelsRGB("DebugModelsRGB", false);
+ConsoleVariable<bool> DebugAudio("DebugAudio", false);
+ConsoleVariable<bool> DebugTriangle("DebugTriangle", false);
+ConsoleVariable<bool> DebugTriangleTex("DebugTriangleTex", false);
+
+World::World() 
+  : mWorldReloadVar("WorldReload", Delegate<void>::FromMember<World, &World::Reload>(this)) {
+}
+
+World::~World() {
+  if (mAmbientTrack.data != nullptr) {
+    PlatformFree(mAmbientTrack.data);
+  }
+
+  if (mAudioDevice != nullptr) {
+    PlatformReleaseAudioDevice(mAudioDevice);
+  }
+}
+
+void World::Load() {
+  if (*DebugAudio) {
+    FileString audioPath(PlatformGetUserDesktopPath());
+    audioPath.SetFilename("AmbientTest.mp3");
+    MP3 audioFile(audioPath);
+
+    mAmbientTrack = audioFile.DecompressFloat();
+    if (mAmbientTrack.data != nullptr) {
+      mAudioDevice = PlatformInitializeAudioDevice(mAmbientTrack.samplesPerSecond, mAmbientTrack.channels, 10);
+      ZAssert(mAudioDevice != nullptr);
+    }
+  }
+
+  if (*DebugTriangle) {
+    const float X = 5.f;
+    const float Y = 5.f;
+    const float Z = 0.f;
+    const float W = 1.f;
+    const float v1[]{ -X, 0.f, Z, W, 1.f, 0.f, 0.f };
+    const float v2[]{ 0.f, Y, Z, W, 0.0f, 1.f, 0.f };
+    const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
+
+    ShadingModeOrder order;
+    order.EmplaceBack(ShadingModes::RGB, 3);
+
+    DebugLoadTriangle(v3, v2, v1, order, 7);
+  }
+  else if (*DebugTriangleTex) {
+    const float X = 5.f;
+    const float Y = 5.f;
+    const float Z = 0.f;
+    const float W = 1.f;
+    const float v1[]{ -X, 0.f, Z, W, 1.f, 1.f };
+    const float v2[]{ 0.f, Y, Z, W, 0.f, 1.f };
+    const float v3[]{ X, 0.f, Z, W, 0.5f, 0.f };
+
+    ShadingModeOrder order;
+    order.EmplaceBack(ShadingModes::UV, 2);
+
+    DebugLoadTriangle(v3, v2, v1, order, 6);
+  }
+  else {
+    ZConfig& config = ZConfig::Get();
+    if (!config.GetAssetPath().GetAbsolutePath().IsEmpty()) {
+      LoadModels();
+    }
+    else {
+      Logger::Log(LogCategory::Warning, "Asset path was empty. Loading debug triangle.\n");
+
+      const float X = 5.f;
+      const float Y = 5.f;
+      const float Z = 0.f;
+      const float W = 1.f;
+      const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f, 0.f };
+      const float v2[]{ 0.f, Y, Z, W, 1.0f, 0.f, 0.f };
+      const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f , 1.f };
+
+      ShadingModeOrder order;
+      order.EmplaceBack(ShadingModes::RGB, 3);
+
+      DebugLoadTriangle(v3, v2, v1, order, 7);
+    }
+  }
+}
+
+void World::Reload() {
+  mActiveModels.Clear();
+  mVertexBuffers.Clear();
+  mIndexBuffers.Clear();
+
+  mDynamicObjects.Clear();
+  mStaticObjects.Clear();
+
+  mAudioPosition = 0;
+
+  if (mAmbientTrack.data != nullptr) {
+    PlatformFree(mAmbientTrack.data);
+  }
+
+  if (mAudioDevice != nullptr) {
+    PlatformReleaseAudioDevice(mAudioDevice);
+  }
+
+  Load();
 }
 
 void World::TickPhysics(size_t deltaMs) {
@@ -23,9 +126,9 @@ void World::TickPhysics(size_t deltaMs) {
 
   Logger::Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
 
-#if !PHYSICS_ENABLE
-  return;
-#endif
+  if (!(*PhysicsEnabled)) {
+    return;
+  }
 
   // Update forces for all dynamic objects at the start of the time step.
   for (PhysicsObject*& currentObject : mDynamicObjects) {
@@ -62,12 +165,24 @@ void World::TickPhysics(size_t deltaMs) {
 #endif
   }
 
-#if !PHYSICS_DISABLE_FORCES
-  // Update positions for the current timestep.
-  for (PhysicsObject*& currentObject : mDynamicObjects) {
-    currentObject->Position() += currentObject->Velocity();
+  if (*PhysicsForcesEnabled) {
+    // Update positions for the current timestep.
+    for (PhysicsObject*& currentObject : mDynamicObjects) {
+      currentObject->Position() += currentObject->Velocity();
+    }
   }
-#endif
+}
+
+void World::TickAudio(size_t deltaMs) {
+  if (mAudioDevice != nullptr && mAmbientTrack.data != nullptr) {
+    // TODO: This forces the track to loop.
+    if (mAudioPosition >= mAmbientTrack.length) {
+      mAudioPosition = 0;
+    }
+
+    // TODO: Audio is still a little choppy, fix this.
+    mAudioPosition += PlatformPlayAudio(mAudioDevice, mAmbientTrack.data, mAudioPosition, mAmbientTrack.length, deltaMs);
+  }
 }
 
 void World::LoadModels() {
@@ -95,10 +210,13 @@ void World::LoadModels() {
         model.Tag() = PhysicsTag::Static;
       }
       else {
-#if PHYSICS_ENABLE
-        model.Position() += Vec3(0.f, 15.f, 0.f);
-#endif
-        model.Tag() = PhysicsTag::Dynamic;
+        if (*PhysicsEnabled) {
+          model.Position() += Vec3(0.f, 15.f, 0.f);
+          model.Tag() = PhysicsTag::Dynamic;
+        }
+        else {
+          model.Tag() = PhysicsTag::Static;
+        }
       }
 
       int32 indexBufSize = 0;
@@ -205,11 +323,12 @@ void World::LoadOBJ(Model& model, Asset& asset) {
   model.SetStride(objFile.Stride());
   Mesh& mesh = model[0];
 
-#if !DEBUG_FLAT_SHADE_RGB
   bool isTextureMapped = objFile.ShadingOrder().Contains(ShadingMode(ShadingModes::UV, 2));
-#else
-  bool isTextureMapped = false;
-#endif
+
+  if (*DebugModelsRGB) {
+    isTextureMapped = false;
+  }
+
   const int32 textureStride = 2;
 
   if (isTextureMapped) {

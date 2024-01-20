@@ -154,6 +154,8 @@ set(ZSharp_Compile_Options_Debug
   /U_MBCS
   /W4
   /WX
+  /Zi
+  /diagnostics:caret
 )
 
 set(ZSharp_Compile_Options_Release 
@@ -169,6 +171,8 @@ set(ZSharp_Compile_Options_Release
   /sdl-
   /GL
   /GS-
+  /Zi
+  /diagnostics:caret
 )
 
 set(ZSharp_Preprocessor_Defines )

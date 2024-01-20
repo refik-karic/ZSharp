@@ -150,9 +150,6 @@ void DrawRunSlice(Framebuffer& framebuffer,
   int32 x2 = static_cast<int32>(p1[0]);
   int32 y2 = static_cast<int32>(p1[1]);
 
-  const float* p0Attributes = p0 + 4;
-  const float* p1Attributes = p1 + 4;
-
   // Vertical line
   if (x1 == x2) {
     float startY = p0[1];

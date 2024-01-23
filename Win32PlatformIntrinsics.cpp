@@ -16,7 +16,7 @@
 #include <intrin.h>
 
 int* CPUIDSection00() {
-  static int buffer[4] = { 0, 0, 0, 0 };
+  static int buffer[4] = {};
 
   if (buffer[0] == 0) {
     __cpuid(buffer, 0x00);
@@ -31,7 +31,7 @@ int* CPUIDSection00() {
 }
 
 int* CPUIDSection01() {
-  static int buffer[4] = { 0, 0, 0, 0 };
+  static int buffer[4] = {};
 
   if (buffer[2] == 0) {
     __cpuid(buffer, 0x01);
@@ -46,7 +46,7 @@ int* CPUIDSection01() {
 }
 
 int* CPUIDSection07() {
-  static int buffer[4] = { 0, 0, 0, 0 };
+  static int buffer[4] = {};
 
   if (buffer[2] == 0) {
     __cpuid(buffer, 0x07);
@@ -61,9 +61,7 @@ int* CPUIDSection07() {
 }
 
 int* CPUIDSectionBrand() {
-  static int buffer[12] = { 0, 0, 0, 0,
-                            0, 0, 0, 0,
-                            0, 0, 0, 0};
+  static int buffer[12] = {};
 
   if (buffer[0] == 0) {
     __cpuid(buffer, 0x80000002);
@@ -266,28 +264,60 @@ void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result) {
 }
 
 void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
-  __m128i shuffleOrder = _mm_set_epi8(
-    15, 12, 13, 14,
-    11, 8, 9, 10,
-    7, 4, 5, 6,
-    3, 0, 1, 2);
-  
-  for (size_t h = 0; h < height; ++h) {
-    uint32* currentPixels = image + (h * width);
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    __m256i shuffleOrder = _mm256_set_epi8(
+      15, 12, 13, 14,
+      11, 8, 9, 10,
+      7, 4, 5, 6,
+      3, 0, 1, 2,
+      15, 12, 13, 14,
+      11, 8, 9, 10,
+      7, 4, 5, 6,
+      3, 0, 1, 2);
 
-    size_t w = 0;
-    for (; (w + 4) < width; w += 4, currentPixels += 4) {
-      __m128i pixels = _mm_loadu_si128((__m128i*)(currentPixels));
-      pixels = _mm_shuffle_epi8(pixels, shuffleOrder);
-      _mm_storeu_si128((__m128i*)(currentPixels), pixels);
+    for (size_t h = 0; h < height; ++h) {
+      uint32* currentPixels = image + (h * width);
+
+      size_t w = 0;
+      for (; (w + 8) < width; w += 8, currentPixels += 8) {
+        __m256i pixels = _mm256_loadu_si256((__m256i*)(currentPixels));
+        pixels = _mm256_shuffle_epi8(pixels, shuffleOrder);
+        _mm256_storeu_si256((__m256i*)(currentPixels), pixels);
+      }
+
+      for (; w < width; ++w, ++currentPixels) {
+        uint8* channels = (uint8*)currentPixels;
+        uint8 blueValue = channels[2];
+        uint8 redValue = channels[0];
+        channels[0] = blueValue;
+        channels[2] = redValue;
+      }
     }
+  }
+  else {
+    __m128i shuffleOrder = _mm_set_epi8(
+      15, 12, 13, 14,
+      11, 8, 9, 10,
+      7, 4, 5, 6,
+      3, 0, 1, 2);
 
-    for (; w < width; ++w, ++currentPixels) {
-      uint8* channels = (uint8*)currentPixels;
-      uint8 blueValue = channels[2];
-      uint8 redValue = channels[0];
-      channels[0] = blueValue;
-      channels[2] = redValue;
+    for (size_t h = 0; h < height; ++h) {
+      uint32* currentPixels = image + (h * width);
+
+      size_t w = 0;
+      for (; (w + 4) < width; w += 4, currentPixels += 4) {
+        __m128i pixels = _mm_loadu_si128((__m128i*)(currentPixels));
+        pixels = _mm_shuffle_epi8(pixels, shuffleOrder);
+        _mm_storeu_si128((__m128i*)(currentPixels), pixels);
+      }
+
+      for (; w < width; ++w, ++currentPixels) {
+        uint8* channels = (uint8*)currentPixels;
+        uint8 blueValue = channels[2];
+        uint8 redValue = channels[0];
+        channels[0] = blueValue;
+        channels[2] = redValue;
+      }
     }
   }
 }
@@ -466,46 +496,92 @@ void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
 }
 
 void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width, size_t height, float opacity) {
-  __m128i devOpacity = _mm_set1_epi16((short)(255.f * opacity));
-  __m128i bufferOpacity = _mm_set1_epi16((short)(255.f * (1.f - opacity)));
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    __m256i devOpacity = _mm256_set1_epi16((short)(255.f * opacity));
+    __m256i bufferOpacity = _mm256_set1_epi16((short)(255.f * (1.f - opacity)));
 
-  // Need this to clear high 8 bits of the 16 unpacked value
-  __m128i zero = _mm_setzero_si128();
+    // Need this to clear high 8 bits of the 16 unpacked value
+    __m256i zero = _mm256_setzero_si256();
 
-  for (size_t y = 0; y < height; ++y) {
-    for (size_t x = 0; x < width; x += 4) {
-      size_t index = (y * width) + x;
+    for (size_t y = 0; y < height; ++y) {
+      for (size_t x = 0; x < width; x += 8) {
+        size_t index = (y * width) + x;
 
-      // Load 4 pixels at a time
-      // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
-      // The best we can do is 16bit arithmetic
-      __m128i devColor = _mm_loadu_si128((__m128i*)(devBuffer + index));
-      __m128i bufferColor = _mm_loadu_si128((__m128i*)(frameBuffer + index));
+        // Load 8 pixels at a time
+        // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
+        // The best we can do is 16bit arithmetic
+        __m256i devColor = _mm256_loadu_si256((__m256i*)(devBuffer + index));
+        __m256i bufferColor = _mm256_loadu_si256((__m256i*)(frameBuffer + index));
 
-      __m128i devLo16 = _mm_unpacklo_epi8(devColor, zero); // 2x 32bit BGRA, [0,1]
-      __m128i devHi16 = _mm_unpackhi_epi8(devColor, zero); // 2x 32bit BGRA, [2,3]
+        __m256i devLo16 = _mm256_unpacklo_epi8(devColor, zero); // 4x 32bit BGRA, [0,1]
+        __m256i devHi16 = _mm256_unpackhi_epi8(devColor, zero); // 4x 32bit BGRA, [2,3]
 
-      __m128i bufLo16 = _mm_unpacklo_epi8(bufferColor, zero);
-      __m128i bufHi16 = _mm_unpackhi_epi8(bufferColor, zero);
+        __m256i bufLo16 = _mm256_unpacklo_epi8(bufferColor, zero);
+        __m256i bufHi16 = _mm256_unpackhi_epi8(bufferColor, zero);
 
-      devLo16 = _mm_mullo_epi16(devLo16, devOpacity);
-      devHi16 = _mm_mullo_epi16(devHi16, devOpacity);
+        devLo16 = _mm256_mullo_epi16(devLo16, devOpacity);
+        devHi16 = _mm256_mullo_epi16(devHi16, devOpacity);
 
-      bufLo16 = _mm_mullo_epi16(bufLo16, bufferOpacity);
-      bufHi16 = _mm_mullo_epi16(bufHi16, bufferOpacity);
+        bufLo16 = _mm256_mullo_epi16(bufLo16, bufferOpacity);
+        bufHi16 = _mm256_mullo_epi16(bufHi16, bufferOpacity);
 
-      // Divide by 256
-      devLo16 = _mm_srli_epi16(devLo16, 8);
-      devHi16 = _mm_srli_epi16(devHi16, 8);
+        // Divide by 256
+        devLo16 = _mm256_srli_epi16(devLo16, 8);
+        devHi16 = _mm256_srli_epi16(devHi16, 8);
 
-      bufLo16 = _mm_srli_epi16(bufLo16, 8);
-      bufHi16 = _mm_srli_epi16(bufHi16, 8);
+        bufLo16 = _mm256_srli_epi16(bufLo16, 8);
+        bufHi16 = _mm256_srli_epi16(bufHi16, 8);
 
-      __m128i loResult = _mm_add_epi16(devLo16, bufLo16);
-      __m128i hiResult = _mm_add_epi16(devHi16, bufHi16);
+        __m256i loResult = _mm256_add_epi16(devLo16, bufLo16);
+        __m256i hiResult = _mm256_add_epi16(devHi16, bufHi16);
 
-      // Pack the 16bit results into 8bit values and store it back to memory
-      _mm_storeu_si128((__m128i*)(frameBuffer + index), _mm_packus_epi16(loResult, hiResult));
+        // Pack the 16bit results into 8bit values and store it back to memory
+        _mm256_storeu_si256((__m256i*)(frameBuffer + index), _mm256_packus_epi16(loResult, hiResult));
+      }
+    }
+  }
+  else {
+    __m128i devOpacity = _mm_set1_epi16((short)(255.f * opacity));
+    __m128i bufferOpacity = _mm_set1_epi16((short)(255.f * (1.f - opacity)));
+
+    // Need this to clear high 8 bits of the 16 unpacked value
+    __m128i zero = _mm_setzero_si128();
+
+    for (size_t y = 0; y < height; ++y) {
+      for (size_t x = 0; x < width; x += 4) {
+        size_t index = (y * width) + x;
+
+        // Load 4 pixels at a time
+        // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
+        // The best we can do is 16bit arithmetic
+        __m128i devColor = _mm_loadu_si128((__m128i*)(devBuffer + index));
+        __m128i bufferColor = _mm_loadu_si128((__m128i*)(frameBuffer + index));
+
+        __m128i devLo16 = _mm_unpacklo_epi8(devColor, zero); // 2x 32bit BGRA, [0,1]
+        __m128i devHi16 = _mm_unpackhi_epi8(devColor, zero); // 2x 32bit BGRA, [2,3]
+
+        __m128i bufLo16 = _mm_unpacklo_epi8(bufferColor, zero);
+        __m128i bufHi16 = _mm_unpackhi_epi8(bufferColor, zero);
+
+        devLo16 = _mm_mullo_epi16(devLo16, devOpacity);
+        devHi16 = _mm_mullo_epi16(devHi16, devOpacity);
+
+        bufLo16 = _mm_mullo_epi16(bufLo16, bufferOpacity);
+        bufHi16 = _mm_mullo_epi16(bufHi16, bufferOpacity);
+
+        // Divide by 256
+        devLo16 = _mm_srli_epi16(devLo16, 8);
+        devHi16 = _mm_srli_epi16(devHi16, 8);
+
+        bufLo16 = _mm_srli_epi16(bufLo16, 8);
+        bufHi16 = _mm_srli_epi16(bufHi16, 8);
+
+        __m128i loResult = _mm_add_epi16(devLo16, bufLo16);
+        __m128i hiResult = _mm_add_epi16(devHi16, bufHi16);
+
+        // Pack the 16bit results into 8bit values and store it back to memory
+        _mm_storeu_si128((__m128i*)(frameBuffer + index), _mm_packus_epi16(loResult, hiResult));
+      }
     }
   }
 }

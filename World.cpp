@@ -2,6 +2,7 @@
 
 #include "Bundle.h"
 #include "CommonMath.h"
+#include "Delegate.h"
 #include "Logger.h"
 #include "OBJFile.h"
 #include "PhysicsAlgorithms.h"

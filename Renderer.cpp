@@ -121,6 +121,8 @@ uint8* Renderer::GetFrame() {
 }
 
 uint8* Renderer::GetDepth() {
+  NamedScopedTimer(DepthBufferVisualize);
+
   float* buffer = mDepthBuffer.GetBuffer();
 
   if (!mDepthBufferDirty) {

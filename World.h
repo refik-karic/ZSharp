@@ -27,8 +27,6 @@ class World final {
 
   void TickAudio(size_t deltaMs);
 
-  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride);
-
   size_t GetTotalModels() const;
 
   Array<Model>& GetModels();
@@ -52,6 +50,8 @@ class World final {
   size_t mAudioPosition = 0;
 
   ConsoleVariable<void> mWorldReloadVar;
+
+  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride);
 
   void LoadModels();
 

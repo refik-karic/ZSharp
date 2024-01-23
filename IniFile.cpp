@@ -50,46 +50,54 @@ bool IniFile::Loaded() const {
 }
 
 void IniFile::ParseFile() {
-  BufferedFileReader fileReader(mFileName);
-  if (!fileReader.IsOpen()) {
+  MemoryMappedFileReader reader(mFileName);
+  if (!reader.IsOpen()) {
     return;
   }
 
   mLoaded = true;
-
   IniSection* activeSection = nullptr;
 
-  for (size_t bytesRead = fileReader.ReadLine(); bytesRead > 0; bytesRead = fileReader.ReadLine()) {
-    String currentLine(fileReader.GetBuffer());
-    currentLine.Trim('\n');
-    currentLine.Trim('\r');
+  const char* fileBuffer = reader.GetBuffer();
+  size_t fileSize = reader.GetSize();
+  size_t lastLineIndex = 0;
 
-    switch (currentLine[0]) {
-    case '[': // Section
-    {
-      const char* endSection = currentLine.FindLast(']');
-      if (endSection != nullptr) {
-        size_t sectionLength = endSection - currentLine.Str();
-        String sectionString(currentLine.SubStr(1, sectionLength));
-        activeSection = &mSections.EmplaceBack(sectionString);
+  for (size_t offset = 0; offset < fileSize; ++offset) {
+    if (fileBuffer[offset] == '\n') {
+      size_t lineLength = offset - lastLineIndex;
+      if ((offset > 0) && (fileBuffer[offset - 1] == '\r')) {
+        --lineLength;
       }
-    }
-      break;
-    case ';': // Comment
-      break;
-    default: // Key value pair
-      const char* delimLocation = currentLine.FindFirst('=');
-      if (delimLocation != nullptr) {
-        size_t keyLength = delimLocation - currentLine.Str();
 
-        String key(currentLine.SubStr(0, keyLength));
-        String value(currentLine.SubStr(keyLength + 1, currentLine.Length()));
+      String currentLine(fileBuffer + lastLineIndex, 0, lineLength);
+      lastLineIndex = offset + 1;
 
-        if (activeSection != nullptr) {
-          activeSection->mPairs.EmplaceBack(key, value);
+      switch (currentLine[0]) {
+        case '[': // Section
+        {
+          const char* endSection = currentLine.FindLast(']');
+          if (endSection != nullptr) {
+            size_t sectionLength = endSection - currentLine.Str();
+            String sectionString(currentLine.Str(), 1, sectionLength - 1);
+            activeSection = &mSections.EmplaceBack(sectionString);
+          }
         }
+        break;
+        case ';': // Comment
+          break;
+        default: // Key value pair
+          const char* delimLocation = currentLine.FindFirst('=');
+          if (delimLocation != nullptr) {
+            size_t keyLength = delimLocation - currentLine.Str();
+            String key(currentLine.Str(), 0, keyLength);
+            String value(currentLine.Str(), keyLength + 1, currentLine.Length());
+
+            if (activeSection != nullptr) {
+              activeSection->mPairs.EmplaceBack(key, value);
+            }
+          }
+          break;
       }
-      break;
     }
   }
 }

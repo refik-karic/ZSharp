@@ -86,6 +86,13 @@ FORCE_INLINE __m128 Lerp128(__m128 x1, __m128 x2, __m128 t) {
   return result;
 }
 
+FORCE_INLINE __m256 Lerp256(__m256 x1, __m256 x2, __m256 t) {
+  __m256 mulResult = _mm256_mul_ps(t, x2);
+  __m256 subResult = _mm256_sub_ps(_mm256_set1_ps(1.f), t);
+  __m256 result = _mm256_add_ps(mulResult, _mm256_mul_ps(subResult, x1));
+  return result;
+}
+
 namespace ZSharp {
 
 bool PlatformSupportsSIMDLanes(SIMDLaneWidth width) {
@@ -181,31 +188,6 @@ float Aligned_128MulSum(const float* a, const float* b) {
 
 void Aligned_Memset(void* __restrict dest, uint32 value, const size_t numBytes) {
   __stosd((unsigned long*)dest, value, numBytes / 4);
-
-#if 0
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Sixteen) && ((numBytes % sizeof(__m512i)) == 0)) {
-    __m512i repData;
-
-    for (size_t i = 0; i < sizeof(repData.m512i_u32) / sizeof(uint32); ++i) {
-      repData.m512i_u32[i] = value;
-    }
-
-    __m512i* nextDest = reinterpret_cast<__m512i*>(dest);
-    for (size_t i = 0; i < numBytes; i += sizeof(__m512i)) {
-      _mm512_store_epi32(nextDest, repData);
-      ++nextDest;
-    }
-  }
-  else if((numBytes % sizeof(uint32)) == 0) {
-    uint32* data = (uint32*)dest;
-    for (size_t i = 0; i * sizeof(uint32) < numBytes; ++i) {
-      data[i] = value;
-    }
-  }
-  else {
-    ZAssert(false); // numBytes is not a valid multiple.
-  }
-#endif
 }
 
 void Aligned_Memcpy(void* __restrict dest, const void* __restrict src, size_t numBytes) {
@@ -371,35 +353,84 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
 
   size_t currentIndex = 0;
 
-  __m128 subFactor = _mm_set_ps1(6.f);
-  __m128 invDenominator = _mm_set_ps1(invDenominatorScalar);
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    __m256 subFactor = _mm256_set1_ps(6.f);
+    __m256 invDenominator = _mm256_set1_ps(invDenominatorScalar);
 
-  __m128 rbVec = _mm_set_ps1((float)black.R());
-  __m128 gbVec = _mm_set_ps1((float)black.G());
-  __m128 bbVec = _mm_set_ps1((float)black.B());
+    __m256 rbVec = _mm256_set1_ps((float)black.R());
+    __m256 gbVec = _mm256_set1_ps((float)black.G());
+    __m256 bbVec = _mm256_set1_ps((float)black.B());
 
-  __m128 rwVec = _mm_set_ps1((float)white.R());
-  __m128 gwVec = _mm_set_ps1((float)white.G());
-  __m128 bwVec = _mm_set_ps1((float)white.B());
+    __m256 rwVec = _mm256_set1_ps((float)white.R());
+    __m256 gwVec = _mm256_set1_ps((float)white.G());
+    __m256 bwVec = _mm256_set1_ps((float)white.B());
 
-  for (size_t h = 0; h < height; ++h) {
-    for (size_t w = 0; w < width; w += 4, currentIndex += 4) {
-      __m128 numerator = _mm_load_ps(pixel);
-      numerator = _mm_sub_ps(numerator, subFactor);
-      __m128 parametricT = _mm_mul_ps(numerator, invDenominator);
+    __m256i initialColor = _mm256_set1_epi32(0xFF000000);
 
-      __m128 lerpedR = Lerp128(rbVec, rwVec, parametricT);
-      __m128 lerpedG = Lerp128(gbVec, gwVec, parametricT);
-      __m128 lerpedB = Lerp128(bbVec, bwVec, parametricT);
+    for (size_t h = 0; h < height; ++h) {
+      for (size_t w = 0; w < width; w += 8, currentIndex += 8, pixel += 8) {
+        __m256 numerator = _mm256_load_ps(pixel);
+        numerator = _mm256_sub_ps(numerator, subFactor);
+        __m256 parametricT = _mm256_mul_ps(numerator, invDenominator);
 
-      __m128i convR = _mm_cvtps_epi32(lerpedR);
-      __m128i convG = _mm_cvtps_epi32(lerpedG);
-      __m128i convB = _mm_cvtps_epi32(lerpedB);
+        __m256 lerpedR = Lerp256(rbVec, rwVec, parametricT);
+        __m256 lerpedG = Lerp256(gbVec, gwVec, parametricT);
+        __m256 lerpedB = Lerp256(bbVec, bwVec, parametricT);
 
-      (*((uint32*)pixel++)) = ColorFromRGB((uint8)convR.m128i_i32[0], (uint8)convG.m128i_i32[0], (uint8)convB.m128i_i32[0]);
-      (*((uint32*)pixel++)) = ColorFromRGB((uint8)convR.m128i_i32[1], (uint8)convG.m128i_i32[1], (uint8)convB.m128i_i32[1]);
-      (*((uint32*)pixel++)) = ColorFromRGB((uint8)convR.m128i_i32[2], (uint8)convG.m128i_i32[2], (uint8)convB.m128i_i32[2]);
-      (*((uint32*)pixel++)) = ColorFromRGB((uint8)convR.m128i_i32[3], (uint8)convG.m128i_i32[3], (uint8)convB.m128i_i32[3]);
+        __m256i convR = _mm256_cvtps_epi32(lerpedR);
+        __m256i convG = _mm256_cvtps_epi32(lerpedG);
+        __m256i convB = _mm256_cvtps_epi32(lerpedB);
+
+        convR = _mm256_slli_epi32(convR, 16);
+        convG = _mm256_slli_epi32(convG, 8);
+
+        __m256i finalColor = initialColor;
+        finalColor = _mm256_or_epi32(finalColor, convR);
+        finalColor = _mm256_or_epi32(finalColor, convG);
+        finalColor = _mm256_or_epi32(finalColor, convB);
+
+        _mm256_storeu_si256((__m256i*)pixel, finalColor);
+      }
+    }
+  }
+  else {
+    __m128 subFactor = _mm_set_ps1(6.f);
+    __m128 invDenominator = _mm_set_ps1(invDenominatorScalar);
+
+    __m128 rbVec = _mm_set_ps1((float)black.R());
+    __m128 gbVec = _mm_set_ps1((float)black.G());
+    __m128 bbVec = _mm_set_ps1((float)black.B());
+
+    __m128 rwVec = _mm_set_ps1((float)white.R());
+    __m128 gwVec = _mm_set_ps1((float)white.G());
+    __m128 bwVec = _mm_set_ps1((float)white.B());
+
+    __m128i initialColor = _mm_set1_epi32(0xFF000000);
+
+    for (size_t h = 0; h < height; ++h) {
+      for (size_t w = 0; w < width; w += 4, currentIndex += 4, pixel += 4) {
+        __m128 numerator = _mm_load_ps(pixel);
+        numerator = _mm_sub_ps(numerator, subFactor);
+        __m128 parametricT = _mm_mul_ps(numerator, invDenominator);
+
+        __m128 lerpedR = Lerp128(rbVec, rwVec, parametricT);
+        __m128 lerpedG = Lerp128(gbVec, gwVec, parametricT);
+        __m128 lerpedB = Lerp128(bbVec, bwVec, parametricT);
+
+        __m128i convR = _mm_cvtps_epi32(lerpedR);
+        __m128i convG = _mm_cvtps_epi32(lerpedG);
+        __m128i convB = _mm_cvtps_epi32(lerpedB);
+
+        convR = _mm_slli_epi32(convR, 16);
+        convG = _mm_slli_epi32(convG, 8);
+
+        __m128i finalColor = initialColor;
+        finalColor = _mm_or_epi32(finalColor, convR);
+        finalColor = _mm_or_epi32(finalColor, convG);
+        finalColor = _mm_or_epi32(finalColor, convB);
+
+        _mm_storeu_si128((__m128i*)pixel, finalColor);
+      }
     }
   }
 

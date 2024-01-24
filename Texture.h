@@ -49,11 +49,9 @@ class Texture final {
     const size_t y = static_cast<size_t>(v * (mHeight - 1));
     const size_t pixel = (y * mStride) + (x * mNumChannels);
 
-    const uint8 B = mData[pixel];
-    const uint8 G = mData[pixel + 1];
-    const uint8 R = mData[pixel + 2];
-
-    return ColorFromRGB(R, G, B);
+    // We're assuming the texture channel layout matches the display here.
+    // This doesn't make a lot of sense for non-albedo textures but we can take care of that later.
+    return *((uint32*)(mData + pixel));
   }
 
   size_t Width() const;

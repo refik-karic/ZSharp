@@ -398,7 +398,7 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
     __m256i initialColor = _mm256_set1_epi32(0xFF000000);
 
     for (size_t h = 0; h < height; ++h) {
-      for (size_t w = 0; w < width; w += 8, currentIndex += 8, pixel += 8) {
+      for (size_t w = 0; w + 8 < width; w += 8, currentIndex += 8, pixel += 8) {
         __m256 numerator = _mm256_load_ps(pixel);
         numerator = _mm256_sub_ps(numerator, subFactor);
         __m256 parametricT = _mm256_mul_ps(numerator, invDenominator);
@@ -438,7 +438,7 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
     __m128i initialColor = _mm_set1_epi32(0xFF000000);
 
     for (size_t h = 0; h < height; ++h) {
-      for (size_t w = 0; w < width; w += 4, currentIndex += 4, pixel += 4) {
+      for (size_t w = 0; w + 4 < width; w += 4, currentIndex += 4, pixel += 4) {
         __m128 numerator = _mm_load_ps(pixel);
         numerator = _mm_sub_ps(numerator, subFactor);
         __m128 parametricT = _mm_mul_ps(numerator, invDenominator);

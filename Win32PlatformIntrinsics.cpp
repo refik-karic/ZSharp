@@ -757,24 +757,46 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       }
       else {
         __m256 invArea = _mm256_set1_ps(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
-        __m256 invVert0 = _mm256_mul_ps(_mm256_set1_ps(v1[3]), invArea);
+
+        __m256 z0 = _mm256_set1_ps(v1[3]);
+        __m256 invVert0 = _mm256_mul_ps(z0, invArea);
         __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
         __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
 
+        __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
+        __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
+
         // We want the RGB values to be scaled by 255 in the end.
         // Doing that here saves us from having to apply the scale at each pixel.
-        __m256 scaleFactor = _mm256_mul_ps(invArea, _mm256_set1_ps(255.f));
-        __m256 invAttr00 = _mm256_mul_ps(_mm256_set1_ps(v1[4]), scaleFactor);
+        __m256 rgbScale = _mm256_set1_ps(255.f);
+        __m256 scaleFactor = _mm256_mul_ps(invArea, rgbScale);
+
+        __m256 r0 = _mm256_set1_ps(v1[4]);
+        __m256 invAttr00 = _mm256_mul_ps(r0, scaleFactor);
         __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), scaleFactor);
         __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), scaleFactor);
 
-        __m256 invAttr10 = _mm256_mul_ps(_mm256_set1_ps(v1[5]), scaleFactor);
+        r0 = _mm256_mul_ps(r0, rgbScale);
+        __m256 r1r0 = _mm256_sub_ps(invAttr01, invAttr00);
+        __m256 r2r0 = _mm256_sub_ps(invAttr02, invAttr00);
+
+        __m256 g0 = _mm256_set1_ps(v1[5]);
+        __m256 invAttr10 = _mm256_mul_ps(g0, scaleFactor);
         __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), scaleFactor);
         __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), scaleFactor);
 
-        __m256 invAttr20 = _mm256_mul_ps(_mm256_set1_ps(v1[6]), scaleFactor);
+        g0 = _mm256_mul_ps(g0, rgbScale);
+        __m256 g1g0 = _mm256_sub_ps(invAttr11, invAttr10);
+        __m256 g2g0 = _mm256_sub_ps(invAttr12, invAttr10);
+
+        __m256 b0 = _mm256_set1_ps(v1[6]);
+        __m256 invAttr20 = _mm256_mul_ps(b0, scaleFactor);
         __m256 invAttr21 = _mm256_mul_ps(_mm256_set1_ps(v2[6]), scaleFactor);
         __m256 invAttr22 = _mm256_mul_ps(_mm256_set1_ps(v3[6]), scaleFactor);
+
+        b0 = _mm256_mul_ps(b0, rgbScale);
+        __m256 b1b0 = _mm256_sub_ps(invAttr21, invAttr20);
+        __m256 b2b0 = _mm256_sub_ps(invAttr22, invAttr20);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
         __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
@@ -821,9 +843,9 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               __m256i pixelVec = _mm256_load_si256((__m256i*)pixels);
               __m256 depthVec = _mm256_load_ps(pixelDepth);
 
-              __m256 weightedVerts0 = _mm256_mul_ps(weights0, invVert0);
-              __m256 weightedVerts1 = _mm256_mul_ps(weights1, invVert1);
-              __m256 weightedVerts2 = _mm256_mul_ps(weights2, invVert2);
+              __m256 weightedVerts0 = z0;
+              __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
+              __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
 
               __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m256 invZValues = _mm256_div_ps(oneValue, zValues);
@@ -833,17 +855,17 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 
-              __m256 weightedAttr00 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr00), invZValues);
-              __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr01), invZValues);
-              __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, invAttr02), invZValues);
+              __m256 weightedAttr00 = _mm256_mul_ps(r0, invZValues);
+              __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues);
+              __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, r2r0), invZValues);
 
-              __m256 weightedAttr10 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr10), invZValues);
-              __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr11), invZValues);
-              __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, invAttr12), invZValues);
+              __m256 weightedAttr10 = _mm256_mul_ps(g0, invZValues);
+              __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), invZValues);
+              __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, g2g0), invZValues);
 
-              __m256 weightedAttr20 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr20), invZValues);
-              __m256 weightedAttr21 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr21), invZValues);
-              __m256 weightedAttr22 = _mm256_mul_ps(_mm256_mul_ps(weights2, invAttr22), invZValues);
+              __m256 weightedAttr20 = _mm256_mul_ps(b0, invZValues);
+              __m256 weightedAttr21 = _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), invZValues);
+              __m256 weightedAttr22 = _mm256_mul_ps(_mm256_mul_ps(weights2, b2b0), invZValues);
 
               __m256i rValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02));
               __m256i gValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));

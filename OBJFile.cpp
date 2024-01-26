@@ -3,6 +3,8 @@
 #include "ZAssert.h"
 #include "Logger.h"
 #include "ZFile.h"
+#include "PlatformIntrinsics.h"
+#include "ScopedTimer.h"
 
 #include <cstring>
 
@@ -12,6 +14,8 @@ OBJFile::OBJFile() {
 
 void OBJFile::LoadFromFile(const FileString& path) {
   ParseRaw(path);
+
+  CalculateBoundingBox();
 }
 
 void OBJFile::Serialize(MemorySerializer& serializer) {
@@ -21,6 +25,7 @@ void OBJFile::Serialize(MemorySerializer& serializer) {
   mFaces.Serialize(serializer);
   mShadingOrder.Serialize(serializer);
   mAlbedoTexture.Serialize(serializer);
+  mBoundingBox.Serialize(serializer);
 }
 
 void OBJFile::Deserialize(MemoryDeserializer& deserializer) {
@@ -30,6 +35,11 @@ void OBJFile::Deserialize(MemoryDeserializer& deserializer) {
   mFaces.Deserialize(deserializer);
   mShadingOrder.Deserialize(deserializer);
   mAlbedoTexture.Deserialize(deserializer);
+  mBoundingBox.Deserialize(deserializer);
+}
+
+AABB& OBJFile::BoundingBox() {
+  return mBoundingBox;
 }
 
 Array<Vec4>& OBJFile::Verts() {
@@ -375,6 +385,22 @@ void OBJFile::ParseMaterial(String& line, const FileString& objFilePath) {
       lastLineIndex = offset + 1;
     }
   }
+}
+
+void OBJFile::CalculateBoundingBox() {
+  NamedScopedTimer(OBJComputeAABB);
+
+  float min[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
+  float max[4] = { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
+
+  const int32 stride = 4;
+  const float* vertices = (const float*)mVerts.GetData();
+  const int32 numVertices = mVerts.Size();
+
+  Unaligned_AABB(vertices, numVertices, stride, min, max);
+
+  AABB aabb(min, max);
+  mBoundingBox = aabb;
 }
 
 }

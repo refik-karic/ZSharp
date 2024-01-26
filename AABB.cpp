@@ -25,6 +25,16 @@ void AABB::operator=(const AABB& rhs) {
   mMax = rhs.mMax;
 }
 
+void AABB::Serialize(ISerializer& serializer) {
+  serializer.Serialize(&mMin, sizeof(mMin));
+  serializer.Serialize(&mMax, sizeof(mMax));
+}
+
+void AABB::Deserialize(IDeserializer& deserializer) {
+  deserializer.Deserialize(&mMin, sizeof(mMin));
+  deserializer.Deserialize(&mMax, sizeof(mMax));
+}
+
 void AABB::Grow(float vertex[3]) {
   float* min = *mMin;
   float* max = *mMax;

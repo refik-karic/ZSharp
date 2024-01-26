@@ -4,10 +4,11 @@
 
 #include "Vec3.h"
 #include "Mat4x4.h"
+#include "ISerializable.h"
 
 namespace ZSharp {
 
-class AABB final {
+class AABB final : public ISerializable {
   public:
 
   AABB();
@@ -17,6 +18,10 @@ class AABB final {
   AABB(const float min[3], const float max[3]);
 
   void operator=(const AABB& rhs);
+
+  virtual void Serialize(ISerializer& serializer) override;
+
+  virtual void Deserialize(IDeserializer& deserializer) override;
 
   void Grow(float vertex[3]);
 

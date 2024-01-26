@@ -3,7 +3,7 @@
 #include "ZBaseTypes.h"
 
 #include "Asset.h"
-
+#include "AABB.h"
 #include "Array.h"
 #include "Vec3.h"
 #include "Vec4.h"
@@ -35,6 +35,8 @@ class OBJFile final {
 
   void Deserialize(MemoryDeserializer& deserializer);
 
+  AABB& BoundingBox();
+
   Array<Vec4>& Verts();
 
   Array<Vec3>& Normals();
@@ -62,6 +64,8 @@ class OBJFile final {
 
   ShadingModeOrder mShadingOrder;
 
+  AABB mBoundingBox;
+
   void ParseRaw(const FileString& objFilePath);
 
   void ParseOBJLine(const char* currentLine, size_t length, const FileString& objFilePath);
@@ -75,5 +79,7 @@ class OBJFile final {
   void ParseFace(OBJFace& fillFace, String& line);
 
   void ParseMaterial(String& line, const FileString& objFilePath);
+
+  void CalculateBoundingBox();
 };
 }

@@ -395,7 +395,7 @@ void OBJFile::CalculateBoundingBox() {
 
   const int32 stride = 4;
   const float* vertices = (const float*)mVerts.GetData();
-  const int32 numVertices = mVerts.Size();
+  const int32 numVertices = mVerts.Size() * 4;
 
   Unaligned_AABB(vertices, numVertices, stride, min, max);
 

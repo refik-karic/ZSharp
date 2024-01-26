@@ -200,12 +200,6 @@ void World::LoadModels() {
 
       LoadOBJ(model, asset);
 
-      /*
-        TODO: Move this stuff to the bundle generation phase.
-          We're only setting them on load right now because we're still trying to figure out how everything will work.
-      */
-      model.BoundingBox() = model.ComputeBoundingBox();
-
       // TODO: Remove me.
       if (asset.Name() == "plane") {
         model.Tag() = PhysicsTag::Static;
@@ -322,6 +316,7 @@ void World::LoadOBJ(Model& model, Asset& asset) {
   model.CreateNewMesh();
   model.SetShadingOrder(objFile.ShadingOrder());
   model.SetStride(objFile.Stride());
+  model.BoundingBox() = objFile.BoundingBox();
   Mesh& mesh = model[0];
 
   bool isTextureMapped = objFile.ShadingOrder().Contains(ShadingMode(ShadingModes::UV, 2));

@@ -1015,24 +1015,46 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       }
       else {
         __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
-        __m128 invVert0 = _mm_mul_ps(_mm_set_ps1(v1[3]), invArea);
+
+        __m128 z0 = _mm_set_ps1(v1[3]);
+        __m128 invVert0 = _mm_mul_ps(z0, invArea);
         __m128 invVert1 = _mm_mul_ps(_mm_set_ps1(v2[3]), invArea);
         __m128 invVert2 = _mm_mul_ps(_mm_set_ps1(v3[3]), invArea);
 
+        __m128 z1z0 = _mm_sub_ps(invVert1, invVert0);
+        __m128 z2z0 = _mm_sub_ps(invVert2, invVert0);
+
         // We want the RGB values to be scaled by 255 in the end.
         // Doing that here saves us from having to apply the scale at each pixel.
-        __m128 scaleFactor = _mm_mul_ps(invArea, _mm_set_ps1(255.f));
-        __m128 invAttr00 = _mm_mul_ps(_mm_set_ps1(v1[4]), scaleFactor);
+        __m128 rgbScale = _mm_set_ps1(255.f);
+        __m128 scaleFactor = _mm_mul_ps(invArea, rgbScale);
+
+        __m128 r0 = _mm_set_ps1(v1[4]);
+        __m128 invAttr00 = _mm_mul_ps(r0, scaleFactor);
         __m128 invAttr01 = _mm_mul_ps(_mm_set_ps1(v2[4]), scaleFactor);
         __m128 invAttr02 = _mm_mul_ps(_mm_set_ps1(v3[4]), scaleFactor);
 
-        __m128 invAttr10 = _mm_mul_ps(_mm_set_ps1(v1[5]), scaleFactor);
+        r0 = _mm_mul_ps(r0, rgbScale);
+        __m128 r1r0 = _mm_sub_ps(invAttr01, invAttr00);
+        __m128 r2r0 = _mm_sub_ps(invAttr02, invAttr00);
+
+        __m128 g0 = _mm_set_ps1(v1[5]);
+        __m128 invAttr10 = _mm_mul_ps(g0, scaleFactor);
         __m128 invAttr11 = _mm_mul_ps(_mm_set_ps1(v2[5]), scaleFactor);
         __m128 invAttr12 = _mm_mul_ps(_mm_set_ps1(v3[5]), scaleFactor);
 
-        __m128 invAttr20 = _mm_mul_ps(_mm_set_ps1(v1[6]), scaleFactor);
+        g0 = _mm_mul_ps(g0, rgbScale);
+        __m128 g1g0 = _mm_sub_ps(invAttr11, invAttr10);
+        __m128 g2g0 = _mm_sub_ps(invAttr12, invAttr10);
+
+        __m128 b0 = _mm_set_ps1(v1[6]);
+        __m128 invAttr20 = _mm_mul_ps(b0, scaleFactor);
         __m128 invAttr21 = _mm_mul_ps(_mm_set_ps1(v2[6]), scaleFactor);
         __m128 invAttr22 = _mm_mul_ps(_mm_set_ps1(v3[6]), scaleFactor);
+
+        b0 = _mm_mul_ps(b0, rgbScale);
+        __m128 b1b0 = _mm_sub_ps(invAttr21, invAttr20);
+        __m128 b2b0 = _mm_sub_ps(invAttr22, invAttr20);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
         __m128 weightInit0 = _mm_set_ps1(BarycentricArea2D(v2, v3, boundingBoxMin));
@@ -1080,9 +1102,9 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
               __m128 depthVec = _mm_loadu_ps(pixelDepth);
 
-              __m128 weightedVerts0 = _mm_mul_ps(weights0, invVert0);
-              __m128 weightedVerts1 = _mm_mul_ps(weights1, invVert1);
-              __m128 weightedVerts2 = _mm_mul_ps(weights2, invVert2);
+              __m128 weightedVerts0 = z0;
+              __m128 weightedVerts1 = _mm_mul_ps(weights1, z1z0);
+              __m128 weightedVerts2 = _mm_mul_ps(weights2, z2z0);
 
               __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m128 invZValues = _mm_div_ps(oneValue, zValues);
@@ -1092,17 +1114,17 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 
-              __m128 weightedAttr00 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr00), invZValues);
-              __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr01), invZValues);
-              __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, invAttr02), invZValues);
+              __m128 weightedAttr00 = _mm_mul_ps(r0, invZValues);
+              __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, r1r0), invZValues);
+              __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, r2r0), invZValues);
 
-              __m128 weightedAttr10 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr10), invZValues);
-              __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr11), invZValues);
-              __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, invAttr12), invZValues);
+              __m128 weightedAttr10 = _mm_mul_ps(g0, invZValues);
+              __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, g1g0), invZValues);
+              __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, g2g0), invZValues);
 
-              __m128 weightedAttr20 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr20), invZValues);
-              __m128 weightedAttr21 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr21), invZValues);
-              __m128 weightedAttr22 = _mm_mul_ps(_mm_mul_ps(weights2, invAttr22), invZValues);
+              __m128 weightedAttr20 = _mm_mul_ps(b0, invZValues);
+              __m128 weightedAttr21 = _mm_mul_ps(_mm_mul_ps(weights1, b1b0), invZValues);
+              __m128 weightedAttr22 = _mm_mul_ps(_mm_mul_ps(weights2, b2b0), invZValues);
 
               __m128i rValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr00, weightedAttr01), weightedAttr02));
               __m128i gValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
@@ -1238,9 +1260,14 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       }
       else {
         __m256 invArea = _mm256_set1_ps(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
-        __m256 invVert0 = _mm256_mul_ps(_mm256_set1_ps(v1[3]), invArea);
+        
+        __m256 z0 = _mm256_set1_ps(v1[3]);
+        __m256 invVert0 = _mm256_mul_ps(z0, invArea);
         __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
         __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
+
+        __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
+        __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
 
         // We want the UV values to be scaled by the width/height.
         // Doing that here saves us from having to do that at each pixel.
@@ -1256,13 +1283,21 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         __m256 uScaleFactor = _mm256_mul_ps(invArea, maxUValue);
         __m256 vScaleFactor = _mm256_mul_ps(invArea, maxVValue);
 
-        __m256 invAttr00 = _mm256_mul_ps(_mm256_set1_ps(v1[4]), uScaleFactor);
+        __m256 u0 = _mm256_set1_ps(v1[4]);
+        __m256 invAttr00 = _mm256_mul_ps(u0, uScaleFactor);
         __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), uScaleFactor);
         __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), uScaleFactor);
+        u0 = _mm256_mul_ps(u0, maxUValue);
+        __m256 u1u0 = _mm256_sub_ps(invAttr01, invAttr00);
+        __m256 u2u0 = _mm256_sub_ps(invAttr02, invAttr00);
 
-        __m256 invAttr10 = _mm256_mul_ps(_mm256_set1_ps(v1[5]), vScaleFactor);
+        __m256 v0 = _mm256_set1_ps(v1[5]);
+        __m256 invAttr10 = _mm256_mul_ps(v0, vScaleFactor);
         __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), vScaleFactor);
         __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), vScaleFactor);
+        v0 = _mm256_mul_ps(v0, maxVValue);
+        __m256 v1v0 = _mm256_sub_ps(invAttr11, invAttr10);
+        __m256 v2v0 = _mm256_sub_ps(invAttr12, invAttr10);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
         __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
@@ -1311,9 +1346,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               __m256i pixelVec = _mm256_load_si256((__m256i*)pixels);
               __m256 depthVec = _mm256_load_ps(pixelDepth);
 
-              __m256 weightedVerts0 = _mm256_mul_ps(weights0, invVert0);
-              __m256 weightedVerts1 = _mm256_mul_ps(weights1, invVert1);
-              __m256 weightedVerts2 = _mm256_mul_ps(weights2, invVert2);
+              __m256 weightedVerts0 = z0;
+              __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
+              __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
 
               __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m256 invZValues = _mm256_div_ps(oneValue, zValues);
@@ -1323,13 +1358,13 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 
-              __m256 weightedAttr00 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr00), invZValues);
-              __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr01), invZValues);
-              __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, invAttr02), invZValues);
+              __m256 weightedAttr00 = _mm256_mul_ps(u0, invZValues);
+              __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues);
+              __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, u2u0), invZValues);
 
-              __m256 weightedAttr10 = _mm256_mul_ps(_mm256_mul_ps(weights0, invAttr10), invZValues);
-              __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, invAttr11), invZValues);
-              __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, invAttr12), invZValues);
+              __m256 weightedAttr10 = _mm256_mul_ps(v0, invZValues);
+              __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), invZValues);
+              __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, v2v0), invZValues);
 
               __m256 uValues = _mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02);
               __m256 vValues = _mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12);
@@ -1473,9 +1508,14 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       }
       else {
         __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
-        __m128 invVert0 = _mm_mul_ps(_mm_set_ps1(v1[3]), invArea);
+
+        __m128 z0 = _mm_set_ps1(v1[3]);
+        __m128 invVert0 = _mm_mul_ps(z0, invArea);
         __m128 invVert1 = _mm_mul_ps(_mm_set_ps1(v2[3]), invArea);
         __m128 invVert2 = _mm_mul_ps(_mm_set_ps1(v3[3]), invArea);
+
+        __m128 z1z0 = _mm_sub_ps(invVert1, invVert0);
+        __m128 z2z0 = _mm_sub_ps(invVert2, invVert0);
 
         // We want the UV values to be scaled by the width/height.
         // Doing that here saves us from having to do that at each pixel.
@@ -1491,13 +1531,21 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         __m128 uScaleFactor = _mm_mul_ps(invArea, maxUValue);
         __m128 vScaleFactor = _mm_mul_ps(invArea, maxVValue);
 
-        __m128 invAttr00 = _mm_mul_ps(_mm_set_ps1(v1[4]), uScaleFactor);
+        __m128 u0 = _mm_set_ps1(v1[4]);
+        __m128 invAttr00 = _mm_mul_ps(u0, uScaleFactor);
         __m128 invAttr01 = _mm_mul_ps(_mm_set_ps1(v2[4]), uScaleFactor);
         __m128 invAttr02 = _mm_mul_ps(_mm_set_ps1(v3[4]), uScaleFactor);
+        u0 = _mm_mul_ps(u0, maxUValue);
+        __m128 u1u0 = _mm_sub_ps(invAttr01, invAttr00);
+        __m128 u2u0 = _mm_sub_ps(invAttr02, invAttr00);
 
-        __m128 invAttr10 = _mm_mul_ps(_mm_set_ps1(v1[5]), vScaleFactor);
+        __m128 v0 = _mm_set_ps1(v1[5]);
+        __m128 invAttr10 = _mm_mul_ps(v0, vScaleFactor);
         __m128 invAttr11 = _mm_mul_ps(_mm_set_ps1(v2[5]), vScaleFactor);
         __m128 invAttr12 = _mm_mul_ps(_mm_set_ps1(v3[5]), vScaleFactor);
+        v0 = _mm_mul_ps(v0, maxVValue);
+        __m128 v1v0 = _mm_sub_ps(invAttr11, invAttr10);
+        __m128 v2v0 = _mm_sub_ps(invAttr12, invAttr10);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
         __m128 weightInit0 = _mm_set_ps1(BarycentricArea2D(v2, v3, boundingBoxMin));
@@ -1547,9 +1595,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
               __m128 depthVec = _mm_loadu_ps(pixelDepth);
 
-              __m128 weightedVerts0 = _mm_mul_ps(weights0, invVert0);
-              __m128 weightedVerts1 = _mm_mul_ps(weights1, invVert1);
-              __m128 weightedVerts2 = _mm_mul_ps(weights2, invVert2);
+              __m128 weightedVerts0 = z0;
+              __m128 weightedVerts1 = _mm_mul_ps(weights1, z1z0);
+              __m128 weightedVerts2 = _mm_mul_ps(weights2, z2z0);
 
               __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m128 invZValues = _mm_div_ps(oneValue, zValues);
@@ -1559,13 +1607,13 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
               int32 finalCombinedMask = combinedMask | finalDepthMask;
 
-              __m128 weightedAttr00 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr00), invZValues);
-              __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr01), invZValues);
-              __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, invAttr02), invZValues);
+              __m128 weightedAttr00 = _mm_mul_ps(u0, invZValues);
+              __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, u1u0), invZValues);
+              __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, u2u0), invZValues);
 
-              __m128 weightedAttr10 = _mm_mul_ps(_mm_mul_ps(weights0, invAttr10), invZValues);
-              __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, invAttr11), invZValues);
-              __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, invAttr12), invZValues);
+              __m128 weightedAttr10 = _mm_mul_ps(v0, invZValues);
+              __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, v1v0), invZValues);
+              __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, v2v0), invZValues);
 
               __m128 uValues = _mm_add_ps(_mm_add_ps(weightedAttr00, weightedAttr01), weightedAttr02);
               __m128 vValues = _mm_add_ps(_mm_add_ps(weightedAttr10, weightedAttr11), weightedAttr12);

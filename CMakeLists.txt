@@ -146,6 +146,10 @@ target_sources(ZSharp
 
 set(ZSharp_Compile_Options_Debug )
 
+set(ZSharp_Compile_Options_MinSizeRel )
+
+set(ZSharp_Compile_Options_RelWithDebInfo )
+
 set(ZSharp_Compile_Options_Release )
 
 set(ZSharp_Preprocessor_Defines HW_PLATFORM_X86)
@@ -162,6 +166,36 @@ if(WIN32)
   list(APPEND ZSharp_Compile_Options_Debug
     /Od
     /Ob0
+    /source-charset:utf-8
+    /std:c++latest
+    /D_UNICODE
+    /GR-
+    /MP
+    /U_MBCS
+    /W4
+    /WX
+    /Zi
+    /diagnostics:caret
+  )
+
+  list(APPEND ZSharp_Compile_Options_MinSizeRel
+    /O1
+    /Ob1
+    /source-charset:utf-8
+    /std:c++latest
+    /D_UNICODE
+    /GR-
+    /MP
+    /U_MBCS
+    /W4
+    /WX
+    /Zi
+    /diagnostics:caret
+  )
+
+  list(APPEND ZSharp_Compile_Options_RelWithDebInfo
+    /O2
+    /Ob1
     /source-charset:utf-8
     /std:c++latest
     /D_UNICODE
@@ -202,12 +236,20 @@ if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
 		target_compile_options(ZSharp PRIVATE 
 			${ZSharp_Compile_Options_Debug})
 
+    elseif("${CMAKE_BUILD_TYPE}" STREQUAL "MinSizeRel")
+		target_compile_options(ZSharp PRIVATE 
+			${ZSharp_Compile_Options_MinSizeRel})
+
+    elseif("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+		target_compile_options(ZSharp PRIVATE 
+			${ZSharp_Compile_Options_RelWithDebInfo})
+
 	elseif("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 		target_compile_options(ZSharp PRIVATE 
 			${ZSharp_Compile_Options_Release})
 
 	else()
-		message(FATAL_ERROR "Must specify -DCMAKE_BUILD_TYPE=Debug/Release when using Ninja.")
+		message(FATAL_ERROR "Must specify -DCMAKE_BUILD_TYPE=Debug|MinSizeRel|RelWithDebInfo|Release when using Ninja.")
 	endif()
 
 else()

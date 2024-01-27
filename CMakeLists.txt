@@ -144,38 +144,11 @@ target_sources(ZSharp
         ZString.cpp
 )
 
-set(ZSharp_Compile_Options_Debug 
-  /source-charset:utf-8
-  /std:c17
-  /std:c++latest
-  /D_UNICODE
-  /GR-
-  /MP
-  /U_MBCS
-  /W4
-  /WX
-  /Zi
-  /diagnostics:caret
-)
+set(ZSharp_Compile_Options_Debug )
 
-set(ZSharp_Compile_Options_Release 
-  /source-charset:utf-8
-  /std:c17
-  /std:c++latest
-  /D_UNICODE
-  /GR-
-  /MP
-  /U_MBCS
-  /W4
-  /WX
-  /sdl-
-  /GL
-  /GS-
-  /Zi
-  /diagnostics:caret
-)
+set(ZSharp_Compile_Options_Release )
 
-set(ZSharp_Preprocessor_Defines )
+set(ZSharp_Preprocessor_Defines HW_PLATFORM_X86)
 
 if(WIN32)
   list(APPEND ZSharp_Preprocessor_Defines 
@@ -185,20 +158,64 @@ if(WIN32)
     WIN32_LEAN_AND_MEAN
     PLATFORM_MAX_PATH=260
   )
-endif(WIN32)
 
-list(APPEND ZSharp_Preprocessor_Defines 
-  HW_PLATFORM_X86
-)
+  list(APPEND ZSharp_Compile_Options_Debug
+    /Od
+    /Ob0
+    /source-charset:utf-8
+    /std:c++latest
+    /D_UNICODE
+    /GR-
+    /MP
+    /U_MBCS
+    /W4
+    /WX
+    /Zi
+    /diagnostics:caret
+  )
+
+  list(APPEND ZSharp_Compile_Options_Release
+    /O2
+    /Ob2
+    /source-charset:utf-8
+    /std:c++latest
+    /D_UNICODE
+    /GR-
+    /MP
+    /U_MBCS
+    /W4
+    /WX
+    /sdl-
+    /GL
+    /GS-
+    /Zi
+    /diagnostics:caret
+  )
+endif(WIN32)
 
 target_compile_definitions(ZSharp PRIVATE 
   ${ZSharp_Preprocessor_Defines}
 )
 
-target_compile_options(ZSharp PRIVATE 
-	"$<$<CONFIG:DEBUG>:${ZSharp_Compile_Options_Debug}>"
-)
+if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
+	if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+		target_compile_options(ZSharp PRIVATE 
+			${ZSharp_Compile_Options_Debug})
 
-target_compile_options(ZSharp PRIVATE 
-	"$<$<CONFIG:RELEASE>:${ZSharp_Compile_Options_Release}>"
-)
+	elseif("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+		target_compile_options(ZSharp PRIVATE 
+			${ZSharp_Compile_Options_Release})
+
+	else()
+		message(FATAL_ERROR "Must specify -DCMAKE_BUILD_TYPE=Debug/Release when using Ninja.")
+	endif()
+
+else()
+    target_compile_options(ZSharp PRIVATE 
+	    "$<$<CONFIG:DEBUG>:${ZSharp_Compile_Options_Debug}>"
+    )
+
+    target_compile_options(ZSharp PRIVATE 
+	    "$<$<CONFIG:RELEASE>:${ZSharp_Compile_Options_Release}>"
+    )
+endif()

@@ -393,9 +393,9 @@ void OBJFile::CalculateBoundingBox() {
   float min[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
   float max[4] = { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
 
-  const int32 stride = 4;
+  const size_t stride = 4;
   const float* vertices = (const float*)mVerts.GetData();
-  const int32 numVertices = mVerts.Size() * 4;
+  const size_t numVertices = mVerts.Size() * 4;
 
   Unaligned_AABB(vertices, numVertices, stride, min, max);
 

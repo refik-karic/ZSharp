@@ -69,6 +69,11 @@ void IniFile::ParseFile() {
         --lineLength;
       }
 
+      if (lineLength == 0) {
+        lastLineIndex = offset + 1;
+        continue;
+      }
+
       String currentLine(fileBuffer + lastLineIndex, 0, lineLength);
       lastLineIndex = offset + 1;
 

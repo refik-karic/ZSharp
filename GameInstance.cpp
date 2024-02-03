@@ -33,76 +33,9 @@ GameInstance::~GameInstance() {
 }
 
 void GameInstance::LoadWorld() {
+  NamedScopedTimer(WorldLoad);
+
   mWorld.Load();
-}
-
-void GameInstance::MoveCamera(Direction direction) {
-  Vec3 cameraLook(mCamera.GetLook());
-
-  switch (direction) {
-  case Direction::FORWARD:
-    mCamera.Position() = mCamera.Position() + cameraLook;
-    break;
-  case Direction::BACK:
-    mCamera.Position() = mCamera.Position() - cameraLook;
-    break;
-  case Direction::LEFT:
-  {
-    Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
-    mCamera.Position() = mCamera.Position() + sideVec;
-  }
-  break;
-  case Direction::RIGHT:
-  {
-    Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
-    mCamera.Position() = mCamera.Position() - sideVec;
-  }
-  break;
-  }
-}
-
-void GameInstance::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {
-  Vec3 rotationAxis;
-  switch (direction) {
-  case Mat4x4::Axis::X:
-    rotationAxis[0] = 1.f;
-    break;
-  case Mat4x4::Axis::Y:
-    rotationAxis[1] = 1.f;
-    break;
-  case Mat4x4::Axis::Z:
-    rotationAxis[2] = 1.f;
-    break;
-  }
-
-  Quaternion quat(DegreesToRadians(angleDegrees), rotationAxis);
-  Mat4x4 rotation(quat.GetRotationMatrix());
-  mCamera.RotateCamera(rotation);
-}
-
-void GameInstance::RotateTrackball(const Quaternion& quat) {
-  Mat4x4 rotation(quat.GetRotationMatrix());
-  mCamera.RotateCamera(rotation);
-}
-
-void GameInstance::ChangeSpeed(int64 amount) {
-  if (mRotationSpeed + amount > 10) {
-    mRotationSpeed = 10;
-  }
-  else if (mRotationSpeed + amount < 1) {
-    mRotationSpeed = 1;
-  }
-  else {
-    mRotationSpeed += amount;
-  }
-}
-
-void GameInstance::PauseTransforms() {
-  mPauseTransforms = !mPauseTransforms;
-}
-
-void GameInstance::Initialize() {
-  LoadWorld();
 
   mCamera.Position() = Vec3(0.f, 5.f, 50.f);
   // Clip the model at the origin by moving the camera far away.
@@ -117,8 +50,14 @@ void GameInstance::Initialize() {
   inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
-void GameInstance::Tick() {
-  NamedScopedTimer(Render);
+void GameInstance::LoadFrontEnd() {
+  NamedScopedTimer(FrontEndLoad);
+
+  mFrontEnd.Load();
+}
+
+void GameInstance::TickWorld() {
+  NamedScopedTimer(TickWorld);
 
   size_t frameDeltaMs = (mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
 
@@ -229,6 +168,95 @@ void GameInstance::Tick() {
   if (mDevConsole.IsOpen()) {
     uint8* buffer = mVisualizeDepth ? mRenderer.GetDepth() : mRenderer.GetFrameBuffer().GetBuffer();
     mDevConsole.Draw((uint32*)buffer);
+  }
+}
+
+void GameInstance::TickFrontEnd() {
+  NamedScopedTimer(TickFrontEnd);
+
+  mFrontEnd.Tick();
+}
+
+void GameInstance::MoveCamera(Direction direction) {
+  Vec3 cameraLook(mCamera.GetLook());
+
+  switch (direction) {
+  case Direction::FORWARD:
+    mCamera.Position() = mCamera.Position() + cameraLook;
+    break;
+  case Direction::BACK:
+    mCamera.Position() = mCamera.Position() - cameraLook;
+    break;
+  case Direction::LEFT:
+  {
+    Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
+    mCamera.Position() = mCamera.Position() + sideVec;
+  }
+  break;
+  case Direction::RIGHT:
+  {
+    Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
+    mCamera.Position() = mCamera.Position() - sideVec;
+  }
+  break;
+  }
+}
+
+void GameInstance::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {
+  Vec3 rotationAxis;
+  switch (direction) {
+  case Mat4x4::Axis::X:
+    rotationAxis[0] = 1.f;
+    break;
+  case Mat4x4::Axis::Y:
+    rotationAxis[1] = 1.f;
+    break;
+  case Mat4x4::Axis::Z:
+    rotationAxis[2] = 1.f;
+    break;
+  }
+
+  Quaternion quat(DegreesToRadians(angleDegrees), rotationAxis);
+  Mat4x4 rotation(quat.GetRotationMatrix());
+  mCamera.RotateCamera(rotation);
+}
+
+void GameInstance::RotateTrackball(const Quaternion& quat) {
+  Mat4x4 rotation(quat.GetRotationMatrix());
+  mCamera.RotateCamera(rotation);
+}
+
+void GameInstance::ChangeSpeed(int64 amount) {
+  if (mRotationSpeed + amount > 10) {
+    mRotationSpeed = 10;
+  }
+  else if (mRotationSpeed + amount < 1) {
+    mRotationSpeed = 1;
+  }
+  else {
+    mRotationSpeed += amount;
+  }
+}
+
+void GameInstance::PauseTransforms() {
+  mPauseTransforms = !mPauseTransforms;
+}
+
+void GameInstance::Initialize(bool skipTitleScreen) {
+  if (skipTitleScreen) {
+    LoadWorld();
+  }
+  else {
+    LoadFrontEnd();
+  }
+}
+
+void GameInstance::Tick() {
+  if (mFrontEnd.IsVisible()) {
+    TickFrontEnd();
+  }
+  else {
+    TickWorld();
   }
 }
 

@@ -2,6 +2,7 @@
 
 #include "Camera.h"
 #include "DevConsole.h"
+#include "FrontEnd.h"
 #include "InputManager.h"
 #include "Mat4x4.h"
 #include "Quaternion.h"
@@ -28,7 +29,7 @@ class GameInstance final {
   GameInstance(const GameInstance& rhs) = delete;
   void operator=(const GameInstance& rhs) = delete;
 
-  void Initialize();
+  void Initialize(bool skipTitleScreen);
 
   void Tick();
 
@@ -39,6 +40,7 @@ class GameInstance final {
   bool IsDevConsoleOpen() const;
 
   private:
+  FrontEnd mFrontEnd;
   Camera mCamera;
   World mWorld;
   Renderer mRenderer;
@@ -60,6 +62,12 @@ class GameInstance final {
   void PauseTransforms();
 
   void LoadWorld();
+
+  void LoadFrontEnd();
+
+  void TickWorld();
+
+  void TickFrontEnd();
 
   void MoveCamera(Direction direction);
 

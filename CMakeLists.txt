@@ -21,6 +21,7 @@ set(ZSharp_Header_Files
     FileString.h
     FixedArray.h
     Framebuffer.h
+    FrontEnd.h
     GameInstance.h
     Graph.h
     HashFunctions.h
@@ -64,6 +65,14 @@ set(ZSharp_Header_Files
     TexturePool.h
     Tree.h
     Triangle.h
+    UIBase.h
+    UIButton.h
+    UIContainer.h
+    UIElement.h
+    UIFrame.h
+    UIGrid.h
+    UILabel.h
+    UILinearPanel.h
     Vec3.h
     Vec4.h
     VertexBuffer.h
@@ -96,6 +105,7 @@ set(ZSharp_Source_Files
     DevConsole.cpp
     FileString.cpp
     Framebuffer.cpp
+    FrontEnd.cpp
     GameInstance.cpp
     HashFunctions.cpp
     IndexBuffer.cpp
@@ -121,6 +131,14 @@ set(ZSharp_Source_Files
     Texture.cpp
     TexturePool.cpp
     Triangle.cpp
+    UIBase.cpp
+    UIButton.cpp
+    UIContainer.cpp
+    UIElement.cpp
+    UIFrame.cpp
+    UIGrid.cpp
+    UILabel.cpp
+    UILinearPanel.cpp
     Vec3.cpp
     Vec4.cpp
     VertexBuffer.cpp

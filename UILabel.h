@@ -11,7 +11,9 @@ class UILabel : public UIElement {
 
   UILabel(size_t width, size_t height, const String& name);
 
-  virtual void Draw(uint8* screen, size_t width, size_t height) override;
+  virtual void Draw(uint8* screen, size_t width, size_t height, size_t offset) override;
+
+  String& Text();
 
   private:
   String mText;

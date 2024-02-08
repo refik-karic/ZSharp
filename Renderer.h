@@ -4,6 +4,7 @@
 #include "Framebuffer.h"
 #include "DepthBuffer.h"
 #include "World.h"
+#include "ZColor.h"
 
 namespace ZSharp {
 
@@ -25,6 +26,8 @@ class Renderer final {
   uint8* GetFrame();
 
   uint8* GetDepth();
+
+  void ClearFramebuffer(const ZColor& color);
 
   void ToggleRenderMode(RenderMode mode);
 

@@ -139,6 +139,10 @@ uint8* Renderer::GetDepth() {
   return reinterpret_cast<uint8*>(buffer);
 }
 
+void Renderer::ClearFramebuffer(const ZColor& color) {
+  mFramebuffer.Clear(color);
+}
+
 void Renderer::ToggleRenderMode(RenderMode mode) {
   if (mode == RenderMode::FLAT) {
     *DevRenderMode = 1;

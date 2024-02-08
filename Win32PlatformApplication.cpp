@@ -112,7 +112,7 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
       return result;
     }
 
-    mGameInstance.Initialize(true);
+    mGameInstance.Initialize(false);
 
     ShowWindow(mWindowHandle, SW_SHOW);
     for (MSG msg; mWindowHandle != nullptr;) {

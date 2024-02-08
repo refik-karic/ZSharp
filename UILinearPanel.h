@@ -17,11 +17,15 @@ class UILinearPanel : public UIContainer {
 
   UILinearPanel(size_t width, size_t height, const String& name, UILinearFlow flow);
 
-  void Draw(uint8* screen, size_t width, size_t height);
+  ~UILinearPanel();
+
+  virtual void Draw(uint8* screen, size_t width, size_t height, size_t offset) override;
+
+  void AddItem(UIBase* item);
 
   private:
   UILinearFlow mFlow;
-  List<UIBase> mItems;
+  List<UIBase*> mItems;
 };
 
 }

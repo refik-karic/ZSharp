@@ -175,6 +175,16 @@ void GameInstance::TickFrontEnd() {
   NamedScopedTimer(TickFrontEnd);
 
   mFrontEnd.Tick();
+
+  ZColor color(ZColors::BLACK);
+  mRenderer.ClearFramebuffer(color);
+
+  Framebuffer& framebuffer = mRenderer.GetFrameBuffer();
+  uint8* buffer = mRenderer.GetFrame();
+  size_t width = framebuffer.GetWidth();
+  size_t height = framebuffer.GetHeight();
+
+  mFrontEnd.Draw(buffer, width, height);
 }
 
 void GameInstance::MoveCamera(Direction direction) {
@@ -273,7 +283,10 @@ void GameInstance::TickAudio() {
 }
 
 uint8* GameInstance::GetCurrentFrame() {
-  if (!mVisualizeDepth) {
+  if (mFrontEnd.IsVisible()) {
+    return mRenderer.GetFrame();
+  }
+  else if (!mVisualizeDepth) {
     return mRenderer.GetFrame();
   }
   else {

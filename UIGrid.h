@@ -28,7 +28,7 @@ class UIGrid : public UIContainer {
 
   UIGrid(size_t width, size_t height, const String& name);
 
-  void Draw(uint8* screen, size_t width, size_t height);
+  void Draw(uint8* screen, size_t width, size_t height, size_t offset);
 
   private:
   List<UIGridRow> mRows;

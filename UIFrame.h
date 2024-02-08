@@ -21,14 +21,18 @@ The frame fills a viewport and stores all of its child elements either directly 
 class UIFrame {
   public:
 
-  UIFrame(size_t width, size_t height, UIBase& rootItem);
+  UIFrame(size_t width, size_t height, UIBase* rootItem);
+
+  ~UIFrame();
 
   void Draw(uint8* screen, size_t width, size_t height);
+
+  void OnResize(size_t width, size_t height);
 
   private:
   size_t mWidth;
   size_t mHeight;
-  UIBase mBaseItem;
+  UIBase* mBaseItem;
 };
 
 }

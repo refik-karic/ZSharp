@@ -12,7 +12,7 @@ class UIButton : public UIElement {
 
   UIButton(size_t width, size_t height, const String& name);
 
-  virtual void Draw(uint8* screen, size_t width, size_t height) override;
+  virtual void Draw(uint8* screen, size_t width, size_t height, size_t offset) override;
 
   private:
   String mText;

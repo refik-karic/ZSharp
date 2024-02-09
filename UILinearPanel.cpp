@@ -28,20 +28,30 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offs
       currentOffset += (mWidth / 2);
       break;
     case UIHorizontalAlignment::Right:
+    {
       currentOffset += mWidth;
+      for (UIBase* item : mItems) {
+        currentOffset -= item->Width();
+      }
+    }
       break;
   }
 
   switch (mVerticalAlignment) {
     case UIVerticalAlignment::Fill:
       break;
-    case UIVerticalAlignment::Left:
+    case UIVerticalAlignment::Top:
       break;
     case UIVerticalAlignment::Center:
-      currentOffset += ((mHeight / 2) * width);
+      currentOffset += ((mHeight / 2) * mWidth);
       break;
-    case UIVerticalAlignment::Right:
-      currentOffset += (mHeight * width);
+    case UIVerticalAlignment::Bottom:
+    {
+      currentOffset += (mWidth * mHeight);
+      for (UIBase* item : mItems) {
+        currentOffset -= (mWidth * item->Height());
+      }
+    }
       break;
   }
   

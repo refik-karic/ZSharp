@@ -4,6 +4,13 @@
 
 namespace ZSharp {
 
+/*
+TODO: We're just using the default 8x8 font here for now.
+  If we want to get fancy text rendering we will need to change this.
+*/
+const size_t FontWidth = 8;
+const size_t FontHeight = 8;
+
 UILabel::UILabel(size_t width, size_t height, const String& name) 
   : UIElement(width, height, name) {
 }
@@ -18,19 +25,22 @@ void UILabel::Draw(uint8* screen, size_t width, size_t height, size_t offset) {
 
   uint8* currentScreenPos = screen + (offset * 4);
 
-  size_t adjustAmount = ((mWidth / 2) * 4);
-
-  if (adjustAmount < offset) {
-    offset -= adjustAmount;
-  }
-
   ZColor color(ZColors::GREEN);
 
   DrawText(mText, 0, 0, currentScreenPos, width, color);
 }
 
-String& UILabel::Text() {
+const String& UILabel::GetText() const {
   return mText;
+}
+
+void UILabel::SetText(const String& string) {
+  mText = string;
+  
+  size_t stringLength = string.Length();
+
+  mWidth = stringLength * FontWidth;
+  mHeight = FontHeight;
 }
 
 }

@@ -13,7 +13,9 @@ class UILabel : public UIElement {
 
   virtual void Draw(uint8* screen, size_t width, size_t height, size_t offset) override;
 
-  String& Text();
+  const String& GetText() const;
+
+  void SetText(const String& string);
 
   private:
   String mText;

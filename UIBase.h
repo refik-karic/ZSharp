@@ -13,9 +13,9 @@ enum class UIHorizontalAlignment {
 };
 
 enum class UIVerticalAlignment {
-  Left,
+  Top,
   Center,
-  Right,
+  Bottom,
   Fill
 };
 

@@ -30,12 +30,12 @@ void FrontEnd::Load() {
   size_t width = config.GetViewportWidth().Value();
   size_t height = config.GetViewportHeight().Value();
 
-  UILabel* labelText = new UILabel(100, 10, "TestLabel");
-  labelText->Text() = "This is a test.";
+  UILabel* labelText = new UILabel(150, 10, "TestLabel");
+  labelText->SetText("This is a test.");
   UILinearPanel* linearPanel = new UILinearPanel(width, height, "TestPanel", UILinearFlow::Vertical);
   linearPanel->AddItem(labelText);
-  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Center;
-  linearPanel->VerticalAlignment() = UIVerticalAlignment::Center;
+  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Right;
+  linearPanel->VerticalAlignment() = UIVerticalAlignment::Bottom;
 
   mFrame = new UIFrame(width, height, linearPanel);
 }

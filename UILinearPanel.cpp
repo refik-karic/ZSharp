@@ -30,8 +30,20 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offs
     case UIHorizontalAlignment::Right:
     {
       currentOffset += mWidth;
-      for (UIBase* item : mItems) {
-        currentOffset -= item->Width();
+
+      if (mFlow == UILinearFlow::Horizontal) {
+        for (UIBase* item : mItems) {
+          currentOffset -= item->Width();
+        }
+      }
+      else {
+        size_t maxWidth = 0;
+
+        for (UIBase* item : mItems) {
+          maxWidth = Max(maxWidth, item->Width());
+        }
+
+        currentOffset -= maxWidth;
       }
     }
       break;
@@ -48,8 +60,20 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offs
     case UIVerticalAlignment::Bottom:
     {
       currentOffset += (mWidth * mHeight);
-      for (UIBase* item : mItems) {
-        currentOffset -= (mWidth * item->Height());
+
+      if (mFlow == UILinearFlow::Horizontal) {
+        size_t maxHeight = 0;
+
+        for (UIBase* item : mItems) {
+          maxHeight = Max(maxHeight, item->Height());
+        }
+
+        currentOffset -= (mWidth * maxHeight);
+      }
+      else {
+        for (UIBase* item : mItems) {
+          currentOffset -= (mWidth * item->Height());
+        }
       }
     }
       break;
@@ -74,6 +98,14 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offs
       itemHeight = Clamp(itemHeight, (size_t)0, mHeight);
       currentOffset += (itemHeight * width);
     }
+  }
+}
+
+void UILinearPanel::HitTest(int32 x, int32 y) {
+  // TODO: Need a way to pass through the screen offset in order to correctly perform the hit test.
+
+  for (UIBase* item : mItems) {
+    item->HitTest(x, y);
   }
 }
 

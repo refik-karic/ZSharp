@@ -38,6 +38,8 @@ class UIBase {
 
   UIVerticalAlignment& VerticalAlignment();
 
+  virtual void HitTest(int32 x, int32 y);
+
   protected:
   size_t mWidth;
   size_t mHeight;

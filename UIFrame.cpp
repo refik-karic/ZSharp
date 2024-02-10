@@ -26,4 +26,9 @@ void UIFrame::OnResize(size_t width, size_t height) {
   }
 }
 
+void UIFrame::OnMouseMove(int32 x, int32 y) {
+  (void)x;
+  (void)y;
+}
+
 }

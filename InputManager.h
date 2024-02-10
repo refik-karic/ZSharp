@@ -29,7 +29,9 @@ class InputManager final {
 
   BroadcastDelegate<MiscKey> OnMiscKeyUpDelegate;
 
-  BroadcastDelegate<int32, int32, int32, int32> OnMouseMoveDelegate;
+  BroadcastDelegate<int32, int32, int32, int32> OnMouseDragDelegate;
+
+  BroadcastDelegate<int32, int32> OnMouseMoveDelegate;
 
   enum class KeyState {
     Clear,
@@ -48,8 +50,6 @@ class InputManager final {
   void UpdateMousePosition(int32 x, int32 y);
 
   void UpdateMouseState(bool pressedDown);
-
-  void ResetMouse();
 
   void Process();
 

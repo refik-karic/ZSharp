@@ -21,6 +21,8 @@ class UILinearPanel : public UIContainer {
 
   virtual void Draw(uint8* screen, size_t width, size_t height, size_t offset) override;
 
+  virtual void HitTest(int32 x, int32 y) override;
+
   void AddItem(UIBase* item);
 
   private:

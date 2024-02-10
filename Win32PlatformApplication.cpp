@@ -355,7 +355,7 @@ void Win32PlatformApplication::OnLButtonDown(ZSharp::int32 x, ZSharp::int32 y) {
 
 void Win32PlatformApplication::OnLButtonUp() {
   ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-  inputManager.ResetMouse();
+  inputManager.UpdateMouseState(false);
 }
 
 void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {

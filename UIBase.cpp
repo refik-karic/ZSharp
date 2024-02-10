@@ -37,4 +37,9 @@ UIVerticalAlignment& UIBase::VerticalAlignment() {
   return mVerticalAlignment;
 }
 
+void UIBase::HitTest(int32 x, int32 y) {
+  (void)x;
+  (void)y;
+}
+
 }

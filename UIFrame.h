@@ -29,6 +29,8 @@ class UIFrame {
 
   void OnResize(size_t width, size_t height);
 
+  void OnMouseMove(int32 x, int32 y);
+
   private:
   size_t mWidth;
   size_t mHeight;

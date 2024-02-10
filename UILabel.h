@@ -3,6 +3,7 @@
 #include "ZBaseTypes.h"
 #include "UIElement.h"
 #include "ZString.h"
+#include "ZColor.h"
 
 namespace ZSharp {
 
@@ -17,8 +18,11 @@ class UILabel : public UIElement {
 
   void SetText(const String& string);
 
+  void SetColor(const ZColor& color);
+
   private:
   String mText;
+  ZColor mColor;
 };
 
 }

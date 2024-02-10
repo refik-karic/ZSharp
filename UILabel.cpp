@@ -12,7 +12,7 @@ const size_t FontWidth = 8;
 const size_t FontHeight = 8;
 
 UILabel::UILabel(size_t width, size_t height, const String& name) 
-  : UIElement(width, height, name) {
+  : UIElement(width, height, name), mColor(ZColors::GREEN) {
 }
 
 void UILabel::Draw(uint8* screen, size_t width, size_t height, size_t offset) {
@@ -25,9 +25,7 @@ void UILabel::Draw(uint8* screen, size_t width, size_t height, size_t offset) {
 
   uint8* currentScreenPos = screen + (offset * 4);
 
-  ZColor color(ZColors::GREEN);
-
-  DrawText(mText, 0, 0, currentScreenPos, width, color);
+  DrawText(mText, 0, 0, currentScreenPos, width, mColor);
 }
 
 const String& UILabel::GetText() const {
@@ -41,6 +39,10 @@ void UILabel::SetText(const String& string) {
 
   mWidth = stringLength * FontWidth;
   mHeight = FontHeight;
+}
+
+void UILabel::SetColor(const ZColor& color) {
+  mColor = color;
 }
 
 }

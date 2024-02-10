@@ -27,6 +27,8 @@ class FrontEnd final {
   UIFrame* mFrame = nullptr;
 
   void OnResize(size_t width, size_t height);
+
+  void OnMouseMove(int32 x, int32 y);
 };
 
 }

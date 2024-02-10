@@ -36,14 +36,6 @@ void InputManager::UpdateMouseState(bool pressedDown) {
   mMousePressed = pressedDown;
 }
 
-void InputManager::ResetMouse() {
-  mMousePressed = false;
-  mOldMouseX = 0;
-  mOldMouseY = 0;
-  mCurrentMouseX = 0;
-  mCurrentMouseY = 0;
-}
-
 void InputManager::Process() {
   for (uint8 i = 0; i < mKeyboard.Size(); ++i) {
     switch (mKeyboard[i]) {
@@ -72,9 +64,11 @@ void InputManager::Process() {
   }
 
   if (mMousePressed) {
-    OnMouseMoveDelegate.Broadcast(mOldMouseX, mOldMouseY, mCurrentMouseX, mCurrentMouseY);
+    OnMouseDragDelegate.Broadcast(mOldMouseX, mOldMouseY, mCurrentMouseX, mCurrentMouseY);
     UpdateMousePosition(mCurrentMouseX, mCurrentMouseY);
   }
+
+  OnMouseMoveDelegate.Broadcast(mCurrentMouseX, mCurrentMouseY);
 
   mKeyboard.Fill(KeyState::Clear);
   mMiscKeys.Fill(KeyState::Clear);

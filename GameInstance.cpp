@@ -29,7 +29,7 @@ GameInstance::~GameInstance() {
   inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
   inputManager.OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
   inputManager.OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
-  inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
+  inputManager.OnMouseDragDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
 void GameInstance::LoadWorld() {
@@ -47,7 +47,7 @@ void GameInstance::LoadWorld() {
   inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
   inputManager.OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
   inputManager.OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
-  inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
+  inputManager.OnMouseDragDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
 void GameInstance::LoadFrontEnd() {
@@ -173,6 +173,9 @@ void GameInstance::TickWorld() {
 
 void GameInstance::TickFrontEnd() {
   NamedScopedTimer(TickFrontEnd);
+
+  InputManager& inputManager = InputManager::Get();
+  inputManager.Process();
 
   mFrontEnd.Tick();
 

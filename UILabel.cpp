@@ -12,20 +12,34 @@ const size_t FontWidth = 8;
 const size_t FontHeight = 8;
 
 UILabel::UILabel(size_t width, size_t height, const String& name) 
-  : UIElement(width, height, name), mColor(ZColors::GREEN) {
+  : UIElement(width, height, name), mColor(ZColors::GREEN), mHoverColor(ZColors::RED) {
 }
 
-void UILabel::Draw(uint8* screen, size_t width, size_t height, size_t offset) {
+void UILabel::Layout(size_t x, size_t y) {
+  mX = x;
+  mY = y;
+
+  size_t stringLength = mText.Length();
+
+  mWidth = stringLength * FontWidth;
+  mHeight = FontHeight;
+}
+
+void UILabel::HitTest(int32 x, int32 y) {
+  bool isInX = (x >= mX && x <= (mX + mWidth));
+  bool isInY = (y >= mY && y <= (mY + mHeight));
+
+  mMouseOver = isInX && isInY;
+}
+
+void UILabel::Draw(uint8* screen, size_t width, size_t height) {
   (void)height;
 
-  // TODO: We need to handle clipping/resizing in order to prevent checks like this.
-  if ((width * height) < offset) {
-    return;
-  }
+  uint8* currentScreenPos = screen + (mY * width * 4) + (mX * 4);
 
-  uint8* currentScreenPos = screen + (offset * 4);
+  ZColor& drawColor = mMouseOver ? mHoverColor : mColor;
 
-  DrawText(mText, 0, 0, currentScreenPos, width, mColor);
+  DrawText(mText, 0, 0, currentScreenPos, width, drawColor);
 }
 
 const String& UILabel::GetText() const {
@@ -34,8 +48,8 @@ const String& UILabel::GetText() const {
 
 void UILabel::SetText(const String& string) {
   mText = string;
-  
-  size_t stringLength = string.Length();
+
+  size_t stringLength = mText.Length();
 
   mWidth = stringLength * FontWidth;
   mHeight = FontHeight;

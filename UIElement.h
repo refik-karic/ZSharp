@@ -13,7 +13,8 @@ class UIElement : public UIBase {
 
   UIElement(size_t width, size_t height, const String& name);
 
-  private:
+  protected:
+
 };
 
 }

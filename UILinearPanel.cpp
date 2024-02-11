@@ -16,8 +16,12 @@ UILinearPanel::~UILinearPanel() {
   }
 }
 
-void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offset) {
-  size_t currentOffset = offset;
+void UILinearPanel::Layout(size_t x, size_t y) {
+  mX = x;
+  mY = y;
+
+  size_t currX = x;
+  size_t currY = y;
 
   switch (mHorizontalAlignment) {
     case UIHorizontalAlignment::Fill:
@@ -25,15 +29,15 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offs
     case UIHorizontalAlignment::Left:
       break;
     case UIHorizontalAlignment::Center:
-      currentOffset += (mWidth / 2);
+      currX += (mWidth / 2);
       break;
     case UIHorizontalAlignment::Right:
     {
-      currentOffset += mWidth;
+      currX += mWidth;
 
       if (mFlow == UILinearFlow::Horizontal) {
         for (UIBase* item : mItems) {
-          currentOffset -= item->Width();
+          currX -= item->Width();
         }
       }
       else {
@@ -43,10 +47,10 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offs
           maxWidth = Max(maxWidth, item->Width());
         }
 
-        currentOffset -= maxWidth;
+        currX -= maxWidth;
       }
     }
-      break;
+    break;
   }
 
   switch (mVerticalAlignment) {
@@ -55,11 +59,11 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offs
     case UIVerticalAlignment::Top:
       break;
     case UIVerticalAlignment::Center:
-      currentOffset += ((mHeight / 2) * mWidth);
+      currY += (mHeight / 2);
       break;
     case UIVerticalAlignment::Bottom:
     {
-      currentOffset += (mWidth * mHeight);
+      currY += mHeight;
 
       if (mFlow == UILinearFlow::Horizontal) {
         size_t maxHeight = 0;
@@ -68,36 +72,42 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height, size_t offs
           maxHeight = Max(maxHeight, item->Height());
         }
 
-        currentOffset -= (mWidth * maxHeight);
+        currY -= maxHeight;
       }
       else {
         for (UIBase* item : mItems) {
-          currentOffset -= (mWidth * item->Height());
+          currY -= item->Height();
         }
       }
     }
-      break;
+    break;
   }
-  
+
   // TODO: We need to handle clipping items outside of the frame/container.
 
   if (mFlow == UILinearFlow::Horizontal) {
     for (UIBase* item : mItems) {
-      item->Draw(screen, width, height, currentOffset);
+      item->Layout(currX, currY);
 
       size_t itemWidth = item->Width();
       itemWidth = Clamp(itemWidth, (size_t)0, mWidth);
-      currentOffset += itemWidth;
+      currX += itemWidth;
     }
   }
   else {
     for (UIBase* item : mItems) {
-      item->Draw(screen, width, height, currentOffset);
+      item->Layout(currX, currY);
 
       size_t itemHeight = item->Height();
       itemHeight = Clamp(itemHeight, (size_t)0, mHeight);
-      currentOffset += (itemHeight * width);
+      currY += itemHeight;
     }
+  }
+}
+
+void UILinearPanel::Draw(uint8* screen, size_t width, size_t height) {
+  for (UIBase* item : mItems) {
+    item->Draw(screen, width, height);
   }
 }
 

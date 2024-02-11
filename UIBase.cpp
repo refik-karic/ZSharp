@@ -3,18 +3,22 @@
 namespace ZSharp {
 
 UIBase::UIBase() 
-  : mWidth(0), mHeight(0), mName("") {
+  : mWidth(0), mHeight(0), mName(""), mX(0), mY(0), mMouseOver(false) {
 }
 
 UIBase::UIBase(size_t width, size_t height, const String& name)
-  : mWidth(width), mHeight(height), mName(name) {
+  : mWidth(width), mHeight(height), mName(name), mX(0), mY(0), mMouseOver(false) {
 }
 
-void UIBase::Draw(uint8* screen, size_t width, size_t height, size_t offset) {
+void UIBase::Layout(size_t x, size_t y) {
+  (void)x;
+  (void)y;
+}
+
+void UIBase::Draw(uint8* screen, size_t width, size_t height) {
   (void)screen;
   (void)width;
   (void)height;
-  (void)offset;
 }
 
 bool UIBase::operator==(const UIBase& rhs) const {

@@ -12,8 +12,12 @@ UIFrame::~UIFrame() {
   }
 }
 
+void UIFrame::Layout() {
+  mBaseItem->Layout(0, 0);
+}
+
 void UIFrame::Draw(uint8* screen, size_t width, size_t height) {
-  mBaseItem->Draw(screen, width, height, 0);
+  mBaseItem->Draw(screen, width, height);
 }
 
 void UIFrame::OnResize(size_t width, size_t height) {
@@ -27,8 +31,7 @@ void UIFrame::OnResize(size_t width, size_t height) {
 }
 
 void UIFrame::OnMouseMove(int32 x, int32 y) {
-  (void)x;
-  (void)y;
+  mBaseItem->HitTest(x, y);
 }
 
 }

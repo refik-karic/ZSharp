@@ -9,6 +9,7 @@
 #include "UILinearPanel.h"
 #include "UILabel.h"
 #include "Win32PlatformApplication.h"
+#include "ZString.h"
 
 namespace ZSharp {
 
@@ -66,6 +67,7 @@ void FrontEnd::Unload() {
 }
 
 void FrontEnd::Tick() {
+  mFrame->Layout();
 }
 
 bool FrontEnd::IsVisible() const {

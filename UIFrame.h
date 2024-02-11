@@ -9,9 +9,13 @@ namespace ZSharp {
 Flow should go something like this:
   1. Create UIFrame with a base item (i.e. Grid/Label/Button/etc)
   2. Populate the base item accordingly
-  3. When it's time to render, draw from the root down the tree
-  4. Each item should override Draw() to know where and how to draw itself
-    4a. i.e. Grid knows it's column/row layout and can arrange those items in the correct layout before calling Draw() on them
+  3. Perform layout update (Window resizing happens outside of the input processing stage)
+  4. Process input
+  5. Hit test
+  6. Perform responsive actions
+  7. When it's time to render, draw from the root down the tree
+    7a. Each item should override Draw() to know where and how to draw itself
+    7b. i.e. Grid knows it's column/row layout and can arrange those items in the correct layout before calling Draw() on them
 */
 
 /*
@@ -24,6 +28,8 @@ class UIFrame {
   UIFrame(size_t width, size_t height, UIBase* rootItem);
 
   ~UIFrame();
+
+  void Layout();
 
   void Draw(uint8* screen, size_t width, size_t height);
 

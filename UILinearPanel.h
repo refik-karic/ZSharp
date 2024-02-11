@@ -19,7 +19,9 @@ class UILinearPanel : public UIContainer {
 
   ~UILinearPanel();
 
-  virtual void Draw(uint8* screen, size_t width, size_t height, size_t offset) override;
+  virtual void Layout(size_t x, size_t y) override;
+
+  virtual void Draw(uint8* screen, size_t width, size_t height) override;
 
   virtual void HitTest(int32 x, int32 y) override;
 

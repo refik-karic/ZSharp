@@ -174,10 +174,10 @@ void GameInstance::TickWorld() {
 void GameInstance::TickFrontEnd() {
   NamedScopedTimer(TickFrontEnd);
 
+  mFrontEnd.Tick();
+
   InputManager& inputManager = InputManager::Get();
   inputManager.Process();
-
-  mFrontEnd.Tick();
 
   ZColor color(ZColors::BLACK);
   mRenderer.ClearFramebuffer(color);

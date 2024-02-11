@@ -19,6 +19,8 @@ class World final {
 
   ~World();
 
+  bool IsLoaded();
+
   void Load();
 
   void Reload();
@@ -35,9 +37,9 @@ class World final {
 
   Array<IndexBuffer>& GetIndexBuffers();
 
-  protected:
-
   private:
+  bool mLoaded = false;
+
   Array<Model> mActiveModels;
   Array<VertexBuffer> mVertexBuffers;
   Array<IndexBuffer> mIndexBuffers;

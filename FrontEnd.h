@@ -12,6 +12,8 @@ class FrontEnd final {
 
   ~FrontEnd();
 
+  bool IsLoaded();
+
   void Load();
 
   void Unload();
@@ -23,12 +25,15 @@ class FrontEnd final {
   void Draw(uint8* screen, size_t width, size_t height);
 
   private:
+  bool mLoaded = false;
   bool mVisible = false;
   UIFrame* mFrame = nullptr;
 
   void OnResize(size_t width, size_t height);
 
-  void OnMouseMove(int32 x, int32 y);
+  void OnMouseMove(int32 x, int32 y, bool mouseDown);
+
+  void OnStartButtonClicked();
 };
 
 }

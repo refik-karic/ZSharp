@@ -111,11 +111,9 @@ void UILinearPanel::Draw(uint8* screen, size_t width, size_t height) {
   }
 }
 
-void UILinearPanel::HitTest(int32 x, int32 y) {
-  // TODO: Need a way to pass through the screen offset in order to correctly perform the hit test.
-
+void UILinearPanel::HitTest(int32 x, int32 y, bool mouseDown) {
   for (UIBase* item : mItems) {
-    item->HitTest(x, y);
+    item->HitTest(x, y, mouseDown);
   }
 }
 

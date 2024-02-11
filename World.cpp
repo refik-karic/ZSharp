@@ -36,7 +36,13 @@ World::~World() {
   }
 }
 
+bool World::IsLoaded() {
+  return mLoaded;
+}
+
 void World::Load() {
+  mLoaded = true;
+
   if (*DebugAudio) {
     FileString audioPath(PlatformGetUserDesktopPath());
     audioPath.SetFilename("AmbientTest.mp3");

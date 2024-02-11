@@ -17,7 +17,7 @@ class UIButton : public UIElement {
 
   virtual void Layout(size_t x, size_t y) override;
 
-  virtual void HitTest(int32 x, int32 y) override;
+  virtual void HitTest(int32 x, int32 y, bool mouseDown) override;
 
   virtual void Draw(uint8* screen, size_t width, size_t height) override;
 

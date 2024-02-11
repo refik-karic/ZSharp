@@ -41,9 +41,14 @@ UIVerticalAlignment& UIBase::VerticalAlignment() {
   return mVerticalAlignment;
 }
 
-void UIBase::HitTest(int32 x, int32 y) {
+void UIBase::SetMouseOver(bool state) {
+  mMouseOver = state;
+}
+
+void UIBase::HitTest(int32 x, int32 y, bool mouseDown) {
   (void)x;
   (void)y;
+  (void)mouseDown;
 }
 
 }

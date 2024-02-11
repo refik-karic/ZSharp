@@ -30,8 +30,8 @@ void UIFrame::OnResize(size_t width, size_t height) {
   }
 }
 
-void UIFrame::OnMouseMove(int32 x, int32 y) {
-  mBaseItem->HitTest(x, y);
+void UIFrame::OnMouseMove(int32 x, int32 y, bool mouseDown) {
+  mBaseItem->HitTest(x, y, mouseDown);
 }
 
 }

@@ -179,6 +179,11 @@ void GameInstance::TickFrontEnd() {
   InputManager& inputManager = InputManager::Get();
   inputManager.Process();
 
+  // TODO: We should handle front end unload more gracefully.
+  if (!mFrontEnd.IsVisible()) {
+    return;
+  }
+
   ZColor color(ZColors::BLACK);
   mRenderer.ClearFramebuffer(color);
 
@@ -269,6 +274,10 @@ void GameInstance::Tick() {
     TickFrontEnd();
   }
   else {
+    if (!mWorld.IsLoaded()) {
+      LoadWorld();
+    }
+
     TickWorld();
   }
 }

@@ -68,7 +68,7 @@ void InputManager::Process() {
     UpdateMousePosition(mCurrentMouseX, mCurrentMouseY);
   }
 
-  OnMouseMoveDelegate.Broadcast(mCurrentMouseX, mCurrentMouseY);
+  OnMouseMoveDelegate.Broadcast(mCurrentMouseX, mCurrentMouseY, mMousePressed);
 
   mKeyboard.Fill(KeyState::Clear);
   mMiscKeys.Fill(KeyState::Clear);

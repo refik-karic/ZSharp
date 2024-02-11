@@ -17,7 +17,7 @@ FrontEnd::FrontEnd() {
   Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<FrontEnd, &FrontEnd::OnResize>(this));
 
   InputManager& inputManager = InputManager::Get();
-  inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
+  inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32, bool>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
 }
 
 FrontEnd::~FrontEnd() {
@@ -28,39 +28,48 @@ FrontEnd::~FrontEnd() {
   Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<FrontEnd, &FrontEnd::OnResize>(this));
 
   InputManager& inputManager = InputManager::Get();
-  inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
+  inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, bool>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
+}
+
+bool FrontEnd::IsLoaded() {
+  return mLoaded;
 }
 
 void FrontEnd::Load() {
   mVisible = true;
+  mLoaded = true;
 
   ZConfig& config = ZConfig::Get();
 
   size_t width = config.GetViewportWidth().Value();
   size_t height = config.GetViewportHeight().Value();
 
-  UILabel* labelText = new UILabel(150, 10, "TestLabel");
-  labelText->SetText("This is a test.");
+  UILabel* labelText = new UILabel(150, 10, "DemoLabel");
+  labelText->SetText("Demo V1");
+  labelText->SetHighlightColor(ZColors::YELLOW);
+  labelText->HorizontalAlignment() = UIHorizontalAlignment::Center;
 
-  UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabelTest");
-  buttonLabel->SetText("Click");
+  UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabel");
+  buttonLabel->SetText("Start Game");
   buttonLabel->SetColor(ZColors::ORANGE);
 
-  UIButton* testButton = new UIButton(100, 100, "TestButton");
+  UIButton* testButton = new UIButton(100, 100, "DemoButton");
   testButton->SetLabel(buttonLabel);
   testButton->SetColor(ZColors::BLUE);
+  testButton->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnStartButtonClicked>(this);
 
-  UILinearPanel* linearPanel = new UILinearPanel(width, height, "TestPanel", UILinearFlow::Horizontal);
+  UILinearPanel* linearPanel = new UILinearPanel(width, height, "DemoPanel", UILinearFlow::Vertical);
   linearPanel->AddItem(labelText);
   linearPanel->AddItem(testButton);
-  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Right;
-  linearPanel->VerticalAlignment() = UIVerticalAlignment::Bottom;
+  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  linearPanel->VerticalAlignment() = UIVerticalAlignment::Center;
 
   mFrame = new UIFrame(width, height, linearPanel);
 }
 
 void FrontEnd::Unload() {
   mVisible = false;
+  mLoaded = false;
 
   delete mFrame;
   mFrame = nullptr;
@@ -87,13 +96,17 @@ void FrontEnd::OnResize(size_t width, size_t height) {
   mFrame->OnResize(width, height);
 }
 
-void FrontEnd::OnMouseMove(int32 x, int32 y) {
+void FrontEnd::OnMouseMove(int32 x, int32 y, bool mouseDown) {
   if (!mVisible) {
     return;
   }
 
   ZAssert(mFrame != nullptr);
-  mFrame->OnMouseMove(x, y);
+  mFrame->OnMouseMove(x, y, mouseDown);
+}
+
+void FrontEnd::OnStartButtonClicked() {
+  Unload();
 }
 
 }

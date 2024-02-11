@@ -20,12 +20,28 @@ void UILabel::Layout(size_t x, size_t y) {
   mY = y;
 
   size_t stringLength = mText.Length();
-
   mWidth = stringLength * FontWidth;
   mHeight = FontHeight;
+
+  switch (mHorizontalAlignment) {
+    case UIHorizontalAlignment::Fill:
+      break;
+    case UIHorizontalAlignment::Left:
+      break;
+    case UIHorizontalAlignment::Center:
+    {
+      size_t widthOffset = mWidth / 2;
+      mX += widthOffset;
+    }
+      break;
+    case UIHorizontalAlignment::Right:
+      break;
+  }
 }
 
-void UILabel::HitTest(int32 x, int32 y) {
+void UILabel::HitTest(int32 x, int32 y, bool mouseDown) {
+  (void)mouseDown;
+
   bool isInX = (x >= mX && x <= (mX + mWidth));
   bool isInY = (y >= mY && y <= (mY + mHeight));
 
@@ -57,6 +73,10 @@ void UILabel::SetText(const String& string) {
 
 void UILabel::SetColor(const ZColor& color) {
   mColor = color;
+}
+
+void UILabel::SetHighlightColor(const ZColor& color) {
+  mHoverColor = color;
 }
 
 }

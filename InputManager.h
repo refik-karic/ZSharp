@@ -31,7 +31,7 @@ class InputManager final {
 
   BroadcastDelegate<int32, int32, int32, int32> OnMouseDragDelegate;
 
-  BroadcastDelegate<int32, int32> OnMouseMoveDelegate;
+  BroadcastDelegate<int32, int32, bool> OnMouseMoveDelegate;
 
   enum class KeyState {
     Clear,

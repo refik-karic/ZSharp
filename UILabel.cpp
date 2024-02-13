@@ -22,21 +22,6 @@ void UILabel::Layout(size_t x, size_t y) {
   size_t stringLength = mText.Length();
   mWidth = stringLength * FontWidth;
   mHeight = FontHeight;
-
-  switch (mHorizontalAlignment) {
-    case UIHorizontalAlignment::Fill:
-      break;
-    case UIHorizontalAlignment::Left:
-      break;
-    case UIHorizontalAlignment::Center:
-    {
-      size_t widthOffset = mWidth / 2;
-      mX += widthOffset;
-    }
-      break;
-    case UIHorizontalAlignment::Right:
-      break;
-  }
 }
 
 void UILabel::HitTest(int32 x, int32 y, bool mouseDown) {

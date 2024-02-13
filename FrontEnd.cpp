@@ -48,6 +48,7 @@ void FrontEnd::Load() {
   labelText->SetText("Demo V1");
   labelText->SetHighlightColor(ZColors::YELLOW);
   labelText->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  labelText->VerticalAlignment() = UIVerticalAlignment::Center;
 
   UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabel");
   buttonLabel->SetText("Start Game");
@@ -56,13 +57,14 @@ void FrontEnd::Load() {
   UIButton* testButton = new UIButton(100, 100, "DemoButton");
   testButton->SetLabel(buttonLabel);
   testButton->SetColor(ZColors::BLUE);
+  testButton->HorizontalAlignment() = UIHorizontalAlignment::Center;
   testButton->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnStartButtonClicked>(this);
 
   UILinearPanel* linearPanel = new UILinearPanel(width, height, "DemoPanel", UILinearFlow::Vertical);
   linearPanel->AddItem(labelText);
   linearPanel->AddItem(testButton);
-  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Center;
-  linearPanel->VerticalAlignment() = UIVerticalAlignment::Center;
+  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Left;
+  linearPanel->VerticalAlignment() = UIVerticalAlignment::Top;
 
   mFrame = new UIFrame(width, height, linearPanel);
 }

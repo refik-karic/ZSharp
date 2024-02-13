@@ -34,21 +34,6 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     case UIHorizontalAlignment::Right:
     {
       currX += mWidth;
-
-      if (mFlow == UILinearFlow::Horizontal) {
-        for (UIBase* item : mItems) {
-          currX -= item->Width();
-        }
-      }
-      else {
-        size_t maxWidth = 0;
-
-        for (UIBase* item : mItems) {
-          maxWidth = Max(maxWidth, item->Width());
-        }
-
-        currX -= maxWidth;
-      }
     }
     break;
   }
@@ -64,21 +49,6 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     case UIVerticalAlignment::Bottom:
     {
       currY += mHeight;
-
-      if (mFlow == UILinearFlow::Horizontal) {
-        size_t maxHeight = 0;
-
-        for (UIBase* item : mItems) {
-          maxHeight = Max(maxHeight, item->Height());
-        }
-
-        currY -= maxHeight;
-      }
-      else {
-        for (UIBase* item : mItems) {
-          currY -= item->Height();
-        }
-      }
     }
     break;
   }
@@ -86,8 +56,70 @@ void UILinearPanel::Layout(size_t x, size_t y) {
   // TODO: We need to handle clipping items outside of the frame/container.
 
   if (mFlow == UILinearFlow::Horizontal) {
+    if (mVerticalAlignment == UIVerticalAlignment::Center) {
+      size_t yOffset = 0;
+      for (UIBase* item : mItems) {
+        yOffset += item->Height();
+      }
+
+      yOffset = Min(currY, yOffset);
+      currY -= (yOffset / 2);
+    }
+    else if (mVerticalAlignment == UIVerticalAlignment::Bottom) {
+      size_t yOffset = 0;
+      for (UIBase* item : mItems) {
+        yOffset = Max(yOffset, item->Height());
+      }
+
+      yOffset = Min(currY, yOffset);
+      currY -= yOffset;
+    }
+
+    if (mHorizontalAlignment == UIHorizontalAlignment::Center) {
+      size_t xOffset = 0;
+      for (UIBase* item : mItems) {
+        xOffset += item->Width();
+      }
+
+      xOffset = Min(currX, xOffset);
+      currX -= (xOffset / 2);
+    }
+    else if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
+      size_t xOffset = 0;
+      for (UIBase* item : mItems) {
+        xOffset += item->Width();
+      }
+
+      xOffset = Min(currX, xOffset);
+      currX -= xOffset;
+    }
+
     for (UIBase* item : mItems) {
-      item->Layout(currX, currY);
+      size_t itemXOffset = currX;
+      size_t itemYOffset = currY;
+
+      switch (item->VerticalAlignment()) {
+        case UIVerticalAlignment::Fill:
+          break;
+        case UIVerticalAlignment::Top:
+          break;
+        case UIVerticalAlignment::Center:
+        {
+          size_t centerPoint = (mHeight - itemYOffset - item->Height()) / 2;
+
+          itemYOffset += centerPoint;
+        }
+          break;
+        case UIVerticalAlignment::Bottom:
+        {
+          if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
+            itemYOffset = mHeight - item->Height();
+          }
+        }
+        break;
+      }
+
+      item->Layout(itemXOffset, itemYOffset);
 
       size_t itemWidth = item->Width();
       itemWidth = Clamp(itemWidth, (size_t)0, mWidth);
@@ -95,8 +127,76 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     }
   }
   else {
+    if (mVerticalAlignment == UIVerticalAlignment::Center) {
+      size_t yOffset = 0;
+      for (UIBase* item : mItems) {
+        yOffset += item->Height();
+      }
+
+      yOffset = Min(currY, yOffset);
+      currY -= (yOffset / 2);
+    }
+    else if (mVerticalAlignment == UIVerticalAlignment::Bottom) {
+      size_t yOffset = 0;
+      for (UIBase* item : mItems) {
+        yOffset += item->Height();
+      }
+
+      yOffset = Min(currY, yOffset);
+      currY -= yOffset;
+    }
+
+    if (mHorizontalAlignment == UIHorizontalAlignment::Center) {
+      size_t xOffset = 0;
+      for (UIBase* item : mItems) {
+        xOffset = Max(xOffset, item->Width());
+      }
+
+      xOffset = Min(currX, xOffset);
+      currX -= (xOffset / 2);
+    }
+    else if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
+      size_t xOffset = 0;
+      for (UIBase* item : mItems) {
+        xOffset = Max(xOffset, item->Width());
+      }
+
+      xOffset = Min(currX, xOffset);
+      currX -= xOffset;
+    }
+
     for (UIBase* item : mItems) {
-      item->Layout(currX, currY);
+      size_t itemXOffset = currX;
+      size_t itemYOffset = currY;
+
+      switch (item->HorizontalAlignment()) {
+        case UIHorizontalAlignment::Fill:
+          break;
+        case UIHorizontalAlignment::Left:
+          break;
+        case UIHorizontalAlignment::Center:
+        {
+          size_t largestItem = 0;
+          for (UIBase* currentItem : mItems) {
+            largestItem = Max(largestItem, currentItem->Width());
+          }
+
+          itemXOffset = (itemXOffset + (largestItem / 2)) - (item->Width() / 2);
+        }
+          break;
+        case UIHorizontalAlignment::Right:
+        {
+          size_t largestItem = 0;
+          for (UIBase* currentItem : mItems) {
+            largestItem = Max(largestItem, currentItem->Width());
+          }
+
+          itemXOffset = (itemXOffset + largestItem - item->Width());
+        }
+          break;
+      }
+
+      item->Layout(itemXOffset, itemYOffset);
 
       size_t itemHeight = item->Height();
       itemHeight = Clamp(itemHeight, (size_t)0, mHeight);

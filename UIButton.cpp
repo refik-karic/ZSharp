@@ -17,12 +17,44 @@ void UIButton::Layout(size_t x, size_t y) {
   mY = y;
   
   if (mLabel != nullptr) {
-    // TODO: We may want more control over how labels are aligned within a button.
-    //  We can probably do that without having to place a Grid/LinearLayout inside of the button.
-    size_t heightOffset = mHeight / 2;
-    size_t widthOffset = (mWidth / 2) - (mLabel->Width() / 2);
+    size_t xOffset = x;
+    size_t yOffset = y;
 
-    mLabel->Layout(x + widthOffset, y + heightOffset);
+    switch (mLabel->VerticalAlignment()) {
+      case UIVerticalAlignment::Fill:
+        break;
+      case UIVerticalAlignment::Top:
+        break;
+      case UIVerticalAlignment::Center:
+      {
+        yOffset += ((mHeight / 2) - (mLabel->Height() / 2));
+      }
+        break;
+      case UIVerticalAlignment::Bottom:
+      {
+        yOffset += (mHeight - mLabel->Height());
+      }
+        break;
+    }
+
+    switch (mLabel->HorizontalAlignment()) {
+      case UIHorizontalAlignment::Fill:
+        break;
+      case UIHorizontalAlignment::Left:
+        break;
+      case UIHorizontalAlignment::Center:
+      {
+        xOffset += ((mWidth / 2) - (mLabel->Width() / 2));
+      }
+        break;
+      case UIHorizontalAlignment::Right:
+      {
+        xOffset += (mWidth - mLabel->Width());
+      }
+        break;
+    }
+
+    mLabel->Layout(xOffset, yOffset);
   }
 }
 

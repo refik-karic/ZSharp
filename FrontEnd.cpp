@@ -53,6 +53,8 @@ void FrontEnd::Load() {
   UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabel");
   buttonLabel->SetText("Start Game");
   buttonLabel->SetColor(ZColors::ORANGE);
+  buttonLabel->VerticalAlignment() = UIVerticalAlignment::Center;
+  buttonLabel->HorizontalAlignment() = UIHorizontalAlignment::Center;
 
   UIButton* testButton = new UIButton(100, 100, "DemoButton");
   testButton->SetLabel(buttonLabel);
@@ -63,8 +65,8 @@ void FrontEnd::Load() {
   UILinearPanel* linearPanel = new UILinearPanel(width, height, "DemoPanel", UILinearFlow::Vertical);
   linearPanel->AddItem(labelText);
   linearPanel->AddItem(testButton);
-  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Left;
-  linearPanel->VerticalAlignment() = UIVerticalAlignment::Top;
+  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  linearPanel->VerticalAlignment() = UIVerticalAlignment::Center;
 
   mFrame = new UIFrame(width, height, linearPanel);
 }

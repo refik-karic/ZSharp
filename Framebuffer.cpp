@@ -1,7 +1,7 @@
 ﻿#include "Framebuffer.h"
 
 #include "PlatformMemory.h"
-#include "Win32PlatformApplication.h"
+#include "PlatformApplication.h"
 #include "ZAssert.h"
 #include "ZConfig.h"
 #include "ScopedTimer.h"
@@ -16,7 +16,7 @@ Framebuffer::Framebuffer() {
   const ZConfig& config = ZConfig::Get();
   OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
 
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
+  OnWindowSizeChangedDelegate().Add(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
 }
 
 Framebuffer::Framebuffer(const ZColor clearColor) : Framebuffer() {
@@ -28,7 +28,7 @@ Framebuffer::~Framebuffer() {
     PlatformAlignedFree(mPixelBuffer);
   }
 
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
+  OnWindowSizeChangedDelegate().Remove(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
 }
 
 void Framebuffer::SetPixel(const size_t x, const size_t y, const ZColor color) {

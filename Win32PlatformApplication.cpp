@@ -29,10 +29,21 @@ static ZSharp::WideString TimerName(L"MainLoop");
 UINT MinTimerPeriod = 0;
 DWORD WindowStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
 
-ZSharp::BroadcastDelegate<size_t, size_t> Win32PlatformApplication::OnWindowSizeChangedDelegate;
-
 ZSharp::ConsoleVariable<bool> UncappedFPS("UncappedFPS", false);
 ZSharp::ConsoleVariable<ZSharp::int32> LockedFPS("LockedFPS", 60);
+
+namespace ZSharp {
+
+BroadcastDelegate<size_t, size_t>& OnWindowSizeChangedDelegate() {
+  static BroadcastDelegate<size_t, size_t> instance;
+  return instance;
+}
+
+void AppChangeCursor(AppCursor cursor) {
+  Win32PlatformApplication::Get().ApplyCursor(cursor);
+}
+
+}
 
 Win32PlatformApplication& Win32PlatformApplication::Get() {
   static Win32PlatformApplication ZSharpApp;
@@ -136,6 +147,10 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
   }
 }
 
+void Win32PlatformApplication::ApplyCursor(ZSharp::AppCursor cursor) {
+  mCurrentCursor = cursor;
+}
+
 Win32PlatformApplication::Win32PlatformApplication() {
   ZeroMemory(&mBitmapInfo, sizeof(BITMAPINFO));
   mBitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFO);
@@ -149,6 +164,9 @@ Win32PlatformApplication::Win32PlatformApplication() {
   mBitmapInfo.bmiHeader.biYPelsPerMeter = 0;
   mBitmapInfo.bmiHeader.biClrUsed = 0;
   mBitmapInfo.bmiHeader.biClrImportant = 0;
+
+  mPointCursor = nullptr;
+  mHandCursor = nullptr;
 }
 
 Win32PlatformApplication::~Win32PlatformApplication() {
@@ -235,6 +253,10 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
     return;
   }
 
+  mPointCursor = LoadCursor(NULL, IDC_ARROW);
+  mHandCursor = LoadCursor(NULL, IDC_HAND);
+
+  mCurrentCursor = ZSharp::AppCursor::Arrow;
 
   mHighPrecisionTimer = CreateWaitableTimerW(NULL, false, TimerName.Str());
 
@@ -281,7 +303,7 @@ void Win32PlatformApplication::OnTimer() {
     mBitmapInfo.bmiHeader.biHeight = -activeWindowSize.bottom;
 
     if (dirtySize) {
-      OnWindowSizeChangedDelegate.Broadcast(activeWindowSize.right, activeWindowSize.bottom);
+      ZSharp::OnWindowSizeChangedDelegate().Broadcast(activeWindowSize.right, activeWindowSize.bottom);
     }
   }
 
@@ -359,6 +381,15 @@ void Win32PlatformApplication::OnLButtonUp() {
 }
 
 void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
+  switch (mCurrentCursor) {
+    case ZSharp::AppCursor::Arrow:
+      SetCursor(mPointCursor);
+      break;
+    case ZSharp::AppCursor::Hand:
+      SetCursor(mHandCursor);
+      break;
+  }
+
   ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
   inputManager.UpdateMousePosition(x, y);
 }

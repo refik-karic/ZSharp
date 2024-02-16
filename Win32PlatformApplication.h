@@ -7,8 +7,9 @@
 #include "Delegate.h"
 #include "GameInstance.h"
 #include "ZBaseTypes.h"
+#include "PlatformApplication.h"
 
-class Win32PlatformApplication {
+class Win32PlatformApplication : public ZSharp::PlatformApplication {
   public:
   
   static Win32PlatformApplication& Get();
@@ -19,7 +20,7 @@ class Win32PlatformApplication {
 
   int Run(HINSTANCE instance);
 
-  static ZSharp::BroadcastDelegate<size_t, size_t> OnWindowSizeChangedDelegate;
+  virtual void ApplyCursor(ZSharp::AppCursor cursor) override;
 
   private:
   HINSTANCE mInstance = nullptr;
@@ -27,6 +28,9 @@ class Win32PlatformApplication {
   HANDLE mHighPrecisionTimer = nullptr;
   bool mPaused = false;
   BITMAPINFO mBitmapInfo;
+
+  HCURSOR mPointCursor = nullptr;
+  HCURSOR mHandCursor = nullptr;
 
   ZSharp::GameInstance mGameInstance;
 

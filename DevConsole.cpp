@@ -7,14 +7,13 @@
 #include "PlatformIntrinsics.h"
 #include "ZConfig.h"
 #include "ZColor.h"
-#include "Win32PlatformApplication.h"
+#include "PlatformApplication.h"
 #include "ScopedTimer.h"
 
 #include <ctype.h>
 #include <cstring>
 
 namespace ZSharp {
-
 
 DevConsole::DevConsole() {
   InputManager& inputManager = InputManager::Get();
@@ -26,7 +25,7 @@ DevConsole::DevConsole() {
   ZConfig& config = ZConfig::Get();
   OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
 
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<DevConsole, &DevConsole::OnResize>(this));
+  OnWindowSizeChangedDelegate().Add(Delegate<size_t, size_t>::FromMember<DevConsole, &DevConsole::OnResize>(this));
 }
 
 DevConsole::~DevConsole() {
@@ -36,7 +35,7 @@ DevConsole::~DevConsole() {
   inputManager.OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyDown>(this));
   inputManager.OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyUp>(this));
 
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<DevConsole, &DevConsole::OnResize>(this));
+  OnWindowSizeChangedDelegate().Remove(Delegate<size_t, size_t>::FromMember<DevConsole, &DevConsole::OnResize>(this));
 
   if (mScreen != nullptr) {
     PlatformAlignedFree(mScreen);

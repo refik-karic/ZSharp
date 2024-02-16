@@ -1,5 +1,7 @@
 #include "UIButton.h"
 
+#include "PlatformApplication.h"
+
 namespace ZSharp {
 
 UIButton::UIButton(size_t width, size_t height, const String& name) 
@@ -64,11 +66,19 @@ void UIButton::HitTest(int32 x, int32 y, bool mouseDown) {
 
   mMouseOver = isInX && isInY;
 
+  if (mMouseOver) {
+    AppChangeCursor(AppCursor::Hand);
+  }
+  else {
+    AppChangeCursor(AppCursor::Arrow);
+  }
+
   if (mLabel != nullptr) {
     mLabel->SetMouseOver(mMouseOver);
   }
 
   if (mMouseOver && mouseDown && OnClickDelegate.IsBound()) {
+    AppChangeCursor(AppCursor::Arrow);
     OnClickDelegate();
   }
 }

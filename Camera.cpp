@@ -5,7 +5,7 @@
 #include "CommonMath.h"
 #include "Constants.h"
 #include "ConsoleVariable.h"
-#include "Win32PlatformApplication.h"
+#include "PlatformApplication.h"
 #include "ZAlgorithm.h"
 #include "ZConfig.h"
 #include "PlatformIntrinsics.h"
@@ -32,11 +32,11 @@ Camera::Camera() {
   const ZConfig& config = ZConfig::Get();
   OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
 
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<Camera, &Camera::OnResize>(this));
+  OnWindowSizeChangedDelegate().Add(Delegate<size_t, size_t>::FromMember<Camera, &Camera::OnResize>(this));
 }
 
 Camera::~Camera() {
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<Camera, &Camera::OnResize>(this));
+  OnWindowSizeChangedDelegate().Remove(Delegate<size_t, size_t>::FromMember<Camera, &Camera::OnResize>(this));
 }
 
 Vec3 Camera::GetLook() const {

@@ -8,13 +8,13 @@
 #include "UIButton.h"
 #include "UILinearPanel.h"
 #include "UILabel.h"
-#include "Win32PlatformApplication.h"
+#include "PlatformApplication.h"
 #include "ZString.h"
 
 namespace ZSharp {
 
 FrontEnd::FrontEnd() {
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<FrontEnd, &FrontEnd::OnResize>(this));
+  OnWindowSizeChangedDelegate().Add(Delegate<size_t, size_t>::FromMember<FrontEnd, &FrontEnd::OnResize>(this));
 
   InputManager& inputManager = InputManager::Get();
   inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32, bool>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
@@ -25,7 +25,7 @@ FrontEnd::~FrontEnd() {
     delete mFrame;
   }
 
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<FrontEnd, &FrontEnd::OnResize>(this));
+  OnWindowSizeChangedDelegate().Remove(Delegate<size_t, size_t>::FromMember<FrontEnd, &FrontEnd::OnResize>(this));
 
   InputManager& inputManager = InputManager::Get();
   inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, bool>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));

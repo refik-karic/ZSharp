@@ -45,6 +45,7 @@ set(ZSharp_Header_Files
     PhysicsAlgorithms.h
     PhysicsObject.h
     PlatformAudio.h
+    PlatformApplication.h
     PlatformDebug.h
     PlatformDefines.h
     PlatformFile.h

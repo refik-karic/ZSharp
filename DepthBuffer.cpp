@@ -4,7 +4,7 @@
 #include "PlatformMemory.h"
 #include "Delegate.h"
 #include "ZConfig.h"
-#include "Win32PlatformApplication.h"
+#include "PlatformApplication.h"
 #include "PlatformIntrinsics.h"
 #include "ScopedTimer.h"
 
@@ -16,7 +16,7 @@ DepthBuffer::DepthBuffer() {
   const ZConfig& config = ZConfig::Get();
   OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
 
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Add(Delegate<size_t, size_t>::FromMember<DepthBuffer, &DepthBuffer::OnResize>(this));
+  OnWindowSizeChangedDelegate().Add(Delegate<size_t, size_t>::FromMember<DepthBuffer, &DepthBuffer::OnResize>(this));
 }
 
 DepthBuffer::~DepthBuffer() {
@@ -24,7 +24,7 @@ DepthBuffer::~DepthBuffer() {
     PlatformAlignedFree(mData);
   }
 
-  Win32PlatformApplication::OnWindowSizeChangedDelegate.Remove(Delegate<size_t, size_t>::FromMember<DepthBuffer, &DepthBuffer::OnResize>(this));
+  OnWindowSizeChangedDelegate().Remove(Delegate<size_t, size_t>::FromMember<DepthBuffer, &DepthBuffer::OnResize>(this));
 }
 
 float& DepthBuffer::operator[](size_t index) {

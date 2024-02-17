@@ -45,6 +45,19 @@ void UIBase::SetMouseOver(bool state) {
   mMouseOver = state;
 }
 
+void UIBase::DrawRect(uint8* buffer, size_t bufferWidth, size_t rWidth, size_t rHeight, const ZColor& color) {
+  uint32* pixelOffset = (uint32*)(buffer + (mY * bufferWidth * 4) + mX * 4);
+
+  uint32 colorValue = color.Color();
+
+  for (size_t y = 0; y < rHeight; ++y) {
+    for (size_t x = 0; x < rWidth; ++x) {
+      pixelOffset[(y * bufferWidth) + x] = colorValue;
+    }
+  }
+
+}
+
 void UIBase::HitTest(int32 x, int32 y, bool mouseDown) {
   (void)x;
   (void)y;

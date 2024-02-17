@@ -3,6 +3,7 @@
 #include "ZBaseTypes.h"
 #include "ZString.h"
 #include "Delegate.h"
+#include "ZColor.h"
 
 namespace ZSharp {
 
@@ -57,6 +58,8 @@ class UIBase {
   UIVerticalAlignment mVerticalAlignment = UIVerticalAlignment::Fill;
 
   bool mMouseOver;
+
+  void DrawRect(uint8* buffer, size_t bufferWidth, size_t rWidth, size_t rHeight, const ZColor& color);
 };
 
 }

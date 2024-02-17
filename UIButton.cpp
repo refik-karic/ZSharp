@@ -1,5 +1,6 @@
 #include "UIButton.h"
 
+#include "CommonMath.h"
 #include "PlatformApplication.h"
 
 namespace ZSharp {
@@ -84,17 +85,11 @@ void UIButton::HitTest(int32 x, int32 y, bool mouseDown) {
 }
 
 void UIButton::Draw(uint8* screen, size_t width, size_t height) {
-  (void)height;
+  size_t rWidth = Clamp(mWidth, (size_t)0, width - mX);
+  size_t rHeight = Clamp(mHeight, (size_t)0, height - mY);
+  ZColor& color = mMouseOver ? mHoverBackground : mBackground;
 
-  uint32* pixelOffset = (uint32*)(screen + (mY * width * 4) + mX * 4);
-
-  uint32 backgroundColor = mMouseOver ? mHoverBackground.Color() : mBackground.Color();
-
-  for (size_t y = 0; y < mHeight; ++y) {
-    for (size_t x = 0; x < mWidth; ++x) {
-      pixelOffset[(y * width) + x] = backgroundColor;
-    }
-  }
+  DrawRect(screen, width, rWidth, rHeight, color);
   
   if (mLabel != nullptr) {
     mLabel->Draw(screen, width, height);

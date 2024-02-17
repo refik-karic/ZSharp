@@ -56,7 +56,7 @@ void FrontEnd::Load() {
   buttonLabel->VerticalAlignment() = UIVerticalAlignment::Center;
   buttonLabel->HorizontalAlignment() = UIHorizontalAlignment::Center;
 
-  UIButton* testButton = new UIButton(100, 100, "DemoButton");
+  UIButton* testButton = new UIButton(100, 50, "DemoButton");
   testButton->SetLabel(buttonLabel);
   testButton->SetColor(ZColors::BLUE);
   testButton->HorizontalAlignment() = UIHorizontalAlignment::Center;

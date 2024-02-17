@@ -23,6 +23,11 @@ void UILinearPanel::Layout(size_t x, size_t y) {
   size_t currX = x;
   size_t currY = y;
 
+  for (UIBase* item : mItems) {
+    item->Width() = Clamp(item->Width(), (size_t)0, mWidth);
+    item->Height() = Clamp(item->Height(), (size_t)0, mHeight);
+  }
+
   switch (mHorizontalAlignment) {
     case UIHorizontalAlignment::Fill:
       break;

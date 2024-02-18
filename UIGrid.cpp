@@ -32,6 +32,14 @@ UIGrid::UIGrid(size_t width, size_t height, const String& name)
   : UIContainer(width, height, name) {
 }
 
+UIGrid::~UIGrid() {
+  for (UIBase* item : mItems) {
+    if (item != nullptr) {
+      delete item;
+    }
+  }
+}
+
 void UIGrid::Layout(size_t x, size_t y) {
   mX = x;
   mY = y;
@@ -172,6 +180,7 @@ void UIGrid::LayoutInner(UIGridColumn& column, UIGridRow& row, size_t colIdx, si
       continue;
     }
 
+    // TODO: We need to decide what kind of layout restrictions we must place here.
     item->Layout(currX, currY);
     currX += item->Width();
   }

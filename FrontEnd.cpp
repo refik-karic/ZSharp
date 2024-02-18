@@ -45,12 +45,27 @@ void FrontEnd::Load() {
   size_t width = config.GetViewportWidth().Value();
   size_t height = config.GetViewportHeight().Value();
 
-#if 0
-  UILabel* labelText = new UILabel(150, 10, "DemoLabel");
-  labelText->SetText("Demo V1");
-  labelText->SetHighlightColor(ZColors::YELLOW);
-  labelText->HorizontalAlignment() = UIHorizontalAlignment::Center;
-  labelText->VerticalAlignment() = UIVerticalAlignment::Center;
+  UIGridColumn lowerColumn0(.8f, "LowerColumn0");
+  UIGridColumn lowerColumn1(.2f, "LowerColumn1");
+  UIGridRow lowerRow0(1.f, "LowerRow0");
+
+  UIGrid* lowerGrid = new UIGrid(width, 100, "LowerGrid");
+  lowerGrid->AddRow(lowerRow0);
+  lowerGrid->AddColumn(lowerColumn0);
+  lowerGrid->AddColumn(lowerColumn1);
+  lowerGrid->GridRow() = 1;
+
+  UILabel* labelText0 = new UILabel(150, 10, "DemoLabel0");
+  labelText0->SetText("Demo V1");
+  labelText0->SetHighlightColor(ZColors::YELLOW);
+  labelText0->HorizontalAlignment() = UIHorizontalAlignment::Left;
+  labelText0->VerticalAlignment() = UIVerticalAlignment::Bottom;
+
+  UILabel* labelText1 = new UILabel(150, 10, "DemoLabel1");
+  labelText1->SetText("DEBUG");
+  labelText1->SetHighlightColor(ZColors::YELLOW);
+  labelText1->HorizontalAlignment() = UIHorizontalAlignment::Right;
+  labelText1->VerticalAlignment() = UIVerticalAlignment::Bottom;
 
   UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabel");
   buttonLabel->SetText("Start Game");
@@ -58,46 +73,39 @@ void FrontEnd::Load() {
   buttonLabel->VerticalAlignment() = UIVerticalAlignment::Center;
   buttonLabel->HorizontalAlignment() = UIHorizontalAlignment::Center;
 
-  UIButton* testButton = new UIButton(100, 50, "DemoButton");
+  UIButton* testButton = new UIButton(200, 100, "DemoButton");
   testButton->SetLabel(buttonLabel);
   testButton->SetColor(ZColors::BLUE);
   testButton->HorizontalAlignment() = UIHorizontalAlignment::Center;
   testButton->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnStartButtonClicked>(this);
 
-  UILinearPanel* linearPanel = new UILinearPanel(width, height, "DemoPanel", UILinearFlow::Vertical);
-  linearPanel->AddItem(labelText);
-  linearPanel->AddItem(testButton);
-  linearPanel->HorizontalAlignment() = UIHorizontalAlignment::Center;
-  linearPanel->VerticalAlignment() = UIVerticalAlignment::Center;
+  UILinearPanel* linearPanel0 = new UILinearPanel(width, height, "DemoPanel0", UILinearFlow::Vertical);
+  linearPanel0->AddItem(testButton);
+  linearPanel0->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  linearPanel0->VerticalAlignment() = UIVerticalAlignment::Center;
 
-  mFrame = new UIFrame(width, height, linearPanel);
-#else
-  UILabel* labelText = new UILabel(150, 10, "DemoLabel");
-  labelText->SetText("Demo V1");
-  labelText->SetHighlightColor(ZColors::YELLOW);
-  labelText->HorizontalAlignment() = UIHorizontalAlignment::Center;
-  labelText->VerticalAlignment() = UIVerticalAlignment::Center;
-  labelText->GridRow() = 1;
+  UILinearPanel* linearPanel1 = new UILinearPanel(width, height, "DemoPanel1", UILinearFlow::Vertical);
+  linearPanel1->AddItem(labelText0);
+  linearPanel1->HorizontalAlignment() = UIHorizontalAlignment::Left;
+  linearPanel1->VerticalAlignment() = UIVerticalAlignment::Bottom;
+  linearPanel1->GridColumn() = 0;
 
-  UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabel");
-  buttonLabel->SetText("Start Game");
-  buttonLabel->SetColor(ZColors::ORANGE);
-  buttonLabel->VerticalAlignment() = UIVerticalAlignment::Center;
-  buttonLabel->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  UILinearPanel* linearPanel2 = new UILinearPanel(width, height, "DemoPanel2", UILinearFlow::Vertical);
+  linearPanel2->AddItem(labelText1);
+  linearPanel2->HorizontalAlignment() = UIHorizontalAlignment::Right;
+  linearPanel2->VerticalAlignment() = UIVerticalAlignment::Bottom;
+  linearPanel2->GridColumn() = 1;
 
-  UIButton* testButton = new UIButton(100, 50, "DemoButton");
-  testButton->SetLabel(buttonLabel);
-  testButton->SetColor(ZColors::BLUE);
-  testButton->HorizontalAlignment() = UIHorizontalAlignment::Center;
-  testButton->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnStartButtonClicked>(this);
+  lowerGrid->AddItem(linearPanel1);
+  lowerGrid->AddItem(linearPanel2);
 
   UIGridColumn column0(1.f, "DemoColumn0");
   UIGridRow row0(.9f, "DemoRow0");
   UIGridRow row1(.1f, "DemoRow1");
 
   UIGrid* grid = new UIGrid(width, height, "DemoGrid");
-  grid->AddItem(labelText);
-  grid->AddItem(testButton);
+  grid->AddItem(linearPanel0);
+  grid->AddItem(lowerGrid);
   grid->HorizontalAlignment() = UIHorizontalAlignment::Center;
   grid->VerticalAlignment() = UIVerticalAlignment::Center;
   grid->AddColumn(column0);
@@ -105,7 +113,6 @@ void FrontEnd::Load() {
   grid->AddRow(row1);
 
   mFrame = new UIFrame(width, height, grid);
-#endif
 }
 
 void FrontEnd::Unload() {

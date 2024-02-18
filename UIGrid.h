@@ -40,6 +40,8 @@ class UIGrid : public UIContainer {
 
   UIGrid(size_t width, size_t height, const String& name);
 
+  ~UIGrid();
+
   virtual void Layout(size_t x, size_t y) override;
 
   virtual void Draw(uint8* screen, size_t width, size_t height) override;

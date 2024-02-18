@@ -6,6 +6,8 @@
 
 namespace ZSharp {
 
+String PlatformGetBuildType();
+
 String PlatformGetUsername();
 
 String PlatformGetMachineName();

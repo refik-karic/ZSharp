@@ -11,6 +11,7 @@
 #include "UIGrid.h"
 #include "PlatformApplication.h"
 #include "ZString.h"
+#include "PlatformMisc.h"
 
 namespace ZSharp {
 
@@ -49,20 +50,24 @@ void FrontEnd::Load() {
   UIGridColumn lowerColumn1(.2f, "LowerColumn1");
   UIGridRow lowerRow0(1.f, "LowerRow0");
 
-  UIGrid* lowerGrid = new UIGrid(width, 100, "LowerGrid");
+  UIGrid* lowerGrid = new UIGrid(width, height, "LowerGrid");
   lowerGrid->AddRow(lowerRow0);
   lowerGrid->AddColumn(lowerColumn0);
   lowerGrid->AddColumn(lowerColumn1);
   lowerGrid->GridRow() = 1;
 
+  const String buildType(String::FromFormat("Build: {0}", PlatformGetBuildType()));
+
   UILabel* labelText0 = new UILabel(150, 10, "DemoLabel0");
-  labelText0->SetText("Demo V1");
+  labelText0->SetText(buildType);
   labelText0->SetHighlightColor(ZColors::YELLOW);
   labelText0->HorizontalAlignment() = UIHorizontalAlignment::Left;
   labelText0->VerticalAlignment() = UIVerticalAlignment::Bottom;
 
+  const String userText(String::FromFormat("Player: {0}", PlatformGetUsername()));
+
   UILabel* labelText1 = new UILabel(150, 10, "DemoLabel1");
-  labelText1->SetText("DEBUG");
+  labelText1->SetText(userText);
   labelText1->SetHighlightColor(ZColors::YELLOW);
   labelText1->HorizontalAlignment() = UIHorizontalAlignment::Right;
   labelText1->VerticalAlignment() = UIVerticalAlignment::Bottom;

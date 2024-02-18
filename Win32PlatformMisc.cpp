@@ -9,6 +9,10 @@
 #include <Lmcons.h>
 
 namespace ZSharp {
+String PlatformGetBuildType() {
+  String buildType(BUILD_TYPE);
+  return buildType;
+}
 
 String PlatformGetUsername() {
   char buffer[UNLEN + 1];

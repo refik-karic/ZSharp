@@ -3,11 +3,11 @@
 namespace ZSharp {
 
 UIBase::UIBase() 
-  : mWidth(0), mHeight(0), mName(""), mX(0), mY(0), mMouseOver(false) {
+  : mWidth(0), mHeight(0), mName(""), mX(0), mY(0), mGridRow(0), mGridColumn(0), mMouseOver(false) {
 }
 
 UIBase::UIBase(size_t width, size_t height, const String& name)
-  : mWidth(width), mHeight(height), mName(name), mX(0), mY(0), mMouseOver(false) {
+  : mWidth(width), mHeight(height), mName(name), mX(0), mY(0), mGridRow(0), mGridColumn(0), mMouseOver(false)  {
 }
 
 void UIBase::Layout(size_t x, size_t y) {
@@ -21,6 +21,11 @@ void UIBase::Draw(uint8* screen, size_t width, size_t height) {
   (void)height;
 }
 
+void UIBase::Resize(size_t width, size_t height) {
+  mWidth = width;
+  mHeight = height;
+}
+
 bool UIBase::operator==(const UIBase& rhs) const {
   return mName == rhs.mName;
 }
@@ -29,8 +34,32 @@ size_t& UIBase::Width() {
   return mWidth;
 }
 
+const size_t& UIBase::Width() const {
+  return mWidth;
+}
+
 size_t& UIBase::Height() {
   return mHeight;
+}
+
+const size_t& UIBase::Height() const {
+  return mHeight;
+}
+
+size_t& UIBase::GridRow() {
+  return mGridRow;
+}
+
+const size_t& UIBase::GridRow() const {
+  return mGridRow;
+}
+
+size_t& UIBase::GridColumn() {
+  return mGridColumn;
+}
+
+const size_t& UIBase::GridColumn() const {
+  return mGridColumn;
 }
 
 UIHorizontalAlignment& UIBase::HorizontalAlignment() {

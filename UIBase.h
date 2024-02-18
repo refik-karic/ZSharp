@@ -36,11 +36,25 @@ class UIBase {
 
   virtual void Draw(uint8* screen, size_t width, size_t height);
 
+  virtual void Resize(size_t width, size_t height);
+
   bool operator==(const UIBase& rhs) const;
 
   size_t& Width();
 
+  const size_t& Width() const;
+
   size_t& Height();
+
+  const size_t& Height() const;
+
+  size_t& GridRow();
+
+  const size_t& GridRow() const;
+
+  size_t& GridColumn();
+
+  const size_t& GridColumn() const;
 
   UIHorizontalAlignment& HorizontalAlignment();
 
@@ -53,6 +67,8 @@ class UIBase {
   size_t mHeight;
   size_t mX;
   size_t mY;
+  size_t mGridRow;
+  size_t mGridColumn;
   String mName;
   UIHorizontalAlignment mHorizontalAlignment = UIHorizontalAlignment::Fill;
   UIVerticalAlignment mVerticalAlignment = UIVerticalAlignment::Fill;

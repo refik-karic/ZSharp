@@ -8,6 +8,7 @@
 #include "UIButton.h"
 #include "UILinearPanel.h"
 #include "UILabel.h"
+#include "UIGrid.h"
 #include "PlatformApplication.h"
 #include "ZString.h"
 
@@ -44,6 +45,7 @@ void FrontEnd::Load() {
   size_t width = config.GetViewportWidth().Value();
   size_t height = config.GetViewportHeight().Value();
 
+#if 0
   UILabel* labelText = new UILabel(150, 10, "DemoLabel");
   labelText->SetText("Demo V1");
   labelText->SetHighlightColor(ZColors::YELLOW);
@@ -69,6 +71,41 @@ void FrontEnd::Load() {
   linearPanel->VerticalAlignment() = UIVerticalAlignment::Center;
 
   mFrame = new UIFrame(width, height, linearPanel);
+#else
+  UILabel* labelText = new UILabel(150, 10, "DemoLabel");
+  labelText->SetText("Demo V1");
+  labelText->SetHighlightColor(ZColors::YELLOW);
+  labelText->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  labelText->VerticalAlignment() = UIVerticalAlignment::Center;
+  labelText->GridRow() = 1;
+
+  UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabel");
+  buttonLabel->SetText("Start Game");
+  buttonLabel->SetColor(ZColors::ORANGE);
+  buttonLabel->VerticalAlignment() = UIVerticalAlignment::Center;
+  buttonLabel->HorizontalAlignment() = UIHorizontalAlignment::Center;
+
+  UIButton* testButton = new UIButton(100, 50, "DemoButton");
+  testButton->SetLabel(buttonLabel);
+  testButton->SetColor(ZColors::BLUE);
+  testButton->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  testButton->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnStartButtonClicked>(this);
+
+  UIGridColumn column0(1.f, "DemoColumn0");
+  UIGridRow row0(.9f, "DemoRow0");
+  UIGridRow row1(.1f, "DemoRow1");
+
+  UIGrid* grid = new UIGrid(width, height, "DemoGrid");
+  grid->AddItem(labelText);
+  grid->AddItem(testButton);
+  grid->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  grid->VerticalAlignment() = UIVerticalAlignment::Center;
+  grid->AddColumn(column0);
+  grid->AddRow(row0);
+  grid->AddRow(row1);
+
+  mFrame = new UIFrame(width, height, grid);
+#endif
 }
 
 void FrontEnd::Unload() {

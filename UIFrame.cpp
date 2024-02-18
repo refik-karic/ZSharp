@@ -25,8 +25,7 @@ void UIFrame::OnResize(size_t width, size_t height) {
   mHeight = height;
 
   if (mBaseItem != nullptr) {
-    mBaseItem->Width() = width;
-    mBaseItem->Height() = height;
+    mBaseItem->Resize(width, height);
   }
 }
 

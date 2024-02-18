@@ -23,6 +23,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
   size_t currX = x;
   size_t currY = y;
 
+  // Clip all stored items to the bounds of this container.
   for (UIBase* item : mItems) {
     item->Width() = Clamp(item->Width(), (size_t)0, mWidth);
     item->Height() = Clamp(item->Height(), (size_t)0, mHeight);
@@ -57,8 +58,6 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     }
     break;
   }
-
-  // TODO: We need to handle clipping items outside of the frame/container.
 
   if (mFlow == UILinearFlow::Horizontal) {
     if (mVerticalAlignment == UIVerticalAlignment::Center) {

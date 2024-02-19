@@ -16,6 +16,14 @@ UIButton::~UIButton() {
 }
 
 void UIButton::Layout(size_t x, size_t y) {
+  if (mBorderThickness <= mWidth && mBorderThickness <= mHeight) {
+    x += mBorderThickness;
+    y += mBorderThickness;
+
+    //mWidth -= (mBorderThickness * 2);
+    //mHeight -= (mBorderThickness * 2);
+  }
+
   mX = x;
   mY = y;
   
@@ -30,12 +38,12 @@ void UIButton::Layout(size_t x, size_t y) {
         break;
       case UIVerticalAlignment::Center:
       {
-        yOffset += ((mHeight / 2) - (mLabel->Height() / 2));
+        yOffset += ((mHeight / 2) - (mLabel->GetHeight() / 2));
       }
         break;
       case UIVerticalAlignment::Bottom:
       {
-        yOffset += (mHeight - mLabel->Height());
+        yOffset += (mHeight - mLabel->GetHeight());
       }
         break;
     }
@@ -47,12 +55,12 @@ void UIButton::Layout(size_t x, size_t y) {
         break;
       case UIHorizontalAlignment::Center:
       {
-        xOffset += ((mWidth / 2) - (mLabel->Width() / 2));
+        xOffset += ((mWidth / 2) - (mLabel->GetWidth() / 2));
       }
         break;
       case UIHorizontalAlignment::Right:
       {
-        xOffset += (mWidth - mLabel->Width());
+        xOffset += (mWidth - mLabel->GetWidth());
       }
         break;
     }
@@ -62,7 +70,7 @@ void UIButton::Layout(size_t x, size_t y) {
 }
 
 void UIButton::HitTest(int32 x, int32 y, bool mouseDown) {
-  bool isInX = (x >= mX && x <= (mX + mWidth));
+  bool isInX = (x >= mX && x <= (mX + mWidth + (mBorderThickness * 2)));
   bool isInY = (y >= mY && y <= (mY + mHeight));
 
   mMouseOver = isInX && isInY;
@@ -88,6 +96,10 @@ void UIButton::Draw(uint8* screen, size_t width, size_t height) {
   size_t rWidth = Clamp(mWidth, (size_t)0, width - mX);
   size_t rHeight = Clamp(mHeight, (size_t)0, height - mY);
   ZColor& color = mMouseOver ? mHoverBackground : mBackground;
+
+  if (mBorderThickness > 0) {
+    DrawBorder(screen, width);
+  }
 
   DrawRect(screen, width, rWidth, rHeight, color);
   

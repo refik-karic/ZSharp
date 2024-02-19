@@ -20,14 +20,14 @@ void UILabel::Layout(size_t x, size_t y) {
   mY = y;
 
   size_t stringLength = mText.Length();
-  mWidth = stringLength * FontWidth;
-  mHeight = FontHeight;
+  SetWidth(stringLength * FontWidth + (mBorderThickness * 2));
+  SetHeight(FontHeight + (mBorderThickness * 2));
 }
 
 void UILabel::HitTest(int32 x, int32 y, bool mouseDown) {
   (void)mouseDown;
 
-  bool isInX = (x >= mX && x <= (mX + mWidth));
+  bool isInX = (x >= mX && x <= (mX + mWidth + (mBorderThickness * 2)));
   bool isInY = (y >= mY && y <= (mY + mHeight));
 
   mMouseOver = isInX && isInY;
@@ -40,7 +40,19 @@ void UILabel::Draw(uint8* screen, size_t width, size_t height) {
 
   ZColor& drawColor = mMouseOver ? mHoverColor : mColor;
 
-  DrawText(mText, 0, 0, currentScreenPos, width, drawColor);
+  if (mBorderThickness > 0) {
+    DrawBorder(screen, width);
+  }
+
+  DrawText(mText, mBorderThickness, mBorderThickness, currentScreenPos, width, drawColor);
+}
+
+void UILabel::SetBorderThickness(size_t size) {
+  mBorderThickness = size;
+
+  size_t stringLength = mText.Length();
+  SetWidth(stringLength * FontWidth + (mBorderThickness * 2));
+  SetHeight(FontHeight + (mBorderThickness * 2));
 }
 
 const String& UILabel::GetText() const {
@@ -52,8 +64,8 @@ void UILabel::SetText(const String& string) {
 
   size_t stringLength = mText.Length();
 
-  mWidth = stringLength * FontWidth;
-  mHeight = FontHeight;
+  SetWidth(stringLength * FontWidth + (mBorderThickness * 2));
+  SetHeight(FontHeight + (mBorderThickness * 2));
 }
 
 void UILabel::SetColor(const ZColor& color) {

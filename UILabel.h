@@ -18,6 +18,8 @@ class UILabel : public UIElement {
 
   virtual void Draw(uint8* screen, size_t width, size_t height) override;
 
+  virtual void SetBorderThickness(size_t size) override;
+
   const String& GetText() const;
 
   void SetText(const String& string);

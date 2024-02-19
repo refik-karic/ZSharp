@@ -25,8 +25,8 @@ void UILinearPanel::Layout(size_t x, size_t y) {
 
   // Clip all stored items to the bounds of this container.
   for (UIBase* item : mItems) {
-    item->Width() = Clamp(item->Width(), (size_t)0, mWidth);
-    item->Height() = Clamp(item->Height(), (size_t)0, mHeight);
+    item->SetWidth(Clamp(item->GetWidth(), (size_t)0, GetWidth()));
+    item->SetHeight(Clamp(item->GetHeight(), (size_t)0, GetHeight()));
   }
 
   switch (mHorizontalAlignment) {
@@ -35,11 +35,11 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     case UIHorizontalAlignment::Left:
       break;
     case UIHorizontalAlignment::Center:
-      currX += (mWidth / 2);
+      currX += (GetWidth() / 2);
       break;
     case UIHorizontalAlignment::Right:
     {
-      currX += mWidth;
+      currX += GetWidth();
     }
     break;
   }
@@ -50,11 +50,11 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     case UIVerticalAlignment::Top:
       break;
     case UIVerticalAlignment::Center:
-      currY += (mHeight / 2);
+      currY += (GetHeight() / 2);
       break;
     case UIVerticalAlignment::Bottom:
     {
-      currY += mHeight;
+      currY += GetHeight();
     }
     break;
   }
@@ -63,7 +63,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     if (mVerticalAlignment == UIVerticalAlignment::Center) {
       size_t yOffset = 0;
       for (UIBase* item : mItems) {
-        yOffset += item->Height();
+        yOffset += item->GetHeight();
       }
 
       yOffset = Min(currY, yOffset);
@@ -72,7 +72,8 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     else if (mVerticalAlignment == UIVerticalAlignment::Bottom) {
       size_t yOffset = 0;
       for (UIBase* item : mItems) {
-        yOffset = Max(yOffset, item->Height());
+        size_t itemHeight = item->GetHeight();
+        yOffset = Max(yOffset, itemHeight);
       }
 
       yOffset = Min(currY, yOffset);
@@ -82,7 +83,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     if (mHorizontalAlignment == UIHorizontalAlignment::Center) {
       size_t xOffset = 0;
       for (UIBase* item : mItems) {
-        xOffset += item->Width();
+        xOffset += item->GetWidth();
       }
 
       xOffset = Min(currX, xOffset);
@@ -91,7 +92,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     else if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
       size_t xOffset = 0;
       for (UIBase* item : mItems) {
-        xOffset += item->Width();
+        xOffset += item->GetWidth();
       }
 
       xOffset = Min(currX, xOffset);
@@ -109,7 +110,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
           break;
         case UIVerticalAlignment::Center:
         {
-          size_t centerPoint = (mHeight - itemYOffset - item->Height()) / 2;
+          size_t centerPoint = (GetHeight() - itemYOffset - item->GetHeight()) / 2;
 
           itemYOffset += centerPoint;
         }
@@ -117,7 +118,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
         case UIVerticalAlignment::Bottom:
         {
           if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
-            itemYOffset = mHeight - item->Height();
+            itemYOffset = GetHeight() - item->GetHeight();
           }
         }
         break;
@@ -125,8 +126,8 @@ void UILinearPanel::Layout(size_t x, size_t y) {
 
       item->Layout(itemXOffset, itemYOffset);
 
-      size_t itemWidth = item->Width();
-      itemWidth = Clamp(itemWidth, (size_t)0, mWidth);
+      size_t itemWidth = item->GetWidth();
+      itemWidth = Clamp(itemWidth, (size_t)0, GetWidth());
       currX += itemWidth;
     }
   }
@@ -134,7 +135,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     if (mVerticalAlignment == UIVerticalAlignment::Center) {
       size_t yOffset = 0;
       for (UIBase* item : mItems) {
-        yOffset += item->Height();
+        yOffset += item->GetHeight();
       }
 
       yOffset = Min(currY, yOffset);
@@ -143,7 +144,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     else if (mVerticalAlignment == UIVerticalAlignment::Bottom) {
       size_t yOffset = 0;
       for (UIBase* item : mItems) {
-        yOffset += item->Height();
+        yOffset += item->GetHeight();
       }
 
       yOffset = Min(currY, yOffset);
@@ -153,7 +154,8 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     if (mHorizontalAlignment == UIHorizontalAlignment::Center) {
       size_t xOffset = 0;
       for (UIBase* item : mItems) {
-        xOffset = Max(xOffset, item->Width());
+        size_t itemWidth = item->GetWidth();
+        xOffset = Max(xOffset, itemWidth);
       }
 
       xOffset = Min(currX, xOffset);
@@ -162,7 +164,8 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     else if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
       size_t xOffset = 0;
       for (UIBase* item : mItems) {
-        xOffset = Max(xOffset, item->Width());
+        size_t itemWidth = item->GetWidth();
+        xOffset = Max(xOffset, itemWidth);
       }
 
       xOffset = Min(currX, xOffset);
@@ -182,28 +185,30 @@ void UILinearPanel::Layout(size_t x, size_t y) {
         {
           size_t largestItem = 0;
           for (UIBase* currentItem : mItems) {
-            largestItem = Max(largestItem, currentItem->Width());
+            size_t itemWidth = currentItem->GetWidth();
+            largestItem = Max(largestItem, itemWidth);
           }
 
-          itemXOffset = (itemXOffset + (largestItem / 2)) - (item->Width() / 2);
+          itemXOffset = (itemXOffset + (largestItem / 2)) - (item->GetWidth() / 2);
         }
           break;
         case UIHorizontalAlignment::Right:
         {
           size_t largestItem = 0;
           for (UIBase* currentItem : mItems) {
-            largestItem = Max(largestItem, currentItem->Width());
+            size_t itemWidth = currentItem->GetWidth();
+            largestItem = Max(largestItem, itemWidth);
           }
 
-          itemXOffset = (itemXOffset + largestItem - item->Width());
+          itemXOffset = (itemXOffset + largestItem - item->GetWidth());
         }
           break;
       }
 
       item->Layout(itemXOffset, itemYOffset);
 
-      size_t itemHeight = item->Height();
-      itemHeight = Clamp(itemHeight, (size_t)0, mHeight);
+      size_t itemHeight = item->GetHeight();
+      itemHeight = Clamp(itemHeight, (size_t)0, GetHeight());
       currY += itemHeight;
     }
   }

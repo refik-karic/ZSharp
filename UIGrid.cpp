@@ -58,11 +58,11 @@ void UIGrid::Layout(size_t x, size_t y) {
       continue;
     }
 
-    size_t columnWidth = column->ToPixels(mWidth);
-    size_t rowHeight = row->ToPixels(mHeight);
+    size_t columnWidth = column->ToPixels(GetWidth());
+    size_t rowHeight = row->ToPixels(GetHeight());
 
-    item->Width() = Clamp(item->Width(), (size_t)0, columnWidth);
-    item->Height() = Clamp(item->Height(), (size_t)0, rowHeight);
+    item->SetWidth(Clamp(item->GetWidth(), (size_t)0, columnWidth));
+    item->SetHeight(Clamp(item->GetHeight(), (size_t)0, rowHeight));
   }
 
   /* 
@@ -87,11 +87,11 @@ void UIGrid::Layout(size_t x, size_t y) {
 
     for (UIGridRow& row : mRows) {
       LayoutInner(column, row, colIdx, rowIdx, currX, rowY);
-      rowY += row.ToPixels(mHeight);
+      rowY += row.ToPixels(GetHeight());
       ++rowIdx;
     }
 
-    currX += column.ToPixels(mWidth);
+    currX += column.ToPixels(GetWidth());
     ++colIdx;
   }
 }
@@ -139,7 +139,7 @@ bool UIGrid::InvalidSetup() {
 }
 
 UIGridRow* UIGrid::GetItemRow(const UIBase& item) {
-  size_t rowIndex = item.GridRow();
+  size_t rowIndex = item.GetGridRow();
   List<UIGridRow>::Iterator rowIter = mRows.begin();
 
   for (size_t i = 0; i < mRows.Size(); ++i) {
@@ -154,7 +154,7 @@ UIGridRow* UIGrid::GetItemRow(const UIBase& item) {
 }
 
 UIGridColumn* UIGrid::GetItemColumn(const UIBase& item) {
-  size_t columnIndex = item.GridColumn();
+  size_t columnIndex = item.GetGridColumn();
   List<UIGridColumn>::Iterator columnIter = mColumns.begin();
 
   for (size_t i = 0; i < mColumns.Size(); ++i) {
@@ -176,13 +176,13 @@ void UIGrid::LayoutInner(UIGridColumn& column, UIGridRow& row, size_t colIdx, si
   (void)row;
 
   for (UIBase* item : mItems) {
-    if (item->GridColumn() != colIdx || item->GridRow() != rowIdx) {
+    if (item->GetGridColumn() != colIdx || item->GetGridRow() != rowIdx) {
       continue;
     }
 
     // TODO: We need to decide what kind of layout restrictions we must place here.
     item->Layout(currX, currY);
-    currX += item->Width();
+    currX += item->GetWidth();
   }
 }
 

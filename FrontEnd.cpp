@@ -54,7 +54,7 @@ void FrontEnd::Load() {
   lowerGrid->AddRow(lowerRow0);
   lowerGrid->AddColumn(lowerColumn0);
   lowerGrid->AddColumn(lowerColumn1);
-  lowerGrid->GridRow() = 1;
+  lowerGrid->SetGridRow(1);
 
   const String buildType(String::FromFormat("Build: {0}", PlatformGetBuildType()));
 
@@ -73,16 +73,20 @@ void FrontEnd::Load() {
   labelText1->VerticalAlignment() = UIVerticalAlignment::Bottom;
 
   UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabel");
-  buttonLabel->SetText("Start Game");
-  buttonLabel->SetColor(ZColors::ORANGE);
+  buttonLabel->SetText("PLAY");
+  buttonLabel->SetColor(ZColors::WHITE);
+  buttonLabel->SetHighlightColor(ZColors::BLACK);
   buttonLabel->VerticalAlignment() = UIVerticalAlignment::Center;
   buttonLabel->HorizontalAlignment() = UIHorizontalAlignment::Center;
 
   UIButton* testButton = new UIButton(200, 100, "DemoButton");
   testButton->SetLabel(buttonLabel);
-  testButton->SetColor(ZColors::BLUE);
+  testButton->SetColor(ZColors::GRAY);
   testButton->HorizontalAlignment() = UIHorizontalAlignment::Center;
   testButton->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnStartButtonClicked>(this);
+  testButton->SetBorderThickness(4);
+  testButton->SetBorderColor(ZColors::WHITE);
+  testButton->SetHighlightBorderColor(ZColors::BLUE);
 
   UILinearPanel* linearPanel0 = new UILinearPanel(width, height, "DemoPanel0", UILinearFlow::Vertical);
   linearPanel0->AddItem(testButton);
@@ -93,13 +97,13 @@ void FrontEnd::Load() {
   linearPanel1->AddItem(labelText0);
   linearPanel1->HorizontalAlignment() = UIHorizontalAlignment::Left;
   linearPanel1->VerticalAlignment() = UIVerticalAlignment::Bottom;
-  linearPanel1->GridColumn() = 0;
+  linearPanel1->SetGridColumn(0);
 
   UILinearPanel* linearPanel2 = new UILinearPanel(width, height, "DemoPanel2", UILinearFlow::Vertical);
   linearPanel2->AddItem(labelText1);
   linearPanel2->HorizontalAlignment() = UIHorizontalAlignment::Right;
   linearPanel2->VerticalAlignment() = UIVerticalAlignment::Bottom;
-  linearPanel2->GridColumn() = 1;
+  linearPanel2->SetGridColumn(1);
 
   lowerGrid->AddItem(linearPanel1);
   lowerGrid->AddItem(linearPanel2);

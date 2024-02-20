@@ -34,6 +34,8 @@ class FrontEnd final {
   void OnMouseMove(int32 x, int32 y, bool mouseDown);
 
   void OnStartButtonClicked();
+
+  void OnQuitButtonClicked();
 };
 
 }

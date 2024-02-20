@@ -43,6 +43,10 @@ void AppChangeCursor(AppCursor cursor) {
   Win32PlatformApplication::Get().ApplyCursor(cursor);
 }
 
+void AppShutdown() {
+  Win32PlatformApplication::Get().Shutdown();
+}
+
 }
 
 Win32PlatformApplication& Win32PlatformApplication::Get() {
@@ -149,6 +153,10 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
 
 void Win32PlatformApplication::ApplyCursor(ZSharp::AppCursor cursor) {
   mCurrentCursor = cursor;
+}
+
+void Win32PlatformApplication::Shutdown() {
+  OnDestroy();
 }
 
 Win32PlatformApplication::Win32PlatformApplication() {

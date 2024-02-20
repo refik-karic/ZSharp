@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 #include "UIBase.h"
+#include "ZColor.h"
 
 namespace ZSharp {
 
@@ -13,8 +14,13 @@ class UIElement : public UIBase {
 
   UIElement(size_t width, size_t height, const String& name);
 
-  protected:
+  virtual void SetBackgroundColor(const ZColor& color);
 
+  virtual void SetHighlightColor(const ZColor& color);
+
+  protected:
+  ZColor mBackgroundColor;
+  ZColor mHighlightColor;
 };
 
 }

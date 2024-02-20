@@ -6,7 +6,7 @@
 namespace ZSharp {
 
 UIButton::UIButton(size_t width, size_t height, const String& name) 
-  : UIElement(width, height, name), mLabel(nullptr), mBackground(ZColors::BLACK), mHoverBackground(ZColors::YELLOW) {
+  : UIElement(width, height, name), mLabel(nullptr) {
 }
 
 UIButton::~UIButton() {
@@ -16,14 +16,6 @@ UIButton::~UIButton() {
 }
 
 void UIButton::Layout(size_t x, size_t y) {
-  if (mBorderThickness <= mWidth && mBorderThickness <= mHeight) {
-    x += mBorderThickness;
-    y += mBorderThickness;
-
-    //mWidth -= (mBorderThickness * 2);
-    //mHeight -= (mBorderThickness * 2);
-  }
-
   mX = x;
   mY = y;
   
@@ -95,7 +87,7 @@ void UIButton::HitTest(int32 x, int32 y, bool mouseDown) {
 void UIButton::Draw(uint8* screen, size_t width, size_t height) {
   size_t rWidth = Clamp(mWidth, (size_t)0, width - mX);
   size_t rHeight = Clamp(mHeight, (size_t)0, height - mY);
-  ZColor& color = mMouseOver ? mHoverBackground : mBackground;
+  ZColor& color = mMouseOver ? mHighlightColor : mBackgroundColor;
 
   if (mBorderThickness > 0) {
     DrawBorder(screen, width);
@@ -106,10 +98,6 @@ void UIButton::Draw(uint8* screen, size_t width, size_t height) {
   if (mLabel != nullptr) {
     mLabel->Draw(screen, width, height);
   }
-}
-
-void UIButton::SetColor(const ZColor& color) {
-  mBackground = color;
 }
 
 void UIButton::SetLabel(UILabel* label) {

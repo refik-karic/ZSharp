@@ -13,7 +13,10 @@ class UIContainer : public UIBase {
 
   UIContainer(size_t width, size_t height, const String& name);
 
+  void SetSpacing(size_t space);
+
   protected:
+  size_t mItemSpacing;
 };
 
 }

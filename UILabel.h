@@ -24,14 +24,8 @@ class UILabel : public UIElement {
 
   void SetText(const String& string);
 
-  void SetColor(const ZColor& color);
-
-  void SetHighlightColor(const ZColor& color);
-
   private:
   String mText;
-  ZColor mColor;
-  ZColor mHoverColor;
 };
 
 }

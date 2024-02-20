@@ -60,6 +60,7 @@ void FrontEnd::Load() {
 
   UILabel* labelText0 = new UILabel(150, 10, "DemoLabel0");
   labelText0->SetText(buildType);
+  labelText0->SetBackgroundColor(ZColors::WHITE);
   labelText0->SetHighlightColor(ZColors::YELLOW);
   labelText0->HorizontalAlignment() = UIHorizontalAlignment::Left;
   labelText0->VerticalAlignment() = UIVerticalAlignment::Bottom;
@@ -68,28 +69,49 @@ void FrontEnd::Load() {
 
   UILabel* labelText1 = new UILabel(150, 10, "DemoLabel1");
   labelText1->SetText(userText);
+  labelText1->SetBackgroundColor(ZColors::WHITE);
   labelText1->SetHighlightColor(ZColors::YELLOW);
   labelText1->HorizontalAlignment() = UIHorizontalAlignment::Right;
   labelText1->VerticalAlignment() = UIVerticalAlignment::Bottom;
 
-  UILabel* buttonLabel = new UILabel(100, 10, "ButtonLabel");
-  buttonLabel->SetText("PLAY");
-  buttonLabel->SetColor(ZColors::WHITE);
-  buttonLabel->SetHighlightColor(ZColors::BLACK);
-  buttonLabel->VerticalAlignment() = UIVerticalAlignment::Center;
-  buttonLabel->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  UILabel* buttonLabel0 = new UILabel(100, 10, "ButtonLabel0");
+  buttonLabel0->SetText("PLAY");
+  buttonLabel0->SetBackgroundColor(ZColors::BLACK);
+  buttonLabel0->SetHighlightColor(ZColors::BLACK);
+  buttonLabel0->VerticalAlignment() = UIVerticalAlignment::Center;
+  buttonLabel0->HorizontalAlignment() = UIHorizontalAlignment::Center;
 
-  UIButton* testButton = new UIButton(200, 100, "DemoButton");
-  testButton->SetLabel(buttonLabel);
-  testButton->SetColor(ZColors::GRAY);
-  testButton->HorizontalAlignment() = UIHorizontalAlignment::Center;
-  testButton->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnStartButtonClicked>(this);
-  testButton->SetBorderThickness(4);
-  testButton->SetBorderColor(ZColors::WHITE);
-  testButton->SetHighlightBorderColor(ZColors::BLUE);
+  UILabel* buttonLabel1 = new UILabel(100, 10, "ButtonLabel1");
+  buttonLabel1->SetText("QUIT");
+  buttonLabel1->SetBackgroundColor(ZColors::BLACK);
+  buttonLabel1->SetHighlightColor(ZColors::BLACK);
+  buttonLabel1->VerticalAlignment() = UIVerticalAlignment::Center;
+  buttonLabel1->HorizontalAlignment() = UIHorizontalAlignment::Center;
+
+  UIButton* testButton0 = new UIButton(200, 100, "DemoButton0");
+  testButton0->SetLabel(buttonLabel0);
+  testButton0->SetBackgroundColor(ZColors::GRAY);
+  testButton0->SetHighlightColor(ZColors::WHITE);
+  testButton0->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  testButton0->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnStartButtonClicked>(this);
+  testButton0->SetBorderThickness(2);
+  testButton0->SetBorderColor(ZColors::WHITE);
+  testButton0->SetHighlightBorderColor(ZColors::BLUE);
+
+  UIButton* testButton1 = new UIButton(200, 100, "DemoButton1");
+  testButton1->SetLabel(buttonLabel1);
+  testButton1->SetBackgroundColor(ZColors::GRAY);
+  testButton1->SetHighlightColor(ZColors::WHITE);
+  testButton1->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  testButton1->OnClickDelegate = Delegate<void>::FromMember<FrontEnd, &FrontEnd::OnQuitButtonClicked>(this);
+  testButton1->SetBorderThickness(2);
+  testButton1->SetBorderColor(ZColors::WHITE);
+  testButton1->SetHighlightBorderColor(ZColors::BLUE);
 
   UILinearPanel* linearPanel0 = new UILinearPanel(width, height, "DemoPanel0", UILinearFlow::Vertical);
-  linearPanel0->AddItem(testButton);
+  linearPanel0->AddItem(testButton0);
+  linearPanel0->AddItem(testButton1);
+  linearPanel0->SetSpacing(10);
   linearPanel0->HorizontalAlignment() = UIHorizontalAlignment::Center;
   linearPanel0->VerticalAlignment() = UIVerticalAlignment::Center;
 
@@ -164,6 +186,10 @@ void FrontEnd::OnMouseMove(int32 x, int32 y, bool mouseDown) {
 
 void FrontEnd::OnStartButtonClicked() {
   Unload();
+}
+
+void FrontEnd::OnQuitButtonClicked() {
+  AppShutdown();
 }
 
 }

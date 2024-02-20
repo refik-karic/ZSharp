@@ -128,7 +128,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
 
       size_t itemWidth = item->GetWidth();
       itemWidth = Clamp(itemWidth, (size_t)0, GetWidth());
-      currX += itemWidth;
+      currX += (itemWidth + mItemSpacing);
     }
   }
   else {
@@ -209,7 +209,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
 
       size_t itemHeight = item->GetHeight();
       itemHeight = Clamp(itemHeight, (size_t)0, GetHeight());
-      currY += itemHeight;
+      currY += (itemHeight + mItemSpacing);
     }
   }
 }

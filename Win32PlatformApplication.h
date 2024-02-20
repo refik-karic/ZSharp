@@ -22,6 +22,8 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   virtual void ApplyCursor(ZSharp::AppCursor cursor) override;
 
+  virtual void Shutdown() override;
+
   private:
   HINSTANCE mInstance = nullptr;
   HWND mWindowHandle = nullptr;

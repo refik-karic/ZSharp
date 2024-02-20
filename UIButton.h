@@ -21,14 +21,10 @@ class UIButton : public UIElement {
 
   virtual void Draw(uint8* screen, size_t width, size_t height) override;
 
-  void SetColor(const ZColor& color);
-
   void SetLabel(UILabel* label);
 
   private:
   UILabel* mLabel;
-  ZColor mBackground;
-  ZColor mHoverBackground;
 };
 
 }

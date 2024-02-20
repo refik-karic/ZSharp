@@ -12,7 +12,7 @@ const size_t FontWidth = 8;
 const size_t FontHeight = 8;
 
 UILabel::UILabel(size_t width, size_t height, const String& name) 
-  : UIElement(width, height, name), mColor(ZColors::GREEN), mHoverColor(ZColors::RED) {
+  : UIElement(width, height, name) {
 }
 
 void UILabel::Layout(size_t x, size_t y) {
@@ -38,7 +38,7 @@ void UILabel::Draw(uint8* screen, size_t width, size_t height) {
 
   uint8* currentScreenPos = screen + (mY * width * 4) + (mX * 4);
 
-  ZColor& drawColor = mMouseOver ? mHoverColor : mColor;
+  ZColor& drawColor = mMouseOver ? mHighlightColor : mBackgroundColor;
 
   if (mBorderThickness > 0) {
     DrawBorder(screen, width);
@@ -66,14 +66,6 @@ void UILabel::SetText(const String& string) {
 
   SetWidth(stringLength * FontWidth + (mBorderThickness * 2));
   SetHeight(FontHeight + (mBorderThickness * 2));
-}
-
-void UILabel::SetColor(const ZColor& color) {
-  mColor = color;
-}
-
-void UILabel::SetHighlightColor(const ZColor& color) {
-  mHoverColor = color;
 }
 
 }

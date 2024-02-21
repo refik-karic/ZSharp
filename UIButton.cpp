@@ -68,10 +68,7 @@ void UIButton::HitTest(int32 x, int32 y, bool mouseDown) {
   mMouseOver = isInX && isInY;
 
   if (mMouseOver) {
-    AppChangeCursor(AppCursor::Hand);
-  }
-  else {
-    AppChangeCursor(AppCursor::Arrow);
+    GetApplication()->ApplyCursor(AppCursor::Hand);
   }
 
   if (mLabel != nullptr) {
@@ -79,7 +76,6 @@ void UIButton::HitTest(int32 x, int32 y, bool mouseDown) {
   }
 
   if (mMouseOver && mouseDown && OnClickDelegate.IsBound()) {
-    AppChangeCursor(AppCursor::Arrow);
     OnClickDelegate();
   }
 }

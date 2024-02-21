@@ -189,7 +189,7 @@ void FrontEnd::OnStartButtonClicked() {
 }
 
 void FrontEnd::OnQuitButtonClicked() {
-  AppShutdown();
+  GetApplication()->Shutdown();
 }
 
 }

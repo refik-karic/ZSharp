@@ -12,10 +12,6 @@ enum class AppCursor {
 
 BroadcastDelegate<size_t, size_t>& OnWindowSizeChangedDelegate();
 
-void AppChangeCursor(AppCursor cursor);
-
-void AppShutdown();
-
 class PlatformApplication {
   public:
 
@@ -26,5 +22,7 @@ class PlatformApplication {
   protected:
   AppCursor mCurrentCursor = AppCursor::Arrow;
 };
+
+PlatformApplication* GetApplication();
 
 }

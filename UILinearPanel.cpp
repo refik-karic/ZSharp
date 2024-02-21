@@ -35,7 +35,14 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     case UIHorizontalAlignment::Left:
       break;
     case UIHorizontalAlignment::Center:
-      currX += (GetWidth() / 2);
+    {
+      if (mItems.Size() > 1) {
+        currX += ((GetWidth() / 2) - (((mItems.Size() - 1) * mItemSpacing) / 2));
+      }
+      else {
+        currX += (GetWidth() / 2);
+      }
+    }
       break;
     case UIHorizontalAlignment::Right:
     {
@@ -50,7 +57,14 @@ void UILinearPanel::Layout(size_t x, size_t y) {
     case UIVerticalAlignment::Top:
       break;
     case UIVerticalAlignment::Center:
-      currY += (GetHeight() / 2);
+    {
+      if (mItems.Size() > 1) {
+        currY += ((GetHeight() / 2) - (((mItems.Size() - 1) * mItemSpacing) / 2));
+      }
+      else {
+        currY += (GetHeight() / 2);
+      }
+    }
       break;
     case UIVerticalAlignment::Bottom:
     {

@@ -39,12 +39,9 @@ BroadcastDelegate<size_t, size_t>& OnWindowSizeChangedDelegate() {
   return instance;
 }
 
-void AppChangeCursor(AppCursor cursor) {
-  Win32PlatformApplication::Get().ApplyCursor(cursor);
-}
-
-void AppShutdown() {
-  Win32PlatformApplication::Get().Shutdown();
+PlatformApplication* GetApplication() {
+  Win32PlatformApplication& app = Win32PlatformApplication::Get();
+  return &app;
 }
 
 }
@@ -153,6 +150,15 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
 
 void Win32PlatformApplication::ApplyCursor(ZSharp::AppCursor cursor) {
   mCurrentCursor = cursor;
+
+  switch (mCurrentCursor) {
+    case ZSharp::AppCursor::Arrow:
+      SetCursor(mPointCursor);
+      break;
+    case ZSharp::AppCursor::Hand:
+      SetCursor(mHandCursor);
+      break;
+  }
 }
 
 void Win32PlatformApplication::Shutdown() {
@@ -291,6 +297,8 @@ void Win32PlatformApplication::OnTimer() {
 
   PauseTimer();
 
+  ApplyCursor(ZSharp::AppCursor::Arrow);
+
   RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
     ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
@@ -389,15 +397,6 @@ void Win32PlatformApplication::OnLButtonUp() {
 }
 
 void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
-  switch (mCurrentCursor) {
-    case ZSharp::AppCursor::Arrow:
-      SetCursor(mPointCursor);
-      break;
-    case ZSharp::AppCursor::Hand:
-      SetCursor(mHandCursor);
-      break;
-  }
-
   ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
   inputManager.UpdateMousePosition(x, y);
 }

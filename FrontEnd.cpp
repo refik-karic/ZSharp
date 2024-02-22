@@ -54,7 +54,7 @@ void FrontEnd::Load() {
   lowerGrid->AddRow(lowerRow0);
   lowerGrid->AddColumn(lowerColumn0);
   lowerGrid->AddColumn(lowerColumn1);
-  lowerGrid->SetGridRow(1);
+  lowerGrid->SetGridRow(2);
 
   const String buildType(String::FromFormat("Build: {0}", PlatformGetBuildType()));
 
@@ -115,6 +115,19 @@ void FrontEnd::Load() {
   linearPanel0->HorizontalAlignment() = UIHorizontalAlignment::Center;
   linearPanel0->VerticalAlignment() = UIVerticalAlignment::Center;
 
+  UILabel* topPanelLabel = new UILabel(100, 10, "TopPanelLabel");
+  topPanelLabel->SetText("A fully software rendered demo by Refik Karic.");
+  topPanelLabel->SetBackgroundColor(ZColors::WHITE);
+  topPanelLabel->SetHighlightColor(ZColors::YELLOW);
+  topPanelLabel->VerticalAlignment() = UIVerticalAlignment::Center;
+  topPanelLabel->HorizontalAlignment() = UIHorizontalAlignment::Center;
+
+  UILinearPanel* centerPanel = new UILinearPanel(width, height, "CenterPanel", UILinearFlow::Vertical);
+  centerPanel->AddItem(topPanelLabel);
+  centerPanel->HorizontalAlignment() = UIHorizontalAlignment::Center;
+  centerPanel->VerticalAlignment() = UIVerticalAlignment::Top;
+  centerPanel->SetGridRow(1);
+
   UILinearPanel* linearPanel1 = new UILinearPanel(width, height, "DemoPanel1", UILinearFlow::Vertical);
   linearPanel1->AddItem(labelText0);
   linearPanel1->HorizontalAlignment() = UIHorizontalAlignment::Left;
@@ -131,17 +144,20 @@ void FrontEnd::Load() {
   lowerGrid->AddItem(linearPanel2);
 
   UIGridColumn column0(1.f, "DemoColumn0");
-  UIGridRow row0(.9f, "DemoRow0");
-  UIGridRow row1(.1f, "DemoRow1");
+  UIGridRow row0(.7f, "DemoRow0");
+  UIGridRow row1(.2f, "DemoRow1");
+  UIGridRow row2(.1f, "DemoRow2");
 
   UIGrid* grid = new UIGrid(width, height, "DemoGrid");
   grid->AddItem(linearPanel0);
+  grid->AddItem(centerPanel);
   grid->AddItem(lowerGrid);
   grid->HorizontalAlignment() = UIHorizontalAlignment::Center;
   grid->VerticalAlignment() = UIVerticalAlignment::Center;
   grid->AddColumn(column0);
   grid->AddRow(row0);
   grid->AddRow(row1);
+  grid->AddRow(row2);
 
   mFrame = new UIFrame(width, height, grid);
 }

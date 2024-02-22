@@ -36,12 +36,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
       break;
     case UIHorizontalAlignment::Center:
     {
-      if (mItems.Size() > 1) {
-        currX += ((GetWidth() / 2) - (((mItems.Size() - 1) * mItemSpacing) / 2));
-      }
-      else {
-        currX += (GetWidth() / 2);
-      }
+      currX += (GetWidth() / 2);
     }
       break;
     case UIHorizontalAlignment::Right:
@@ -58,12 +53,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
       break;
     case UIVerticalAlignment::Center:
     {
-      if (mItems.Size() > 1) {
-        currY += ((GetHeight() / 2) - (((mItems.Size() - 1) * mItemSpacing) / 2));
-      }
-      else {
-        currY += (GetHeight() / 2);
-      }
+      currY += (GetHeight() / 2);
     }
       break;
     case UIVerticalAlignment::Bottom:
@@ -96,21 +86,35 @@ void UILinearPanel::Layout(size_t x, size_t y) {
 
     if (mHorizontalAlignment == UIHorizontalAlignment::Center) {
       size_t xOffset = 0;
+      size_t spacing = 0;
       for (UIBase* item : mItems) {
         xOffset += item->GetWidth();
+        spacing += mItemSpacing;
       }
 
-      xOffset = Min(currX, xOffset);
+      if (spacing > 0) {
+        spacing -= mItemSpacing;
+      }
+
+      xOffset = Clamp(xOffset, (size_t)0, mWidth);
       currX -= (xOffset / 2);
+      currX -= (spacing / 2);
     }
     else if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
       size_t xOffset = 0;
+      size_t spacing = 0;
       for (UIBase* item : mItems) {
         xOffset += item->GetWidth();
+        spacing += mItemSpacing;
       }
 
-      xOffset = Min(currX, xOffset);
+      if (spacing > 0) {
+        spacing -= mItemSpacing;
+      }
+
+      xOffset = Clamp(xOffset, (size_t)0, mWidth);
       currX -= xOffset;
+      currX -= spacing;
     }
 
     for (UIBase* item : mItems) {
@@ -148,21 +152,35 @@ void UILinearPanel::Layout(size_t x, size_t y) {
   else {
     if (mVerticalAlignment == UIVerticalAlignment::Center) {
       size_t yOffset = 0;
+      size_t spacing = 0;
       for (UIBase* item : mItems) {
         yOffset += item->GetHeight();
+        spacing += mItemSpacing;
       }
 
-      yOffset = Min(currY, yOffset);
+      if (spacing > 0) {
+        spacing -= mItemSpacing;
+      }
+
+      yOffset = Clamp(yOffset, (size_t)0, mHeight);
       currY -= (yOffset / 2);
+      currY -= (spacing / 2);
     }
     else if (mVerticalAlignment == UIVerticalAlignment::Bottom) {
       size_t yOffset = 0;
+      size_t spacing = 0;
       for (UIBase* item : mItems) {
         yOffset += item->GetHeight();
+        spacing += mItemSpacing;
       }
 
-      yOffset = Min(currY, yOffset);
+      if (spacing > 0) {
+        spacing -= mItemSpacing;
+      }
+
+      yOffset = Clamp(yOffset, (size_t)0, mHeight);
       currY -= yOffset;
+      currY -= spacing;
     }
 
     if (mHorizontalAlignment == UIHorizontalAlignment::Center) {

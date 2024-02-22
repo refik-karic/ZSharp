@@ -48,6 +48,8 @@ class UIGrid : public UIContainer {
 
   virtual void HitTest(int32 x, int32 y, bool mouseDown) override;
 
+  virtual void Resize(size_t width, size_t height) override;
+
   void AddItem(UIBase* item);
 
   void AddRow(const UIGridRow& row);

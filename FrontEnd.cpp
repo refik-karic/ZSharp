@@ -108,10 +108,10 @@ void FrontEnd::Load() {
   testButton1->SetBorderColor(ZColors::WHITE);
   testButton1->SetHighlightBorderColor(ZColors::BLUE);
 
-  UILinearPanel* linearPanel0 = new UILinearPanel(width, height, "DemoPanel0", UILinearFlow::Vertical);
+  UILinearPanel* linearPanel0 = new UILinearPanel(width, height, "DemoPanel0", UILinearFlow::Horizontal);
   linearPanel0->AddItem(testButton0);
   linearPanel0->AddItem(testButton1);
-  linearPanel0->SetSpacing(10);
+  linearPanel0->SetSpacing(100);
   linearPanel0->HorizontalAlignment() = UIHorizontalAlignment::Center;
   linearPanel0->VerticalAlignment() = UIVerticalAlignment::Center;
 

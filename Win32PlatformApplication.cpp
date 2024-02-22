@@ -297,7 +297,9 @@ void Win32PlatformApplication::OnTimer() {
 
   PauseTimer();
 
-  ApplyCursor(ZSharp::AppCursor::Arrow);
+  if (mCurrentCursor != ZSharp::AppCursor::Arrow) {
+    ApplyCursor(ZSharp::AppCursor::Arrow);
+  }
 
   RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {

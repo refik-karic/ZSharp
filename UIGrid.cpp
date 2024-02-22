@@ -116,6 +116,15 @@ void UIGrid::HitTest(int32 x, int32 y, bool mouseDown) {
   }
 }
 
+void UIGrid::Resize(size_t width, size_t height) {
+  SetWidth(width);
+  SetHeight(height);
+  
+  for (UIBase* item : mItems) {
+    item->Resize(width, height);
+  }
+}
+
 void UIGrid::AddItem(UIBase* item) {
   if (!mItems.Contains(item)) {
     mItems.Add(item);

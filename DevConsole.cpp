@@ -5,6 +5,7 @@
 #include "Delegate.h"
 #include "PlatformMemory.h"
 #include "PlatformIntrinsics.h"
+#include "PlatformMisc.h"
 #include "ZConfig.h"
 #include "ZColor.h"
 #include "PlatformApplication.h"
@@ -16,6 +17,10 @@
 namespace ZSharp {
 
 DevConsole::DevConsole() {
+  if (PlatformGetBuildType() == "Release") {
+    return;
+  }
+
   InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));
@@ -29,6 +34,10 @@ DevConsole::DevConsole() {
 }
 
 DevConsole::~DevConsole() {
+  if (PlatformGetBuildType() == "Release") {
+    return;
+  }
+
   InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));

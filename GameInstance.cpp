@@ -179,18 +179,19 @@ void GameInstance::TickFrontEnd() {
   InputManager& inputManager = InputManager::Get();
   inputManager.Process();
 
-  // TODO: We should handle front end unload more gracefully.
-  if (!mFrontEnd.IsVisible()) {
-    return;
-  }
-
-  ZColor color(ZColors::BLACK);
-  mRenderer.ClearFramebuffer(color);
+  ZColor clearColor(ZColors::BLACK);
+  mRenderer.ClearFramebuffer(clearColor);
 
   Framebuffer& framebuffer = mRenderer.GetFrameBuffer();
   uint8* buffer = mRenderer.GetFrame();
   size_t width = framebuffer.GetWidth();
   size_t height = framebuffer.GetHeight();
+
+  if (!mFrontEnd.IsVisible()) {
+    ZColor loadColor(ZColors::WHITE);
+    DrawText("LOADING WORLD", width / 2, height / 2, buffer, width, loadColor);
+    return;
+  }
 
   mFrontEnd.Draw(buffer, width, height);
 }

@@ -56,7 +56,6 @@ class GameInstance final {
   bool mDrawStats = true;
   bool mVisualizeDepth = false;
 
-  // TODO: ifdef this out in release builds at some point.
   DevConsole mDevConsole;
 
   void PauseTransforms();

@@ -77,6 +77,10 @@ int* CPUIDSectionBrand() {
   return buffer;
 }
 
+FORCE_INLINE __m256i Not256(const __m256i v) {
+  return _mm256_xor_si256(_mm256_cmpeq_epi32(v, v), v);
+}
+
 FORCE_INLINE __m128 Lerp128(__m128 x1, __m128 x2, __m128 t) {
   __m128 mulResult = _mm_mul_ps(t, x2);
   __m128 subResult = _mm_sub_ps(_mm_set_ps1(1.f), t);
@@ -840,7 +844,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
             // If all mask bits are set then none of these pixels are inside the triangle.
             if (combinedMask != 0xFF) {
-              __m256i pixelVec = _mm256_load_si256((__m256i*)pixels);
               __m256 depthVec = _mm256_load_ps(pixelDepth);
 
               __m256 weightedVerts0 = z0;
@@ -878,10 +881,9 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               finalColor = _mm256_or_epi32(finalColor, gValues);
               finalColor = _mm256_or_epi32(finalColor, bValues);
 
-              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(finalColor), _mm256_castsi256_ps(pixelVec), _mm256_castsi256_ps(finalCombinedMask)));
               __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, _mm256_castsi256_ps(finalCombinedMask));
 
-              _mm256_store_si256((__m256i*)pixels, writebackColor);
+              _mm256_maskstore_epi32((int*)pixels, Not256(finalCombinedMask), finalColor);
               _mm256_store_ps(pixelDepth, writebackDepth);
             }
 
@@ -1333,7 +1335,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
             // If all mask bits are set then none of these pixels are inside the triangle.
             if (combinedMask != 0xFF) {
-              __m256i pixelVec = _mm256_load_si256((__m256i*)pixels);
               __m256 depthVec = _mm256_load_ps(pixelDepth);
 
               __m256 weightedVerts0 = z0;
@@ -1384,10 +1385,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               //  This memory read is by far the biggest bottleneck here.
               __m256i loadedColors = _mm256_i32gather_epi32(textureData, colorValues, 4);
 
-              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(loadedColors), _mm256_castsi256_ps(pixelVec), _mm256_castsi256_ps(finalCombinedMask)));
               __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, _mm256_castsi256_ps(finalCombinedMask));
 
-              _mm256_store_si256((__m256i*)pixels, writebackColor);
+              _mm256_maskstore_epi32((int*)pixels, Not256(finalCombinedMask), loadedColors);
               _mm256_store_ps(pixelDepth, writebackDepth);
             }
 

@@ -824,7 +824,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
         __m256 oneValue = _mm256_set1_ps(1.f);
         __m256i initialColor = _mm256_set1_epi32(0xFF000000);
-        __m256i blendMaskShift = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m256 weights0 = weightInit0;
@@ -836,10 +835,11 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
           for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
             // OR all weights and fetch the sign bits
-            int32 combinedMask = _mm256_movemask_ps(_mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2));
+            __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
+            int32 combinedMask = _mm256_movemask_ps(combinedWeights);
 
             // If all mask bits are set then none of these pixels are inside the triangle.
-            if ((combinedMask & 0xFF) != 0xFF) {
+            if (combinedMask != 0xFF) {
               __m256i pixelVec = _mm256_load_si256((__m256i*)pixels);
               __m256 depthVec = _mm256_load_ps(pixelDepth);
 
@@ -850,10 +850,9 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m256 invZValues = _mm256_div_ps(oneValue, zValues);
 
-              __m256 depthMask = _mm256_cmp_ps(depthVec, zValues, _CMP_LT_OQ);
-              int32 finalDepthMask = _mm256_movemask_ps(depthMask);
+              __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-              int32 finalCombinedMask = combinedMask | finalDepthMask;
+              __m256i finalCombinedMask = _mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask));
 
               __m256 weightedAttr00 = _mm256_mul_ps(r0, invZValues);
               __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues);
@@ -879,10 +878,8 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               finalColor = _mm256_or_epi32(finalColor, gValues);
               finalColor = _mm256_or_epi32(finalColor, bValues);
 
-              __m256 variableBlendMask = _mm256_castsi256_ps(_mm256_sllv_epi32(_mm256_set1_epi32(finalCombinedMask), blendMaskShift));
-
-              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(finalColor), _mm256_castsi256_ps(pixelVec), variableBlendMask));
-              __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, variableBlendMask);
+              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(finalColor), _mm256_castsi256_ps(pixelVec), _mm256_castsi256_ps(finalCombinedMask)));
+              __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, _mm256_castsi256_ps(finalCombinedMask));
 
               _mm256_store_si256((__m256i*)pixels, writebackColor);
               _mm256_store_ps(pixelDepth, writebackDepth);
@@ -1082,7 +1079,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
         __m128 oneValue = _mm_set_ps1(1.f);
         __m128i initialColor = _mm_set1_epi32(0xFF00);
-        __m128i andMask = _mm_set1_epi32(0x80000000);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m128 weights0 = weightInit0;
@@ -1094,10 +1090,11 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
           for (int32 w = minX; w < maxX; w += 4, pixels += 4, pixelDepth += 4) {
             // Fetch all sign bits and OR them together
-            int32 combinedMask = _mm_movemask_ps(_mm_or_ps(_mm_or_ps(weights0, weights1), weights2));
+            __m128 combinedWeights = _mm_or_ps(_mm_or_ps(weights0, weights1), weights2);
+            int32 combinedMask = _mm_movemask_ps(combinedWeights);
 
             // If all mask bits are set then none of these pixels are inside the triangle.
-            if ((combinedMask & 0x0F) != 0x0F) {
+            if (combinedMask != 0x0F) {
               // Our 4-wide alignment doesn't match at the moment. Possibly revisit in the future.
               __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
               __m128 depthVec = _mm_loadu_ps(pixelDepth);
@@ -1109,10 +1106,9 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m128 invZValues = _mm_div_ps(oneValue, zValues);
 
-              __m128 depthMask = _mm_cmp_ps(depthVec, zValues, _CMP_LT_OQ);
-              int32 finalDepthMask = _mm_movemask_ps(depthMask);
+              __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-              int32 finalCombinedMask = combinedMask | finalDepthMask;
+              __m128i finalCombinedMask = _mm_or_epi32(_mm_castps_si128(combinedWeights), _mm_castps_si128(depthMask));
 
               __m128 weightedAttr00 = _mm_mul_ps(r0, invZValues);
               __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, r1r0), invZValues);
@@ -1137,14 +1133,8 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               finalColor = _mm_slli_epi32(finalColor, 0x08);
               finalColor = _mm_or_epi32(finalColor, bValues);
 
-              __m128 variableBlendMask = _mm_castsi128_ps(
-                _mm_and_epi32(_mm_set_epi32(
-                  (finalCombinedMask << 28), (finalCombinedMask << 29),
-                  (finalCombinedMask << 30), (finalCombinedMask << 31)),
-                  andMask));
-
-              __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(finalColor), _mm_castsi128_ps(pixelVec), variableBlendMask));
-              __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, variableBlendMask);
+              __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(finalColor), _mm_castsi128_ps(pixelVec), _mm_castsi128_ps(finalCombinedMask)));
+              __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, _mm_castsi128_ps(finalCombinedMask));
 
               _mm_storeu_si128((__m128i*)pixels, writebackColor);
               _mm_storeu_ps(pixelDepth, writebackDepth);
@@ -1325,7 +1315,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
         __m256 minValue = _mm256_setzero_ps();
         __m256 oneValue = _mm256_set1_ps(1.f);
-        __m256i blendMaskShift = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
 
         int32* textureData = (int32*)texture->Data();
 
@@ -1339,10 +1328,11 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
           for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
             // OR all weights and fetch the sign bits
-            int32 combinedMask = _mm256_movemask_ps(_mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2));
+            __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
+            int32 combinedMask = _mm256_movemask_ps(combinedWeights);
 
             // If all mask bits are set then none of these pixels are inside the triangle.
-            if ((combinedMask & 0xFF) != 0xFF) {
+            if (combinedMask != 0xFF) {
               __m256i pixelVec = _mm256_load_si256((__m256i*)pixels);
               __m256 depthVec = _mm256_load_ps(pixelDepth);
 
@@ -1353,10 +1343,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m256 invZValues = _mm256_div_ps(oneValue, zValues);
 
-              __m256 depthMask = _mm256_cmp_ps(depthVec, zValues, _CMP_LT_OQ);
-              int32 finalDepthMask = _mm256_movemask_ps(depthMask);
+              __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-              int32 finalCombinedMask = combinedMask | finalDepthMask;
+              __m256i finalCombinedMask = _mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask));
 
               __m256 weightedAttr00 = _mm256_mul_ps(u0, invZValues);
               __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues);
@@ -1395,9 +1384,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               //  This memory read is by far the biggest bottleneck here.
               __m256i loadedColors = _mm256_i32gather_epi32(textureData, colorValues, 4);
 
-              __m256 variableBlendMask = _mm256_castsi256_ps(_mm256_sllv_epi32(_mm256_set1_epi32(finalCombinedMask), blendMaskShift));
-              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(loadedColors), _mm256_castsi256_ps(pixelVec), variableBlendMask));
-              __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, variableBlendMask);
+              __m256i writebackColor = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(loadedColors), _mm256_castsi256_ps(pixelVec), _mm256_castsi256_ps(finalCombinedMask)));
+              __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, _mm256_castsi256_ps(finalCombinedMask));
 
               _mm256_store_si256((__m256i*)pixels, writebackColor);
               _mm256_store_ps(pixelDepth, writebackDepth);
@@ -1573,7 +1561,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
         __m128 minValue = _mm_setzero_ps();
         __m128 oneValue = _mm_set_ps1(1.f);
-        __m128i andMask = _mm_set1_epi32(0x80000000);
 
         uint32* textureData = (uint32*)texture->Data();
 
@@ -1587,7 +1574,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
           for (int32 w = minX; w < maxX; w += 4, pixels += 4, pixelDepth += 4) {
             // Fetch all sign bits and OR them together
-            int32 combinedMask = _mm_movemask_ps(_mm_or_ps(_mm_or_ps(weights0, weights1), weights2));
+            __m128 combinedWeights = _mm_or_ps(_mm_or_ps(weights0, weights1), weights2);
+            int32 combinedMask = _mm_movemask_ps(combinedWeights);
 
             // If all mask bits are set then none of these pixels are inside the triangle.
             if ((combinedMask & 0x0F) != 0x0F) {
@@ -1602,10 +1590,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
               __m128 invZValues = _mm_div_ps(oneValue, zValues);
 
-              __m128 depthMask = _mm_cmp_ps(depthVec, zValues, _CMP_LT_OQ);
-              int32 finalDepthMask = _mm_movemask_ps(depthMask);
+              __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-              int32 finalCombinedMask = combinedMask | finalDepthMask;
+              __m128i finalCombinedMask = _mm_or_epi32(_mm_castps_si128(combinedWeights), _mm_castps_si128(depthMask));
 
               __m128 weightedAttr00 = _mm_mul_ps(u0, invZValues);
               __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, u1u0), invZValues);
@@ -1637,14 +1624,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
               __m128i loadedColors = _mm_set_epi32(textureData[colorValues.m128i_u32[3]], textureData[colorValues.m128i_u32[2]], textureData[colorValues.m128i_u32[1]], textureData[colorValues.m128i_u32[0]]);
 
-              __m128 variableBlendMask = _mm_castsi128_ps(
-                _mm_and_epi32(_mm_set_epi32(
-                  (finalCombinedMask << 28), (finalCombinedMask << 29),
-                  (finalCombinedMask << 30), (finalCombinedMask << 31)),
-                  andMask));
-
-              __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(loadedColors), _mm_castsi128_ps(pixelVec), variableBlendMask));
-              __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, variableBlendMask);
+              __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(loadedColors), _mm_castsi128_ps(pixelVec), _mm_castsi128_ps(finalCombinedMask)));
+              __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, _mm_castsi128_ps(finalCombinedMask));
 
               _mm_storeu_si128((__m128i*)pixels, writebackColor);
               _mm_storeu_ps(pixelDepth, writebackDepth);

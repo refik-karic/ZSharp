@@ -89,9 +89,8 @@ FORCE_INLINE __m128 Lerp128(__m128 x1, __m128 x2, __m128 t) {
 }
 
 FORCE_INLINE __m256 Lerp256(__m256 x1, __m256 x2, __m256 t) {
-  __m256 mulResult = _mm256_mul_ps(t, x2);
   __m256 subResult = _mm256_sub_ps(_mm256_set1_ps(1.f), t);
-  __m256 result = _mm256_add_ps(mulResult, _mm256_mul_ps(subResult, x1));
+  __m256 result = _mm256_fmadd_ps(t, x2, _mm256_mul_ps(subResult, x1));
   return result;
 }
 

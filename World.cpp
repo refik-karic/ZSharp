@@ -331,8 +331,6 @@ void World::LoadOBJ(Model& model, Asset& asset) {
     isTextureMapped = false;
   }
 
-  const int32 textureStride = 2;
-
   if (isTextureMapped) {
     Bundle& bundle = Bundle::Get();
     Asset* textureAsset = bundle.GetAsset(objFile.AlbedoTexture());
@@ -359,50 +357,58 @@ void World::LoadOBJ(Model& model, Asset& asset) {
   mesh.Resize(vertSize, indexSize);
 
   if (isTextureMapped) {
-    const int32 scratchSize = 6;
-    float vertex[scratchSize];
+    const int32 numVerts = (int32)objFile.Verts().Size();
+    const float* vertData = (const float*)objFile.Verts().GetData();
+    const float* uvData = (const float*)objFile.UVs().GetData();
 
-    for (int32 i = 0; i < objFile.Verts().Size(); ++i) {
-      const Vec4& vector = objFile.Verts()[i];
-      ZAssert(FloatEqual(vector[3], 1.f));
+    for (int32 i = 0; i < numVerts; ++i) {
+      ZAssert(vertData[3] == 1.f);
 
-      memcpy(vertex, reinterpret_cast<const float*>(&vector), sizeof(Vec4));
-      memcpy(vertex + 4, &objFile.UVs()[i], textureStride * sizeof(float));
+      const size_t index = i * stride;
 
-      mesh.SetData(vertex, i * stride, stride * sizeof(float));
+      mesh.SetData(vertData, index, 4 * sizeof(float));
+      mesh.SetData(uvData, index + 4, 2 * sizeof(float));
+
+      vertData += 4;
+      uvData += 3;
     }
   }
   else {
-    const int32 scratchSize = 7;
-    float vertex[scratchSize];
-
-    // Assign 
     const float R[] = { 1.f, 0.f, 0.f };
     const float G[] = { 0.f, 1.f, 0.f };
     const float B[] = { 0.f, 0.f, 1.f };
-    for (int32 i = 0, triIndex = 0; i < objFile.Verts().Size(); ++i) {
-      const Vec4& vector = objFile.Verts()[i];
-      ZAssert(FloatEqual(vector[3], 1.f));
 
-      memcpy(vertex, reinterpret_cast<const float*>(&vector), sizeof(Vec4));
+    const int32 numVerts = (int32)objFile.Verts().Size();
+    const float* vertData = (const float*)objFile.Verts().GetData();
+
+    for (int32 i = 0, triIndex = 0; i < numVerts; ++i) {
+      ZAssert(vertData[3] == 1.f);
+
+      const size_t index = i * 7;
+      mesh.SetData(vertData, index, 4 * sizeof(float));
 
       switch (triIndex % 3) {
         case 0:
-          memcpy(vertex + 4, R, sizeof(R));
+        {
+          mesh.SetData(R, index + 4, sizeof(R));
+        }
           break;
         case 1:
-          memcpy(vertex + 4, G, sizeof(G));
+        {
+          mesh.SetData(G, index + 4, sizeof(G));
+        }
           break;
         case 2:
-          memcpy(vertex + 4, B, sizeof(B));
+        {
+          mesh.SetData(B, index + 4, sizeof(B));
+        }
           break;
         default:
           break;
       }
 
+      vertData += 4;
       triIndex++;
-
-      mesh.SetData(vertex, i * stride, stride * sizeof(float));
     }
   }
 

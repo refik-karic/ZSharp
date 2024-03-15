@@ -1,6 +1,7 @@
 #include "Texture.h"
 
 #include "PlatformMemory.h"
+#include "PlatformIntrinsics.h"
 
 #include "ZAssert.h"
 
@@ -62,18 +63,7 @@ uint8* Texture::Data() const {
 
 uint8* InsertAlphaChannel(uint8* data, size_t width, size_t height) {
   uint8* alphaImage = (uint8*)PlatformMalloc(width * height * 4);
-
-  for (size_t h = 0; h < height; ++h) {
-    uint8* inPtr = data + (h * width * 3);
-    uint8* outPtr = alphaImage + (h * width * 4);
-    for (size_t w = 0; w < width; ++w, inPtr += 3, outPtr += 4) {
-      outPtr[0] = inPtr[0];
-      outPtr[1] = inPtr[1];
-      outPtr[2] = inPtr[2];
-      outPtr[3] = 0xFF;
-    }
-  }
-
+  Unaligned_BGRToBGRA(data, alphaImage, width * height * 3);
   PlatformFree(data);
   return alphaImage;
 }

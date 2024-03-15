@@ -53,6 +53,8 @@ float Unaligned_128MulSum(const float* a, const float* b);
 
 void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result);
 
+void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes);
+
 void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height);
 
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride, int32 length);

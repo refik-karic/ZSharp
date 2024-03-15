@@ -3,6 +3,8 @@
 #include "PNG.h"
 #include "JPEG.h"
 
+#include "ScopedTimer.h"
+
 namespace ZSharp {
 
 TexturePool& TexturePool::Get() {

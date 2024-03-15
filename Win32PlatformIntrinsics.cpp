@@ -266,6 +266,69 @@ void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result) {
   _mm_store_ps(result + 12, _mm_add_ps(_mm_add_ps(_mm_add_ps(result12, result13), result14), result15));
 }
 
+void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    // [BGRB, GRBG, RBGR, BGRB, GRBG, RBGR, BGRB, GRBG] => [BGRA, BGRA, BGRA, BGRA, BGRA, BGRA, BGRA, BGRA]
+    __m256i shuffleOrder = _mm256_set_epi8(
+      23, 23, 22, 21,
+      20, 20, 19, 18,
+      17, 17, 16, 15,
+      14, 14, 13, 12,
+      11, 11, 10, 9,
+      8, 8, 7, 6,
+      5, 5, 4, 3,
+      2, 2, 1, 0);
+
+    size_t i = 0;
+    size_t j = 0;
+    __m256i alpha = _mm256_set1_epi32(0xFF000000);
+    __m256i alphaMask = _mm256_set1_epi32(0x00FFFFFF);
+
+    for (; (i + 8) < rgbBytes; i += 6, j += 8) {
+      __m256i inData = _mm256_lddqu_si256((__m256i*)(rgb + i));
+      __m256i shuffledPixels = _mm256_shuffle_epi8(inData, shuffleOrder);
+      shuffledPixels = _mm256_and_si256(shuffledPixels, alphaMask);
+      shuffledPixels = _mm256_or_si256(shuffledPixels, alpha);
+      _mm256_storeu_si256((__m256i*)(rgba + j), shuffledPixels);
+    }
+
+    for (; i < rgbBytes; i += 3, j += 4) {
+      rgba[j] = rgb[i];
+      rgba[j + 1] = rgb[i + 1];
+      rgba[j + 2] = rgb[i + 2];
+      rgba[j + 3] = 0xFF;
+    }
+  }
+  else {
+    // [BGRB, GRBG, RBGR, BGRB] => [BGRA, BGRA, BGRA, BGRA]
+    __m128i shuffleOrder = _mm_set_epi8(
+      11, 11, 10, 9,
+      8, 8, 7, 6,
+      5, 5, 4, 3,
+      2, 2, 1, 0);
+
+    size_t i = 0;
+    size_t j = 0;
+    __m128i alpha = _mm_set1_epi32(0xFF000000);
+    __m128i alphaMask = _mm_set1_epi32(0x00FFFFFF);
+
+    for (; (i + 4) < rgbBytes; i += 3, j += 4) {
+      __m128i inData = _mm_lddqu_si128((__m128i*)(rgb + i));
+      __m128i shuffledPixels = _mm_shuffle_epi8(inData, shuffleOrder);
+      shuffledPixels = _mm_and_si128(shuffledPixels, alphaMask);
+      shuffledPixels = _mm_or_si128(shuffledPixels, alpha);
+      _mm_storeu_si128((__m128i*)(rgba + j), shuffledPixels);
+    }
+
+    for (; i < rgbBytes; i += 3, j += 4) {
+      rgba[j] = rgb[i];
+      rgba[j + 1] = rgb[i + 1];
+      rgba[j + 2] = rgb[i + 2];
+      rgba[j + 3] = 0xFF;
+    }
+  }
+}
+
 void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     __m256i shuffleOrder = _mm256_set_epi8(

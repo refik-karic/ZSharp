@@ -30,12 +30,15 @@
 
 #include "PlatformMemory.h"
 #include "ZAssert.h"
+#include "PlatformIntrinsics.h"
 
 #include <string.h>
 #include <algorithm>
 
 #include <intrin.h>
 #include <immintrin.h>
+
+#define JPGD_USE_SSE2 1
 
 #ifdef PLATFORM_WINDOWS
 #pragma warning (disable : 4611) // warning C4611: interaction between '_setjmp' and C++ object destruction is non-portable
@@ -3353,7 +3356,8 @@ unsigned char* decompress_jpeg_image_from_stream(jpeg_decoder_stream* pStream, i
 
     uint8* pDst = pImage_data + y * dst_bpl;
 
-    if (((req_comps == 1) && (decoder.get_num_components() == 1)) || ((req_comps == 4) && (decoder.get_num_components() == 3)))
+    //if (((req_comps == 1) && (decoder.get_num_components() == 1)) || ((req_comps == 4) && (decoder.get_num_components() == 3)))
+    if ((req_comps == 1) && (decoder.get_num_components() == 1))
       memcpy(pDst, pScan_line, dst_bpl);
     else if (decoder.get_num_components() == 1) {
       if (req_comps == 3) {
@@ -3384,6 +3388,26 @@ unsigned char* decompress_jpeg_image_from_stream(jpeg_decoder_stream* pStream, i
           int g = pScan_line[x * 4 + 1];
           int b = pScan_line[x * 4 + 2];
           *pDst++ = static_cast<uint8>((r * YR + g * YG + b * YB + 32768) >> 16);
+        }
+      }
+      else if (req_comps == 4) {
+        switch (order) {
+          case ChannelOrderJPG::RGB:
+          {
+            for (int x = 0; x < image_width; x++) {
+              pDst[0] = pScan_line[x * 4 + 0];
+              pDst[1] = pScan_line[x * 4 + 1];
+              pDst[2] = pScan_line[x * 4 + 2];
+              pDst[3] = 0xFF;
+              pDst += 4;
+            }
+          }
+          break;
+          case ChannelOrderJPG::BGR:
+          {
+            Unaligned_RGBXToBGRA(pScan_line, pDst, dst_bpl);
+          }
+          break;
         }
       }
       else {
@@ -3465,8 +3489,12 @@ uint8* JPEG::Decompress(ChannelOrderJPG order) {
     return nullptr;
   }
 
+  // We want to enforce 4 channel BGRA format even if JPEG doesn't specifically support that.
+  // This lets us do the channel swap and alpha insertion during decoding so we don't have to do an additional pass afterwards.
   jpeg_decoder_mem_stream mem_stream(mDataPtr, (uint32)mFileSize);
-  return decompress_jpeg_image_from_stream(&mem_stream, &mWidth, &mHeight, &mChannels, 3, order, 0);
+  uint8* decompressedData = decompress_jpeg_image_from_stream(&mem_stream, &mWidth, &mHeight, &mChannels, 4, order, 0);
+  mChannels = 4;
+  return decompressedData;
 }
 
 size_t JPEG::GetWidth() const {

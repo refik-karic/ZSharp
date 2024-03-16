@@ -266,6 +266,65 @@ void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result) {
   _mm_store_ps(result + 12, _mm_add_ps(_mm_add_ps(_mm_add_ps(result12, result13), result14), result15));
 }
 
+void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    // [RGBX, RGBX, RGBX, RGBX, RGBX, RGBX, RGBX, RGBX] => [BGRA, BGRA, BGRA, BGRA, BGRA, BGRA, BGRA, BGRA]
+    __m256i shuffleOrder = _mm256_set_epi8(
+      31, 28, 29, 30,
+      27, 24, 25, 26,
+      23, 20, 21, 22,
+      19, 16, 17, 18,
+      15, 12, 13, 14,
+      11, 8, 9, 10,
+      7, 4, 5, 6,
+      3, 0, 1, 2);
+
+    size_t i = 0;
+    size_t j = 0;
+    __m256i alpha = _mm256_set1_epi32(0xFF000000);
+
+    for (; (j + 8) < rgbBytes; i += 8, j += 8) {
+      __m256i inData = _mm256_lddqu_si256((__m256i*)(rgb + i));
+      __m256i shuffledPixels = _mm256_shuffle_epi8(inData, shuffleOrder);
+      shuffledPixels = _mm256_or_si256(shuffledPixels, alpha);
+      _mm256_storeu_si256((__m256i*)(rgba + j), shuffledPixels);
+    }
+
+    for (; i < rgbBytes; i += 4, j += 4) {
+      rgba[j] = rgb[i + 2];
+      rgba[j + 1] = rgb[i + 1];
+      rgba[j + 2] = rgb[i];
+      rgba[j + 3] = 0xFF;
+    }
+  }
+  else {
+    // [RGBX, RGBX, RGBX, RGBX] => [BGRA, BGRA, BGRA, BGRA]
+    __m128i shuffleOrder = _mm_set_epi8(
+      15, 12, 13, 14,
+      11, 8, 9, 10,
+      7, 4, 5, 6,
+      3, 0, 1, 2);
+
+    size_t i = 0;
+    size_t j = 0;
+    __m128i alpha = _mm_set1_epi32(0xFF000000);
+
+    for (; (i + 4) < rgbBytes; i += 4, j += 4) {
+      __m128i inData = _mm_lddqu_si128((__m128i*)(rgb + i));
+      __m128i shuffledPixels = _mm_shuffle_epi8(inData, shuffleOrder);
+      shuffledPixels = _mm_or_si128(shuffledPixels, alpha);
+      _mm_storeu_si128((__m128i*)(rgba + j), shuffledPixels);
+    }
+
+    for (; i < rgbBytes; i += 4, j += 4) {
+      rgba[j] = rgb[i + 2];
+      rgba[j + 1] = rgb[i + 1];
+      rgba[j + 2] = rgb[i];
+      rgba[j + 3] = 0xFF;
+    }
+  }
+}
+
 void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     // [BGRB, GRBG, RBGR, BGRB, GRBG, RBGR, BGRB, GRBG] => [BGRA, BGRA, BGRA, BGRA, BGRA, BGRA, BGRA, BGRA]
@@ -282,12 +341,10 @@ void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t i = 0;
     size_t j = 0;
     __m256i alpha = _mm256_set1_epi32(0xFF000000);
-    __m256i alphaMask = _mm256_set1_epi32(0x00FFFFFF);
 
     for (; (i + 8) < rgbBytes; i += 6, j += 8) {
       __m256i inData = _mm256_lddqu_si256((__m256i*)(rgb + i));
       __m256i shuffledPixels = _mm256_shuffle_epi8(inData, shuffleOrder);
-      shuffledPixels = _mm256_and_si256(shuffledPixels, alphaMask);
       shuffledPixels = _mm256_or_si256(shuffledPixels, alpha);
       _mm256_storeu_si256((__m256i*)(rgba + j), shuffledPixels);
     }
@@ -310,12 +367,10 @@ void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t i = 0;
     size_t j = 0;
     __m128i alpha = _mm_set1_epi32(0xFF000000);
-    __m128i alphaMask = _mm_set1_epi32(0x00FFFFFF);
 
     for (; (i + 4) < rgbBytes; i += 3, j += 4) {
       __m128i inData = _mm_lddqu_si128((__m128i*)(rgb + i));
       __m128i shuffledPixels = _mm_shuffle_epi8(inData, shuffleOrder);
-      shuffledPixels = _mm_and_si128(shuffledPixels, alphaMask);
       shuffledPixels = _mm_or_si128(shuffledPixels, alpha);
       _mm_storeu_si128((__m128i*)(rgba + j), shuffledPixels);
     }

@@ -15,12 +15,16 @@
 #include <immintrin.h>
 #include <intrin.h>
 
+#include "Common.h"
+
 int* CPUIDSection00() {
   static int buffer[4] = {};
 
   if (buffer[0] == 0) {
     __cpuid(buffer, 0x00);
 
+    // Note: GenuineIntel is not written as expected so we need to swap the last couple DWORDS
+    ZSharp::Swap(buffer[3], buffer[2]);
     // [0] = EAX
     // [1] = EBX
     // [2] = ECX
@@ -147,24 +151,12 @@ size_t PlatformAlignmentGranularity() {
 }
 
 String PlatformCPUVendor() {
-  String vendor;
-
-  const char* vendorString = (const char*)CPUIDSection00() + 4;
-  vendor.Append(vendorString, 0, 4);
-  vendor.Append(vendorString, 8, 4);
-  vendor.Append(vendorString, 4, 4);
-
+  String vendor((const char*)(CPUIDSection00() + 1), 0, 12);
   return vendor;
 }
 
 String PlatformCPUBrand() {
-  String brand;
-
-  const char* brandString = (const char*)CPUIDSectionBrand();
-  brand.Append(brandString, 0, 16);
-  brand.Append(brandString, 16, 16);
-  brand.Append(brandString, 32, 16);
-
+  String brand((const char*)CPUIDSectionBrand(), 0, 48);
   return brand;
 }
 

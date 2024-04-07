@@ -1,14 +1,12 @@
 #pragma once
 
-#include "ZAssert.h"
 #include "ZBaseTypes.h"
-
-#include <cstring>
+#include "ZAssert.h"
 
 namespace ZSharp {
 
-template<typename T, size_t N>
-class FixedArray final {
+template<typename T>
+class Span final {
   public:
 
   class Iterator {
@@ -46,25 +44,20 @@ class FixedArray final {
     T* mPtr;
   };
 
-  FixedArray() = default;
+  Span(const T* data, size_t size) 
+    : mData(data), mSize(size) {
 
-  FixedArray(const T& value) {
-    for (size_t i = 0; i < N; ++i) {
-      mData[i] = value;
-    }
   }
 
-  FixedArray(const FixedArray& rhs) {
-    for (size_t i = 0; i < N; ++i) {
-      mData[i] = rhs.mData[i];
-    }
+  Span(const Span& rhs) 
+    : mData(rhs.mData), mSize(rhs.mSize) {
+
   }
 
-  void operator=(const FixedArray& rhs) {
+  void operator=(const Span& rhs) {
     if (&rhs != this) {
-      for (size_t i = 0; i < N; ++i) {
-        mData[i] = rhs.mData[i];
-      }
+      mData = rhs.mData;
+      mSize = rhs.mSize;
     }
   }
 
@@ -87,19 +80,7 @@ class FixedArray final {
   }
 
   size_t Size() const {
-    return N;
-  }
-
-  void Clear() {
-    for (size_t i = 0; i < N; ++i) {
-      mData[i] = T();
-    }
-  }
-
-  void Fill(const T& value) {
-    for (size_t i = 0; i < N; ++i) {
-      mData[i] = value;
-    }
+    return mSize;
   }
 
   Iterator begin() const {
@@ -107,11 +88,12 @@ class FixedArray final {
   }
 
   Iterator end() const {
-    return Iterator(mData + N);
+    return Iterator(mData + mSize);
   }
 
   private:
-  T mData[N];
+  T* mData = nullptr;
+  size_t mSize = 0;
 };
 
 }

@@ -61,6 +61,7 @@ set(ZSharp_Header_Files
     ScopedTimer.h
     Serializer.h
     ShadingMode.h
+    Span.h
     Stack.h
     Texture.h
     TexturePool.h

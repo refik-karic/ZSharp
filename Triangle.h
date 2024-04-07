@@ -26,7 +26,7 @@ class Triangle final {
   const int32* GetData() const;
 
   private:
-  int32 mIndicies[TRI_VERTS] = {0, 0, 0};
+  int32 mIndicies[TRI_VERTS] = {};
 };
 
 }

@@ -1,9 +1,8 @@
 #include "InputManager.h"
 
 namespace ZSharp {
-InputManager::InputManager() {
-  mKeyboard.Fill(KeyState::Clear);
-  mMiscKeys.Fill(KeyState::Clear);
+InputManager::InputManager()
+  : mKeyboard(KeyState::Clear), mMiscKeys(KeyState::Clear) {
 }
 
 InputManager& InputManager::Get() {

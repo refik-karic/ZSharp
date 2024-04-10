@@ -196,6 +196,12 @@ class jpeg_decoder
     char m_data[1];
   };
 
+  enum class simd_version {
+    NONE, // NO SIMD
+    SSE2, // Original
+    AVX2  // Gather/Scatter support
+  };
+
   jmp_buf m_jmp_state;
   uint32 m_flags;
   mem_block* m_pMem_blocks;
@@ -276,7 +282,7 @@ class jpeg_decoder
   bool m_ready_flag;
   bool m_eof_flag;
   bool m_sample_buf_prev_valid;
-  bool m_has_sse2;
+  simd_version m_simd;
 
   inline int check_sample_buf_ofs(int ofs) const;
   void free_all_blocks();

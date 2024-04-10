@@ -1627,16 +1627,18 @@ void jpeg_decoder::init(jpeg_decoder_stream* pStream, uint32 flags) {
   for (int i = 0; i < JPGD_MAX_BLOCKS_PER_MCU; i++)
     m_mcu_block_max_zag[i] = 64;
 
-  m_has_sse2 = false;
+  m_simd = simd_version::NONE;
 
 #if JPGD_USE_SSE2
 #ifdef _MSC_VER
   int cpu_info[4];
   __cpuid(cpu_info, 1);
-  const int cpu_info3 = cpu_info[3];
-  m_has_sse2 = ((cpu_info3 >> 26U) & 1U) != 0U;
+  m_simd = ((cpu_info[3] >> 26U) & 1U) != 0U ? simd_version::SSE2 : simd_version::NONE;
+
+  __cpuid(cpu_info, 7);
+  m_simd = ((cpu_info[1] >> 5) & 1U) != 0U ? simd_version::AVX2 : m_simd;
 #else
-  m_has_sse2 = true;
+  m_simd = simd_version::SSE2;
 #endif
 #endif
 }
@@ -1684,7 +1686,7 @@ void jpeg_decoder::transform_mcu(int mcu_row) {
   uint8* pDst_ptr = m_pSample_buf + mcu_row * m_blocks_per_mcu * 64;
 
   for (int mcu_block = 0; mcu_block < m_blocks_per_mcu; mcu_block++) {
-    idct(pSrc_ptr, pDst_ptr, m_mcu_block_max_zag[mcu_block], ((m_flags & cFlagDisableSIMD) == 0) && m_has_sse2);
+    idct(pSrc_ptr, pDst_ptr, m_mcu_block_max_zag[mcu_block], ((m_flags & cFlagDisableSIMD) == 0) && (m_simd != simd_version::NONE));
     pSrc_ptr += 64;
     pDst_ptr += 64;
   }
@@ -1917,7 +1919,90 @@ void jpeg_decoder::H1V1Convert() {
   uint8* s = m_pSample_buf + row * 8;
 
 #if JPGD_USE_SSE2
-  if (m_has_sse2) {
+  if (m_simd == simd_version::AVX2) {
+    __m256i zero = _mm256_setzero_si256();
+    __m256i maxClamp = _mm256_set1_epi32(255);
+    __m256i resultInit = _mm256_set1_epi32(0xFF000000);
+    __m256i shortMask = _mm256_set1_epi32(0x0000FFFF);
+
+    for (int i = m_max_mcus_per_row; i > 0; i--) {
+      __m256i y = _mm256_set_epi32(
+        s[7], 
+        s[6], 
+        s[5], 
+        s[4], 
+        s[3], 
+        s[2], 
+        s[1], 
+        s[0]);
+
+      __m256i mCrr = _mm256_set_epi32(
+        m_crr[s[135]], 
+        m_crr[s[134]], 
+        m_crr[s[133]], 
+        m_crr[s[132]], 
+        m_crr[s[131]], 
+        m_crr[s[130]], 
+        m_crr[s[129]], 
+        m_crr[s[128]]);
+      
+      __m256i mCrg = _mm256_set_epi32(
+        m_crg[s[135]],
+        m_crg[s[134]],
+        m_crg[s[133]],
+        m_crg[s[132]],
+        m_crg[s[131]],
+        m_crg[s[130]],
+        m_crg[s[129]],
+        m_crg[s[128]]);
+      __m256i mCbg = _mm256_set_epi32(
+        m_cbg[s[71]], 
+        m_cbg[s[70]], 
+        m_cbg[s[69]], 
+        m_cbg[s[68]], 
+        m_cbg[s[67]], 
+        m_cbg[s[66]], 
+        m_cbg[s[65]], 
+        m_cbg[s[64]]);
+
+      __m256i mCbb = _mm256_set_epi32(
+        m_cbb[s[71]], 
+        m_cbb[s[70]], 
+        m_cbb[s[69]], 
+        m_cbb[s[68]], 
+        m_cbb[s[67]], 
+        m_cbb[s[66]], 
+        m_cbb[s[65]], 
+        m_cbb[s[64]]);
+
+      __m256i mCbgResult = _mm256_srli_epi32(_mm256_add_epi32(mCrg, mCbg), 16);
+
+      __m256i val0 = _mm256_add_epi32(y, mCrr);
+      __m256i val1 = _mm256_and_epi32(_mm256_add_epi32(y, mCbgResult), shortMask);
+      __m256i val2 = _mm256_add_epi32(y, mCbb);
+
+      val0 = _mm256_min_epi32(val0, maxClamp);
+      val0 = _mm256_max_epi32(val0, zero);
+
+      val1 = _mm256_min_epi32(val1, maxClamp);
+      val1 = _mm256_max_epi32(val1, zero);
+
+      val2 = _mm256_min_epi32(val2, maxClamp);
+      val2 = _mm256_max_epi32(val2, zero);
+
+      __m256i result = resultInit;
+      result = _mm256_or_si256(result, _mm256_slli_epi32(val2, 16));
+      result = _mm256_or_si256(result, _mm256_slli_epi32(val1, 8));
+      result = _mm256_or_si256(result, val0);
+
+      _mm256_storeu_si256((__m256i*)(d), result);
+
+      d += 32;
+
+      s += 64 * 3;
+    }
+  }
+  else if (m_simd == simd_version::SSE2) {
     __m128i zero = _mm_setzero_si128();
     __m128i maxClamp = _mm_set1_epi16(255);
     __m128i resultInit = _mm_set1_epi32(0xFF000000);

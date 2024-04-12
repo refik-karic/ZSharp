@@ -1923,62 +1923,38 @@ void jpeg_decoder::H1V1Convert() {
     __m256i zero = _mm256_setzero_si256();
     __m256i maxClamp = _mm256_set1_epi32(255);
     __m256i resultInit = _mm256_set1_epi32(0xFF000000);
-    __m256i shortMask = _mm256_set1_epi32(0x0000FFFF);
+
+    __m128i loShuffle = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 3,
+      0x80U, 0x80U, 0x80U, 2,
+      0x80U, 0x80U, 0x80U, 1,
+      0x80U, 0x80U, 0x80U, 0);
+
+    __m128i hiShuffle = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 7,
+      0x80U, 0x80U, 0x80U, 6,
+      0x80U, 0x80U, 0x80U, 5,
+      0x80U, 0x80U, 0x80U, 4);
 
     for (int i = m_max_mcus_per_row; i > 0; i--) {
-      __m256i y = _mm256_set_epi32(
-        s[7], 
-        s[6], 
-        s[5], 
-        s[4], 
-        s[3], 
-        s[2], 
-        s[1], 
-        s[0]);
+      __m128i loVals = _mm_loadu_si64(s);
+      __m256i y = _mm256_set_m128i(_mm_shuffle_epi8(loVals, hiShuffle), _mm_shuffle_epi8(loVals, loShuffle));
 
-      __m256i mCrr = _mm256_set_epi32(
-        m_crr[s[135]], 
-        m_crr[s[134]], 
-        m_crr[s[133]], 
-        m_crr[s[132]], 
-        m_crr[s[131]], 
-        m_crr[s[130]], 
-        m_crr[s[129]], 
-        m_crr[s[128]]);
-      
-      __m256i mCrg = _mm256_set_epi32(
-        m_crg[s[135]],
-        m_crg[s[134]],
-        m_crg[s[133]],
-        m_crg[s[132]],
-        m_crg[s[131]],
-        m_crg[s[130]],
-        m_crg[s[129]],
-        m_crg[s[128]]);
-      __m256i mCbg = _mm256_set_epi32(
-        m_cbg[s[71]], 
-        m_cbg[s[70]], 
-        m_cbg[s[69]], 
-        m_cbg[s[68]], 
-        m_cbg[s[67]], 
-        m_cbg[s[66]], 
-        m_cbg[s[65]], 
-        m_cbg[s[64]]);
+      __m128i midVals = _mm_loadu_si64(s + 64);
+      __m128i hiVals = _mm_loadu_si64(s + 128);
 
-      __m256i mCbb = _mm256_set_epi32(
-        m_cbb[s[71]], 
-        m_cbb[s[70]], 
-        m_cbb[s[69]], 
-        m_cbb[s[68]], 
-        m_cbb[s[67]], 
-        m_cbb[s[66]], 
-        m_cbb[s[65]], 
-        m_cbb[s[64]]);
+      __m256i midIndices = _mm256_set_m128i(_mm_shuffle_epi8(midVals, hiShuffle), _mm_shuffle_epi8(midVals, loShuffle));
+      __m256i hiIndices = _mm256_set_m128i(_mm_shuffle_epi8(hiVals, hiShuffle), _mm_shuffle_epi8(hiVals, loShuffle));
 
-      __m256i mCbgResult = _mm256_srli_epi32(_mm256_add_epi32(mCrg, mCbg), 16);
+      __m256i mCrr = _mm256_i32gather_epi32(m_crr, hiIndices, 4);
+      __m256i mCrg = _mm256_i32gather_epi32(m_crg, hiIndices, 4);
+      __m256i mCbg = _mm256_i32gather_epi32(m_cbg, midIndices, 4);
+      __m256i mCbb = _mm256_i32gather_epi32(m_cbb, midIndices, 4);
+
+      __m256i mCbgResult = _mm256_srai_epi32(_mm256_add_epi32(mCrg, mCbg), 16);
 
       __m256i val0 = _mm256_add_epi32(y, mCrr);
-      __m256i val1 = _mm256_and_epi32(_mm256_add_epi32(y, mCbgResult), shortMask);
+      __m256i val1 = _mm256_add_epi32(y, mCbgResult);
       __m256i val2 = _mm256_add_epi32(y, mCbb);
 
       val0 = _mm256_min_epi32(val0, maxClamp);
@@ -1998,7 +1974,6 @@ void jpeg_decoder::H1V1Convert() {
       _mm256_storeu_si256((__m256i*)(d), result);
 
       d += 32;
-
       s += 64 * 3;
     }
   }
@@ -2019,8 +1994,8 @@ void jpeg_decoder::H1V1Convert() {
 
       __m128i mCbb = _mm_set_epi16((short)m_cbb[s[71]], (short)m_cbb[s[70]], (short)m_cbb[s[69]], (short)m_cbb[s[68]], (short)m_cbb[s[67]], (short)m_cbb[s[66]], (short)m_cbb[s[65]], (short)m_cbb[s[64]]);
 
-      __m128i mCbgLoResult = _mm_srli_epi32(_mm_add_epi32(mCrgLo, mCbgLo), 16);
-      __m128i mCbgHiResult = _mm_srli_epi32(_mm_add_epi32(mCrgHi, mCbgHi), 16);
+      __m128i mCbgLoResult = _mm_srai_epi32(_mm_add_epi32(mCrgLo, mCbgLo), 16);
+      __m128i mCbgHiResult = _mm_srai_epi32(_mm_add_epi32(mCrgHi, mCbgHi), 16);
 
       __m128i mCrgCbgSum = _mm_set_epi16((short)mCbgHiResult.m128i_i32[3], (short)mCbgHiResult.m128i_i32[2], (short)mCbgHiResult.m128i_i32[1], (short)mCbgHiResult.m128i_i32[0],
         (short)mCbgLoResult.m128i_i32[3], (short)mCbgLoResult.m128i_i32[2], (short)mCbgLoResult.m128i_i32[1], (short)mCbgLoResult.m128i_i32[0]);
@@ -2052,7 +2027,6 @@ void jpeg_decoder::H1V1Convert() {
       _mm_storeu_si128((__m128i*)(d + 16), result1);
 
       d += 32;
-
       s += 64 * 3;
     }
   }

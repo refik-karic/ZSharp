@@ -150,7 +150,7 @@ class jpeg_decoder
   // Returns JPGD_SUCCESS if a scan line has been returned.
   // Returns JPGD_DONE if all scan lines have been returned.
   // Returns JPGD_FAILED if an error occurred. Call get_error_code() for a more info.
-  int decode(const void** pScan_line, uint32* pScan_line_len);
+  int decode(const void** pScan_line, uint32* pScan_line_len, ChannelOrderJPG order);
 
   jpgd_status get_error_code() const;
 
@@ -328,7 +328,7 @@ class jpeg_decoder
   void H2V1ConvertFiltered();
   void H1V2Convert();
   void H1V2ConvertFiltered();
-  void H1V1Convert();
+  void H1V1Convert(ChannelOrderJPG order);
   void gray_convert();
   void find_eoi();
   uint32 get_char();

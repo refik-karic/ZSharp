@@ -91,16 +91,11 @@ void IndexBuffer::RemoveTriangle(int32 index) {
 
   int32* srcAddr = mData + (mWorkingSize - TRI_VERTS);
   int32* destAddr = mData + index;
-  memcpy(destAddr, srcAddr, TRI_VERTS * sizeof(int32));
-  
-  if (mWorkingSize < TRI_VERTS) {
-    mWorkingSize = 0;
-  }
-  else {
-    mWorkingSize -= TRI_VERTS;
-  }
+  ((int64*)destAddr)[0] = ((int64*)srcAddr)[0];
+  destAddr[2] = srcAddr[2];
 
-  ZAssert((mWorkingSize % TRI_VERTS) == 0);
+  mWorkingSize -= TRI_VERTS;
+  ZAssert(mWorkingSize >= 0);
 }
 
 void IndexBuffer::AppendClipData(const int32* data, const int32 length) {

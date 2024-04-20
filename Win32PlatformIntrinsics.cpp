@@ -701,7 +701,7 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
 
 void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]) {
   __m128 view = _mm_loadu_ps(viewer);
-  
+
   int32* indexData = indexBuffer.GetInputData();
   const float* vertexData = vertexBuffer[0];
 
@@ -838,7 +838,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               if ((*pixelDepth) > pixelZ) {
                 *pixelDepth = pixelZ;
 
-                __m128 invDenominator = _mm_set_ps1(1.f / pixelZ);
+                __m128 invDenominator = _mm_rcp_ps(_mm_set_ps1(pixelZ));
 
                 __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
                 __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
@@ -935,7 +935,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
         xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
         xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
-        __m256 oneValue = _mm256_set1_ps(1.f);
         __m256i initialColor = _mm256_set1_epi32(0xFF000000);
 
         for (int32 h = minY; h < maxY; ++h) {
@@ -960,7 +959,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
 
               __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
-              __m256 invZValues = _mm256_div_ps(oneValue, zValues);
+              __m256 invZValues = _mm256_rcp_ps(zValues);
 
               __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
@@ -1091,7 +1090,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               if ((*pixelDepth) > pixelZ) {
                 *pixelDepth = pixelZ;
 
-                __m128 invDenominator = _mm_set_ps1(1.f / pixelZ);
+                __m128 invDenominator = _mm_rcp_ps(_mm_set_ps1(pixelZ));
 
                 __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
                 __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
@@ -1188,7 +1187,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
         xStep1 = _mm_mul_ps(stepMultiplier, xStep1);
         xStep2 = _mm_mul_ps(stepMultiplier, xStep2);
 
-        __m128 oneValue = _mm_set_ps1(1.f);
         __m128i initialColor = _mm_set1_epi32(0xFF00);
 
         for (int32 h = minY; h < maxY; ++h) {
@@ -1215,7 +1213,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               __m128 weightedVerts2 = _mm_mul_ps(weights2, z2z0);
 
               __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
-              __m128 invZValues = _mm_div_ps(oneValue, zValues);
+              __m128 invZValues = _mm_rcp_ps(zValues);
 
               __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
@@ -1337,7 +1335,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               if ((*pixelDepth) > pixelZ) {
                 *pixelDepth = pixelZ;
 
-                __m128 invDenominator = _mm_set_ps1(1.f / pixelZ);
+                __m128 invDenominator = _mm_rcp_ps(_mm_set_ps1(pixelZ));
 
                 __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
                 __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
@@ -1425,7 +1423,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
         __m256 minValue = _mm256_setzero_ps();
-        __m256 oneValue = _mm256_set1_ps(1.f);
 
         int32* textureData = (int32*)texture->Data();
 
@@ -1451,7 +1448,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
 
               __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
-              __m256 invZValues = _mm256_div_ps(oneValue, zValues);
+              __m256 invZValues = _mm256_rcp_ps(zValues);
 
               __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
@@ -1581,7 +1578,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               if ((*pixelDepth) > pixelZ) {
                 *pixelDepth = pixelZ;
 
-                __m128 invDenominator = _mm_set_ps1(1.f / pixelZ);
+                __m128 invDenominator = _mm_rcp_ps(_mm_set_ps1(pixelZ));
 
                 __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
                 __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
@@ -1669,7 +1666,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         xStep2 = _mm_mul_ps(stepMultiplier, xStep2);
 
         __m128 minValue = _mm_setzero_ps();
-        __m128 oneValue = _mm_set_ps1(1.f);
 
         uint32* textureData = (uint32*)texture->Data();
 
@@ -1697,7 +1693,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               __m128 weightedVerts2 = _mm_mul_ps(weights2, z2z0);
 
               __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
-              __m128 invZValues = _mm_div_ps(oneValue, zValues);
+              __m128 invZValues = _mm_rcp_ps(zValues);
 
               __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 

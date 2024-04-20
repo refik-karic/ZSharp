@@ -169,34 +169,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     vertexClipData = vertexBuffer[0];
   }
 
-  for (int32 i = 0; i < vertClipLength; ++i) {
-    float* vertexData = vertexClipData + (i * stride);
-
-    const float perspectiveZ = vertexData[3];
-    const float invPerspectiveZ = 1.f / vertexData[3];
-
-    // Homogenize
-    const float invDivisor = 1.f / vertexData[2];
-    vertexData[0] *= invDivisor;
-    vertexData[1] *= invDivisor;
-    vertexData[2] *= invDivisor;
-
-    // Apply Window transform.
-    const float dotX = Dot3(vertexData, windowTransformVec0);
-    const float dotY = Dot3(vertexData, windowTransformVec1);
-
-    vertexData[0] = dotX;
-    vertexData[1] = dotY;
-
-    // Store perspective Z and inverse Z for each vertex in the clip buffer.
-    // Prevents us from having to calculate this at a later point in the drawing code.
-    vertexData[2] = perspectiveZ;
-    vertexData[3] = invPerspectiveZ;
-
-    for (size_t j = 4; j < stride; ++j) {
-      vertexData[j] *= invPerspectiveZ;
-    }
-  }
+  Aligned_WindowTransform(vertexClipData, stride, vertClipLength, windowTransformVec0, windowTransformVec1);
 }
 
 ClipBounds Camera::ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {

@@ -592,9 +592,11 @@ void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
     for (int32 i = 0; i < length; i += stride) {
       float* nextVec = data + i;
-      float perspectiveTerm = nextVec[3];
-      _mm_store_ps(nextVec, _mm_div_ps(_mm_load_ps(nextVec), _mm_set_ps1(perspectiveTerm)));
-      nextVec[3] = perspectiveTerm;
+      __m128 vec = _mm_loadu_ps(nextVec);
+      __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
+      __m128 result = _mm_mul_ps(vec, _mm_rcp_ps(perspectiveTerm));
+      result = _mm_blend_ps(result, perspectiveTerm, 0b1000);
+      _mm_store_ps(nextVec, result);
     }
   }
   else {
@@ -729,6 +731,52 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
 
     if (dotResult > 0.f) {
       indexBuffer.RemoveTriangle(i - 3);
+    }
+  }
+}
+
+void Aligned_WindowTransform(float* data, int32 stride, int32 length, const float windowTransform0[3], const float windowTransform1[3]) {
+  __m128 window0 = _mm_set_ps(0.f, windowTransform0[2], windowTransform0[1], windowTransform0[0]);
+  __m128 window1 = _mm_set_ps(0.f, windowTransform1[2], windowTransform1[1], windowTransform1[0]);
+
+  for (int32 i = 0; i < length; ++i) {
+    float* vertexData = data + (i * stride);
+
+    __m128 vec = _mm_loadu_ps(vertexData);
+    __m128 perspectiveZ = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
+    __m128 invPerspectiveZ = _mm_rcp_ps(perspectiveZ);
+    __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b10101010)));
+
+    // [0] = _
+    // [1] = _
+    // [2] = perspectiveZ
+    // [3] = invPerspectiveZ
+    perspectiveZ = _mm_blend_ps(perspectiveZ, invPerspectiveZ, 0b1000);
+
+    // Homogenize with Z
+    __m128 result = _mm_mul_ps(vec, invDivisor);
+
+    // Apply Window transform.
+    __m128 dotX = _mm_mul_ps(result, window0);
+    __m128 dotY = _mm_mul_ps(result, window1);
+
+    result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_castsi128_ps(_mm_setzero_si128()));
+
+    // [0] = dotX
+    // [1] = dotY
+    // [2] = perspectiveZ
+    // [3] = invPerspectiveZ
+    result = _mm_blend_ps(result, perspectiveZ, 0b1100);
+
+    _mm_store_ps(vertexData, result);
+
+    /*
+      NOTE: In most cases this is actually faster than doing a load and masked store.
+        Main theory being, we don't typically need to write the entire register back to memory.
+    */
+    const float tempZ = invPerspectiveZ.m128_f32[0];
+    for (int32 j = 4; j < stride; ++j) {
+      vertexData[j] *= tempZ;
     }
   }
 }

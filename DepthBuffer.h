@@ -16,7 +16,7 @@ class DepthBuffer final {
 
   float& operator[](size_t index);
 
-  void Clear();
+  void Clear(size_t begin, size_t size);
 
   float* GetBuffer();
 

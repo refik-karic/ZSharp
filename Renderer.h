@@ -33,6 +33,8 @@ class Renderer final {
 
   Framebuffer& GetFrameBuffer();
 
+  DepthBuffer& GetDepthBuffer();
+
   private:
   Framebuffer mFramebuffer;
   DepthBuffer mDepthBuffer;

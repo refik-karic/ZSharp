@@ -36,9 +36,6 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
     mRenderMode = RenderMode::WIREFRAME;
   }
 
-  const ZColor clearColor(ZColors::ORANGE);
-  mFramebuffer.Clear(clearColor);
-  mDepthBuffer.Clear();
   mDepthBufferDirty = false;
 
   for (size_t i = 0; i < world.GetTotalModels(); ++i) {
@@ -140,7 +137,7 @@ uint8* Renderer::GetDepth() {
 }
 
 void Renderer::ClearFramebuffer(const ZColor& color) {
-  mFramebuffer.Clear(color);
+  mFramebuffer.Clear(color, 0, mFramebuffer.GetSize());
 }
 
 void Renderer::ToggleRenderMode(RenderMode mode) {
@@ -154,6 +151,10 @@ void Renderer::ToggleRenderMode(RenderMode mode) {
 
 Framebuffer& Renderer::GetFrameBuffer() {
   return mFramebuffer;
+}
+
+DepthBuffer& Renderer::GetDepthBuffer() {
+  return mDepthBuffer;
 }
 
 }

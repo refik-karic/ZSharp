@@ -7,12 +7,16 @@ size_t RoundUpNearestMultiple(size_t val, size_t multiple) {
     return 0;
   }
 
-  if ((val % multiple) > 0) {
-    return (static_cast<size_t>(ceil((double)val / (double)multiple)) * multiple);
+  return ((val + multiple - 1) / multiple) * multiple;
+}
+
+size_t RoundDownNearestMultiple(size_t val, size_t multiple) {
+  if (val == 0 || multiple == 0) {
+    ZAssert(false);
+    return 0;
   }
-  else {
-    return val;
-  }
+
+  return (val / multiple) * multiple;
 }
 
 float DegreesToRadians(float degrees) {

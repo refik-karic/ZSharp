@@ -44,6 +44,7 @@ set(ZSharp_Header_Files
     Pair.h
     PhysicsAlgorithms.h
     PhysicsObject.h
+    PlatformAtomic.h
     PlatformAudio.h
     PlatformApplication.h
     PlatformDebug.h
@@ -54,6 +55,7 @@ set(ZSharp_Header_Files
     PlatformMisc.h
     PlatformMemory.h
     PlatformTime.h
+    PlatformThread.h
     PNG.h
     Quaternion.h
     Random.h
@@ -65,6 +67,7 @@ set(ZSharp_Header_Files
     Stack.h
     Texture.h
     TexturePool.h
+    ThreadPool.h
     Tree.h
     Triangle.h
     UIBase.h
@@ -132,6 +135,7 @@ set(ZSharp_Source_Files
     ScopedTimer.cpp
     Texture.cpp
     TexturePool.cpp
+    ThreadPool.cpp
     Triangle.cpp
     UIBase.cpp
     UIButton.cpp
@@ -145,6 +149,7 @@ set(ZSharp_Source_Files
     Vec4.cpp
     VertexBuffer.cpp
     Win32PlatformApplication.cpp
+    Win32PlatformAtomic.cpp
     Win32PlatformAudio.cpp
     Win32PlatformDebug.cpp
     Win32PlatformFile.cpp
@@ -153,6 +158,7 @@ set(ZSharp_Source_Files
     Win32PlatformMisc.cpp
     Win32PlatformMemory.cpp
     Win32PlatformTime.cpp
+    Win32PlatformThread.cpp
     World.cpp
     WorldObject.cpp
     ZAlgorithm.cpp

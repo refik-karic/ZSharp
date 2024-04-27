@@ -14,6 +14,8 @@
 #include "ZConfig.h"
 #include "ZString.h"
 
+#include "PlatformIntrinsics.h"
+
 #include <cmath>
 
 namespace ZSharp {
@@ -311,6 +313,15 @@ bool GameInstance::IsDevConsoleOpen() const {
   return mDevConsole.IsOpen();
 }
 
+void GameInstance::RunBackgroundJobs() {
+  mThreadPool.Wake();
+
+  ParallelRange range = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearBuffers>(this);
+  size_t size = mRenderer.GetFrameBuffer().GetSize();
+
+  mThreadPool.Execute(range, nullptr, size, 4, true);
+}
+
 void GameInstance::OnKeyDown(uint8 key) {
   if (mDevConsole.IsOpen()) {
     return;
@@ -388,6 +399,14 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
   float theta = V1 * V2;
   Quaternion quat(theta, normal);
   RotateTrackball(quat);
+}
+
+void GameInstance::FastClearBuffers(size_t begin, size_t end, void* data) {
+  (void)data;
+
+  ZColor orange(ZColors::ORANGE);
+  mRenderer.GetFrameBuffer().Clear(orange, begin, end - begin);
+  mRenderer.GetDepthBuffer().Clear(begin, end - begin);
 }
 
 Vec3 GameInstance::ProjectClick(float x, float y) {

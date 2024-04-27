@@ -43,6 +43,11 @@ class Delegate final {
     return (mFreeFunctionSignature != nullptr) || (mClassSignature != nullptr);
   }
 
+  void Unbind() {
+    mFreeFunctionSignature = nullptr;
+    mClassSignature = nullptr;
+  }
+
   private:
   typedef void (*FreeFunctionSignature)(Signature...);
   typedef void (*ClassSignature)(void* objectPtr, Signature...);
@@ -98,6 +103,11 @@ class Delegate<void> final {
 
   bool IsBound() const {
     return (mFreeFunctionSignature != nullptr) || (mClassSignature != nullptr);
+  }
+
+  void Unbind() {
+    mFreeFunctionSignature = nullptr;
+    mClassSignature = nullptr;
   }
 
   private:
@@ -156,6 +166,11 @@ class ResultDelegate final {
 
   bool IsBound() const {
     return (mFreeFunctionSignature != nullptr) || (mClassSignature != nullptr);
+  }
+
+  void Unbind() {
+    mFreeFunctionSignature = nullptr;
+    mClassSignature = nullptr;
   }
 
   private:

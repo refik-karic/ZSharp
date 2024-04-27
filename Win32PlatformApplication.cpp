@@ -297,11 +297,38 @@ void Win32PlatformApplication::OnTimer() {
 
   PauseTimer();
 
+  RECT activeWindowSize;
+  if (GetClientRect(mWindowHandle, &activeWindowSize)) {
+    // If the window is hidden we don't do anything.
+    if (activeWindowSize.top == 0 &&
+      activeWindowSize.right == 0 &&
+      activeWindowSize.bottom == 0 &&
+      activeWindowSize.left == 0) {
+      // Sleep if we have some time left in the frame, otherwise start again immediately.
+      frameDeltaTime = ZSharp::PlatformHighResClockDelta(frameDeltaTime, ZSharp::ClockUnits::Milliseconds);
+      if (frameDeltaTime >= (1000 / (*LockedFPS))) {
+        frameDeltaTime = 1;
+      }
+      else {
+        if (*UncappedFPS) {
+          frameDeltaTime = 1;
+        }
+        else {
+          frameDeltaTime = (1000 / (*LockedFPS)) - frameDeltaTime;
+          frameDeltaTime = (frameDeltaTime * 10000);
+        }
+      }
+
+      StartTimer((ZSharp::int64)frameDeltaTime);
+
+      return;
+    }
+  }
+
   if (mCurrentCursor != ZSharp::AppCursor::Arrow) {
     ApplyCursor(ZSharp::AppCursor::Arrow);
   }
 
-  RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
     ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
 
@@ -384,6 +411,8 @@ void Win32PlatformApplication::OnPaint() {
   }
 #else
   UpdateFrame(mGameInstance.GetCurrentFrame());
+
+  mGameInstance.RunBackgroundJobs();
 #endif
 }
 

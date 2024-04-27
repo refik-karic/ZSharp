@@ -20,7 +20,7 @@ Framebuffer::Framebuffer() {
 }
 
 Framebuffer::Framebuffer(const ZColor clearColor) : Framebuffer() {
-  Clear(clearColor);
+  Clear(clearColor, 0, mTotalSize);
 }
 
 Framebuffer::~Framebuffer() {
@@ -79,9 +79,16 @@ void Framebuffer::SetRow(const size_t y, const size_t x1, const size_t x2, const
 #endif
 }
 
-void Framebuffer::Clear(const ZColor color) {
-  NamedScopedTimer(ClearFrameBuffer);
-  Aligned_Memset(mPixelBuffer, color.Color(), mTotalSize);
+void Framebuffer::Clear(const ZColor color, size_t begin, size_t size) {
+  uint32 colorValue = color.Color();
+  size_t nearestSize = RoundDownNearestMultiple(size, 4);
+  if (nearestSize > 0) {
+    Aligned_Memset(mPixelBuffer + begin, colorValue, nearestSize);
+  }
+
+  for (size_t i = nearestSize; i < size; i += 4) {
+    *((uint32*)(mPixelBuffer + i)) = colorValue;
+  }
 }
 
 uint8* Framebuffer::GetBuffer() {

@@ -15,7 +15,7 @@ class Framebuffer final {
 
   void SetPixel(const size_t x, const size_t y, const ZColor color);
   void SetRow(const size_t y, const size_t x1, const size_t x2, const ZColor color);
-  void Clear(const ZColor color);
+  void Clear(const ZColor color, size_t begin, size_t size);
   uint8* GetBuffer();
   size_t GetWidth() const;
   size_t GetHeight() const;

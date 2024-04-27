@@ -32,11 +32,17 @@ float& DepthBuffer::operator[](size_t index) {
   return mData[index];
 }
 
-void DepthBuffer::Clear() {
-  NamedScopedTimer(ClearDepthBuffer);
+void DepthBuffer::Clear(size_t begin, size_t size) {
   const float clearValue = INFINITY;
 
-  Aligned_Memset(mData, *reinterpret_cast<const uint32*>(&clearValue), mWidth * mHeight * sizeof(float));
+  size_t nearestSize = RoundDownNearestMultiple(size, 4);
+  if (nearestSize > 0) {
+    Aligned_Memset(((uint8*)mData) + begin, *reinterpret_cast<const uint32*>(&clearValue), nearestSize);
+  }
+
+  for (size_t i = nearestSize / 4; i < size / 4; ++i) {
+    *(mData + i) = clearValue;
+  }
 }
 
 float* DepthBuffer::GetBuffer() {

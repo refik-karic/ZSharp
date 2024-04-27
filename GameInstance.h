@@ -7,6 +7,7 @@
 #include "Mat4x4.h"
 #include "Quaternion.h"
 #include "Renderer.h"
+#include "ThreadPool.h"
 #include "Vec3.h"
 #include "World.h"
 #include "ZColor.h"
@@ -39,11 +40,14 @@ class GameInstance final {
 
   bool IsDevConsoleOpen() const;
 
+  void RunBackgroundJobs();
+
   private:
   FrontEnd mFrontEnd;
   Camera mCamera;
   World mWorld;
   Renderer mRenderer;
+  ThreadPool mThreadPool;
 
   size_t mLastFrameTime = 0;
   size_t mLastAudioTime = 0;
@@ -88,6 +92,7 @@ class GameInstance final {
 
   void OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y);
 
+  void FastClearBuffers(size_t begin, size_t end, void* data);
 };
 
 }

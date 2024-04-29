@@ -23,6 +23,7 @@ int32 BackgroundWorker(void* data) {
         control.remainingJobs--;
 
         if (control.remainingJobs == 0) {
+          PlatformClearMonitor(control.monitor);
           control.status = ThreadControl::RunStatus::SLEEP;
         }
 
@@ -33,7 +34,7 @@ int32 BackgroundWorker(void* data) {
       }
     }
     else if (control.status == ThreadControl::RunStatus::SLEEP) {
-      PlatformYieldThread();
+      PlatformWaitMonitor(control.monitor);
     }
     else if (control.status == ThreadControl::RunStatus::END) {
       break;
@@ -50,6 +51,8 @@ ThreadPool::ThreadPool() {
   mPool.Resize(numCores);
   mWorkerControl.Resize(numCores);
 
+  mControl.monitor = PlatformCreateMonitor();
+
   for (size_t i = 0; i < mWorkerControl.Size(); ++i) {
     WorkerThreadControl& control = mWorkerControl[i];
     control.masterControl = &mControl;
@@ -65,8 +68,11 @@ ThreadPool::ThreadPool() {
 
 ThreadPool::~ThreadPool() {
   mControl.status = ThreadControl::RunStatus::END;
+  PlatformSignalMonitor(mControl.monitor);
 
   PlatformJoinThreadPool(mPool.GetData(), mPool.Size());
+
+  PlatformDestroyMonitor(mControl.monitor);
 }
 
 void ThreadPool::Wake() {
@@ -75,6 +81,8 @@ void ThreadPool::Wake() {
   mControl.remainingJobs = 0;
 
   mControl.status = ThreadControl::RunStatus::RUNNING;
+
+  PlatformSignalMonitor(mControl.monitor);
 }
 
 void ThreadPool::Sleep() {

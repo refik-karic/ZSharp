@@ -20,6 +20,7 @@ struct ThreadControl {
 
   RunStatus status = RunStatus::SLEEP;
   PlatformMutex lock;
+  PlatformMonitor* monitor;
   size_t remainingJobs = 0;
   ParallelRange func;
   void* data;

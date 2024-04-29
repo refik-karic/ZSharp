@@ -12,6 +12,7 @@
 #include <handleapi.h>
 
 #if HW_PLATFORM_X86
+#include <intrin.h>
 #include <emmintrin.h>
 #endif
 
@@ -20,6 +21,10 @@ namespace ZSharp {
 struct PlatformThread {
   HANDLE threadHandle;
   DWORD threadId;
+};
+
+struct PlatformMonitor {
+  HANDLE monitorHandle;
 };
 
 PlatformThread* PlatformCreateThread(PlatformThreadFunction threadFunction, void* threadData) {
@@ -115,13 +120,71 @@ void PlatformJoinThreadPool(PlatformThread** threads, size_t numThreads) {
   }
 }
 
+PlatformMonitor* PlatformCreateMonitor() {
+  HANDLE handle = CreateEventA(NULL, true, false, NULL);
+
+  if (handle == NULL) {
+    return nullptr;
+  }
+
+  PlatformMonitor* monitor = new PlatformMonitor;
+  monitor->monitorHandle = handle;
+  return monitor;
+}
+
+void PlatformWaitMonitor(PlatformMonitor* monitor) {
+  if (monitor == nullptr) {
+    return;
+  }
+
+  WaitForSingleObject(monitor->monitorHandle, INFINITE);
+}
+
+void PlatformSignalMonitor(PlatformMonitor* monitor) {
+  if (monitor != nullptr) {
+    SetEvent(monitor->monitorHandle);
+  }
+}
+
+void PlatformClearMonitor(PlatformMonitor* monitor) {
+  if (monitor != nullptr) {
+    ResetEvent(monitor->monitorHandle);
+  }
+}
+
+void PlatformDestroyMonitor(PlatformMonitor* monitor) {
+  if (monitor == nullptr) {
+    return;
+  }
+
+  CloseHandle(monitor->monitorHandle);
+}
+
 void PlatformYieldThread() {
   Sleep(0);
 }
 
 void PlatformBusySpin() {
 #if HW_PLATFORM_X86
-  _mm_pause();
+
+  int buffer[4] = {};
+  __cpuid(buffer, 0x07);
+
+  // Check for tpause support.
+  if (((buffer[2] >> 5) & 1U) == 1) {
+    // Get the base frequency.
+    __cpuid(buffer, 0x16);
+
+    // Wait 1us (i.e. on a 3.2GHz base, we wait 3200 cycles)
+    // The 1us value is conventiently provided via the base frequency in MHz.
+    DWORD64 waitTime = __rdtsc() + buffer[0];
+    // 0 = slow wakeup
+    // 1 = fast wakeup
+    _tpause(0x01, waitTime);
+  }
+  else {
+    _mm_pause();
+  }
 #endif
 }
 

@@ -80,6 +80,10 @@ void Framebuffer::SetRow(const size_t y, const size_t x1, const size_t x2, const
 }
 
 void Framebuffer::Clear(const ZColor color, size_t begin, size_t size) {
+  if (begin > mTotalSize || (begin + size) > mTotalSize) {
+    return;
+  }
+  
   uint32 colorValue = color.Color();
   size_t nearestSize = RoundDownNearestMultiple(size, 4);
   if (nearestSize > 0) {

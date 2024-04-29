@@ -33,6 +33,11 @@ float& DepthBuffer::operator[](size_t index) {
 }
 
 void DepthBuffer::Clear(size_t begin, size_t size) {
+  size_t totalSize = mWidth * mHeight * sizeof(float);
+  if (begin > totalSize || (begin + size) > totalSize) {
+    return;
+  }
+
   const float clearValue = INFINITY;
 
   size_t nearestSize = RoundDownNearestMultiple(size, 4);

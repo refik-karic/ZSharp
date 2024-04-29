@@ -314,6 +314,10 @@ bool GameInstance::IsDevConsoleOpen() const {
 }
 
 void GameInstance::RunBackgroundJobs() {
+  if (!mWorld.IsLoaded()) {
+    return;
+  }
+
   mThreadPool.Wake();
 
   ParallelRange range = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearBuffers>(this);
@@ -403,6 +407,10 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
 
 void GameInstance::FastClearBuffers(size_t begin, size_t end, void* data) {
   (void)data;
+
+  if (!mWorld.IsLoaded()) {
+    return;
+  }
 
   ZColor orange(ZColors::ORANGE);
   mRenderer.GetFrameBuffer().Clear(orange, begin, end - begin);

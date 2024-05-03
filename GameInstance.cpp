@@ -61,6 +61,11 @@ void GameInstance::LoadFrontEnd() {
 void GameInstance::TickWorld() {
   NamedScopedTimer(TickWorld);
 
+  {
+    NamedScopedTimer(ThreadPoolWait);
+    mThreadPool.WaitForJobs();
+  }
+
   size_t frameDeltaMs = (mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
 
   mLastFrameTime = PlatformHighResClock();
@@ -326,6 +331,11 @@ void GameInstance::RunBackgroundJobs() {
   mThreadPool.Execute(range, nullptr, size, 4, true);
 }
 
+void GameInstance::WaitForBackgroundJobs() {
+  NamedScopedTimer(ThreadPoolWait);
+  mThreadPool.WaitForJobs();
+}
+
 void GameInstance::OnKeyDown(uint8 key) {
   if (mDevConsole.IsOpen()) {
     return;
@@ -407,10 +417,6 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
 
 void GameInstance::FastClearBuffers(size_t begin, size_t end, void* data) {
   (void)data;
-
-  if (!mWorld.IsLoaded()) {
-    return;
-  }
 
   ZColor orange(ZColors::ORANGE);
   mRenderer.GetFrameBuffer().Clear(orange, begin, end - begin);

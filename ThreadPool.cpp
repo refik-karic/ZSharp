@@ -25,6 +25,7 @@ int32 BackgroundWorker(void* data) {
         if (control.remainingJobs == 0) {
           PlatformClearMonitor(control.monitor);
           control.status = ThreadControl::RunStatus::SLEEP;
+          PlatformSignalMonitor(control.asyncMonitor);
         }
 
         control.lock.Release();
@@ -45,13 +46,12 @@ int32 BackgroundWorker(void* data) {
 }
 
 ThreadPool::ThreadPool() {
-  // Note: We don't want too many worker threads competing with the main thread.
-  //  Therefore we only allocate half the CPU to worker threads.
-  size_t numCores = PlatformGetNumPhysicalCores() / 2;
+  size_t numCores = PlatformGetNumPhysicalCores();
   mPool.Resize(numCores);
   mWorkerControl.Resize(numCores);
 
   mControl.monitor = PlatformCreateMonitor();
+  mControl.asyncMonitor = PlatformCreateMonitor();
 
   for (size_t i = 0; i < mWorkerControl.Size(); ++i) {
     WorkerThreadControl& control = mWorkerControl[i];
@@ -60,7 +60,7 @@ ThreadPool::ThreadPool() {
   }
 
   for (size_t i = 0; i < numCores; ++i) {
-    mPool[i] = PlatformCreateThread(&BackgroundWorker, &mWorkerControl[i]);
+    mPool[i] = PlatformCreateThread(&BackgroundWorker, &(mWorkerControl[i]));
   }
 
   PlatformPinThreadsToProcessors(mPool.GetData(), mPool.Size(), false);
@@ -73,6 +73,7 @@ ThreadPool::~ThreadPool() {
   PlatformJoinThreadPool(mPool.GetData(), mPool.Size());
 
   PlatformDestroyMonitor(mControl.monitor);
+  PlatformDestroyMonitor(mControl.asyncMonitor);
 }
 
 void ThreadPool::Wake() {
@@ -83,10 +84,15 @@ void ThreadPool::Wake() {
   mControl.status = ThreadControl::RunStatus::RUNNING;
 
   PlatformSignalMonitor(mControl.monitor);
+  PlatformClearMonitor(mControl.asyncMonitor);
 }
 
 void ThreadPool::Sleep() {
   mControl.status = ThreadControl::RunStatus::SLEEP;
+}
+
+void ThreadPool::WaitForJobs() {
+  PlatformWaitMonitor(mControl.asyncMonitor);
 }
 
 void ThreadPool::Execute(ParallelRange& range, void* data, size_t length, size_t chunkMultiple, bool async) {
@@ -132,9 +138,7 @@ void ThreadPool::Execute(ParallelRange& range, void* data, size_t length, size_t
   mControl.func = range;
 
   if (!async) {
-    while (mControl.remainingJobs > 0) {
-      PlatformBusySpin();
-    }
+    PlatformWaitMonitor(mControl.asyncMonitor);
   }
 }
 

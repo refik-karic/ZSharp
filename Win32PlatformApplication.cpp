@@ -348,6 +348,7 @@ void Win32PlatformApplication::OnTimer() {
     mBitmapInfo.bmiHeader.biHeight = -activeWindowSize.bottom;
 
     if (dirtySize) {
+      mGameInstance.WaitForBackgroundJobs();
       ZSharp::OnWindowSizeChangedDelegate().Broadcast(activeWindowSize.right, activeWindowSize.bottom);
     }
   }

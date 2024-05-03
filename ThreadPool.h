@@ -21,6 +21,7 @@ struct ThreadControl {
   RunStatus status = RunStatus::SLEEP;
   PlatformMutex lock;
   PlatformMonitor* monitor;
+  PlatformMonitor* asyncMonitor;
   size_t remainingJobs = 0;
   ParallelRange func;
   void* data;
@@ -47,6 +48,8 @@ class ThreadPool final {
   void Sleep();
 
   void Execute(ParallelRange& range, void* data, size_t length, size_t chunkMultiple, bool async);
+
+  void WaitForJobs();
 
   private:
   Array<PlatformThread*> mPool;

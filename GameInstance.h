@@ -42,6 +42,8 @@ class GameInstance final {
 
   void RunBackgroundJobs();
 
+  void WaitForBackgroundJobs();
+
   private:
   FrontEnd mFrontEnd;
   Camera mCamera;

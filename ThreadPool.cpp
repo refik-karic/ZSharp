@@ -64,6 +64,7 @@ ThreadPool::ThreadPool() {
   }
 
   PlatformPinThreadsToProcessors(mPool.GetData(), mPool.Size(), false);
+  PlatformSignalMonitor(mControl.asyncMonitor);
 }
 
 ThreadPool::~ThreadPool() {

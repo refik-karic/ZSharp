@@ -247,8 +247,7 @@ void World::LoadModels() {
   }
 }
 
-void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride)
-{
+void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride) {
   Model& model = mActiveModels.EmplaceBack(order, stride);
   VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
   IndexBuffer& indexBuffer = mIndexBuffers.EmplaceBack();
@@ -285,6 +284,8 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
     Triangle triangle(0 * stride, 1 * stride, 2 * stride);
     firstMesh.SetTriangle(triangle, 0);
   }
+
+  model.BoundingBox() = model.ComputeBoundingBox();
 
   int32 indexBufSize = 0;
   int32 vertBufSize = 0;

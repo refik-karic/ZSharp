@@ -781,6 +781,75 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
   }
 }
 
+void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length, const float matrix[4][4], const float windowTransform0[3], const float windowTransform1[3]) {
+  __m128 matrixX = _mm_set_ps(matrix[3][0], matrix[2][0], matrix[1][0], matrix[0][0]);
+  __m128 matrixY = _mm_set_ps(matrix[3][1], matrix[2][1], matrix[1][1], matrix[0][1]);
+  __m128 matrixZ = _mm_set_ps(matrix[3][2], matrix[2][2], matrix[1][2], matrix[0][2]);
+  __m128 matrixW = _mm_set_ps(matrix[3][3], matrix[2][3], matrix[1][3], matrix[0][3]);
+
+  __m128 window0 = _mm_set_ps(0.f, windowTransform0[2], windowTransform0[1], windowTransform0[0]);
+  __m128 window1 = _mm_set_ps(0.f, windowTransform1[2], windowTransform1[1], windowTransform1[0]);
+
+  for (size_t i = 0; i < length; i += stride) {
+    float* vecData = data + i;
+
+    // Perspective projection
+    __m128 vecX = _mm_set_ps1(vecData[0]);
+    __m128 vecY = _mm_set_ps1(vecData[1]);
+    __m128 vecZ = _mm_set_ps1(vecData[2]);
+    __m128 vecW = _mm_set_ps1(vecData[3]);
+
+    vecX = _mm_mul_ps(matrixX, vecX);
+    vecY = _mm_mul_ps(matrixY, vecY);
+    vecZ = _mm_mul_ps(matrixZ, vecZ);
+    vecW = _mm_mul_ps(matrixW, vecW);
+
+    __m128 vec = _mm_add_ps(vecX, vecY);
+    vec = _mm_add_ps(vec, vecZ);
+    vec = _mm_add_ps(vec, vecW);
+
+    // Homogenize
+    __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
+    __m128 invPerspectiveZ = _mm_rcp_ps(perspectiveTerm);
+    __m128 homogenized = _mm_mul_ps(vec, invPerspectiveZ);
+
+    // Window transform
+    __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(homogenized), 0b10101010)));
+
+    // [0] = _
+    // [1] = _
+    // [2] = perspectiveZ
+    // [3] = invPerspectiveZ
+    perspectiveTerm = _mm_blend_ps(perspectiveTerm, invPerspectiveZ, 0b1000);
+
+    // Homogenize with Z
+    __m128 result = _mm_mul_ps(homogenized, invDivisor);
+
+    // Apply Window transform.
+    __m128 dotX = _mm_mul_ps(result, window0);
+    __m128 dotY = _mm_mul_ps(result, window1);
+
+    result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_castsi128_ps(_mm_setzero_si128()));
+
+    // [0] = dotX
+    // [1] = dotY
+    // [2] = perspectiveZ
+    // [3] = invPerspectiveZ
+    result = _mm_blend_ps(result, perspectiveTerm, 0b1100);
+
+    _mm_store_ps(vecData, result);
+
+    /*
+      NOTE: In most cases this is actually faster than doing a load and masked store.
+        Main theory being, we don't typically need to write the entire register back to memory.
+    */
+    const float tempZ = invPerspectiveZ.m128_f32[0];
+    for (int32 j = 4; j < stride; ++j) {
+      vecData[j] *= tempZ;
+    }
+  }
+}
+
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]) {
   /*
   Note that we don't do any kind of CPUID check here.

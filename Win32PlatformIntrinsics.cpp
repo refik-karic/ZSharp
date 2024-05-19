@@ -1065,10 +1065,9 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
           for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
             // OR all weights and fetch the sign bits
             __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
-            int32 combinedMask = _mm256_movemask_ps(combinedWeights);
 
             // If all mask bits are set then none of these pixels are inside the triangle.
-            if (combinedMask != 0xFF) {
+            if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
               __m256 depthVec = _mm256_load_ps(pixelDepth);
 
               __m256 weightedVerts0 = z0;
@@ -1080,7 +1079,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
               __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-              __m256i finalCombinedMask = _mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask));
+              __m256i finalCombinedMask = Not256(_mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask)));
 
               __m256 weightedAttr00 = _mm256_mul_ps(r0, invZValues);
               __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues);
@@ -1106,10 +1105,8 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
               finalColor = _mm256_or_epi32(finalColor, gValues);
               finalColor = _mm256_or_epi32(finalColor, bValues);
 
-              __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, _mm256_castsi256_ps(finalCombinedMask));
-
-              _mm256_maskstore_epi32((int*)pixels, Not256(finalCombinedMask), finalColor);
-              _mm256_store_ps(pixelDepth, writebackDepth);
+              _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, finalColor);
+              _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
             }
 
             weights0 = _mm256_sub_ps(weights0, xStep0);
@@ -1554,10 +1551,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
           for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
             // OR all weights and fetch the sign bits
             __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
-            int32 combinedMask = _mm256_movemask_ps(combinedWeights);
 
             // If all mask bits are set then none of these pixels are inside the triangle.
-            if (combinedMask != 0xFF) {
+            if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
               __m256 depthVec = _mm256_load_ps(pixelDepth);
 
               __m256 weightedVerts0 = z0;
@@ -1569,7 +1565,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
               __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-              __m256i finalCombinedMask = _mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask));
+              __m256i finalCombinedMask = Not256(_mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask)));
 
               __m256 weightedAttr00 = _mm256_mul_ps(u0, invZValues);
               __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues);
@@ -1608,10 +1604,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               //  This memory read is by far the biggest bottleneck here.
               __m256i loadedColors = _mm256_i32gather_epi32(textureData, colorValues, 4);
 
-              __m256 writebackDepth = _mm256_blendv_ps(zValues, depthVec, _mm256_castsi256_ps(finalCombinedMask));
-
-              _mm256_maskstore_epi32((int*)pixels, Not256(finalCombinedMask), loadedColors);
-              _mm256_store_ps(pixelDepth, writebackDepth);
+              _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, loadedColors);
+              _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
             }
 
             weights0 = _mm256_sub_ps(weights0, xStep0);

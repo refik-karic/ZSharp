@@ -23,7 +23,8 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer,
   const VertexBuffer& vertexBuffer,
   const IndexBuffer& indexBuffer,
   bool wasClipped,
-  const Texture* texture);
+  const Texture* texture,
+  size_t mipLevel);
 
 void DrawTrianglesWireframe(Framebuffer& framebuffer,
   const VertexBuffer& vertexBuffer,

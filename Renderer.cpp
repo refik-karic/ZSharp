@@ -23,6 +23,8 @@ ConsoleVariable<int32> DevRenderMode("RenderMode", 1);
 
 ConsoleVariable<bool> VisualizeAABB("VizAABB", false);
 
+ConsoleVariable<int32> MipOverride("MipOverride", 4);
+
 Renderer::Renderer() {
 }
 
@@ -84,7 +86,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
           case ShadingModes::UV:
           {
             Texture* texture = TexturePool::Get().GetTexture(model.TextureId());
-            DrawTrianglesFlatUV(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), texture);
+            DrawTrianglesFlatUV(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), texture, *MipOverride);
           }
           break;
           default:

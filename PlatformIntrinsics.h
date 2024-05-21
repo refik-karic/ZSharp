@@ -80,6 +80,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
   const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer);
 
 void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end,
-  const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture);
+  const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture, size_t mipLevel);
 
 }

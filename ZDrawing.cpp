@@ -359,7 +359,7 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
 #endif
 }
 
-void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped, const Texture* texture) {
+void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped, const Texture* texture, size_t mipLevel) {
   NamedScopedTimer(DrawFlatTrianglesUV);
 
   const size_t frameHeight = framebuffer.GetHeight();
@@ -474,7 +474,7 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
     }
   }
 #else
-  Unaligned_FlatShadeUVs(vertexClipData, indexClipData, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture);
+  Unaligned_FlatShadeUVs(vertexClipData, indexClipData, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture, mipLevel);
 #endif
 }
 

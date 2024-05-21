@@ -41,6 +41,7 @@ int32 TexturePool::LoadTexture(Asset& asset) {
 
     Texture& texture = mTextures.EmplaceBack();
     texture.Assign(pngData, channels, width, height);
+    texture.GenerateMips();
 
     int32 index = ((int32)mTextures.Size()) - 1;
     mLoadedTextures.Add(assetName, index);
@@ -63,6 +64,7 @@ int32 TexturePool::LoadTexture(Asset& asset) {
 
     Texture& texture = mTextures.EmplaceBack();
     texture.Assign(jpgData, channels, width, height);
+    texture.GenerateMips();
 
     int32 index = ((int32)mTextures.Size()) - 1;
     mLoadedTextures.Add(assetName, index);

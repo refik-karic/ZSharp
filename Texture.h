@@ -4,6 +4,7 @@
 #include "ZColor.h"
 #include "CommonMath.h"
 #include "PlatformDefines.h"
+#include "Array.h"
 
 namespace ZSharp {
 
@@ -40,34 +41,41 @@ class Texture final {
 
   bool IsAssigned() const;
 
-  FORCE_INLINE uint32 Sample(float u, float v) const {
+  FORCE_INLINE uint32 Sample(float u, float v, size_t mipLevel) const {
     /*
       Note that we don't do any kind of check/clamp to make sure U,V are within a valid range.
       This can easily be checked in the raster loop by making sure all attributes are in the proper range.
     */
-    const size_t x = static_cast<size_t>(u * (mWidth - 1));
-    const size_t y = static_cast<size_t>(v * (mHeight - 1));
-    const size_t pixel = (y * mStride) + (x * mNumChannels);
+    const MipMap& map = mMipChain[mipLevel];
+
+    const size_t x = static_cast<size_t>(u * (map.width - 1));
+    const size_t y = static_cast<size_t>(v * (map.height - 1));
+    const size_t pixel = (y * map.stride) + (x * mNumChannels);
 
     // We're assuming the texture channel layout matches the display here.
     // This doesn't make a lot of sense for non-albedo textures but we can take care of that later.
-    return *((uint32*)(mData + pixel));
+    return *((uint32*)(mMipChain[mipLevel].data + pixel));
   }
 
-  size_t Width() const;
+  size_t Width(size_t mipLevel) const;
 
-  size_t Height() const;
+  size_t Height(size_t mipLevel) const;
 
   size_t Channels() const;
 
-  uint8* Data() const;
+  uint8* Data(size_t mipLevel) const;
+
+  void GenerateMips();
 
   private:
   size_t mNumChannels = 0;
-  size_t mWidth = 0;
-  size_t mStride = 0;
-  size_t mHeight = 0;
-  uint8* mData = nullptr;
+  struct MipMap {
+    size_t width = 0;
+    size_t height = 0;
+    size_t stride = 0;
+    uint8* data = nullptr;
+  };
+  Array<MipMap> mMipChain;
 };
 
 }

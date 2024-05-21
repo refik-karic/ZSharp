@@ -1377,7 +1377,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
   }
 }
 
-void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture) {
+void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture, size_t mipLevel) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
@@ -1461,7 +1461,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
                 __m128 firstTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b01000100);
 
                 __m128 summedTerms = _mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms);
-                *pixels = texture->Sample(summedTerms.m128_f32[3], summedTerms.m128_f32[1]);
+                *pixels = texture->Sample(summedTerms.m128_f32[3], summedTerms.m128_f32[1], mipLevel);
               }
             }
 
@@ -1485,8 +1485,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         // We want the UV values to be scaled by the width/height.
         // Doing that here saves us from having to do that at each pixel.
         // We must still multiply the stride and channels separately because of rounding error.
-        size_t texWidth = texture->Width();
-        size_t texHeight = texture->Height();
+        size_t texWidth = texture->Width(mipLevel);
+        size_t texHeight = texture->Height(mipLevel);
 
         __m256 yStride = _mm256_set1_ps((float)(texHeight));
 
@@ -1538,7 +1538,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
         __m256 minValue = _mm256_setzero_ps();
 
-        int32* textureData = (int32*)texture->Data();
+        int32* textureData = (int32*)texture->Data(mipLevel);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m256 weights0 = weightInit0;
@@ -1701,7 +1701,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
                 __m128 firstTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b01000100);
 
                 __m128 summedTerms = _mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms);
-                *pixels = texture->Sample(summedTerms.m128_f32[3], summedTerms.m128_f32[1]);
+                *pixels = texture->Sample(summedTerms.m128_f32[3], summedTerms.m128_f32[1], mipLevel);
               }
             }
 
@@ -1725,8 +1725,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         // We want the UV values to be scaled by the width/height.
         // Doing that here saves us from having to do that at each pixel.
         // We must still multiply the stride and channels separately because of rounding error.
-        size_t texWidth = texture->Width();
-        size_t texHeight = texture->Height();
+        size_t texWidth = texture->Width(mipLevel);
+        size_t texHeight = texture->Height(mipLevel);
 
         __m128 yStride = _mm_set_ps1((float)(texHeight));
 
@@ -1778,7 +1778,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
         __m128 minValue = _mm_setzero_ps();
 
-        uint32* textureData = (uint32*)texture->Data();
+        uint32* textureData = (uint32*)texture->Data(mipLevel);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m128 weights0 = weightInit0;

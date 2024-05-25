@@ -76,6 +76,7 @@ class Texture final {
     uint8* data = nullptr;
   };
   Array<MipMap> mMipChain;
+  uint8* mMipData = nullptr;
 };
 
 }

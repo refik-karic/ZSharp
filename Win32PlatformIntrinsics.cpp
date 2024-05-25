@@ -435,6 +435,56 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
   }
 }
 
+void Unaligned_GenerateMipLevel(uint8* nextMip, size_t nextWidth, size_t nextHeight, uint8* lastMip, size_t lastWidth, size_t lastHeight) {
+  (void)lastHeight;
+  size_t nextMipStride = nextWidth * 4;
+  size_t lastMipStride = lastWidth * 4;
+  
+  __m128i shuffleLeft = _mm_set_epi8(
+    0x80U, 0x80U, 0x80U, 3,
+    0x80U, 0x80U, 0x80U, 2,
+    0x80U, 0x80U, 0x80U, 1,
+    0x80U, 0x80U, 0x80U, 0
+  );
+
+  __m128i shuffleRight = _mm_set_epi8(
+    0x80U, 0x80U, 0x80U, 7,
+    0x80U, 0x80U, 0x80U, 6,
+    0x80U, 0x80U, 0x80U, 5,
+    0x80U, 0x80U, 0x80U, 4
+  );
+
+  __m128i shuffleColor = _mm_set_epi8(
+    0x80U, 0x80U, 0x80U, 0x80U,
+    0x80U, 0x80U, 0x80U, 0x80U,
+    0x80U, 0x80U, 0x80U, 0x80U,
+    12, 8, 4, 0
+  );
+
+  for (size_t y = 0; y < nextHeight; ++y) {
+    for (size_t x = 0; x < nextWidth; ++x) {
+      const size_t xStride = x * 4;
+
+      uint8* topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+      uint8* bottomLeft = topLeft + lastMipStride;
+
+      __m128i topData = _mm_loadu_si64(topLeft);
+      __m128i bottomData = _mm_loadu_si64(bottomLeft);
+
+      __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeft);
+      __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRight);
+      __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeft);
+      __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRight);
+
+      __m128i rgba = _mm_add_epi32(_mm_add_epi32(_mm_add_epi32(topLeftData, topRightData), bottomLeftData), bottomRightData);
+      rgba = _mm_srli_epi32(rgba, 2);
+      rgba = _mm_shuffle_epi8(rgba, shuffleColor);
+
+      _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
+    }
+  }
+}
+
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride, int32 length) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
     /*

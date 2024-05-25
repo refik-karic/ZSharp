@@ -4,6 +4,7 @@
 #include "PlatformIntrinsics.h"
 
 #include "ZAssert.h"
+#include "ScopedTimer.h"
 
 namespace ZSharp {
 Texture::Texture() : mMipChain(1) {
@@ -15,19 +16,16 @@ Texture::Texture(uint8* data,
   size_t height)
 : mMipChain(1),
   mNumChannels(numChannels) {
-  MipMap map;
+  MipMap& map = mMipChain[0];
   map.height = height;
   map.width = width;
   map.stride = width * 4;
   map.data = data;
-  mMipChain[0] = map;
 }
 
 Texture::~Texture() {
-  for (MipMap& map : mMipChain) {
-    if (map.data != nullptr) {
-      PlatformFree(map.data);
-    }
+  if (mMipData != nullptr) {
+    PlatformAlignedFree(mMipData);
   }
 }
 
@@ -70,37 +68,34 @@ void Texture::GenerateMips() {
     return;
   }
 
+  NamedScopedTimer(GenerateMips);
+
   size_t lastMip = 0;
+  size_t allocationSize = 0;
   for (size_t width = mMipChain[0].width, height = mMipChain[0].height; width != 1 && height != 1; width >>= 1, height >>= 1, ++lastMip) {
-    uint8* nextMipData = (uint8*)PlatformMalloc((width >> 1) * (height >> 1) * 4);
+    allocationSize += (width >> 1) * (height >> 1) * 4;
+  }
+
+  allocationSize = RoundUpNearestMultiple(allocationSize, PlatformAlignmentGranularity());
+  lastMip = 0;
+  mMipData = (uint8*)PlatformAlignedMalloc(allocationSize, PlatformAlignmentGranularity());
+  uint8* allocationOffset = mMipData;
+  for (size_t width = mMipChain[0].width, height = mMipChain[0].height; width != 1 && height != 1; width >>= 1, height >>= 1, ++lastMip) {
+    size_t mipWidth = width >> 1;
+    size_t mipHeight = height >> 1;
+    
+    uint8* nextMipData = allocationOffset;
     uint8* lastMipData = mMipChain[lastMip].data;
-    size_t nextMipStride = (width >> 1) * 4;
-    size_t lastMipStride = width * 4;
+    size_t nextMipStride = mipWidth * 4;
+    allocationOffset += mipWidth * mipHeight * 4;
 
     MipMap nextMip;
-    nextMip.width = width >> 1;
-    nextMip.stride = (width >> 1) * 4;
-    nextMip.height = height >> 1;
+    nextMip.width = mipWidth;
+    nextMip.stride = nextMipStride;
+    nextMip.height = mipHeight;
     nextMip.data = nextMipData;
 
-    for (size_t y = 0; y != (height >> 1); ++y) {
-      for (size_t x = 0; x != (width >> 1); ++x) {
-        uint8* topLeft = lastMipData + (y * 2 * lastMipStride) + ((x * 4) * 2);
-        uint8* topRight = topLeft + 4;
-        uint8* bottomLeft = lastMipData + (y * 2 * lastMipStride) + ((x * 4) * 2) + lastMipStride;
-        uint8* bottomRight = bottomLeft + 4;
-
-        uint8 B = (uint8)(((size_t)topLeft[0] + (size_t)topRight[0] + (size_t)bottomLeft[0] + (size_t)bottomRight[0]) / 4);
-        uint8 G = (uint8)(((size_t)topLeft[1] + (size_t)topRight[1] + (size_t)bottomLeft[1] + (size_t)bottomRight[1]) / 4);
-        uint8 R = (uint8)(((size_t)topLeft[2] + (size_t)topRight[2] + (size_t)bottomLeft[2] + (size_t)bottomRight[2]) / 4);
-        uint8 A = (uint8)(((size_t)topLeft[3] + (size_t)topRight[3] + (size_t)bottomLeft[3] + (size_t)bottomRight[3]) / 4);
-        
-        nextMipData[(y * nextMipStride) + (x * 4)] = B;
-        nextMipData[(y * nextMipStride) + (x * 4) + 1] = G;
-        nextMipData[(y * nextMipStride) + (x * 4) + 2] = R;
-        nextMipData[(y * nextMipStride) + (x * 4) + 3] = A;
-      }
-    }
+    Unaligned_GenerateMipLevel(nextMipData, mipWidth, mipHeight, lastMipData, width, height);
 
     mMipChain.EmplaceBack(nextMip);
   }

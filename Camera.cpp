@@ -27,7 +27,7 @@ Camera::Camera() {
   //mFarPlane = 1000.f;
 
   mNearPlane = 10.f;
-  mFarPlane = 100.f;
+  mFarPlane = 1000.f;
 
   const ZConfig& config = ZConfig::Get();
   OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());

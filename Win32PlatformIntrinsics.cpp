@@ -1001,7 +1001,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
             if (!_mm_movemask_ps(weights)) {
               __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
-              float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
+              float pixelZ = _mm_cvtss_f32(_mm_hadd_ps(_mm_hadd_ps(weightedVerts, weightedVerts), _mm_setzero_ps()));
               if ((*pixelDepth) > pixelZ) {
                 *pixelDepth = pixelZ;
 
@@ -1250,7 +1250,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
             if (!_mm_movemask_ps(weights)) {
               __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
-              float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
+              float pixelZ = _mm_cvtss_f32(_mm_hadd_ps(_mm_hadd_ps(weightedVerts, weightedVerts), _mm_setzero_ps()));
               if ((*pixelDepth) > pixelZ) {
                 *pixelDepth = pixelZ;
 
@@ -1465,22 +1465,26 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       int32 minY = (int32)fminY;
       int32 maxY = (int32)fmaxY;
 
-      float boundingBoxMin[2] = { fminX, fminY };
-
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
       //  2) For larger triangles we step SIMD width at a time
       if ((maxX - minX) < 8) {
-        __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+        __m128 invArea = _mm_rcp_ps(_mm_set_ps1(((v3[0] - v1[0]) * (v2[1] - v1[1])) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
 
         __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
         __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), invArea);
         __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), invArea);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
-          BarycentricArea2D(v3, v1, boundingBoxMin),
-          BarycentricArea2D(v1, v2, boundingBoxMin),
+        /*
+          float boundingBoxMin[2] = {fminX, fminY};
+          __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
+          __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
+          __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
+        */
+        __m128 weightInit = _mm_set_ps(((fminX - v2[0]) * (v3[1] - v2[1])) - ((fminY - v2[1]) * (v3[0] - v2[0])),
+          ((fminX - v3[0]) * (v1[1] - v3[1])) - ((fminY - v3[1]) * (v1[0] - v3[0])),
+          ((fminX - v1[0]) * (v2[1] - v1[1])) - ((fminY - v1[1]) * (v2[0] - v1[0])),
           0.f);
 
         __m128 xStep = _mm_set_ps(v2[1] - v3[1], v3[1] - v1[1], v1[1] - v2[1], 0.f);
@@ -1495,7 +1499,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
             if (_mm_movemask_ps(weights) == 0) {
               __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
-              float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
+              float pixelZ = _mm_cvtss_f32(_mm_hadd_ps(_mm_hadd_ps(weightedVerts, weightedVerts), _mm_setzero_ps()));
               if ((*pixelDepth) > pixelZ) {
                 *pixelDepth = pixelZ;
 
@@ -1522,7 +1526,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         }
       }
       else {
-        __m256 invArea = _mm256_set1_ps(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+        __m256 invArea = _mm256_rcp_ps(_mm256_set1_ps(((v3[0] - v1[0]) * (v2[1] - v1[1])) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
         
         __m256 z0 = _mm256_set1_ps(v1[3]);
         __m256 invVert0 = _mm256_mul_ps(z0, invArea);
@@ -1563,9 +1567,15 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         __m256 v2v0 = _mm256_sub_ps(invAttr12, invAttr10);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
-        __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
-        __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
+        /*
+          float boundingBoxMin[2] = {fminX, fminY};
+          __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
+          __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
+          __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
+        */
+        __m256 weightInit0 = _mm256_set1_ps(((fminX - v2[0]) * (v3[1] - v2[1])) - ((fminY - v2[1]) * (v3[0] - v2[0])));
+        __m256 weightInit1 = _mm256_set1_ps(((fminX - v3[0]) * (v1[1] - v3[1])) - ((fminY - v3[1]) * (v1[0] - v3[0])));
+        __m256 weightInit2 = _mm256_set1_ps(((fminX - v1[0]) * (v2[1] - v1[1])) - ((fminY - v1[1]) * (v2[0] - v1[0])));
 
         __m256 xStep0 = _mm256_set1_ps(v2[1] - v3[1]);
         __m256 xStep1 = _mm256_set1_ps(v3[1] - v1[1]);
@@ -1652,7 +1662,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
               // NOTE: Gathers are faster in the general case except on some early HW that didn't optimize for it!
               //  If we plan on optimizing for all cases, we will need to take this into account.
               //  This memory read is by far the biggest bottleneck here.
-              __m256i loadedColors = _mm256_i32gather_epi32(textureData, colorValues, 4);
+              __m256i loadedColors = _mm256_mask_i32gather_epi32(_mm256_castps_si256(minValue), textureData, colorValues, finalCombinedMask, 4);
 
               _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, loadedColors);
               _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
@@ -1735,7 +1745,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
             if (_mm_movemask_ps(weights) == 0) {
               __m128 weightedVerts = _mm_mul_ps(weights, invVert);
 
-              float pixelZ = weightedVerts.m128_f32[3] + weightedVerts.m128_f32[2] + weightedVerts.m128_f32[1];
+              float pixelZ = _mm_cvtss_f32(_mm_hadd_ps(_mm_hadd_ps(weightedVerts, weightedVerts), _mm_setzero_ps()));
               if ((*pixelDepth) > pixelZ) {
                 *pixelDepth = pixelZ;
 

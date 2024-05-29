@@ -66,7 +66,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
         TriangulateAABBWithColor(aabb, aabbVertexBuffer, aabbIndexBuffer, aabbColor);
 
         camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds);
-        DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer, aabbVertexBuffer.WasClipped());
+        DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer, aabbVertexBuffer.WasClipped(), aabbColor);
       }
     }
 
@@ -94,19 +94,8 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
         break;
       case RenderMode::WIREFRAME:
       {
-        switch (model.ShadingOrder()[0].mode) {
-          case ShadingModes::RGB:
-          {
-            DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
-          }
-          break;
-          default:
-          {
-            ZColor wireframeColor(ZColors::BLUE);
-            DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), wireframeColor);
-          }
-            break;
-        }
+        ZColor wireframeColor(ZColors::BLUE);
+        DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), wireframeColor);
       }
         break;
     }

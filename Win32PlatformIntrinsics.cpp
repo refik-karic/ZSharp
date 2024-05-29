@@ -435,51 +435,140 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
   }
 }
 
-void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride, int32 length) {
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
-    /*
-      We preload 4 registers with all of the matrix X, Y, Z, W values.
-      We also broadcast each vector component (X, Y, Z, W) to 4 registers.
+void Aligned_Mat4x4Transform(const float matrix[4][4], float** data, int32 length) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    for (size_t i = 0; i < length; i += 8) {
+      float* xData = data[0] + i;
+      float* yData = data[1] + i;
+      float* zData = data[2] + i;
+      float* wData = data[3] + i;
 
-      This saves us some arithmetic. We only have to perform 4 multiplies and 4 adds per vertex in the end.
-    */
+      __m256 x = _mm256_loadu_ps(xData);
+      __m256 y = _mm256_loadu_ps(yData);
+      __m256 z = _mm256_loadu_ps(zData);
+      __m256 w = _mm256_loadu_ps(wData);
 
-    __m128 matrixX = _mm_set_ps(matrix[3][0], matrix[2][0], matrix[1][0], matrix[0][0]);
-    __m128 matrixY = _mm_set_ps(matrix[3][1], matrix[2][1], matrix[1][1], matrix[0][1]);
-    __m128 matrixZ = _mm_set_ps(matrix[3][2], matrix[2][2], matrix[1][2], matrix[0][2]);
-    __m128 matrixW = _mm_set_ps(matrix[3][3], matrix[2][3], matrix[1][3], matrix[0][3]);
+      __m256 xMat = _mm256_set1_ps(matrix[0][0]);
+      __m256 yMat = _mm256_set1_ps(matrix[0][1]);
+      __m256 zMat = _mm256_set1_ps(matrix[0][2]);
+      __m256 wMat = _mm256_set1_ps(matrix[0][3]);
 
-    for (size_t i = 0; i < length; i += stride) {
-      float* vecData = data + i;
+      xMat = _mm256_mul_ps(x, xMat);
+      yMat = _mm256_mul_ps(y, yMat);
+      zMat = _mm256_mul_ps(z, zMat);
+      wMat = _mm256_mul_ps(w, wMat);
 
-      __m128 vecX = _mm_set_ps1(vecData[0]);
-      __m128 vecY = _mm_set_ps1(vecData[1]);
-      __m128 vecZ = _mm_set_ps1(vecData[2]);
-      __m128 vecW = _mm_set_ps1(vecData[3]);
+      _mm256_store_ps(xData, _mm256_add_ps(_mm256_add_ps(_mm256_add_ps(xMat, yMat), zMat), wMat));
 
-      vecX = _mm_mul_ps(matrixX, vecX);
-      vecY = _mm_mul_ps(matrixY, vecY);
-      vecZ = _mm_mul_ps(matrixZ, vecZ);
-      vecW = _mm_mul_ps(matrixW, vecW);
+      xMat = _mm256_set1_ps(matrix[1][0]);
+      yMat = _mm256_set1_ps(matrix[1][1]);
+      zMat = _mm256_set1_ps(matrix[1][2]);
+      wMat = _mm256_set1_ps(matrix[1][3]);
 
-      __m128 result = _mm_add_ps(vecX, vecY);
-      result = _mm_add_ps(result, vecZ);
-      result = _mm_add_ps(result, vecW);
+      xMat = _mm256_mul_ps(x, xMat);
+      yMat = _mm256_mul_ps(y, yMat);
+      zMat = _mm256_mul_ps(z, zMat);
+      wMat = _mm256_mul_ps(w, wMat);
 
-      _mm_store_ps(vecData, result);
+      _mm256_store_ps(yData, _mm256_add_ps(_mm256_add_ps(_mm256_add_ps(xMat, yMat), zMat), wMat));
+
+      xMat = _mm256_set1_ps(matrix[2][0]);
+      yMat = _mm256_set1_ps(matrix[2][1]);
+      zMat = _mm256_set1_ps(matrix[2][2]);
+      wMat = _mm256_set1_ps(matrix[2][3]);
+
+      xMat = _mm256_mul_ps(x, xMat);
+      yMat = _mm256_mul_ps(y, yMat);
+      zMat = _mm256_mul_ps(z, zMat);
+      wMat = _mm256_mul_ps(w, wMat);
+
+      _mm256_store_ps(zData, _mm256_add_ps(_mm256_add_ps(_mm256_add_ps(xMat, yMat), zMat), wMat));
+
+      xMat = _mm256_set1_ps(matrix[3][0]);
+      yMat = _mm256_set1_ps(matrix[3][1]);
+      zMat = _mm256_set1_ps(matrix[3][2]);
+      wMat = _mm256_set1_ps(matrix[3][3]);
+
+      xMat = _mm256_mul_ps(x, xMat);
+      yMat = _mm256_mul_ps(y, yMat);
+      zMat = _mm256_mul_ps(z, zMat);
+      wMat = _mm256_mul_ps(w, wMat);
+
+      _mm256_store_ps(wData, _mm256_add_ps(_mm256_add_ps(_mm256_add_ps(xMat, yMat), zMat), wMat));
+    }
+  }
+  else if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
+    for (size_t i = 0; i < length; i += 4) {
+      float* xData = data[0] + i;
+      float* yData = data[1] + i;
+      float* zData = data[2] + i;
+      float* wData = data[3] + i;
+
+      __m128 x = _mm_loadu_ps(xData);
+      __m128 y = _mm_loadu_ps(yData);
+      __m128 z = _mm_loadu_ps(zData);
+      __m128 w = _mm_loadu_ps(wData);
+
+      __m128 xMat = _mm_set_ps1(matrix[0][0]);
+      __m128 yMat = _mm_set_ps1(matrix[0][1]);
+      __m128 zMat = _mm_set_ps1(matrix[0][2]);
+      __m128 wMat = _mm_set_ps1(matrix[0][3]);
+
+      xMat = _mm_mul_ps(x, xMat);
+      yMat = _mm_mul_ps(y, yMat);
+      zMat = _mm_mul_ps(z, zMat);
+      wMat = _mm_mul_ps(w, wMat);
+
+      _mm_store_ps(xData, _mm_add_ps(_mm_add_ps(_mm_add_ps(xMat, yMat), zMat), wMat));
+
+      xMat = _mm_set_ps1(matrix[1][0]);
+      yMat = _mm_set_ps1(matrix[1][1]);
+      zMat = _mm_set_ps1(matrix[1][2]);
+      wMat = _mm_set_ps1(matrix[1][3]);
+
+      xMat = _mm_mul_ps(x, xMat);
+      yMat = _mm_mul_ps(y, yMat);
+      zMat = _mm_mul_ps(z, zMat);
+      wMat = _mm_mul_ps(w, wMat);
+
+      _mm_store_ps(yData, _mm_add_ps(_mm_add_ps(_mm_add_ps(xMat, yMat), zMat), wMat));
+
+      xMat = _mm_set_ps1(matrix[2][0]);
+      yMat = _mm_set_ps1(matrix[2][1]);
+      zMat = _mm_set_ps1(matrix[2][2]);
+      wMat = _mm_set_ps1(matrix[2][3]);
+
+      xMat = _mm_mul_ps(x, xMat);
+      yMat = _mm_mul_ps(y, yMat);
+      zMat = _mm_mul_ps(z, zMat);
+      wMat = _mm_mul_ps(w, wMat);
+
+      _mm_store_ps(zData, _mm_add_ps(_mm_add_ps(_mm_add_ps(xMat, yMat), zMat), wMat));
+
+      xMat = _mm_set_ps1(matrix[3][0]);
+      yMat = _mm_set_ps1(matrix[3][1]);
+      zMat = _mm_set_ps1(matrix[3][2]);
+      wMat = _mm_set_ps1(matrix[3][3]);
+
+      xMat = _mm_mul_ps(x, xMat);
+      yMat = _mm_mul_ps(y, yMat);
+      zMat = _mm_mul_ps(z, zMat);
+      wMat = _mm_mul_ps(w, wMat);
+
+      _mm_store_ps(wData, _mm_add_ps(_mm_add_ps(_mm_add_ps(xMat, yMat), zMat), wMat));
     }
   }
   else {
-    for (int32 i = 0; i < length; i += stride) {
-      float* vec = (data + i);
+    for (int32 i = 0; i < length; ++i) {
+      float x = *(data[0] + i);
+      float y = *(data[1] + i);
+      float z = *(data[2] + i);
+      float w = *(data[3] + i);
 
-      float xyzw[4];
-      xyzw[0] = (matrix[0][0] * vec[0]) + (matrix[0][1] * vec[1]) + (matrix[0][2] * vec[2]) + (matrix[0][3] * vec[3]);
-      xyzw[1] = (matrix[1][0] * vec[0]) + (matrix[1][1] * vec[1]) + (matrix[1][2] * vec[2]) + (matrix[1][3] * vec[3]);
-      xyzw[2] = (matrix[2][0] * vec[0]) + (matrix[2][1] * vec[1]) + (matrix[2][2] * vec[2]) + (matrix[2][3] * vec[3]);
-      xyzw[3] = (matrix[3][0] * vec[0]) + (matrix[3][1] * vec[1]) + (matrix[3][2] * vec[2]) + (matrix[3][3] * vec[3]);
-
-      memcpy(data + i, xyzw, sizeof(xyzw));
+      *(data[0] + i) = (matrix[0][0] * x) + (matrix[0][1] * y) + (matrix[0][2] * z) + (matrix[0][3] * w);
+      *(data[1] + i) = (matrix[1][0] * x) + (matrix[1][1] * y) + (matrix[1][2] * z) + (matrix[1][3] * w);
+      *(data[2] + i) = (matrix[2][0] * x) + (matrix[2][1] * y) + (matrix[2][2] * z) + (matrix[2][3] * w);
+      *(data[3] + i) = (matrix[3][0] * x) + (matrix[3][1] * y) + (matrix[3][2] * z) + (matrix[3][3] * w);
     }
   }
 }
@@ -588,24 +677,35 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
   }
 }
 
-void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
-    for (int32 i = 0; i < length; i += stride) {
-      float* nextVec = data + i;
-      __m128 vec = _mm_loadu_ps(nextVec);
-      __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
-      __m128 result = _mm_mul_ps(vec, _mm_rcp_ps(perspectiveTerm));
-      result = _mm_blend_ps(result, perspectiveTerm, 0b1000);
-      _mm_store_ps(nextVec, result);
+void Aligned_Vec4Homogenize(float** data, int32 length) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    for (int32 i = 0; i < length; i += 8) {
+      float* x = data[0] + i;
+      float* y = data[1] + i;
+      float* z = data[2] + i;
+      float* w = data[3] + i;
+      __m256 xVec = _mm256_loadu_ps(x);
+      __m256 yVec = _mm256_loadu_ps(y);
+      __m256 zVec = _mm256_loadu_ps(z);
+      __m256 invW = _mm256_rcp_ps(_mm256_loadu_ps(w));
+      _mm256_store_ps(x, _mm256_mul_ps(invW, xVec));
+      _mm256_store_ps(y, _mm256_mul_ps(invW, yVec));
+      _mm256_store_ps(z, _mm256_mul_ps(invW, zVec));
     }
   }
   else {
-    for (int32 i = 0; i < length; i += stride) {
-      float* vec = data + i;
-      const float invDivisor = 1.f / vec[3];
-      vec[0] *= invDivisor;
-      vec[1] *= invDivisor;
-      vec[2] *= invDivisor;
+    for (int32 i = 0; i < length; i += 4) {
+      float* x = data[0] + i;
+      float* y = data[1] + i;
+      float* z = data[2] + i;
+      float* w = data[3] + i;
+      __m128 xVec = _mm_loadu_ps(x);
+      __m128 yVec = _mm_loadu_ps(y);
+      __m128 zVec = _mm_loadu_ps(z);
+      __m128 invW = _mm_rcp_ps(_mm_loadu_ps(w));
+      _mm_store_ps(x, _mm_mul_ps(invW, xVec));
+      _mm_store_ps(y, _mm_mul_ps(invW, yVec));
+      _mm_store_ps(z, _mm_mul_ps(invW, zVec));
     }
   }
 }
@@ -705,15 +805,17 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
   __m128 view = _mm_loadu_ps(viewer);
 
   int32* indexData = indexBuffer.GetInputData();
-  const float* vertexData = vertexBuffer[0];
+  const float* xData = vertexBuffer.GetInputDataX(0);
+  const float* yData = vertexBuffer.GetInputDataY(0);
+  const float* zData = vertexBuffer.GetInputDataZ(0);
 
   for (int32 i = indexBuffer.GetIndexSize(); i >= 3; i -= 3) {
     int32 i1 = indexData[i - 3];
     int32 i2 = indexData[i - 2];
     int32 i3 = indexData[i - 1];
-    __m128 v1 = _mm_load_ps(vertexData + i1);
-    __m128 v2 = _mm_load_ps(vertexData + i2);
-    __m128 v3 = _mm_load_ps(vertexData + i3);
+    __m128 v1 = _mm_set_ps(1.f, zData[i1], yData[i1], xData[i1]);
+    __m128 v2 = _mm_set_ps(1.f, zData[i2], yData[i2], xData[i2]);
+    __m128 v3 = _mm_set_ps(1.f, zData[i3], yData[i3], xData[i3]);
 
     __m128 p1p0 = _mm_sub_ps(v2, v1);
     __m128 p2p0 = _mm_sub_ps(v3, v1);
@@ -735,48 +837,95 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
   }
 }
 
-void Aligned_WindowTransform(float* data, int32 stride, int32 length, const float windowTransform0[3], const float windowTransform1[3]) {
-  __m128 window0 = _mm_set_ps(0.f, windowTransform0[2], windowTransform0[1], windowTransform0[0]);
-  __m128 window1 = _mm_set_ps(0.f, windowTransform1[2], windowTransform1[1], windowTransform1[0]);
+void Aligned_WindowTransform(float** data, int32 stride, int32 length, const float windowTransform0[3], const float windowTransform1[3]) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    __m256 window0X = _mm256_set1_ps(windowTransform0[0]);
+    __m256 window0Y = _mm256_set1_ps(windowTransform0[1]);
+    __m256 window0Z = _mm256_set1_ps(windowTransform0[2]);
 
-  for (int32 i = 0; i < length; ++i) {
-    float* vertexData = data + (i * stride);
+    __m256 window1X = _mm256_set1_ps(windowTransform1[0]);
+    __m256 window1Y = _mm256_set1_ps(windowTransform1[1]);
+    __m256 window1Z = _mm256_set1_ps(windowTransform1[2]);
 
-    __m128 vec = _mm_loadu_ps(vertexData);
-    __m128 perspectiveZ = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
-    __m128 invPerspectiveZ = _mm_rcp_ps(perspectiveZ);
-    __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b10101010)));
+    for (int32 i = 0; i < length; i += 8) {
+      float* xData = data[0] + i;
+      float* yData = data[1] + i;
+      float* zData = data[2] + i;
+      float* wData = data[3] + i;
 
-    // [0] = _
-    // [1] = _
-    // [2] = perspectiveZ
-    // [3] = invPerspectiveZ
-    perspectiveZ = _mm_blend_ps(perspectiveZ, invPerspectiveZ, 0b1000);
+      __m256 xVec = _mm256_loadu_ps(xData);
+      __m256 yVec = _mm256_loadu_ps(yData);
+      __m256 zVec = _mm256_loadu_ps(zData);
+      __m256 wVec = _mm256_loadu_ps(wData);
 
-    // Homogenize with Z
-    __m128 result = _mm_mul_ps(vec, invDivisor);
+      __m256 invPerspectiveZ = _mm256_rcp_ps(wVec);
+      __m256 invDivisor = _mm256_rcp_ps(zVec);
 
-    // Apply Window transform.
-    __m128 dotX = _mm_mul_ps(result, window0);
-    __m128 dotY = _mm_mul_ps(result, window1);
+      // Homogenize with Z
+      xVec = _mm256_mul_ps(xVec, invDivisor);
+      yVec = _mm256_mul_ps(yVec, invDivisor);
+      zVec = _mm256_mul_ps(invDivisor, zVec);
 
-    result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_castsi128_ps(_mm_setzero_si128()));
+      // Apply Window transform.
+      __m256 dotX = _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(xVec, window0X), _mm256_mul_ps(yVec, window0Y)), _mm256_mul_ps(zVec, window0Z));
+      __m256 dotY = _mm256_add_ps(_mm256_add_ps(_mm256_mul_ps(xVec, window1X), _mm256_mul_ps(yVec, window1Y)), _mm256_mul_ps(zVec, window1Z));
 
-    // [0] = dotX
-    // [1] = dotY
-    // [2] = perspectiveZ
-    // [3] = invPerspectiveZ
-    result = _mm_blend_ps(result, perspectiveZ, 0b1100);
+      _mm256_store_ps(xData, dotX);
+      _mm256_store_ps(yData, dotY);
+      _mm256_store_ps(zData, wVec);
+      _mm256_store_ps(wData, invPerspectiveZ);
 
-    _mm_store_ps(vertexData, result);
+      for (int32 j = 0; j < stride; ++j) {
+        float* attributeData = data[4 + j] + i;
+        __m256 attribute = _mm256_loadu_ps(attributeData);
+        attribute = _mm256_mul_ps(attribute, invPerspectiveZ);
+        _mm256_store_ps(attributeData, attribute);
+      }
+    }
+  }
+  else {
+    __m128 window0X = _mm_set_ps1(windowTransform0[0]);
+    __m128 window0Y = _mm_set_ps1(windowTransform0[1]);
+    __m128 window0Z = _mm_set_ps1(windowTransform0[2]);
 
-    /*
-      NOTE: In most cases this is actually faster than doing a load and masked store.
-        Main theory being, we don't typically need to write the entire register back to memory.
-    */
-    const float tempZ = invPerspectiveZ.m128_f32[0];
-    for (int32 j = 4; j < stride; ++j) {
-      vertexData[j] *= tempZ;
+    __m128 window1X = _mm_set_ps1(windowTransform1[0]);
+    __m128 window1Y = _mm_set_ps1(windowTransform1[1]);
+    __m128 window1Z = _mm_set_ps1(windowTransform1[2]);
+
+    for (int32 i = 0; i < length; i += 4) {
+      float* xData = data[0] + i;
+      float* yData = data[1] + i;
+      float* zData = data[2] + i;
+      float* wData = data[3] + i;
+
+      __m128 xVec = _mm_loadu_ps(xData);
+      __m128 yVec = _mm_loadu_ps(yData);
+      __m128 zVec = _mm_loadu_ps(zData);
+      __m128 wVec = _mm_loadu_ps(wData);
+
+      __m128 invPerspectiveZ = _mm_rcp_ps(wVec);
+      __m128 invDivisor = _mm_rcp_ps(zVec);
+
+      // Homogenize with Z
+      xVec = _mm_mul_ps(xVec, invDivisor);
+      yVec = _mm_mul_ps(yVec, invDivisor);
+      zVec = _mm_mul_ps(invDivisor, zVec);
+
+      // Apply Window transform.
+      __m128 dotX = _mm_add_ps(_mm_add_ps(_mm_mul_ps(xVec, window0X), _mm_mul_ps(yVec, window0Y)), _mm_mul_ps(zVec, window0Z));
+      __m128 dotY = _mm_add_ps(_mm_add_ps(_mm_mul_ps(xVec, window1X), _mm_mul_ps(yVec, window1Y)), _mm_mul_ps(zVec, window1Z));
+
+      _mm_store_ps(xData, dotX);
+      _mm_store_ps(yData, dotY);
+      _mm_store_ps(zData, wVec);
+      _mm_store_ps(wData, invPerspectiveZ);
+
+      for (int32 j = 0; j < stride; ++j) {
+        float* attributeData = data[4 + j] + i;
+        __m128 attribute = _mm_loadu_ps(attributeData);
+        attribute = _mm_mul_ps(attribute, invPerspectiveZ);
+        _mm_storeu_ps(attributeData, attribute);
+      }
     }
   }
 }
@@ -800,14 +949,63 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
-void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
+void Unaligned_AABBSOA(const float** vertices, size_t numVertices, float outMin[4], float outMax[4]) {
+  __m128 minX = _mm_set_ps1(outMin[0]);
+  __m128 minY = _mm_set_ps1(outMin[1]);
+  __m128 minZ = _mm_set_ps1(outMin[2]);
+  __m128 minW = _mm_set_ps1(outMin[3]);
+
+  __m128 maxX = _mm_set_ps1(outMax[0]);
+  __m128 maxY = _mm_set_ps1(outMax[1]);
+  __m128 maxZ = _mm_set_ps1(outMax[2]);
+  __m128 maxW = _mm_set_ps1(outMax[3]);
+
+  for (size_t i = 0; i < numVertices; i += 4) {
+    __m128 x = _mm_loadu_ps(vertices[0] + i);
+    __m128 y = _mm_loadu_ps(vertices[1] + i);
+    __m128 z = _mm_loadu_ps(vertices[2] + i);
+    __m128 w = _mm_loadu_ps(vertices[3] + i);
+    minX = _mm_min_ps(minX, x);
+    minY = _mm_min_ps(minY, y);
+    minZ = _mm_min_ps(minZ, z);
+    minW = _mm_min_ps(minW, w);
+
+    maxX = _mm_max_ps(maxX, x);
+    maxY = _mm_max_ps(maxY, y);
+    maxZ = _mm_max_ps(maxZ, z);
+    maxW = _mm_max_ps(maxW, w);
+  }
+
+  outMin[0] = Min(Min(Min(minX.m128_f32[0], minX.m128_f32[1]), minX.m128_f32[2]), minX.m128_f32[3]);
+  outMin[1] = Min(Min(Min(minY.m128_f32[0], minY.m128_f32[1]), minY.m128_f32[2]), minY.m128_f32[3]);
+  outMin[2] = Min(Min(Min(minY.m128_f32[0], minY.m128_f32[1]), minY.m128_f32[2]), minY.m128_f32[3]);
+  outMin[3] = Min(Min(Min(minY.m128_f32[0], minY.m128_f32[1]), minY.m128_f32[2]), minY.m128_f32[3]);
+
+  outMax[0] = Max(Max(Max(maxX.m128_f32[0], maxX.m128_f32[1]), maxX.m128_f32[2]), maxX.m128_f32[3]);
+  outMax[1] = Max(Max(Max(maxY.m128_f32[0], maxY.m128_f32[1]), maxY.m128_f32[2]), maxY.m128_f32[3]);
+  outMax[2] = Max(Max(Max(maxZ.m128_f32[0], maxZ.m128_f32[1]), maxZ.m128_f32[2]), maxZ.m128_f32[3]);
+  outMax[3] = Max(Max(Max(maxW.m128_f32[0], maxW.m128_f32[1]), maxW.m128_f32[2]), maxW.m128_f32[3]);
+}
+
+void Unaligned_FlatShadeRGB(const float** vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      float v1[] = { 
+        *(vertices[0] + indices[i]), *(vertices[1] + indices[i]), *(vertices[2] + indices[i]), *(vertices[3] + indices[i]), 
+        *(vertices[4] + indices[i]), *(vertices[5] + indices[i]), *(vertices[6] + indices[i])
+      };
+
+      float v2[] = {
+        *(vertices[0] + indices[i + 1]), *(vertices[1] + indices[i + 1]), *(vertices[2] + indices[i + 1]), *(vertices[3] + indices[i + 1]),
+        *(vertices[4] + indices[i + 1]), *(vertices[5] + indices[i + 1]), *(vertices[6] + indices[i + 1])
+      };
+
+      float v3[] = {
+        *(vertices[0] + indices[i + 2]), *(vertices[1] + indices[i + 2]), *(vertices[2] + indices[i + 2]), *(vertices[3] + indices[i + 2]),
+        *(vertices[4] + indices[i + 2]), *(vertices[5] + indices[i + 2]), *(vertices[6] + indices[i + 2])
+      };
 
       float x0 = v1[0];
       float x1 = v2[0];
@@ -1057,9 +1255,20 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
   }
   else {
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      float v1[] = {
+        *(vertices[0] + indices[i]), *(vertices[1] + indices[i]), *(vertices[2] + indices[i]), *(vertices[3] + indices[i]),
+        *(vertices[4] + indices[i]), *(vertices[5] + indices[i]), *(vertices[6] + indices[i])
+      };
+
+      float v2[] = {
+        *(vertices[0] + indices[i + 1]), *(vertices[1] + indices[i + 1]), *(vertices[2] + indices[i + 1]), *(vertices[3] + indices[i + 1]),
+        *(vertices[4] + indices[i + 1]), *(vertices[5] + indices[i + 1]), *(vertices[6] + indices[i + 1])
+      };
+
+      float v3[] = {
+        *(vertices[0] + indices[i + 2]), *(vertices[1] + indices[i + 2]), *(vertices[2] + indices[i + 2]), *(vertices[3] + indices[i + 2]),
+        *(vertices[4] + indices[i + 2]), *(vertices[5] + indices[i + 2]), *(vertices[6] + indices[i + 2])
+      };
 
       float x0 = v1[0];
       float x1 = v2[0];
@@ -1311,14 +1520,25 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
   }
 }
 
-void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture) {
+void Unaligned_FlatShadeUVs(const float** vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      float v1[] = {
+        *(vertices[0] + indices[i]), *(vertices[1] + indices[i]), *(vertices[2] + indices[i]), *(vertices[3] + indices[i]),
+        *(vertices[4] + indices[i]), *(vertices[5] + indices[i])
+      };
+
+      float v2[] = {
+        *(vertices[0] + indices[i + 1]), *(vertices[1] + indices[i + 1]), *(vertices[2] + indices[i + 1]), *(vertices[3] + indices[i + 1]),
+        *(vertices[4] + indices[i + 1]), *(vertices[5] + indices[i + 1])
+      };
+
+      float v3[] = {
+        *(vertices[0] + indices[i + 2]), *(vertices[1] + indices[i + 2]), *(vertices[2] + indices[i + 2]), *(vertices[3] + indices[i + 2]),
+        *(vertices[4] + indices[i + 2]), *(vertices[5] + indices[i + 2])
+      };
 
       float x0 = v1[0];
       float x1 = v2[0];
@@ -1559,9 +1779,20 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
   }
   else {
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      float v1[] = {
+        *(vertices[0] + indices[i]), *(vertices[1] + indices[i]), *(vertices[2] + indices[i]), *(vertices[3] + indices[i]),
+        *(vertices[4] + indices[i]), *(vertices[5] + indices[i])
+      };
+
+      float v2[] = {
+        *(vertices[0] + indices[i + 1]), *(vertices[1] + indices[i + 1]), *(vertices[2] + indices[i + 1]), *(vertices[3] + indices[i + 1]),
+        *(vertices[4] + indices[i + 1]), *(vertices[5] + indices[i + 1])
+      };
+
+      float v3[] = {
+        *(vertices[0] + indices[i + 2]), *(vertices[1] + indices[i + 2]), *(vertices[2] + indices[i + 2]), *(vertices[3] + indices[i + 2]),
+        *(vertices[4] + indices[i + 2]), *(vertices[5] + indices[i + 2])
+      };
 
       float x0 = v1[0];
       float x1 = v2[0];

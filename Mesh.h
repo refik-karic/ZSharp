@@ -12,9 +12,9 @@ class Mesh final {
 
   Mesh() = default;
 
-  Mesh(size_t stride);
+  Mesh(size_t numAttributes);
 
-  Mesh(size_t numVerts, size_t stride, size_t numTriangleFaces);
+  Mesh(size_t numVerts, size_t numAttributes, size_t numTriangleFaces);
 
   Mesh(const Mesh& copy);
   
@@ -22,25 +22,32 @@ class Mesh final {
 
   void Resize(size_t vertexLength, size_t faceTableLength);
 
-  void SetData(const float* vertData, size_t index, size_t numBytes);
+  void SetDataSOA(const float** data, size_t index, size_t numBytes);
+
+  void SetDataAOS(const float* data, size_t index, size_t numBytes, size_t stride);
 
   void SetTriangle(const Triangle& triangle, size_t index);
 
-  Array<float>& GetVertTable();
+  Array<float>* GetVertTables();
 
-  const Array<float>& GetVertTable() const;
+  const Array<float>* GetVertTables() const;
 
-  size_t Stride() const;
+  Array<Array<float>>& GetAttributeTables();
 
-  void SetStride(size_t stride);
+  const Array<Array<float>>& GetAttributeTables() const;
+
+  size_t NumAttributes() const;
+
+  void SetNumAttributes(size_t numAttributes);
 
   Array<Triangle>& GetTriangleFaceTable();
 
   const Array<Triangle>& GetTriangleFaceTable() const;
 
   private:
-  size_t mStride = 0;
-  Array<float> mVertTable;
+  size_t mNumAttributes = 0;
+  Array<float> mVertTables[4];
+  Array<Array<float>> mAttributeTables;
   Array<Triangle> mTriangleFaceTable;
 };
 }

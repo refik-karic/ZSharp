@@ -225,8 +225,8 @@ void World::LoadModels() {
       int32 vertStride = 0;
       for (Mesh& mesh : model.GetMeshData()) {
         indexBufSize += (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
-        vertBufSize += (int32)mesh.GetVertTable().Size();
-        vertStride = (int32)mesh.Stride();
+        vertBufSize += (int32)mesh.GetVertTables()[0].Size();
+        vertStride = (int32)mesh.NumAttributes();
       }
 
       indexBuffer.Resize(indexBufSize);
@@ -247,9 +247,8 @@ void World::LoadModels() {
   }
 }
 
-void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride)
-{
-  Model& model = mActiveModels.EmplaceBack(order, stride);
+void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride) {
+  Model& model = mActiveModels.EmplaceBack(order, stride - 4);
   VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
   IndexBuffer& indexBuffer = mIndexBuffers.EmplaceBack();
 
@@ -276,13 +275,13 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
   {
     const int32 strideBytes = stride * sizeof(float);
     Mesh& firstMesh = model[0];
-    int32 vertSize = 3 * stride;
+    int32 vertSize = 3;
     int32 faceSize = 1;
     firstMesh.Resize(vertSize, faceSize);
-    firstMesh.SetData(v1, 0, strideBytes);
-    firstMesh.SetData(v2, stride, strideBytes);
-    firstMesh.SetData(v3, stride * 2, strideBytes);
-    Triangle triangle(0 * stride, 1 * stride, 2 * stride);
+    firstMesh.SetDataAOS(v1, 0, strideBytes, stride);
+    firstMesh.SetDataAOS(v2, 1, strideBytes, stride);
+    firstMesh.SetDataAOS(v3, 2, strideBytes, stride);
+    Triangle triangle(0, 1, 2);
     firstMesh.SetTriangle(triangle, 0);
   }
 
@@ -290,11 +289,13 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
   int32 vertBufSize = 0;
   for (Mesh& mesh : model.GetMeshData()) {
     indexBufSize += (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
-    vertBufSize += (int32)mesh.GetVertTable().Size();
+    vertBufSize += (int32)mesh.GetVertTables()[0].Size();
   }
 
+  model.BoundingBox() = model.ComputeBoundingBox();
+
   indexBuffer.Resize(indexBufSize);
-  vertBuffer.Resize(vertBufSize, stride);
+  vertBuffer.Resize(vertBufSize, stride - 4);
 }
 
 size_t World::GetTotalModels() const {
@@ -321,7 +322,7 @@ void World::LoadOBJ(Model& model, Asset& asset) {
 
   model.CreateNewMesh();
   model.SetShadingOrder(objFile.ShadingOrder());
-  model.SetStride(objFile.Stride());
+  model.SetStride(objFile.Stride() - 4);
   model.BoundingBox() = objFile.BoundingBox();
   Mesh& mesh = model[0];
 
@@ -346,12 +347,10 @@ void World::LoadOBJ(Model& model, Asset& asset) {
     objFile.ShadingOrder().Clear();
     objFile.ShadingOrder().EmplaceBack(ShadingModes::RGB, 3);
     model.SetShadingOrder(objFile.ShadingOrder());
-    model.SetStride(7);
+    model.SetStride(7 - 4);
   }
 
-  const int32 stride = objFile.Stride();
-
-  int32 vertSize = (int32)objFile.Verts().Size() * stride;
+  int32 vertSize = (int32)objFile.Verts().Size();
   int32 indexSize = (int32)objFile.Faces().Size();
 
   mesh.Resize(vertSize, indexSize);
@@ -364,10 +363,10 @@ void World::LoadOBJ(Model& model, Asset& asset) {
     for (int32 i = 0; i < numVerts; ++i) {
       ZAssert(vertData[3] == 1.f);
 
-      const size_t index = i * stride;
+      float xyzwuv[6] = { vertData[0], vertData[1], vertData[2], vertData[3],
+        uvData[0], uvData[1] };
 
-      mesh.SetData(vertData, index, 4 * sizeof(float));
-      mesh.SetData(uvData, index + 4, 2 * sizeof(float));
+      mesh.SetDataAOS(xyzwuv, i, sizeof(xyzwuv), 6);
 
       vertData += 4;
       uvData += 3;
@@ -384,28 +383,35 @@ void World::LoadOBJ(Model& model, Asset& asset) {
     for (int32 i = 0, triIndex = 0; i < numVerts; ++i) {
       ZAssert(vertData[3] == 1.f);
 
-      const size_t index = i * 7;
-      mesh.SetData(vertData, index, 4 * sizeof(float));
+      float xyzwuv[7] = { vertData[0], vertData[1], vertData[2], vertData[3] };
 
       switch (triIndex % 3) {
         case 0:
         {
-          mesh.SetData(R, index + 4, sizeof(R));
+          xyzwuv[4] = R[0];
+          xyzwuv[5] = R[1];
+          xyzwuv[6] = R[2];
         }
           break;
         case 1:
         {
-          mesh.SetData(G, index + 4, sizeof(G));
+          xyzwuv[4] = G[0];
+          xyzwuv[5] = G[1];
+          xyzwuv[6] = G[2];
         }
           break;
         case 2:
         {
-          mesh.SetData(B, index + 4, sizeof(B));
+          xyzwuv[4] = B[0];
+          xyzwuv[5] = B[1];
+          xyzwuv[6] = B[2];
         }
           break;
         default:
           break;
       }
+
+      mesh.SetDataAOS(xyzwuv, i, sizeof(xyzwuv), 7);
 
       vertData += 4;
       triIndex++;
@@ -414,9 +420,9 @@ void World::LoadOBJ(Model& model, Asset& asset) {
 
   const Array<OBJFace>& faceList = objFile.Faces();
   for (size_t triIndex = 0; triIndex < indexSize; ++triIndex) {
-    Triangle triangle(static_cast<int32>(faceList[triIndex].triangleFace[0].vertexIndex) * stride,
-      static_cast<int32>(faceList[triIndex].triangleFace[1].vertexIndex) * stride,
-      static_cast<int32>(faceList[triIndex].triangleFace[2].vertexIndex) * stride
+    Triangle triangle(static_cast<int32>(faceList[triIndex].triangleFace[0].vertexIndex),
+      static_cast<int32>(faceList[triIndex].triangleFace[1].vertexIndex),
+      static_cast<int32>(faceList[triIndex].triangleFace[2].vertexIndex)
     );
     mesh.SetTriangle(triangle, triIndex);
   }

@@ -88,7 +88,7 @@ void GameInstance::TickWorld() {
 
   for (Model& model : mWorld.GetModels()) {
     for (Mesh& mesh : model.GetMeshData()) {
-      numVerts += (mesh.GetVertTable().Size() / mesh.Stride());
+      numVerts += mesh.GetVertTables()[0].Size();
       numTriangles += mesh.GetTriangleFaceTable().Size();
     }
   }

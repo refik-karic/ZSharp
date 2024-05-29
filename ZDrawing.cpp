@@ -246,9 +246,7 @@ void DrawRunSlice(Framebuffer& framebuffer,
 void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped) {
   NamedScopedTimer(DrawFlatTrianglesRGB);
   
-  const size_t frameHeight = framebuffer.GetHeight();
   const size_t frameWidth = framebuffer.GetWidth();
-  const float maxHeight = (float)frameHeight;
   const float maxWidth = (float)frameWidth;
 
   const float* vertexClipData;
@@ -355,16 +353,14 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
     }
   }
 #else
-  Unaligned_FlatShadeRGB(vertexClipData, indexClipData, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
+  Unaligned_FlatShadeRGB(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
 #endif
 }
 
 void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped, const Texture* texture, size_t mipLevel) {
   NamedScopedTimer(DrawFlatTrianglesUV);
 
-  const size_t frameHeight = framebuffer.GetHeight();
   const size_t frameWidth = framebuffer.GetWidth();
-  const float maxHeight = (float)frameHeight;
   const float maxWidth = (float)frameWidth;
 
   const float* vertexClipData;
@@ -474,7 +470,7 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
     }
   }
 #else
-  Unaligned_FlatShadeUVs(vertexClipData, indexClipData, end, maxWidth, maxHeight, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture, mipLevel);
+  Unaligned_FlatShadeUVs(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture, mipLevel);
 #endif
 }
 

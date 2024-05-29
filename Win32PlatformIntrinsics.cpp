@@ -785,9 +785,11 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
   }
 }
 
-void Aligned_WindowTransform(float* data, int32 stride, int32 length, const float windowTransform0[3], const float windowTransform1[3]) {
+void Aligned_WindowTransform(float* data, int32 stride, int32 length, const float windowTransform0[3], const float windowTransform1[3], const float width, const float height) {
   __m128 window0 = _mm_set_ps(0.f, windowTransform0[2], windowTransform0[1], windowTransform0[0]);
   __m128 window1 = _mm_set_ps(0.f, windowTransform1[2], windowTransform1[1], windowTransform1[0]);
+
+  __m128 maxXY = _mm_set_ps(0.f, 0.f, height, width);
 
   for (int32 i = 0; i < length; ++i) {
     float* vertexData = data + (i * stride);
@@ -810,7 +812,8 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
     __m128 dotX = _mm_mul_ps(result, window0);
     __m128 dotY = _mm_mul_ps(result, window1);
 
-    result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_castsi128_ps(_mm_setzero_si128()));
+    result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_setzero_ps());
+    result = _mm_min_ps(_mm_max_ps(result, _mm_setzero_ps()), maxXY);
 
     // [0] = dotX
     // [1] = dotY
@@ -831,7 +834,7 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
   }
 }
 
-void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length, const float matrix[4][4], const float windowTransform0[3], const float windowTransform1[3]) {
+void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length, const float matrix[4][4], const float windowTransform0[3], const float windowTransform1[3], const float width, const float height) {
   __m128 matrixX = _mm_set_ps(matrix[3][0], matrix[2][0], matrix[1][0], matrix[0][0]);
   __m128 matrixY = _mm_set_ps(matrix[3][1], matrix[2][1], matrix[1][1], matrix[0][1]);
   __m128 matrixZ = _mm_set_ps(matrix[3][2], matrix[2][2], matrix[1][2], matrix[0][2]);
@@ -839,6 +842,8 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
 
   __m128 window0 = _mm_set_ps(0.f, windowTransform0[2], windowTransform0[1], windowTransform0[0]);
   __m128 window1 = _mm_set_ps(0.f, windowTransform1[2], windowTransform1[1], windowTransform1[0]);
+
+  __m128 maxXY = _mm_set_ps(0.f, 0.f, height, width);
 
   for (size_t i = 0; i < length; i += stride) {
     float* vecData = data + i;
@@ -880,6 +885,7 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
     __m128 dotY = _mm_mul_ps(result, window1);
 
     result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_castsi128_ps(_mm_setzero_si128()));
+    result = _mm_min_ps(_mm_max_ps(result, _mm_setzero_ps()), maxXY);
 
     // [0] = dotX
     // [1] = dotY
@@ -919,7 +925,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
-void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer) {
+void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const int32 end, const float maxWidth, uint8* framebuffer, float* depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
@@ -947,23 +953,22 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       fmaxX = ceilf(fmaxX);
       fmaxY = ceilf(fmaxY);
 
-      fminX = Clamp(fminX, 0.f, maxWidth);
-      fmaxX = Clamp(fmaxX, 0.f, maxWidth);
-      fminY = Clamp(fminY, 0.f, maxHeight);
-      fmaxY = Clamp(fmaxY, 0.f, maxHeight);
-
       int32 minX = (int32)fminX;
       int32 maxX = (int32)fmaxX;
       int32 minY = (int32)fminY;
       int32 maxY = (int32)fmaxY;
 
-      float boundingBoxMin[2] = { fminX, fminY };
+      const float x1x0 = x1 - x0;
+      const float x2x1 = x2 - x1;
+      const float x0x2 = x0 - x2;
+      const float y1y0 = y1 - y0;
+      const float y2y0 = y2 - y0;
 
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
       //  2) For larger triangles we step SIMD width at a time
       if ((maxX - minX) < 8) {
-        __m128 invArea = _mm_set_ps1(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+        __m128 invArea = _mm_rcp_ps(_mm_set_ps1(((x2 - x0) * y1y0) - (y2y0 * x1x0)));
         __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
 
         // We want the RGB values to be scaled by 255 in the end.
@@ -974,13 +979,13 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
         __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), scaleFactor);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        __m128 weightInit = _mm_set_ps(BarycentricArea2D(v2, v3, boundingBoxMin),
-          BarycentricArea2D(v3, v1, boundingBoxMin),
-          BarycentricArea2D(v1, v2, boundingBoxMin),
+        __m128 weightInit = _mm_set_ps(((fminX - x1) * (y2 - y1)) - ((fminY - y1) * x2x1),
+          ((fminX - x2) * (y0 - y2)) - ((fminY - y2) * x0x2),
+          ((fminX - x0) * y1y0) - ((fminY - y0) * x1x0),
           0.f);
 
-        __m128 xStep = _mm_set_ps(v2[1] - v3[1], v3[1] - v1[1], v1[1] - v2[1], 0.f);
-        __m128 yStep = _mm_set_ps(v3[0] - v2[0], v1[0] - v3[0], v2[0] - v1[0], 0.f);
+        __m128 xStep = _mm_set_ps(y1 - y2, y2y0, y0 - y1, 0.f);
+        __m128 yStep = _mm_set_ps(x2x1, x0x2, x1x0, 0.f);
 
         const uint32 pixelOffset = (minX + (minY * sMaxWidth));
         const uint32 remainingStride = sMaxWidth - (maxX - minX);
@@ -1036,7 +1041,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
         }
       }
       else {
-        __m256 invArea = _mm256_set1_ps(1.f / ((v3[0] - v1[0]) * (v2[1] - v1[1]) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+        __m256 invArea = _mm256_rcp_ps(_mm256_set1_ps(((x2 - x0) * y1y0) - (y2y0 * x1x0)));
 
         __m256 z0 = _mm256_set1_ps(v1[3]);
         __m256 invVert0 = _mm256_mul_ps(z0, invArea);
@@ -1079,17 +1084,17 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
         __m256 b2b0 = _mm256_sub_ps(invAttr22, invAttr20);
 
         // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
-        __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
-        __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
+        __m256 weightInit0 = _mm256_set1_ps(((fminX - x1) * (y2 - y1)) - ((fminY - y1) * x2x1));
+        __m256 weightInit1 = _mm256_set1_ps(((fminX - x2) * (y0 - y2)) - ((fminY - y2) * x0x2));
+        __m256 weightInit2 = _mm256_set1_ps(((fminX - x0) * y1y0) - ((fminY - y0) * x1x0));
 
-        __m256 xStep0 = _mm256_set1_ps(v2[1] - v3[1]);
-        __m256 xStep1 = _mm256_set1_ps(v3[1] - v1[1]);
-        __m256 xStep2 = _mm256_set1_ps(v1[1] - v2[1]);
+        __m256 xStep0 = _mm256_set1_ps(y1 - y2);
+        __m256 xStep1 = _mm256_set1_ps(y2y0);
+        __m256 xStep2 = _mm256_set1_ps(y0 - y1);
 
-        __m256 yStep0 = _mm256_set1_ps(v3[0] - v2[0]);
-        __m256 yStep1 = _mm256_set1_ps(v1[0] - v3[0]);
-        __m256 yStep2 = _mm256_set1_ps(v2[0] - v1[0]);
+        __m256 yStep0 = _mm256_set1_ps(x2x1);
+        __m256 yStep1 = _mm256_set1_ps(x0x2);
+        __m256 yStep2 = _mm256_set1_ps(x1x0);
 
         __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
         __m256 stepMultiplier = _mm256_set1_ps(8.f);
@@ -1195,11 +1200,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
       fmaxX = ceilf(fmaxX);
       fmaxY = ceilf(fmaxY);
-
-      fminX = Clamp(fminX, 0.f, maxWidth);
-      fmaxX = Clamp(fmaxX, 0.f, maxWidth);
-      fminY = Clamp(fminY, 0.f, maxHeight);
-      fmaxY = Clamp(fmaxY, 0.f, maxHeight);
 
       int32 minX = (int32)fminX;
       int32 maxX = (int32)fmaxX;
@@ -1427,7 +1427,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
   }
 }
 
-void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end, const float maxWidth, const float maxHeight, uint8* framebuffer, float* depthBuffer, const Texture* texture, size_t mipLevel) {
+void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end, const float maxWidth, uint8* framebuffer, float* depthBuffer, const Texture* texture, size_t mipLevel) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
@@ -1455,21 +1455,22 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       fmaxX = ceilf(fmaxX);
       fmaxY = ceilf(fmaxY);
 
-      fminX = Clamp(fminX, 0.f, maxWidth);
-      fmaxX = Clamp(fmaxX, 0.f, maxWidth);
-      fminY = Clamp(fminY, 0.f, maxHeight);
-      fmaxY = Clamp(fmaxY, 0.f, maxHeight);
-
       int32 minX = (int32)fminX;
       int32 maxX = (int32)fmaxX;
       int32 minY = (int32)fminY;
       int32 maxY = (int32)fmaxY;
 
+      const float x1x0 = x1 - x0;
+      const float x2x1 = x2 - x1;
+      const float x0x2 = x0 - x2;
+      const float y1y0 = y1 - y0;
+      const float y2y0 = y2 - y0;
+
       // Two different render paths are used:
       //  1) For small triangles we step one pixel at a time
       //  2) For larger triangles we step SIMD width at a time
       if ((maxX - minX) < 8) {
-        __m128 invArea = _mm_rcp_ps(_mm_set_ps1(((v3[0] - v1[0]) * (v2[1] - v1[1])) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+        __m128 invArea = _mm_rcp_ps(_mm_set_ps1(((x2 - x0) * y1y0) - (y2y0 * x1x0)));
 
         __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
         __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), invArea);
@@ -1482,13 +1483,13 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
           __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
           __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
         */
-        __m128 weightInit = _mm_set_ps(((fminX - v2[0]) * (v3[1] - v2[1])) - ((fminY - v2[1]) * (v3[0] - v2[0])),
-          ((fminX - v3[0]) * (v1[1] - v3[1])) - ((fminY - v3[1]) * (v1[0] - v3[0])),
-          ((fminX - v1[0]) * (v2[1] - v1[1])) - ((fminY - v1[1]) * (v2[0] - v1[0])),
+        __m128 weightInit = _mm_set_ps(((fminX - x1) * (y2 - y1)) - ((fminY - y1) * x2x1),
+          ((fminX - x2) * (y0 - y2)) - ((fminY - y2) * x0x2),
+          ((fminX - x0) * y1y0) - ((fminY - y0) * x1x0),
           0.f);
 
-        __m128 xStep = _mm_set_ps(v2[1] - v3[1], v3[1] - v1[1], v1[1] - v2[1], 0.f);
-        __m128 yStep = _mm_set_ps(v3[0] - v2[0], v1[0] - v3[0], v2[0] - v1[0], 0.f);
+        __m128 xStep = _mm_set_ps(y1 - y2, y2y0, y0 - y1, 0.f);
+        __m128 yStep = _mm_set_ps(x2x1, x0x2, x1x0, 0.f);
 
         for (int32 h = minY; h < maxY; ++h) {
           __m128 weights = weightInit;
@@ -1526,7 +1527,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         }
       }
       else {
-        __m256 invArea = _mm256_rcp_ps(_mm256_set1_ps(((v3[0] - v1[0]) * (v2[1] - v1[1])) - ((v3[1] - v1[1]) * (v2[0] - v1[0]))));
+        __m256 invArea = _mm256_rcp_ps(_mm256_set1_ps(((x2 - x0) * y1y0) - (y2y0 * x1x0)));
         
         __m256 z0 = _mm256_set1_ps(v1[3]);
         __m256 invVert0 = _mm256_mul_ps(z0, invArea);
@@ -1573,17 +1574,17 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
           __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
           __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
         */
-        __m256 weightInit0 = _mm256_set1_ps(((fminX - v2[0]) * (v3[1] - v2[1])) - ((fminY - v2[1]) * (v3[0] - v2[0])));
-        __m256 weightInit1 = _mm256_set1_ps(((fminX - v3[0]) * (v1[1] - v3[1])) - ((fminY - v3[1]) * (v1[0] - v3[0])));
-        __m256 weightInit2 = _mm256_set1_ps(((fminX - v1[0]) * (v2[1] - v1[1])) - ((fminY - v1[1]) * (v2[0] - v1[0])));
+        __m256 weightInit0 = _mm256_set1_ps(((fminX - x1) * (y2 - y1)) - ((fminY - y1) * x2x1));
+        __m256 weightInit1 = _mm256_set1_ps(((fminX - x2) * (y0 - y2)) - ((fminY - y2) * x0x2));
+        __m256 weightInit2 = _mm256_set1_ps(((fminX - x0) * y1y0) - ((fminY - y0) * x1x0));
 
-        __m256 xStep0 = _mm256_set1_ps(v2[1] - v3[1]);
-        __m256 xStep1 = _mm256_set1_ps(v3[1] - v1[1]);
-        __m256 xStep2 = _mm256_set1_ps(v1[1] - v2[1]);
+        __m256 xStep0 = _mm256_set1_ps(y1 - y2);
+        __m256 xStep1 = _mm256_set1_ps(y2y0);
+        __m256 xStep2 = _mm256_set1_ps(y0 - y1);
 
-        __m256 yStep0 = _mm256_set1_ps(v3[0] - v2[0]);
-        __m256 yStep1 = _mm256_set1_ps(v1[0] - v3[0]);
-        __m256 yStep2 = _mm256_set1_ps(v2[0] - v1[0]);
+        __m256 yStep0 = _mm256_set1_ps(x2x1);
+        __m256 yStep1 = _mm256_set1_ps(x0x2);
+        __m256 yStep2 = _mm256_set1_ps(x1x0);
 
         __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
         __m256 stepMultiplier = _mm256_set1_ps(8.f);
@@ -1704,11 +1705,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
       fmaxX = ceilf(fmaxX);
       fmaxY = ceilf(fmaxY);
-
-      fminX = Clamp(fminX, 0.f, maxWidth);
-      fmaxX = Clamp(fmaxX, 0.f, maxWidth);
-      fminY = Clamp(fminY, 0.f, maxHeight);
-      fmaxY = Clamp(fmaxY, 0.f, maxHeight);
 
       int32 minX = (int32)fminX;
       int32 maxX = (int32)fmaxX;

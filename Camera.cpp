@@ -137,7 +137,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 
   if (clipBounds == ClipBounds::Inside) {
     Aligned_TransformDirectScreenSpace(vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride,
-      (const float(*)[4])*mPerspectiveTransform, windowTransformVec0, windowTransformVec1);
+      (const float(*)[4])*mPerspectiveTransform, windowTransformVec0, windowTransformVec1, mWidth, mHeight);
   }
   else {
     // Apply the perspective projection transform to all input vertices.
@@ -173,7 +173,7 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
       vertexClipData = vertexBuffer[0];
     }
 
-    Aligned_WindowTransform(vertexClipData, stride, vertClipLength, windowTransformVec0, windowTransformVec1);
+    Aligned_WindowTransform(vertexClipData, stride, vertClipLength, windowTransformVec0, windowTransformVec1, mWidth, mHeight);
   }
 }
 
@@ -221,6 +221,8 @@ void Camera::OnResize(size_t width, size_t height) {
   mWindowTransform[1][1] = (float)height;
   mWindowTransform[1][2] = (float)height;
   mWindowTransform = mWindowTransform * 0.5f;
+  mWidth = (float)width;
+  mHeight = (float)height;
 }
   
 }

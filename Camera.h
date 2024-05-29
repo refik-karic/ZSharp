@@ -46,6 +46,9 @@ class Camera final : public WorldObject {
 
   float mStandardNearPlane;
 
+  float mWidth;
+  float mHeight;
+
   Mat4x4 mPerspectiveTransform;
   Mat2x3 mWindowTransform;
 

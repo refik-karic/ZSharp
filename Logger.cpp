@@ -113,6 +113,8 @@ void Logger::LogPrologue() {
   preamble.Appendf("OS: Username={0}, Machine={1}\n", 
     PlatformGetUsername(), 
     PlatformGetMachineName());
+  preamble.Appendf("Build: {0}\n",
+    PlatformGetBuildType());
 
   Array<String> displays(PlatformEnumDisplayInfo());
   for (size_t i = 0; i < displays.Size(); ++i) {

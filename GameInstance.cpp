@@ -61,13 +61,14 @@ void GameInstance::LoadFrontEnd() {
 void GameInstance::TickWorld() {
   NamedScopedTimer(TickWorld);
 
+  size_t renderFrameTime = PlatformHighResClock();
+
   {
     NamedScopedTimer(ThreadPoolWait);
     mThreadPool.WaitForJobs();
   }
 
   size_t frameDeltaMs = (mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
-
   mLastFrameTime = PlatformHighResClock();
 
   const String frameString(String::FromFormat("Frame: {0}\n", mFrameCount));
@@ -149,6 +150,8 @@ void GameInstance::TickWorld() {
   Logger::Log(LogCategory::Info, remainingTriangleString);
 
   if (mDrawStats) {
+    String renderFrameTimeString(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDelta(renderFrameTime, ClockUnits::Microseconds)));
+
     size_t bufferWidth = mRenderer.GetFrameBuffer().GetWidth();
     uint8* buffer;
     ZColor color;
@@ -161,15 +164,17 @@ void GameInstance::TickWorld() {
       color = ZColors::BLACK;
     }
 
+    // TODO: Organize stats a bit better.
     DrawText(frameString, 10, 10, buffer, bufferWidth, color);
     DrawText(deltaString, 10, 20, buffer, bufferWidth, color);
-    DrawText(cameraPosition, 10, 30, buffer, bufferWidth, color);
-    DrawText(cameraView, 10, 40, buffer, bufferWidth, color);
-    DrawText(physicsTime, 10, 50, buffer, bufferWidth, color);
-    DrawText(modelString, 10, 60, buffer, bufferWidth, color);
-    DrawText(vertString, 10, 70, buffer, bufferWidth, color);
-    DrawText(triangleString, 10, 80, buffer, bufferWidth, color);
-    DrawText(remainingTriangleString, 10, 90, buffer, bufferWidth, color);
+    DrawText(renderFrameTimeString, 10, 30, buffer, bufferWidth, color);
+    DrawText(cameraPosition, 10, 40, buffer, bufferWidth, color);
+    DrawText(cameraView, 10, 50, buffer, bufferWidth, color);
+    DrawText(physicsTime, 10, 60, buffer, bufferWidth, color);
+    DrawText(modelString, 10, 70, buffer, bufferWidth, color);
+    DrawText(vertString, 10, 80, buffer, bufferWidth, color);
+    DrawText(triangleString, 10, 90, buffer, bufferWidth, color);
+    DrawText(remainingTriangleString, 10, 100, buffer, bufferWidth, color);
   }
 
   if (mDevConsole.IsOpen()) {

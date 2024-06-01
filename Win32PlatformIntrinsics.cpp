@@ -934,246 +934,169 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       const float* v2 = vertices + indices[i + 1];
       const float* v3 = vertices + indices[i + 2];
 
-      __m128 x0 = _mm_load_ps1(v1);
-      __m128 x1 = _mm_load_ps1(v2);
-      __m128 x2 = _mm_load_ps1(v3);
+      __m256 x0 = _mm256_broadcastss_ps(_mm_load_ps1(v1));
+      __m256 x1 = _mm256_broadcastss_ps(_mm_load_ps1(v2));
+      __m256 x2 = _mm256_broadcastss_ps(_mm_load_ps1(v3));
 
-      __m128 y0 = _mm_load_ps1(v1 + 1);
-      __m128 y1 = _mm_load_ps1(v2 + 1);
-      __m128 y2 = _mm_load_ps1(v3 + 1);
+      __m256 y0 = _mm256_broadcastss_ps(_mm_load_ps1(v1 + 1));
+      __m256 y1 = _mm256_broadcastss_ps(_mm_load_ps1(v2 + 1));
+      __m256 y2 = _mm256_broadcastss_ps(_mm_load_ps1(v3 + 1));
 
-      __m128 fminX = _mm_min_ps(_mm_min_ps(x0, x1), x2);
-      __m128 fminY = _mm_min_ps(_mm_min_ps(y0, y1), y2);
-      __m128 fmaxX = _mm_max_ps(_mm_max_ps(x0, x1), x2);
-      __m128 fmaxY = _mm_max_ps(_mm_max_ps(y0, y1), y2);
+      __m256 fminX = _mm256_min_ps(_mm256_min_ps(x0, x1), x2);
+      __m256 fminY = _mm256_min_ps(_mm256_min_ps(y0, y1), y2);
+      __m256 fmaxX = _mm256_max_ps(_mm256_max_ps(x0, x1), x2);
+      __m256 fmaxY = _mm256_max_ps(_mm256_max_ps(y0, y1), y2);
 
-      fminX = _mm_round_ps(fminX, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
-      fminY = _mm_round_ps(fminY, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
+      fminX = _mm256_round_ps(fminX, _MM_ROUND_MODE_DOWN);
+      fminY = _mm256_round_ps(fminY, _MM_ROUND_MODE_DOWN);
 
-      fmaxX = _mm_round_ps(fmaxX, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC);
-      fmaxY = _mm_round_ps(fmaxY, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC);
+      fmaxX = _mm256_round_ps(fmaxX, _MM_ROUND_MODE_UP);
+      fmaxY = _mm256_round_ps(fmaxY, _MM_ROUND_MODE_UP);
 
-      int32 minX = _mm_cvtsi128_si32(_mm_cvtps_epi32(fminX));
-      int32 maxX = _mm_cvtsi128_si32(_mm_cvtps_epi32(fmaxX));
-      int32 minY = _mm_cvtsi128_si32(_mm_cvtps_epi32(fminY));
-      int32 maxY = _mm_cvtsi128_si32(_mm_cvtps_epi32(fmaxY));
+      int32 minX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminX));
+      int32 maxX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxX));
+      int32 minY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminY));
+      int32 maxY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxY));
 
-      __m128 x1x0 = _mm_sub_ps(x1, x0);
-      __m128 x2x1 = _mm_sub_ps(x2, x1);
-      __m128 x0x2 = _mm_sub_ps(x0, x2);
-      __m128 y1y0 = _mm_sub_ps(y1, y0);
-      __m128 y2y0 = _mm_sub_ps(y2, y0);
+      __m256 x1x0 = _mm256_sub_ps(x1, x0);
+      __m256 x2x1 = _mm256_sub_ps(x2, x1);
+      __m256 x0x2 = _mm256_sub_ps(x0, x2);
+      __m256 y1y0 = _mm256_sub_ps(y1, y0);
+      __m256 y2y0 = _mm256_sub_ps(y2, y0);
 
-      // Two different render paths are used:
-      //  1) For small triangles we step one pixel at a time
-      //  2) For larger triangles we step SIMD width at a time
-      if ((maxX - minX) < 8) {
-        __m128 invArea = _mm_rcp_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(x2, x0), y1y0), _mm_mul_ps(y2y0, x1x0)));
-        __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
+      __m256 invArea = _mm256_rcp_ps(_mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(x2, x0), y1y0), _mm256_mul_ps(y2y0, x1x0)));
 
-        // We want the RGB values to be scaled by 255 in the end.
-        // Doing that here saves us from having to apply the scale at each pixel.
-        __m128 scaleFactor = _mm_mul_ps(invArea, _mm_set_ps1(255.f));
-        __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), scaleFactor);
-        __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), scaleFactor);
-        __m128 invAttr2 = _mm_mul_ps(_mm_set_ps(v1[6], v2[6], v3[6], 0.f), scaleFactor);
+      __m256 z0 = _mm256_set1_ps(v1[3]);
+      __m256 invVert0 = _mm256_mul_ps(z0, invArea);
+      __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
+      __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
 
-        // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        __m128 weightInit = _mm_set_ps(_mm_cvtss_f32(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x1), _mm_sub_ps(y2, y1)), _mm_mul_ps(_mm_sub_ps(fminY, y1), x2x1))),
-          _mm_cvtss_f32(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x2), _mm_sub_ps(y0, y2)), _mm_mul_ps(_mm_sub_ps(fminY, y2), x0x2))),
-          _mm_cvtss_f32(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x0), y1y0), _mm_mul_ps(_mm_sub_ps(fminY, y0), x1x0))),
-          0.f);
+      __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
+      __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
 
-        __m128 xStep = _mm_set_ps(_mm_cvtss_f32(_mm_sub_ps(y1, y2)), _mm_cvtss_f32(y2y0), _mm_cvtss_f32(_mm_sub_ps(y0, y1)), 0.f);
-        __m128 yStep = _mm_set_ps(_mm_cvtss_f32(x2x1), _mm_cvtss_f32(x0x2), _mm_cvtss_f32(x1x0), 0.f);
+      // We want the RGB values to be scaled by 255 in the end.
+      // Doing that here saves us from having to apply the scale at each pixel.
+      __m256 rgbScale = _mm256_set1_ps(255.f);
+      __m256 scaleFactor = _mm256_mul_ps(invArea, rgbScale);
 
-        const uint32 pixelOffset = (minX + (minY * sMaxWidth));
-        const uint32 remainingStride = sMaxWidth - (maxX - minX);
+      __m256 r0 = _mm256_set1_ps(v1[4]);
+      __m256 invAttr00 = _mm256_mul_ps(r0, scaleFactor);
+      __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), scaleFactor);
+      __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), scaleFactor);
 
-        uint32* pixels = ((uint32*)(framebuffer)) + pixelOffset;
-        float* pixelDepth = depthBuffer + pixelOffset;
+      r0 = _mm256_mul_ps(r0, rgbScale);
+      __m256 r1r0 = _mm256_sub_ps(invAttr01, invAttr00);
+      __m256 r2r0 = _mm256_sub_ps(invAttr02, invAttr00);
 
-        __m128i pixelShuffleMask = _mm_set_epi8(
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-          0, 0, 0, 0,
-          0, 12, 8, 4);
+      __m256 g0 = _mm256_set1_ps(v1[5]);
+      __m256 invAttr10 = _mm256_mul_ps(g0, scaleFactor);
+      __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), scaleFactor);
+      __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), scaleFactor);
 
-        for (int32 h = minY; h < maxY; ++h) {
-          __m128 weights = weightInit;
+      g0 = _mm256_mul_ps(g0, rgbScale);
+      __m256 g1g0 = _mm256_sub_ps(invAttr11, invAttr10);
+      __m256 g2g0 = _mm256_sub_ps(invAttr12, invAttr10);
 
-          for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
-            if (!_mm_movemask_ps(weights)) {
-              __m128 weightedVerts = _mm_mul_ps(weights, invVert);
+      __m256 b0 = _mm256_set1_ps(v1[6]);
+      __m256 invAttr20 = _mm256_mul_ps(b0, scaleFactor);
+      __m256 invAttr21 = _mm256_mul_ps(_mm256_set1_ps(v2[6]), scaleFactor);
+      __m256 invAttr22 = _mm256_mul_ps(_mm256_set1_ps(v3[6]), scaleFactor);
 
-              float pixelZ = _mm_cvtss_f32(_mm_hadd_ps(_mm_hadd_ps(weightedVerts, weightedVerts), _mm_setzero_ps()));
-              if ((*pixelDepth) > pixelZ) {
-                *pixelDepth = pixelZ;
+      b0 = _mm256_mul_ps(b0, rgbScale);
+      __m256 b1b0 = _mm256_sub_ps(invAttr21, invAttr20);
+      __m256 b2b0 = _mm256_sub_ps(invAttr22, invAttr20);
 
-                __m128 invDenominator = _mm_rcp_ps(_mm_set_ps1(pixelZ));
+      // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
+      __m256 weightInit0 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x1), _mm256_sub_ps(y2, y1)), _mm256_mul_ps(_mm256_sub_ps(fminY, y1), x2x1));
+      __m256 weightInit1 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x2), _mm256_sub_ps(y0, y2)), _mm256_mul_ps(_mm256_sub_ps(fminY, y2), x0x2));
+      __m256 weightInit2 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x0), y1y0), _mm256_mul_ps(_mm256_sub_ps(fminY, y0), x1x0));
 
-                __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
-                __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
-                __m128 weightedAttr2 = _mm_mul_ps(_mm_mul_ps(weights, invAttr2), invDenominator);
+      __m256 xStep0 = _mm256_sub_ps(y1, y2);
+      __m256 xStep1 = y2y0;
+      __m256 xStep2 = _mm256_sub_ps(y0, y1);
 
-                __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
-                thirdTerms = _mm_shuffle_ps(weightedAttr2, thirdTerms, 0b11011100);
+      __m256 yStep0 = x2x1;
+      __m256 yStep1 = x0x2;
+      __m256 yStep2 = x1x0;
 
-                __m128 secondTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b10001000);
-                secondTerms = _mm_shuffle_ps(weightedAttr2, secondTerms, 0b11011000);
+      __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
+      __m256 stepMultiplier = _mm256_set1_ps(8.f);
 
-                __m128 firstTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b01000100);
-                firstTerms = _mm_shuffle_ps(weightedAttr2, firstTerms, 0b11010100);
+      weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
+      weightInit1 = _mm256_sub_ps(weightInit1, _mm256_mul_ps(initMultiplier, xStep1));
+      weightInit2 = _mm256_sub_ps(weightInit2, _mm256_mul_ps(initMultiplier, xStep2));
 
-                __m128i convertedTerms = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms));
+      xStep0 = _mm256_mul_ps(stepMultiplier, xStep0);
+      xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
+      xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
-                __m128i shuffledPixel = _mm_shuffle_epi8(convertedTerms, pixelShuffleMask);
-                *pixels = shuffledPixel.m128i_i32[0] | 0xFF000000;
-              }
-            }
+      __m256i initialColor = _mm256_set1_epi32(0xFF000000);
 
-            weights = _mm_sub_ps(weights, xStep);
+      for (int32 h = minY; h < maxY; ++h) {
+        __m256 weights0 = weightInit0;
+        __m256 weights1 = weightInit1;
+        __m256 weights2 = weightInit2;
+
+        uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
+        float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+
+        for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
+          // OR all weights and fetch the sign bits
+          __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
+
+          // If all mask bits are set then none of these pixels are inside the triangle.
+          if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
+            __m256 depthVec = _mm256_load_ps(pixelDepth);
+
+            __m256 weightedVerts0 = z0;
+            __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
+            __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
+
+            __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
+            __m256 invZValues = _mm256_rcp_ps(zValues);
+
+            __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
+
+            __m256i finalCombinedMask = Not256(_mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask)));
+
+            __m256 weightedAttr00 = _mm256_mul_ps(r0, invZValues);
+            __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues);
+            __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, r2r0), invZValues);
+
+            __m256 weightedAttr10 = _mm256_mul_ps(g0, invZValues);
+            __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), invZValues);
+            __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, g2g0), invZValues);
+
+            __m256 weightedAttr20 = _mm256_mul_ps(b0, invZValues);
+            __m256 weightedAttr21 = _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), invZValues);
+            __m256 weightedAttr22 = _mm256_mul_ps(_mm256_mul_ps(weights2, b2b0), invZValues);
+
+            __m256i rValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02));
+            __m256i gValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
+            __m256i bValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
+
+            rValues = _mm256_slli_epi32(rValues, 16);
+            gValues = _mm256_slli_epi32(gValues, 8);
+
+            __m256i finalColor = initialColor;
+            finalColor = _mm256_or_epi32(finalColor, rValues);
+            finalColor = _mm256_or_epi32(finalColor, gValues);
+            finalColor = _mm256_or_epi32(finalColor, bValues);
+
+            _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, finalColor);
+            _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
           }
 
-          weightInit = _mm_sub_ps(weightInit, yStep);
-          pixels += remainingStride;
-          pixelDepth += remainingStride;
+          weights0 = _mm256_sub_ps(weights0, xStep0);
+          weights1 = _mm256_sub_ps(weights1, xStep1);
+          weights2 = _mm256_sub_ps(weights2, xStep2);
         }
+
+        weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
+        weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
+        weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
       }
-      else {
-        __m256 invArea = _mm256_broadcastss_ps(_mm_rcp_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(x2, x0), y1y0), _mm_mul_ps(y2y0, x1x0))));
-
-        __m256 z0 = _mm256_set1_ps(v1[3]);
-        __m256 invVert0 = _mm256_mul_ps(z0, invArea);
-        __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
-        __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
-
-        __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
-        __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
-
-        // We want the RGB values to be scaled by 255 in the end.
-        // Doing that here saves us from having to apply the scale at each pixel.
-        __m256 rgbScale = _mm256_set1_ps(255.f);
-        __m256 scaleFactor = _mm256_mul_ps(invArea, rgbScale);
-
-        __m256 r0 = _mm256_set1_ps(v1[4]);
-        __m256 invAttr00 = _mm256_mul_ps(r0, scaleFactor);
-        __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), scaleFactor);
-        __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), scaleFactor);
-
-        r0 = _mm256_mul_ps(r0, rgbScale);
-        __m256 r1r0 = _mm256_sub_ps(invAttr01, invAttr00);
-        __m256 r2r0 = _mm256_sub_ps(invAttr02, invAttr00);
-
-        __m256 g0 = _mm256_set1_ps(v1[5]);
-        __m256 invAttr10 = _mm256_mul_ps(g0, scaleFactor);
-        __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), scaleFactor);
-        __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), scaleFactor);
-
-        g0 = _mm256_mul_ps(g0, rgbScale);
-        __m256 g1g0 = _mm256_sub_ps(invAttr11, invAttr10);
-        __m256 g2g0 = _mm256_sub_ps(invAttr12, invAttr10);
-
-        __m256 b0 = _mm256_set1_ps(v1[6]);
-        __m256 invAttr20 = _mm256_mul_ps(b0, scaleFactor);
-        __m256 invAttr21 = _mm256_mul_ps(_mm256_set1_ps(v2[6]), scaleFactor);
-        __m256 invAttr22 = _mm256_mul_ps(_mm256_set1_ps(v3[6]), scaleFactor);
-
-        b0 = _mm256_mul_ps(b0, rgbScale);
-        __m256 b1b0 = _mm256_sub_ps(invAttr21, invAttr20);
-        __m256 b2b0 = _mm256_sub_ps(invAttr22, invAttr20);
-
-        // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        __m256 weightInit0 = _mm256_broadcastss_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x1), _mm_sub_ps(y2, y1)), _mm_mul_ps(_mm_sub_ps(fminY, y1), x2x1)));
-        __m256 weightInit1 = _mm256_broadcastss_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x2), _mm_sub_ps(y0, y2)), _mm_mul_ps(_mm_sub_ps(fminY, y2), x0x2)));
-        __m256 weightInit2 = _mm256_broadcastss_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x0), y1y0), _mm_mul_ps(_mm_sub_ps(fminY, y0), x1x0)));
-
-        __m256 xStep0 = _mm256_broadcastss_ps(_mm_sub_ps(y1, y2));
-        __m256 xStep1 = _mm256_broadcastss_ps(y2y0);
-        __m256 xStep2 = _mm256_broadcastss_ps(_mm_sub_ps(y0, y1));
-
-        __m256 yStep0 = _mm256_broadcastss_ps(x2x1);
-        __m256 yStep1 = _mm256_broadcastss_ps(x0x2);
-        __m256 yStep2 = _mm256_broadcastss_ps(x1x0);
-
-        __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
-        __m256 stepMultiplier = _mm256_set1_ps(8.f);
-
-        weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
-        weightInit1 = _mm256_sub_ps(weightInit1, _mm256_mul_ps(initMultiplier, xStep1));
-        weightInit2 = _mm256_sub_ps(weightInit2, _mm256_mul_ps(initMultiplier, xStep2));
-
-        xStep0 = _mm256_mul_ps(stepMultiplier, xStep0);
-        xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
-        xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
-
-        __m256i initialColor = _mm256_set1_epi32(0xFF000000);
-
-        for (int32 h = minY; h < maxY; ++h) {
-          __m256 weights0 = weightInit0;
-          __m256 weights1 = weightInit1;
-          __m256 weights2 = weightInit2;
-
-          uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
-          float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
-
-          for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
-            // OR all weights and fetch the sign bits
-            __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
-
-            // If all mask bits are set then none of these pixels are inside the triangle.
-            if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
-              __m256 depthVec = _mm256_load_ps(pixelDepth);
-
-              __m256 weightedVerts0 = z0;
-              __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
-              __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
-
-              __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
-              __m256 invZValues = _mm256_rcp_ps(zValues);
-
-              __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
-
-              __m256i finalCombinedMask = Not256(_mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask)));
-
-              __m256 weightedAttr00 = _mm256_mul_ps(r0, invZValues);
-              __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues);
-              __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, r2r0), invZValues);
-
-              __m256 weightedAttr10 = _mm256_mul_ps(g0, invZValues);
-              __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), invZValues);
-              __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, g2g0), invZValues);
-
-              __m256 weightedAttr20 = _mm256_mul_ps(b0, invZValues);
-              __m256 weightedAttr21 = _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), invZValues);
-              __m256 weightedAttr22 = _mm256_mul_ps(_mm256_mul_ps(weights2, b2b0), invZValues);
-
-              __m256i rValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02));
-              __m256i gValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
-              __m256i bValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
-
-              rValues = _mm256_slli_epi32(rValues, 16);
-              gValues = _mm256_slli_epi32(gValues, 8);
-
-              __m256i finalColor = initialColor;
-              finalColor = _mm256_or_epi32(finalColor, rValues);
-              finalColor = _mm256_or_epi32(finalColor, gValues);
-              finalColor = _mm256_or_epi32(finalColor, bValues);
-
-              _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, finalColor);
-              _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
-            }
-
-            weights0 = _mm256_sub_ps(weights0, xStep0);
-            weights1 = _mm256_sub_ps(weights1, xStep1);
-            weights2 = _mm256_sub_ps(weights2, xStep2);
-          }
-
-          weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
-          weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
-          weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
-        }
-      }
+      
     }
   }
   else {
@@ -1436,260 +1359,186 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       const float* v2 = vertices + indices[i + 1];
       const float* v3 = vertices + indices[i + 2];
 
-      __m128 x0 = _mm_load_ps1(v1);
-      __m128 x1 = _mm_load_ps1(v2);
-      __m128 x2 = _mm_load_ps1(v3);
+      __m256 x0 = _mm256_broadcastss_ps(_mm_load_ps1(v1));
+      __m256 x1 = _mm256_broadcastss_ps(_mm_load_ps1(v2));
+      __m256 x2 = _mm256_broadcastss_ps(_mm_load_ps1(v3));
 
-      __m128 y0 = _mm_load_ps1(v1 + 1);
-      __m128 y1 = _mm_load_ps1(v2 + 1);
-      __m128 y2 = _mm_load_ps1(v3 + 1);
+      __m256 y0 = _mm256_broadcastss_ps(_mm_load_ps1(v1 + 1));
+      __m256 y1 = _mm256_broadcastss_ps(_mm_load_ps1(v2 + 1));
+      __m256 y2 = _mm256_broadcastss_ps(_mm_load_ps1(v3 + 1));
 
-      __m128 fminX = _mm_min_ps(_mm_min_ps(x0, x1), x2);
-      __m128 fminY = _mm_min_ps(_mm_min_ps(y0, y1), y2);
-      __m128 fmaxX = _mm_max_ps(_mm_max_ps(x0, x1), x2);
-      __m128 fmaxY = _mm_max_ps(_mm_max_ps(y0, y1), y2);
+      __m256 fminX = _mm256_min_ps(_mm256_min_ps(x0, x1), x2);
+      __m256 fminY = _mm256_min_ps(_mm256_min_ps(y0, y1), y2);
+      __m256 fmaxX = _mm256_max_ps(_mm256_max_ps(x0, x1), x2);
+      __m256 fmaxY = _mm256_max_ps(_mm256_max_ps(y0, y1), y2);
 
-      fminX = _mm_round_ps(fminX, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
-      fminY = _mm_round_ps(fminY, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
+      fminX = _mm256_round_ps(fminX, _MM_ROUND_MODE_DOWN);
+      fminY = _mm256_round_ps(fminY, _MM_ROUND_MODE_DOWN);
 
-      fmaxX = _mm_round_ps(fmaxX, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC);
-      fmaxY = _mm_round_ps(fmaxY, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC);
+      fmaxX = _mm256_round_ps(fmaxX, _MM_ROUND_MODE_UP);
+      fmaxY = _mm256_round_ps(fmaxY, _MM_ROUND_MODE_UP);
 
-      int32 minX = _mm_cvtsi128_si32(_mm_cvtps_epi32(fminX));
-      int32 maxX = _mm_cvtsi128_si32(_mm_cvtps_epi32(fmaxX));
-      int32 minY = _mm_cvtsi128_si32(_mm_cvtps_epi32(fminY));
-      int32 maxY = _mm_cvtsi128_si32(_mm_cvtps_epi32(fmaxY));
+      int32 minX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminX));
+      int32 maxX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxX));
+      int32 minY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminY));
+      int32 maxY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxY));
 
-      __m128 x1x0 = _mm_sub_ps(x1, x0);
-      __m128 x2x1 = _mm_sub_ps(x2, x1);
-      __m128 x0x2 = _mm_sub_ps(x0, x2);
-      __m128 y1y0 = _mm_sub_ps(y1, y0);
-      __m128 y2y0 = _mm_sub_ps(y2, y0);
+      __m256 x1x0 = _mm256_sub_ps(x1, x0);
+      __m256 x2x1 = _mm256_sub_ps(x2, x1);
+      __m256 x0x2 = _mm256_sub_ps(x0, x2);
+      __m256 y1y0 = _mm256_sub_ps(y1, y0);
+      __m256 y2y0 = _mm256_sub_ps(y2, y0);
 
-      // Two different render paths are used:
-      //  1) For small triangles we step one pixel at a time
-      //  2) For larger triangles we step SIMD width at a time
-      if ((maxX - minX) < 8) {
-        size_t texWidth = texture->Width(mipLevel);
-        size_t texHeight = texture->Height(mipLevel);
-        uint32* textureData = (uint32*)texture->Data(mipLevel);
-
-        __m128 invArea = _mm_rcp_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(x2, x0), y1y0), _mm_mul_ps(y2y0, x1x0)));
-
-        __m128 invVert = _mm_mul_ps(_mm_set_ps(v1[3], v2[3], v3[3], 0.f), invArea);
-
-        __m128 uScaleFactor = _mm_mul_ps(invArea, _mm_set_ps1((float)(texWidth - 1)));
-        __m128 vScaleFactor = _mm_mul_ps(invArea, _mm_set_ps1((float)(texHeight - 1)));
-
-        __m128 invAttr0 = _mm_mul_ps(_mm_set_ps(v1[4], v2[4], v3[4], 0.f), uScaleFactor);
-        __m128 invAttr1 = _mm_mul_ps(_mm_set_ps(v1[5], v2[5], v3[5], 0.f), vScaleFactor);
-
-        // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        /*
-          float boundingBoxMin[2] = {fminX, fminY};
-          __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
-          __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
-          __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
-        */
-        __m128 weightInit = _mm_set_ps(_mm_cvtss_f32(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x1), _mm_sub_ps(y2, y1)), _mm_mul_ps(_mm_sub_ps(fminY, y1), x2x1))),
-          _mm_cvtss_f32(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x2), _mm_sub_ps(y0, y2)), _mm_mul_ps(_mm_sub_ps(fminY, y2), x0x2))),
-          _mm_cvtss_f32(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x0), y1y0), _mm_mul_ps(_mm_sub_ps(fminY, y0), x1x0))),
-          0.f);
-
-        __m128 xStep = _mm_set_ps(_mm_cvtss_f32(_mm_sub_ps(y1, y2)), _mm_cvtss_f32(y2y0), _mm_cvtss_f32(_mm_sub_ps(y0, y1)), 0.f);
-        __m128 yStep = _mm_set_ps(_mm_cvtss_f32(x2x1), _mm_cvtss_f32(x0x2), _mm_cvtss_f32(x1x0), 0.f);
-
-        __m128 uvStride = _mm_set_ps(1.f, 0.f, (float)texHeight, 0.f);
-        __m128 maxUVValue = _mm_set_ps((float)(texWidth - 1), 0.f, (float)(texHeight - 1), 0.f);
-
-        for (int32 h = minY; h < maxY; ++h) {
-          __m128 weights = weightInit;
-
-          uint32* pixels = reinterpret_cast<uint32*>(framebuffer) + (minX + (h * sMaxWidth));
-          float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
-          for (int32 w = minX; w < maxX; ++w, ++pixels, ++pixelDepth) {
-            __m128 weightedVerts = _mm_mul_ps(weights, invVert);
-            float pixelZ = _mm_cvtss_f32(_mm_hadd_ps(_mm_hadd_ps(weightedVerts, weightedVerts), _mm_setzero_ps()));
-            if ((_mm_movemask_ps(weights) == 0) && ((*pixelDepth) > pixelZ)) {
-              __m128 invDenominator = _mm_rcp_ps(_mm_set_ps1(pixelZ));
-
-              __m128 weightedAttr0 = _mm_mul_ps(_mm_mul_ps(weights, invAttr0), invDenominator);
-              __m128 weightedAttr1 = _mm_mul_ps(_mm_mul_ps(weights, invAttr1), invDenominator);
-
-              __m128 thirdTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b11001100);
-              __m128 secondTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b10001000);
-              __m128 firstTerms = _mm_shuffle_ps(weightedAttr1, weightedAttr0, 0b01000100);
-
-              __m128 summedTerms = _mm_add_ps(_mm_add_ps(thirdTerms, secondTerms), firstTerms);
-              summedTerms = _mm_min_ps(summedTerms, maxUVValue);
-              summedTerms = _mm_max_ps(summedTerms, _mm_setzero_ps());
-              summedTerms = _mm_round_ps(summedTerms, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
-              summedTerms = _mm_mul_ps(summedTerms, uvStride);
-                
-              __m128i convertedTerms = _mm_cvtps_epi32(summedTerms);
-              convertedTerms = _mm_add_epi32(convertedTerms, _mm_bslli_si128(convertedTerms, 8));
-              *pixels = textureData[_mm_cvtsi128_si32(_mm_bsrli_si128(convertedTerms, 12))];
-              *pixelDepth = pixelZ;
-            }
-
-            weights = _mm_sub_ps(weights, xStep);
-          }
-
-          weightInit = _mm_sub_ps(weightInit, yStep);
-        }
-      }
-      else {
-        __m256 invArea = _mm256_broadcastss_ps(_mm_rcp_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(x2, x0), y1y0), _mm_mul_ps(y2y0, x1x0))));
+      __m256 invArea = _mm256_rcp_ps(_mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(x2, x0), y1y0), _mm256_mul_ps(y2y0, x1x0)));
         
-        __m256 z0 = _mm256_set1_ps(v1[3]);
-        __m256 invVert0 = _mm256_mul_ps(z0, invArea);
-        __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
-        __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
+      __m256 z0 = _mm256_set1_ps(v1[3]);
+      __m256 invVert0 = _mm256_mul_ps(z0, invArea);
+      __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
+      __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
 
-        __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
-        __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
+      __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
+      __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
 
-        // We want the UV values to be scaled by the width/height.
-        // Doing that here saves us from having to do that at each pixel.
-        // We must still multiply the stride and channels separately because of rounding error.
-        size_t texWidth = texture->Width(mipLevel);
-        size_t texHeight = texture->Height(mipLevel);
+      // We want the UV values to be scaled by the width/height.
+      // Doing that here saves us from having to do that at each pixel.
+      // We must still multiply the stride and channels separately because of rounding error.
+      size_t texWidth = texture->Width(mipLevel);
+      size_t texHeight = texture->Height(mipLevel);
 
-        __m256 yStride = _mm256_set1_ps((float)(texHeight));
+      __m256 yStride = _mm256_set1_ps((float)(texHeight));
 
-        __m256 maxUValue = _mm256_set1_ps((float)(texWidth - 1));
-        __m256 maxVValue = _mm256_set1_ps((float)(texHeight - 1));
+      __m256 maxUValue = _mm256_set1_ps((float)(texWidth - 1));
+      __m256 maxVValue = _mm256_set1_ps((float)(texHeight - 1));
 
-        __m256 uScaleFactor = _mm256_mul_ps(invArea, maxUValue);
-        __m256 vScaleFactor = _mm256_mul_ps(invArea, maxVValue);
+      __m256 uScaleFactor = _mm256_mul_ps(invArea, maxUValue);
+      __m256 vScaleFactor = _mm256_mul_ps(invArea, maxVValue);
 
-        __m256 u0 = _mm256_set1_ps(v1[4]);
-        __m256 invAttr00 = _mm256_mul_ps(u0, uScaleFactor);
-        __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), uScaleFactor);
-        __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), uScaleFactor);
-        u0 = _mm256_mul_ps(u0, maxUValue);
-        __m256 u1u0 = _mm256_sub_ps(invAttr01, invAttr00);
-        __m256 u2u0 = _mm256_sub_ps(invAttr02, invAttr00);
+      __m256 u0 = _mm256_set1_ps(v1[4]);
+      __m256 invAttr00 = _mm256_mul_ps(u0, uScaleFactor);
+      __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), uScaleFactor);
+      __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), uScaleFactor);
+      u0 = _mm256_mul_ps(u0, maxUValue);
+      __m256 u1u0 = _mm256_sub_ps(invAttr01, invAttr00);
+      __m256 u2u0 = _mm256_sub_ps(invAttr02, invAttr00);
 
-        __m256 v0 = _mm256_set1_ps(v1[5]);
-        __m256 invAttr10 = _mm256_mul_ps(v0, vScaleFactor);
-        __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), vScaleFactor);
-        __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), vScaleFactor);
-        v0 = _mm256_mul_ps(v0, maxVValue);
-        __m256 v1v0 = _mm256_sub_ps(invAttr11, invAttr10);
-        __m256 v2v0 = _mm256_sub_ps(invAttr12, invAttr10);
+      __m256 v0 = _mm256_set1_ps(v1[5]);
+      __m256 invAttr10 = _mm256_mul_ps(v0, vScaleFactor);
+      __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), vScaleFactor);
+      __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), vScaleFactor);
+      v0 = _mm256_mul_ps(v0, maxVValue);
+      __m256 v1v0 = _mm256_sub_ps(invAttr11, invAttr10);
+      __m256 v2v0 = _mm256_sub_ps(invAttr12, invAttr10);
 
-        // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-        /*
-          float boundingBoxMin[2] = {fminX, fminY};
-          __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
-          __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
-          __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
-        */
-        __m256 weightInit0 = _mm256_broadcastss_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x1), _mm_sub_ps(y2, y1)), _mm_mul_ps(_mm_sub_ps(fminY, y1), x2x1)));
-        __m256 weightInit1 = _mm256_broadcastss_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x2), _mm_sub_ps(y0, y2)), _mm_mul_ps(_mm_sub_ps(fminY, y2), x0x2)));
-        __m256 weightInit2 = _mm256_broadcastss_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(fminX, x0), y1y0), _mm_mul_ps(_mm_sub_ps(fminY, y0), x1x0)));
+      // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
+      /*
+        float boundingBoxMin[2] = {fminX, fminY};
+        __m256 weightInit0 = _mm256_set1_ps(BarycentricArea2D(v2, v3, boundingBoxMin));
+        __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
+        __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
+      */
+      __m256 weightInit0 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x1), _mm256_sub_ps(y2, y1)), _mm256_mul_ps(_mm256_sub_ps(fminY, y1), x2x1));
+      __m256 weightInit1 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x2), _mm256_sub_ps(y0, y2)), _mm256_mul_ps(_mm256_sub_ps(fminY, y2), x0x2));
+      __m256 weightInit2 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x0), y1y0), _mm256_mul_ps(_mm256_sub_ps(fminY, y0), x1x0));
 
-        __m256 xStep0 = _mm256_broadcastss_ps(_mm_sub_ps(y1, y2));
-        __m256 xStep1 = _mm256_broadcastss_ps(y2y0);
-        __m256 xStep2 = _mm256_broadcastss_ps(_mm_sub_ps(y0, y1));
+      __m256 xStep0 = _mm256_sub_ps(y1, y2);
+      __m256 xStep1 = y2y0;
+      __m256 xStep2 = _mm256_sub_ps(y0, y1);
 
-        __m256 yStep0 = _mm256_broadcastss_ps(x2x1);
-        __m256 yStep1 = _mm256_broadcastss_ps(x0x2);
-        __m256 yStep2 = _mm256_broadcastss_ps(x1x0);
+      __m256 yStep0 = x2x1;
+      __m256 yStep1 = x0x2;
+      __m256 yStep2 = x1x0;
 
-        __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
-        __m256 stepMultiplier = _mm256_set1_ps(8.f);
+      __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
+      __m256 stepMultiplier = _mm256_set1_ps(8.f);
 
-        weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
-        weightInit1 = _mm256_sub_ps(weightInit1, _mm256_mul_ps(initMultiplier, xStep1));
-        weightInit2 = _mm256_sub_ps(weightInit2, _mm256_mul_ps(initMultiplier, xStep2));
+      weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
+      weightInit1 = _mm256_sub_ps(weightInit1, _mm256_mul_ps(initMultiplier, xStep1));
+      weightInit2 = _mm256_sub_ps(weightInit2, _mm256_mul_ps(initMultiplier, xStep2));
 
-        xStep0 = _mm256_mul_ps(stepMultiplier, xStep0);
-        xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
-        xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
+      xStep0 = _mm256_mul_ps(stepMultiplier, xStep0);
+      xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
+      xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
-        __m256 minValue = _mm256_setzero_ps();
+      __m256 minValue = _mm256_setzero_ps();
 
-        int32* textureData = (int32*)texture->Data(mipLevel);
+      int32* textureData = (int32*)texture->Data(mipLevel);
 
-        for (int32 h = minY; h < maxY; ++h) {
-          __m256 weights0 = weightInit0;
-          __m256 weights1 = weightInit1;
-          __m256 weights2 = weightInit2;
+      for (int32 h = minY; h < maxY; ++h) {
+        __m256 weights0 = weightInit0;
+        __m256 weights1 = weightInit1;
+        __m256 weights2 = weightInit2;
 
-          uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
-          float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+        uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
+        float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
 
-          for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
-            // OR all weights and fetch the sign bits
-            __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
+        for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
+          // OR all weights and fetch the sign bits
+          __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
 
-            // If all mask bits are set then none of these pixels are inside the triangle.
-            if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
-              __m256 depthVec = _mm256_load_ps(pixelDepth);
+          // If all mask bits are set then none of these pixels are inside the triangle.
+          if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
+            __m256 depthVec = _mm256_load_ps(pixelDepth);
 
-              __m256 weightedVerts0 = z0;
-              __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
-              __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
+            __m256 weightedVerts0 = z0;
+            __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
+            __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
 
-              __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
-              __m256 invZValues = _mm256_rcp_ps(zValues);
+            __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
+            __m256 invZValues = _mm256_rcp_ps(zValues);
 
-              __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
+            __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-              __m256i finalCombinedMask = Not256(_mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask)));
+            __m256i finalCombinedMask = Not256(_mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask)));
 
-              __m256 weightedAttr00 = _mm256_mul_ps(u0, invZValues);
-              __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues);
-              __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, u2u0), invZValues);
+            __m256 weightedAttr00 = _mm256_mul_ps(u0, invZValues);
+            __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues);
+            __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, u2u0), invZValues);
 
-              __m256 weightedAttr10 = _mm256_mul_ps(v0, invZValues);
-              __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), invZValues);
-              __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, v2v0), invZValues);
+            __m256 weightedAttr10 = _mm256_mul_ps(v0, invZValues);
+            __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), invZValues);
+            __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, v2v0), invZValues);
 
-              __m256 uValues = _mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02);
-              __m256 vValues = _mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12);
+            __m256 uValues = _mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02);
+            __m256 vValues = _mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12);
 
-              // Clamp UV so that we don't index outside of the texture.
-              uValues = _mm256_min_ps(uValues, maxUValue);
-              uValues = _mm256_max_ps(uValues, minValue);
-              vValues = _mm256_min_ps(vValues, maxVValue);
-              vValues = _mm256_max_ps(vValues, minValue);
+            // Clamp UV so that we don't index outside of the texture.
+            uValues = _mm256_min_ps(uValues, maxUValue);
+            uValues = _mm256_max_ps(uValues, minValue);
+            vValues = _mm256_min_ps(vValues, maxVValue);
+            vValues = _mm256_max_ps(vValues, minValue);
 
-              // We must round prior to multiplying the stride and channels.
-              // If this isn't done, we may jump to a completely different set of pixels because of rounding.
-              vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);
+            // We must round prior to multiplying the stride and channels.
+            // If this isn't done, we may jump to a completely different set of pixels because of rounding.
+            vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);
 
-              vValues = _mm256_mul_ps(vValues, yStride);
+            vValues = _mm256_mul_ps(vValues, yStride);
 
-              __m256i uIntValues = _mm256_cvtps_epi32(uValues);
-              __m256i vIntValues = _mm256_cvtps_epi32(vValues);
+            __m256i uIntValues = _mm256_cvtps_epi32(uValues);
+            __m256i vIntValues = _mm256_cvtps_epi32(vValues);
 
-              __m256i colorValues = _mm256_add_epi32(vIntValues, uIntValues);
+            __m256i colorValues = _mm256_add_epi32(vIntValues, uIntValues);
 
-              // Note: we're assuming texture data is stored in ARGB format.
-              // If it isn't, we need to shuffle and handle alpha here as well.
-              // This can be handled outside of the render loop in the texture loading code.
+            // Note: we're assuming texture data is stored in ARGB format.
+            // If it isn't, we need to shuffle and handle alpha here as well.
+            // This can be handled outside of the render loop in the texture loading code.
 
-              // NOTE: Gathers are faster in the general case except on some early HW that didn't optimize for it!
-              //  If we plan on optimizing for all cases, we will need to take this into account.
-              //  This memory read is by far the biggest bottleneck here.
-              __m256i loadedColors = _mm256_mask_i32gather_epi32(_mm256_castps_si256(minValue), textureData, colorValues, finalCombinedMask, 4);
+            // NOTE: Gathers are faster in the general case except on some early HW that didn't optimize for it!
+            //  If we plan on optimizing for all cases, we will need to take this into account.
+            //  This memory read is by far the biggest bottleneck here.
+            __m256i loadedColors = _mm256_mask_i32gather_epi32(_mm256_castps_si256(minValue), textureData, colorValues, finalCombinedMask, 4);
 
-              _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, loadedColors);
-              _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
-            }
-
-            weights0 = _mm256_sub_ps(weights0, xStep0);
-            weights1 = _mm256_sub_ps(weights1, xStep1);
-            weights2 = _mm256_sub_ps(weights2, xStep2);
+            _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, loadedColors);
+            _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
           }
 
-          weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
-          weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
-          weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
+          weights0 = _mm256_sub_ps(weights0, xStep0);
+          weights1 = _mm256_sub_ps(weights1, xStep1);
+          weights2 = _mm256_sub_ps(weights2, xStep2);
         }
+
+        weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
+        weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
+        weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
       }
     }
   }

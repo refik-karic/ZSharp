@@ -757,6 +757,8 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
   int32* indexData = indexBuffer.GetInputData();
   const float* vertexData = vertexBuffer[0];
 
+  __m128i dotSign = _mm_set_epi32(0, 0, 0, 0x80000000);
+
   for (int32 i = indexBuffer.GetIndexSize(); i >= 3; i -= 3) {
     int32 i1 = indexData[i - 3];
     int32 i2 = indexData[i - 2];
@@ -777,9 +779,10 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
     __m128 normal = _mm_sub_ps(_mm_mul_ps(p1p0Shuffled0, p2p0Shuffled0), _mm_mul_ps(p1p0Shuffled1, p2p0Shuffled1));
 
     __m128 dotIntermediate = _mm_mul_ps(_mm_sub_ps(v1, view), normal);
-    float dotResult = dotIntermediate.m128_f32[0] + dotIntermediate.m128_f32[1] + dotIntermediate.m128_f32[2];
 
-    if (dotResult > 0.f) {
+    dotIntermediate = _mm_hadd_ps(_mm_hadd_ps(dotIntermediate, dotIntermediate), _mm_setzero_ps());
+
+    if (_mm_testz_si128(_mm_castps_si128(dotIntermediate), dotSign)) {
       indexBuffer.RemoveTriangle(i - 3);
     }
   }

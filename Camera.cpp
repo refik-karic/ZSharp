@@ -124,6 +124,8 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   NamedScopedTimer(PerspectiveProjection);
 
   if (clipBounds == ClipBounds::Outside) {
+    vertexBuffer.Reset();
+    indexBuffer.Reset();
     return;
   }
 

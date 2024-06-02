@@ -1078,7 +1078,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
           // If all mask bits are set then none of these pixels are inside the triangle.
           if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
-            __m256 depthVec = _mm256_load_ps(pixelDepth);
+            __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
 
             __m256 weightedVerts0 = z0;
             __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
@@ -1439,7 +1439,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
           // If all mask bits are set then none of these pixels are inside the triangle.
           if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
-            __m256 depthVec = _mm256_load_ps(pixelDepth);
+            __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
 
             __m256 weightedVerts0 = z0;
             __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);

@@ -917,7 +917,7 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
     __m128 dotX = _mm_mul_ps(result, window0);
     __m128 dotY = _mm_mul_ps(result, window1);
 
-    result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_castsi128_ps(_mm_setzero_si128()));
+    result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_setzero_ps());
     result = _mm_min_ps(_mm_max_ps(result, _mm_setzero_ps()), maxXY);
 
     // [0] = dotX
@@ -1063,6 +1063,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
       __m256i initialColor = _mm256_set1_epi32(0xFF000000);
+      __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
       for (int32 h = minY; h < maxY; ++h) {
         __m256 weights0 = weightInit0;
@@ -1077,7 +1078,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
           __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
 
           // If all mask bits are set then none of these pixels are inside the triangle.
-          if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
+          if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
             __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
 
             __m256 weightedVerts0 = z0;
@@ -1089,7 +1090,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
             __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-            __m256i finalCombinedMask = Not256(_mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask)));
+            __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
 
             __m256 weightedAttr00 = _mm256_mul_ps(r0, invZValues);
             __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues);
@@ -1424,6 +1425,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
       __m256 minValue = _mm256_setzero_ps();
+      __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
       for (int32 h = minY; h < maxY; ++h) {
         __m256 weights0 = weightInit0;
@@ -1438,8 +1440,8 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
           __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
 
           // If all mask bits are set then none of these pixels are inside the triangle.
-          if (_mm256_movemask_ps(combinedWeights) != 0xFF) {
-            __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
+          if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
+            __m256 depthVec = _mm256_load_ps(pixelDepth);
 
             __m256 weightedVerts0 = z0;
             __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
@@ -1450,7 +1452,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
             __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-            __m256i finalCombinedMask = Not256(_mm256_or_epi32(_mm256_castps_si256(combinedWeights), _mm256_castps_si256(depthMask)));
+            __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
 
             __m256 weightedAttr00 = _mm256_mul_ps(u0, invZValues);
             __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues);
@@ -1473,12 +1475,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
             // If this isn't done, we may jump to a completely different set of pixels because of rounding.
             vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);
 
-            vValues = _mm256_mul_ps(vValues, yStride);
-
-            __m256i uIntValues = _mm256_cvtps_epi32(uValues);
-            __m256i vIntValues = _mm256_cvtps_epi32(vValues);
-
-            __m256i colorValues = _mm256_add_epi32(vIntValues, uIntValues);
+            __m256i colorValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(vValues, yStride, uValues));
 
             // Note: we're assuming texture data is stored in ARGB format.
             // If it isn't, we need to shuffle and handle alpha here as well.

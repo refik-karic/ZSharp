@@ -2,6 +2,9 @@
 
 #include "ZBaseTypes.h"
 
+#include "ZAssert.h"
+#include "PlatformDefines.h"
+
 namespace ZSharp {
 
 class IndexBuffer final {
@@ -33,7 +36,17 @@ class IndexBuffer final {
 
   void Reset();
 
-  void RemoveTriangle(int32 index);
+  FORCE_INLINE void RemoveTriangle(int32 index) {
+    ZAssert(index <= mWorkingSize);
+
+    int32* srcAddr = mData + (mWorkingSize - 3);
+    int32* destAddr = mData + index;
+    ((int64*)destAddr)[0] = ((int64*)srcAddr)[0];
+    destAddr[2] = srcAddr[2];
+
+    mWorkingSize -= 3;
+    ZAssert(mWorkingSize >= 0);
+  }
 
   void AppendClipData(const int32* data, const int32 length);
 

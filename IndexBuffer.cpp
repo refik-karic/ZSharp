@@ -1,9 +1,7 @@
 #include "IndexBuffer.h"
 
-#include "Constants.h"
 #include "PlatformMemory.h"
 #include "PlatformIntrinsics.h"
-#include "ZAssert.h"
 
 #include <cstring>
 
@@ -84,18 +82,6 @@ void IndexBuffer::Reset() {
   mWorkingSize = 0;
   mClipData = mData + mInputSize;
   mWasClipped = false;
-}
-
-void IndexBuffer::RemoveTriangle(int32 index) {
-  ZAssert(index <= mWorkingSize);
-
-  int32* srcAddr = mData + (mWorkingSize - TRI_VERTS);
-  int32* destAddr = mData + index;
-  ((int64*)destAddr)[0] = ((int64*)srcAddr)[0];
-  destAddr[2] = srcAddr[2];
-
-  mWorkingSize -= TRI_VERTS;
-  ZAssert(mWorkingSize >= 0);
 }
 
 void IndexBuffer::AppendClipData(const int32* data, const int32 length) {

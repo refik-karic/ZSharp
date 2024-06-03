@@ -1465,12 +1465,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
             __m256 uValues = _mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02);
             __m256 vValues = _mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12);
 
-            // Clamp UV so that we don't index outside of the texture.
-            uValues = _mm256_min_ps(uValues, maxUValue);
-            uValues = _mm256_max_ps(uValues, minValue);
-            vValues = _mm256_min_ps(vValues, maxVValue);
-            vValues = _mm256_max_ps(vValues, minValue);
-
             // We must round prior to multiplying the stride and channels.
             // If this isn't done, we may jump to a completely different set of pixels because of rounding.
             vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);

@@ -1081,32 +1081,17 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
           if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
             __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
 
-            __m256 weightedVerts0 = z0;
-            __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
-            __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
+            __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
 
-            __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
             __m256 invZValues = _mm256_rcp_ps(zValues);
 
             __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
             __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
 
-            __m256 weightedAttr00 = _mm256_mul_ps(r0, invZValues);
-            __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues);
-            __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, r2r0), invZValues);
-
-            __m256 weightedAttr10 = _mm256_mul_ps(g0, invZValues);
-            __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), invZValues);
-            __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, g2g0), invZValues);
-
-            __m256 weightedAttr20 = _mm256_mul_ps(b0, invZValues);
-            __m256 weightedAttr21 = _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), invZValues);
-            __m256 weightedAttr22 = _mm256_mul_ps(_mm256_mul_ps(weights2, b2b0), invZValues);
-
-            __m256i rValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02));
-            __m256i gValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
-            __m256i bValues = _mm256_cvtps_epi32(_mm256_add_ps(_mm256_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
+            __m256i rValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, r2r0), invZValues, _mm256_fmadd_ps(r0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues))));
+            __m256i gValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, g2g0), invZValues, _mm256_fmadd_ps(g0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), invZValues))));
+            __m256i bValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, b2b0), invZValues, _mm256_fmadd_ps(b0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), invZValues))));
 
             rValues = _mm256_slli_epi32(rValues, 16);
             gValues = _mm256_slli_epi32(gValues, 8);
@@ -1424,7 +1409,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
       xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
-      __m256 minValue = _mm256_setzero_ps();
       __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
       for (int32 h = minY; h < maxY; ++h) {
@@ -1443,27 +1427,16 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
           if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
             __m256 depthVec = _mm256_load_ps(pixelDepth);
 
-            __m256 weightedVerts0 = z0;
-            __m256 weightedVerts1 = _mm256_mul_ps(weights1, z1z0);
-            __m256 weightedVerts2 = _mm256_mul_ps(weights2, z2z0);
+            __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
 
-            __m256 zValues = _mm256_add_ps(_mm256_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
             __m256 invZValues = _mm256_rcp_ps(zValues);
 
             __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
             __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
 
-            __m256 weightedAttr00 = _mm256_mul_ps(u0, invZValues);
-            __m256 weightedAttr01 = _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues);
-            __m256 weightedAttr02 = _mm256_mul_ps(_mm256_mul_ps(weights2, u2u0), invZValues);
-
-            __m256 weightedAttr10 = _mm256_mul_ps(v0, invZValues);
-            __m256 weightedAttr11 = _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), invZValues);
-            __m256 weightedAttr12 = _mm256_mul_ps(_mm256_mul_ps(weights2, v2v0), invZValues);
-
-            __m256 uValues = _mm256_add_ps(_mm256_add_ps(weightedAttr00, weightedAttr01), weightedAttr02);
-            __m256 vValues = _mm256_add_ps(_mm256_add_ps(weightedAttr10, weightedAttr11), weightedAttr12);
+            __m256 uValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, u2u0), invZValues, _mm256_fmadd_ps(u0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues)));
+            __m256 vValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, v2v0), invZValues, _mm256_fmadd_ps(v0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), invZValues)));
 
             // We must round prior to multiplying the stride and channels.
             // If this isn't done, we may jump to a completely different set of pixels because of rounding.
@@ -1478,7 +1451,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
             // NOTE: Gathers are faster in the general case except on some early HW that didn't optimize for it!
             //  If we plan on optimizing for all cases, we will need to take this into account.
             //  This memory read is by far the biggest bottleneck here.
-            __m256i loadedColors = _mm256_mask_i32gather_epi32(_mm256_castps_si256(minValue), (const int*)textureData, colorValues, finalCombinedMask, 4);
+            __m256i loadedColors = _mm256_mask_i32gather_epi32(_mm256_setzero_si256(), (const int*)textureData, colorValues, finalCombinedMask, 4);
 
             _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, loadedColors);
             _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
@@ -1648,12 +1621,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
             // If this isn't done, we may jump to a completely different set of pixels because of rounding.
             vValues = _mm_round_ps(vValues, _MM_ROUND_MODE_DOWN);
 
-            vValues = _mm_mul_ps(vValues, yStride);
+            vValues = _mm_add_ps(_mm_mul_ps(vValues, yStride), uValues);
 
-            __m128i uIntValues = _mm_cvtps_epi32(uValues);
-            __m128i vIntValues = _mm_cvtps_epi32(vValues);
-
-            __m128i colorValues = _mm_add_epi32(vIntValues, uIntValues);
+            __m128i colorValues = _mm_cvtps_epi32(vValues);
 
             __m128i loadedColors = _mm_set_epi32(textureData[colorValues.m128i_u32[3]], textureData[colorValues.m128i_u32[2]], textureData[colorValues.m128i_u32[1]], textureData[colorValues.m128i_u32[0]]);
 

@@ -486,51 +486,61 @@ void Unaligned_GenerateMipLevel(uint8* nextMip, size_t nextWidth, size_t nextHei
 }
 
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride, int32 length) {
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
-    /*
-      We preload 4 registers with all of the matrix X, Y, Z, W values.
-      We also broadcast each vector component (X, Y, Z, W) to 4 registers.
+  /*
+    We preload 4 registers with all of the matrix X, Y, Z, W values.
+    We also broadcast each vector component (X, Y, Z, W) to 4 registers.
 
-      This saves us some arithmetic. We only have to perform 4 multiplies and 4 adds per vertex in the end.
-    */
+    This saves us some arithmetic. We only have to perform 4 multiplies and 4 adds per vertex in the end.
+  */
 
-    __m128 matrixX = _mm_set_ps(matrix[3][0], matrix[2][0], matrix[1][0], matrix[0][0]);
-    __m128 matrixY = _mm_set_ps(matrix[3][1], matrix[2][1], matrix[1][1], matrix[0][1]);
-    __m128 matrixZ = _mm_set_ps(matrix[3][2], matrix[2][2], matrix[1][2], matrix[0][2]);
-    __m128 matrixW = _mm_set_ps(matrix[3][3], matrix[2][3], matrix[1][3], matrix[0][3]);
+  __m128 matrixX = _mm_set_ps(matrix[3][0], matrix[2][0], matrix[1][0], matrix[0][0]);
+  __m128 matrixY = _mm_set_ps(matrix[3][1], matrix[2][1], matrix[1][1], matrix[0][1]);
+  __m128 matrixZ = _mm_set_ps(matrix[3][2], matrix[2][2], matrix[1][2], matrix[0][2]);
+  __m128 matrixW = _mm_set_ps(matrix[3][3], matrix[2][3], matrix[1][3], matrix[0][3]);
 
-    for (size_t i = 0; i < length; i += stride) {
-      float* vecData = data + i;
+  __m128i xShuffle = _mm_set_epi8(
+    3, 2, 1, 0,
+    3, 2, 1, 0,
+    3, 2, 1, 0,
+    3, 2, 1, 0
+  );
 
-      __m128 vecX = _mm_set_ps1(vecData[0]);
-      __m128 vecY = _mm_set_ps1(vecData[1]);
-      __m128 vecZ = _mm_set_ps1(vecData[2]);
-      __m128 vecW = _mm_set_ps1(vecData[3]);
+  __m128i yShuffle = _mm_set_epi8(
+    7, 6, 5, 4,
+    7, 6, 5, 4,
+    7, 6, 5, 4,
+    7, 6, 5, 4
+  );
 
-      vecX = _mm_mul_ps(matrixX, vecX);
-      vecY = _mm_mul_ps(matrixY, vecY);
-      vecZ = _mm_mul_ps(matrixZ, vecZ);
-      vecW = _mm_mul_ps(matrixW, vecW);
+  __m128i zShuffle = _mm_set_epi8(
+    11, 10, 9, 8,
+    11, 10, 9, 8,
+    11, 10, 9, 8,
+    11, 10, 9, 8
+  );
 
-      __m128 result = _mm_add_ps(vecX, vecY);
-      result = _mm_add_ps(result, vecZ);
-      result = _mm_add_ps(result, vecW);
+  __m128i wShuffle = _mm_set_epi8(
+    15, 14, 13, 12,
+    15, 14, 13, 12,
+    15, 14, 13, 12,
+    15, 14, 13, 12
+  );
 
-      _mm_storeu_ps(vecData, result);
-    }
-  }
-  else {
-    for (int32 i = 0; i < length; i += stride) {
-      float* vec = (data + i);
+  for (size_t i = 0; i < length; i += stride) {
+    float* vecData = data + i;
 
-      float xyzw[4];
-      xyzw[0] = (matrix[0][0] * vec[0]) + (matrix[0][1] * vec[1]) + (matrix[0][2] * vec[2]) + (matrix[0][3] * vec[3]);
-      xyzw[1] = (matrix[1][0] * vec[0]) + (matrix[1][1] * vec[1]) + (matrix[1][2] * vec[2]) + (matrix[1][3] * vec[3]);
-      xyzw[2] = (matrix[2][0] * vec[0]) + (matrix[2][1] * vec[1]) + (matrix[2][2] * vec[2]) + (matrix[2][3] * vec[3]);
-      xyzw[3] = (matrix[3][0] * vec[0]) + (matrix[3][1] * vec[1]) + (matrix[3][2] * vec[2]) + (matrix[3][3] * vec[3]);
+    __m128 xyzw = _mm_loadu_ps(vecData);
 
-      memcpy(data + i, xyzw, sizeof(xyzw));
-    }
+    __m128 vecX = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), xShuffle));
+    __m128 vecY = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), yShuffle));
+    __m128 vecZ = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), zShuffle));
+    __m128 vecW = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), wShuffle));
+
+    __m128 result = _mm_add_ps(_mm_mul_ps(matrixX, vecX), _mm_mul_ps(matrixY, vecY));
+    result = _mm_add_ps(result, _mm_mul_ps(matrixZ, vecZ));
+    result = _mm_add_ps(result, _mm_mul_ps(matrixW, vecW));
+
+    _mm_storeu_ps(vecData, result);
   }
 }
 
@@ -886,14 +896,9 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
     __m128 vecZ = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), zShuffle));
     __m128 vecW = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), wShuffle));
 
-    vecX = _mm_mul_ps(matrixX, vecX);
-    vecY = _mm_mul_ps(matrixY, vecY);
-    vecZ = _mm_mul_ps(matrixZ, vecZ);
-    vecW = _mm_mul_ps(matrixW, vecW);
-
-    __m128 vec = _mm_add_ps(vecX, vecY);
-    vec = _mm_add_ps(vec, vecZ);
-    vec = _mm_add_ps(vec, vecW);
+    __m128 vec = _mm_add_ps(_mm_mul_ps(matrixX, vecX), _mm_mul_ps(matrixY, vecY));
+    vec = _mm_add_ps(vec, _mm_mul_ps(matrixZ, vecZ));
+    vec = _mm_add_ps(vec, _mm_mul_ps(matrixW, vecW));
 
     // Homogenize
     __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));

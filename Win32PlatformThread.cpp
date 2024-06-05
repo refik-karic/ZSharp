@@ -167,6 +167,7 @@ void PlatformYieldThread() {
 void PlatformBusySpin() {
 #if HW_PLATFORM_X86
 
+#if 0
   int buffer[4] = {};
   __cpuid(buffer, 0x07);
 
@@ -185,6 +186,9 @@ void PlatformBusySpin() {
   else {
     _mm_pause();
   }
+#else
+  _mm_pause();
+#endif
 #endif
 }
 

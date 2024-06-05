@@ -10,7 +10,7 @@
 
 namespace ZSharp {
 
-static const size_t BundleVersion;
+extern const size_t BundleVersion;
 
 /*
 A bundle contains a collection of assets.

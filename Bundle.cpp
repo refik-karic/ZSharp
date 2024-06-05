@@ -2,9 +2,9 @@
 
 #include "ZConfig.h"
 
-static const size_t BundleVersion = 0;
-
 namespace ZSharp {
+
+const size_t BundleVersion = 0;
 
 Bundle::Bundle(const FileString& filename) : mHandle(filename) {
   if (mHandle.IsOpen()) {

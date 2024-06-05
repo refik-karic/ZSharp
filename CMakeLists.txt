@@ -192,6 +192,8 @@ set(ZSharp_Preprocessor_Defines_RelWithDebInfo HW_PLATFORM_X86)
 
 set(ZSharp_Preprocessor_Defines_Release HW_PLATFORM_X86)
 
+message("Generating with compiler ${CMAKE_CXX_COMPILER_ID}")
+
 if(WIN32)
   list(APPEND ZSharp_Preprocessor_Defines_Debug 
     PLATFORM_WINDOWS
@@ -229,68 +231,152 @@ if(WIN32)
     BUILD_TYPE="Release"
   )
 
-  list(APPEND ZSharp_Compile_Options_Debug
-    /Od
-    /Ob0
-    /source-charset:utf-8
-    /std:c++latest
-    /D_UNICODE
-    /GR-
-    /MP
-    /U_MBCS
-    /W4
-    /WX
-    /Zi
-    /diagnostics:caret
-  )
+  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    list(APPEND ZSharp_Compile_Options_Debug
+        /Od
+        /Ob0
+        /source-charset:utf-8
+        /std:c++latest
+        /D_UNICODE
+        /GR-
+        /U_MBCS
+        /W4
+        /WX
+        /Zi
+        /diagnostics:caret
+        -Wno-ignored-qualifiers
+        -Wno-char-subscripts
+        -Wno-sign-compare
+        -Wno-deprecated-copy-with-user-provided-copy
+        -Wno-reorder-ctor
+        -Wno-unused-but-set-variable
+        -Wno-unused-const-variable
+        -Wno-delete-non-abstract-non-virtual-dtor
+        -Wno-unused-private-field
+        -mavx2
+        -mfma
+    )
 
-  list(APPEND ZSharp_Compile_Options_MinSizeRel
-    /O1
-    /Ob1
-    /source-charset:utf-8
-    /std:c++latest
-    /D_UNICODE
-    /GR-
-    /MP
-    /U_MBCS
-    /W4
-    /WX
-    /Zi
-    /diagnostics:caret
-  )
+    list(APPEND ZSharp_Compile_Options_MinSizeRel
+        /O1
+        /Ob1
+        /source-charset:utf-8
+        /std:c++latest
+        /D_UNICODE
+        /GR-
+        /U_MBCS
+        /W4
+        /WX
+        /Zi
+        /diagnostics:caret
+    )
 
-  list(APPEND ZSharp_Compile_Options_RelWithDebInfo
-    /O2
-    /Ob1
-    /source-charset:utf-8
-    /std:c++latest
-    /D_UNICODE
-    /GR-
-    /MP
-    /U_MBCS
-    /W4
-    /WX
-    /Zi
-    /diagnostics:caret
-  )
+    list(APPEND ZSharp_Compile_Options_RelWithDebInfo
+        /O2
+        /Ob1
+        /source-charset:utf-8
+        /std:c++latest
+        /D_UNICODE
+        /GR-
+        /U_MBCS
+        /W4
+        /WX
+        /Zi
+        /diagnostics:caret
+        -Wno-ignored-qualifiers
+        -Wno-char-subscripts
+        -Wno-sign-compare
+        -Wno-deprecated-copy-with-user-provided-copy
+        -Wno-reorder-ctor
+        -Wno-unused-but-set-variable
+        -Wno-unused-const-variable
+        -Wno-delete-non-abstract-non-virtual-dtor
+        -Wno-unused-private-field
+        -mavx2
+        -mfma
+    )
 
-  list(APPEND ZSharp_Compile_Options_Release
-    /O2
-    /Ob2
-    /source-charset:utf-8
-    /std:c++latest
-    /D_UNICODE
-    /GR-
-    /MP
-    /U_MBCS
-    /W4
-    /WX
-    /sdl-
-    /GL
-    /GS-
-    /Zi
-    /diagnostics:caret
-  )
+    list(APPEND ZSharp_Compile_Options_Release
+        /O2
+        /Ob2
+        /source-charset:utf-8
+        /std:c++latest
+        /D_UNICODE
+        /GR-
+        /U_MBCS
+        /W4
+        /WX
+        /sdl-
+        /GL
+        /GS-
+        /Zi
+        /diagnostics:caret
+    )
+  else()
+    list(APPEND ZSharp_Compile_Options_Debug
+        /Od
+        /Ob0
+        /source-charset:utf-8
+        /std:c++latest
+        /D_UNICODE
+        /GR-
+        /MP
+        /U_MBCS
+        /W4
+        /WX
+        /Zi
+        /diagnostics:caret
+    )
+
+    list(APPEND ZSharp_Compile_Options_MinSizeRel
+        /O1
+        /Ob1
+        /source-charset:utf-8
+        /std:c++latest
+        /D_UNICODE
+        /GR-
+        /MP
+        /U_MBCS
+        /W4
+        /WX
+        /Zi
+        /diagnostics:caret
+    )
+
+    list(APPEND ZSharp_Compile_Options_RelWithDebInfo
+        /O2
+        /Ob1
+        /source-charset:utf-8
+        /std:c++latest
+        /D_UNICODE
+        /GR-
+        /MP
+        /U_MBCS
+        /W4
+        /WX
+        /Zi
+        /diagnostics:caret
+    )
+
+    list(APPEND ZSharp_Compile_Options_Release
+        /O2
+        /Ob2
+        /source-charset:utf-8
+        /std:c++latest
+        /D_UNICODE
+        /GR-
+        /MP
+        /U_MBCS
+        /W4
+        /WX
+        /sdl-
+        /GL
+        /GS-
+        /Zi
+        /diagnostics:caret
+    )
+  endif()
+
 endif(WIN32)
 
 if("${CMAKE_GENERATOR}" STREQUAL "Ninja")

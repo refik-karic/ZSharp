@@ -516,7 +516,7 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride
       result = _mm_add_ps(result, vecZ);
       result = _mm_add_ps(result, vecW);
 
-      _mm_store_ps(vecData, result);
+      _mm_storeu_ps(vecData, result);
     }
   }
   else {
@@ -578,9 +578,9 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
         convG = _mm256_slli_epi32(convG, 8);
 
         __m256i finalColor = initialColor;
-        finalColor = _mm256_or_epi32(finalColor, convR);
-        finalColor = _mm256_or_epi32(finalColor, convG);
-        finalColor = _mm256_or_epi32(finalColor, convB);
+        finalColor = _mm256_or_si256(finalColor, convR);
+        finalColor = _mm256_or_si256(finalColor, convG);
+        finalColor = _mm256_or_si256(finalColor, convB);
 
         _mm256_storeu_si256((__m256i*)pixel, finalColor);
       }
@@ -618,9 +618,9 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
         convG = _mm_slli_epi32(convG, 8);
 
         __m128i finalColor = initialColor;
-        finalColor = _mm_or_epi32(finalColor, convR);
-        finalColor = _mm_or_epi32(finalColor, convG);
-        finalColor = _mm_or_epi32(finalColor, convB);
+        finalColor = _mm_or_si128(finalColor, convR);
+        finalColor = _mm_or_si128(finalColor, convG);
+        finalColor = _mm_or_si128(finalColor, convB);
 
         _mm_storeu_si128((__m128i*)pixel, finalColor);
       }
@@ -646,7 +646,7 @@ void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
       __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
       __m128 result = _mm_mul_ps(vec, _mm_rcp_ps(perspectiveTerm));
       result = _mm_blend_ps(result, perspectiveTerm, 0b1000);
-      _mm_store_ps(nextVec, result);
+      _mm_storeu_ps(nextVec, result);
     }
   }
   else {
@@ -763,9 +763,9 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
     int32 i1 = indexData[i - 3];
     int32 i2 = indexData[i - 2];
     int32 i3 = indexData[i - 1];
-    __m128 v1 = _mm_load_ps(vertexData + i1);
-    __m128 v2 = _mm_load_ps(vertexData + i2);
-    __m128 v3 = _mm_load_ps(vertexData + i3);
+    __m128 v1 = _mm_loadu_ps(vertexData + i1);
+    __m128 v2 = _mm_loadu_ps(vertexData + i2);
+    __m128 v3 = _mm_loadu_ps(vertexData + i3);
 
     __m128 p1p0 = _mm_sub_ps(v2, v1);
     __m128 p2p0 = _mm_sub_ps(v3, v1);
@@ -824,15 +824,14 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
     // [3] = invPerspectiveZ
     result = _mm_blend_ps(result, perspectiveZ, 0b1100);
 
-    _mm_store_ps(vertexData, result);
+    _mm_storeu_ps(vertexData, result);
 
     /*
       NOTE: In most cases this is actually faster than doing a load and masked store.
         Main theory being, we don't typically need to write the entire register back to memory.
     */
-    const float tempZ = invPerspectiveZ.m128_f32[0];
     for (int32 j = 4; j < stride; ++j) {
-      vertexData[j] *= tempZ;
+      _mm_store_ss(vertexData + j, _mm_mul_ss(_mm_load_ss(vertexData + j), invPerspectiveZ));
     }
   }
 }
@@ -926,7 +925,7 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
     // [3] = invPerspectiveZ
     result = _mm_blend_ps(result, perspectiveTerm, 0b1100);
 
-    _mm_store_ps(vecData, result);
+    _mm_storeu_ps(vecData, result);
 
     /*
       NOTE: In most cases this is actually faster than doing a load and masked store.
@@ -979,11 +978,19 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       __m256 fmaxX = _mm256_max_ps(_mm256_max_ps(x0, x1), x2);
       __m256 fmaxY = _mm256_max_ps(_mm256_max_ps(y0, y1), y2);
 
+#ifdef __clang__
+      fminX = _mm256_round_ps(fminX, _MM_FROUND_FLOOR);
+      fminY = _mm256_round_ps(fminY, _MM_FROUND_FLOOR);
+
+      fmaxX = _mm256_round_ps(fmaxX, _MM_FROUND_CEIL);
+      fmaxY = _mm256_round_ps(fmaxY, _MM_FROUND_CEIL);
+#else
       fminX = _mm256_round_ps(fminX, _MM_ROUND_MODE_DOWN);
       fminY = _mm256_round_ps(fminY, _MM_ROUND_MODE_DOWN);
 
       fmaxX = _mm256_round_ps(fmaxX, _MM_ROUND_MODE_UP);
       fmaxY = _mm256_round_ps(fmaxY, _MM_ROUND_MODE_UP);
+#endif
 
       int32 minX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminX));
       int32 maxX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxX));
@@ -1097,9 +1104,9 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
             gValues = _mm256_slli_epi32(gValues, 8);
 
             __m256i finalColor = initialColor;
-            finalColor = _mm256_or_epi32(finalColor, rValues);
-            finalColor = _mm256_or_epi32(finalColor, gValues);
-            finalColor = _mm256_or_epi32(finalColor, bValues);
+            finalColor = _mm256_or_si256(finalColor, rValues);
+            finalColor = _mm256_or_si256(finalColor, gValues);
+            finalColor = _mm256_or_si256(finalColor, bValues);
 
             _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, finalColor);
             _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
@@ -1255,7 +1262,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
             __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-            __m128i finalCombinedMask = _mm_or_epi32(_mm_castps_si128(combinedWeights), _mm_castps_si128(depthMask));
+            __m128i finalCombinedMask = _mm_castps_si128(_mm_or_ps(combinedWeights, depthMask));
 
             __m128 weightedAttr00 = _mm_mul_ps(r0, invZValues);
             __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, r1r0), invZValues);
@@ -1274,11 +1281,11 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
             __m128i bValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
 
             __m128i finalColor = initialColor;
-            finalColor = _mm_or_epi32(finalColor, rValues);
+            finalColor = _mm_or_si128(finalColor, rValues);
             finalColor = _mm_slli_epi32(finalColor, 0x08);
-            finalColor = _mm_or_epi32(finalColor, gValues);
+            finalColor = _mm_or_si128(finalColor, gValues);
             finalColor = _mm_slli_epi32(finalColor, 0x08);
-            finalColor = _mm_or_epi32(finalColor, bValues);
+            finalColor = _mm_or_si128(finalColor, bValues);
 
             __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(finalColor), _mm_castsi128_ps(pixelVec), _mm_castsi128_ps(finalCombinedMask)));
             __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, _mm_castsi128_ps(finalCombinedMask));
@@ -1328,11 +1335,19 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       __m256 fmaxX = _mm256_max_ps(_mm256_max_ps(x0, x1), x2);
       __m256 fmaxY = _mm256_max_ps(_mm256_max_ps(y0, y1), y2);
 
+#ifdef __clang__
+      fminX = _mm256_round_ps(fminX, _MM_FROUND_FLOOR);
+      fminY = _mm256_round_ps(fminY, _MM_FROUND_FLOOR);
+
+      fmaxX = _mm256_round_ps(fmaxX, _MM_FROUND_CEIL);
+      fmaxY = _mm256_round_ps(fmaxY, _MM_FROUND_CEIL);
+#else
       fminX = _mm256_round_ps(fminX, _MM_ROUND_MODE_DOWN);
       fminY = _mm256_round_ps(fminY, _MM_ROUND_MODE_DOWN);
 
       fmaxX = _mm256_round_ps(fmaxX, _MM_ROUND_MODE_UP);
       fmaxY = _mm256_round_ps(fmaxY, _MM_ROUND_MODE_UP);
+#endif
 
       int32 minX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminX));
       int32 maxX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxX));
@@ -1425,7 +1440,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
           // If all mask bits are set then none of these pixels are inside the triangle.
           if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
-            __m256 depthVec = _mm256_load_ps(pixelDepth);
+            __m256 depthVec = _mm256_loadu_ps(pixelDepth);
 
             __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
 
@@ -1440,7 +1455,11 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
             // We must round prior to multiplying the stride and channels.
             // If this isn't done, we may jump to a completely different set of pixels because of rounding.
+#ifdef __clang__
+            vValues = _mm256_round_ps(vValues, _MM_FROUND_FLOOR);
+#else
             vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);
+#endif
 
             __m256i colorValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(vValues, yStride, uValues));
 
@@ -1598,7 +1617,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
             __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-            __m128i finalCombinedMask = _mm_or_epi32(_mm_castps_si128(combinedWeights), _mm_castps_si128(depthMask));
+            __m128i finalCombinedMask = _mm_castps_si128(_mm_or_ps(combinedWeights, depthMask));
 
             __m128 weightedAttr00 = _mm_mul_ps(u0, invZValues);
             __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, u1u0), invZValues);
@@ -1619,13 +1638,17 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
             // We must round prior to multiplying the stride and channels.
             // If this isn't done, we may jump to a completely different set of pixels because of rounding.
+#ifdef __clang__
+            vValues = _mm_round_ps(vValues, _MM_FROUND_FLOOR);
+#else
             vValues = _mm_round_ps(vValues, _MM_ROUND_MODE_DOWN);
+#endif
 
             vValues = _mm_add_ps(_mm_mul_ps(vValues, yStride), uValues);
 
             __m128i colorValues = _mm_cvtps_epi32(vValues);
 
-            __m128i loadedColors = _mm_set_epi32(textureData[colorValues.m128i_u32[3]], textureData[colorValues.m128i_u32[2]], textureData[colorValues.m128i_u32[1]], textureData[colorValues.m128i_u32[0]]);
+            __m128i loadedColors = _mm_set_epi32(textureData[_mm_extract_epi32(colorValues, 0b11)], textureData[_mm_extract_epi32(colorValues, 0b10)], textureData[_mm_extract_epi32(colorValues, 0b01)], textureData[_mm_extract_epi32(colorValues, 0b00)]);
 
             __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(loadedColors), _mm_castsi128_ps(pixelVec), _mm_castsi128_ps(finalCombinedMask)));
             __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, _mm_castsi128_ps(finalCombinedMask));

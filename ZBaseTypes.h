@@ -23,8 +23,14 @@ namespace ZSharp {
 
   constexpr int8 min_int8 = -128;
   constexpr int16 min_int16 = -32768;
+
+#ifdef __clang__
+  constexpr int32 min_int32 = -2147483648;
+  constexpr int64 min_int64 = -9223372036854775807LL - 1LL;
+#else
   constexpr int32 min_int32 = -2147483648i32;
   constexpr int64 min_int64 = -9223372036854775808i64;
+#endif
 
   constexpr int8 max_int8 = 0x7F;
   constexpr int16 max_int16 = 0x7FFF;

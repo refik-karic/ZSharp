@@ -51,6 +51,12 @@ void Unaligned_128MulByValue(const float* a, const float b, float* dest);
 
 float Unaligned_128MulSum(const float* a, const float* b);
 
+float Unaligned_ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]);
+
+bool Unaligned_InsidePlane(const float point[4], const float clipEdge[4], const float normal[4]);
+
+void Unaligned_ParametricVector4D(const float point, const float start[4], const float end[4], float outVec[4]);
+
 void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result);
 
 void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes);

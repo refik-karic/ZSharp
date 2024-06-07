@@ -206,6 +206,39 @@ float Unaligned_128MulSum(const float* a, const float* b) {
   return _mm_cvtss_f32(mulResult);
 }
 
+float Unaligned_ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]) {
+  __m128 startVec = _mm_loadu_ps(start);
+  __m128 endVec = _mm_loadu_ps(end);
+  __m128 normalVec = _mm_loadu_ps(edgeNormal);
+  __m128 pointVec = _mm_loadu_ps(edgePoint);
+  __m128 signFlip = _mm_set_ps1(-0.f); 
+
+  __m128 numeratorIntermediate = _mm_mul_ps(_mm_sub_ps(startVec, pointVec), normalVec);
+  numeratorIntermediate = _mm_hadd_ps(_mm_hadd_ps(numeratorIntermediate, numeratorIntermediate), _mm_setzero_ps());
+
+  __m128 denominatorIntermediate = _mm_mul_ps(_mm_sub_ps(endVec, startVec), _mm_xor_ps(normalVec, signFlip));
+  denominatorIntermediate = _mm_hadd_ps(_mm_hadd_ps(denominatorIntermediate, denominatorIntermediate), _mm_setzero_ps());
+
+  return _mm_cvtss_f32(_mm_div_ss(numeratorIntermediate, denominatorIntermediate));
+}
+
+bool Unaligned_InsidePlane(const float point[4], const float clipEdge[4], const float normal[4]) {
+  __m128 pointVec = _mm_loadu_ps(point);
+  __m128 clipVec = _mm_loadu_ps(clipEdge);
+  __m128 normalVec = _mm_loadu_ps(normal);
+  __m128i dotSign = _mm_set_epi32(0, 0, 0, 0x80000000);
+  __m128 dotIntermediate = _mm_mul_ps(_mm_sub_ps(pointVec, clipVec), normalVec);
+  dotIntermediate = _mm_hadd_ps(_mm_hadd_ps(dotIntermediate, dotIntermediate), _mm_setzero_ps());
+  return !_mm_testz_si128(_mm_castps_si128(dotIntermediate), dotSign);
+}
+
+void Unaligned_ParametricVector4D(const float point, const float start[4], const float end[4], float outVec[4]) {
+  __m128 endVec = _mm_loadu_ps(end);
+  __m128 startVec = _mm_loadu_ps(start);
+  __m128 pointVec = _mm_set_ps1(point);
+  _mm_storeu_ps(outVec, _mm_add_ps(_mm_mul_ps(_mm_sub_ps(endVec, startVec), pointVec), startVec));
+}
+
 void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result) {
   __m128 a0 = _mm_set_ps1(a[0]);
   __m128 a1 = _mm_set_ps1(a[1]);

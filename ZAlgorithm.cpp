@@ -19,35 +19,23 @@ static const size_t ScatchSize = 128;
 
 namespace ZSharp {
 
-bool InsidePlane(const float point[3], const float clipEdge[3], const float normal[3]) {
-  return (((point[0] - clipEdge[0]) * normal[0]) +
-    ((point[1] - clipEdge[1]) * normal[1]) +
-    ((point[2] - clipEdge[2]) * normal[2])) < 0.f;
+bool InsidePlane(const float point[4], const float clipEdge[4], const float normal[4]) {
+  return Unaligned_InsidePlane(point, clipEdge, normal);
 }
 
 void GetParametricVector4D(const float point, const float start[4], const float end[4], float outVec[4]) {
-  outVec[0] = ((end[0] - start[0]) * point) + start[0];
-  outVec[1] = ((end[1] - start[1]) * point) + start[1];
-  outVec[2] = ((end[2] - start[2]) * point) + start[2];
-  outVec[3] = ((end[3] - start[3]) * point) + start[3];
+  Unaligned_ParametricVector4D(point, start, end, outVec);
 }
 
-float ParametricLinePlaneIntersection(const float start[3], const float end[3], const float edgeNormal[3], const float edgePoint[3]) {
-  float numerator = ((start[0] - edgePoint[0]) * edgeNormal[0]) +
-    ((start[1] - edgePoint[1]) * edgeNormal[1]) +
-    ((start[2] - edgePoint[2]) * edgeNormal[2]);
-
-  float denominator = ((end[0] - start[0]) * (-edgeNormal[0])) +
-    ((end[1] - start[1]) * (-edgeNormal[1])) +
-    ((end[2] - start[2]) * (-edgeNormal[2]));
-  return numerator / denominator;
+float ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]) {
+  return Unaligned_ParametricLinePlaneIntersection(start, end, edgeNormal, edgePoint);
 }
 
 void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, float nearClipZ) {
   NamedScopedTimer(NearClip);
 
-  const float nearEdge[3] = { 0.f, 0.f, nearClipZ };
-  const float edgeNormal[3] = { 0.f, 0.f, -1.f };
+  const float nearEdge[4] = { 0.f, 0.f, nearClipZ, 0.f };
+  const float edgeNormal[4] = { 0.f, 0.f, -1.f, 0.f };
 
   const int32 stride = vertexBuffer.GetStride();
   const int32 vertByteSize = stride * sizeof(float);
@@ -62,8 +50,7 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     const float* v2 = vertexBufferData + i2;
     const float* v3 = vertexBufferData + i3;
 
-    float clipBuffer[ScatchSize];
-    memset(clipBuffer, 0, sizeof(clipBuffer));
+    float clipBuffer[ScatchSize] = {};
     memcpy(clipBuffer, v1, vertByteSize);
     memcpy(clipBuffer + stride, v2, vertByteSize);
     memcpy(clipBuffer + (stride * 2), v3, vertByteSize);
@@ -161,7 +148,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     indexBuffer.AppendClipData(nextTriangle);
 #else
 
-    float currentEdge[3] = {1.f, 0.f, 0.f};
+    float currentEdge[4] = {1.f, 0.f, 0.f, 0.f};
     numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge, currentEdge, stride);
 
     currentEdge[0] = 0.f;
@@ -240,7 +227,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   }
 }
 
-int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const float clipEdge[3], const float edgeNormal[3], int32 stride) {
+int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const float clipEdge[4], const float edgeNormal[4], int32 stride) {
   int32 numOutputVerts = 0;
   const int32 vertByteSize = stride * sizeof(float);
   float clipBuffer[ScatchSize];

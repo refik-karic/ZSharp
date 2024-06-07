@@ -9,17 +9,17 @@
 
 namespace ZSharp {
 
-FORCE_INLINE bool InsidePlane(const float point[3], const float clipEdge[3], const float normal[3]);
+bool InsidePlane(const float point[4], const float clipEdge[4], const float normal[4]);
 
 void GetParametricVector4D(const float point, const float start[4], const float end[4], float outVec[4]);
 
-float ParametricLinePlaneIntersection(const float start[3], const float end[3], const float edgeNormal[3], const float edgePoint[3]);
+float ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]);
 
 void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, float nearClipZ);
 
 void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 
-int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const float clipEdge[3], const float edgeNormal[3], int32 stride);
+int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const float clipEdge[4], const float edgeNormal[4], int32 stride);
 
 void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer);
 

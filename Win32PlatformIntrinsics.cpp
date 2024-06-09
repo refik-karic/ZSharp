@@ -938,6 +938,8 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
     __m128 invPerspectiveZ = _mm_rcp_ps(perspectiveTerm);
     __m128 homogenized = _mm_mul_ps(vec, invPerspectiveZ);
 
+    __m128 invPerspectiveZScalar = _mm_move_ss(_mm_setzero_ps(), invPerspectiveZ);
+
     // Window transform
     __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(homogenized), 0b10101010)));
 
@@ -967,10 +969,11 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
 
     /*
       NOTE: In most cases this is actually faster than doing a load and masked store.
-        Main theory being, we don't typically need to write the entire register back to memory.
+        Reason being, recent architectures have optimized scalar floating point code paths.
+        In this case, the architecture can ignore the upper 96 bits and perform the operations slightly faster.
     */
     for (int32 j = 4; j < stride; ++j) {
-      _mm_store_ss(vecData + j, _mm_mul_ss(_mm_load_ss(vecData + j), invPerspectiveZ));
+      _mm_store_ss(vecData + j, _mm_mul_ss(_mm_load_ss(vecData + j), invPerspectiveZScalar));
     }
   }
 }
@@ -1110,56 +1113,67 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       __m256i initialColor = _mm256_set1_epi32(0xFF000000);
       __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
-      for (int32 h = minY; h < maxY; ++h) {
-        __m256 weights0 = weightInit0;
-        __m256 weights1 = weightInit1;
-        __m256 weights2 = weightInit2;
+      uint32* pixels = ((uint32*)(framebuffer)) + (minX + (minY * sMaxWidth));
+      float* pixelDepth = depthBuffer + (minX + (minY * sMaxWidth));
+      int32 w = minX;
+      int32 h = minY;
 
-        uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
-        float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+      __m256 weights0 = weightInit0;
+      __m256 weights1 = weightInit1;
+      __m256 weights2 = weightInit2;
 
-        for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
-          // OR all weights and fetch the sign bits
-          __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
+      while (h < maxY) {
+        // OR all weights and fetch the sign bits
+        __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
 
-          // If all mask bits are set then none of these pixels are inside the triangle.
-          if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
-            __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
+        // If all mask bits are set then none of these pixels are inside the triangle.
+        if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
+          __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
 
-            __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
+          __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
 
-            __m256 invZValues = _mm256_rcp_ps(zValues);
+          __m256 invZValues = _mm256_rcp_ps(zValues);
 
-            __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
+          __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-            __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
+          __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
 
-            __m256i rValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, r2r0), invZValues, _mm256_fmadd_ps(r0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues))));
-            __m256i gValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, g2g0), invZValues, _mm256_fmadd_ps(g0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), invZValues))));
-            __m256i bValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, b2b0), invZValues, _mm256_fmadd_ps(b0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), invZValues))));
+          __m256i rValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, r2r0), invZValues, _mm256_fmadd_ps(r0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues))));
+          __m256i gValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, g2g0), invZValues, _mm256_fmadd_ps(g0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), invZValues))));
+          __m256i bValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, b2b0), invZValues, _mm256_fmadd_ps(b0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), invZValues))));
 
-            rValues = _mm256_slli_epi32(rValues, 16);
-            gValues = _mm256_slli_epi32(gValues, 8);
+          rValues = _mm256_slli_epi32(rValues, 16);
+          gValues = _mm256_slli_epi32(gValues, 8);
 
-            __m256i finalColor = initialColor;
-            finalColor = _mm256_or_si256(finalColor, rValues);
-            finalColor = _mm256_or_si256(finalColor, gValues);
-            finalColor = _mm256_or_si256(finalColor, bValues);
+          __m256i finalColor = initialColor;
+          finalColor = _mm256_or_si256(finalColor, rValues);
+          finalColor = _mm256_or_si256(finalColor, gValues);
+          finalColor = _mm256_or_si256(finalColor, bValues);
 
-            _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, finalColor);
-            _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
-          }
-
-          weights0 = _mm256_sub_ps(weights0, xStep0);
-          weights1 = _mm256_sub_ps(weights1, xStep1);
-          weights2 = _mm256_sub_ps(weights2, xStep2);
+          _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, finalColor);
+          _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
         }
 
-        weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
-        weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
-        weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
+        w += 8;
+        pixels += 8;
+        pixelDepth += 8;
+        weights0 = _mm256_sub_ps(weights0, xStep0);
+        weights1 = _mm256_sub_ps(weights1, xStep1);
+        weights2 = _mm256_sub_ps(weights2, xStep2);
+
+        if (w >= maxX) {
+          w = minX;
+          ++h;
+          pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
+          pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+          weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
+          weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
+          weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
+          weights0 = weightInit0;
+          weights1 = weightInit1;
+          weights2 = weightInit2;
+        }
       }
-      
     }
   }
   else {
@@ -1464,64 +1478,76 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
       __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
-      for (int32 h = minY; h < maxY; ++h) {
-        __m256 weights0 = weightInit0;
-        __m256 weights1 = weightInit1;
-        __m256 weights2 = weightInit2;
+      uint32* pixels = ((uint32*)(framebuffer)) + (minX + (minY * sMaxWidth));
+      float* pixelDepth = depthBuffer + (minX + (minY * sMaxWidth));
+      int32 w = minX;
+      int32 h = minY;
 
-        uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
-        float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+      __m256 weights0 = weightInit0;
+      __m256 weights1 = weightInit1;
+      __m256 weights2 = weightInit2;
 
-        for (int32 w = minX; w < maxX; w += 8, pixels += 8, pixelDepth += 8) {
-          // OR all weights and fetch the sign bits
-          __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
+      while (h < maxY) {
+        // OR all weights and fetch the sign bits
+        __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
 
-          // If all mask bits are set then none of these pixels are inside the triangle.
-          if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
-            __m256 depthVec = _mm256_loadu_ps(pixelDepth);
+        // If all mask bits are set then none of these pixels are inside the triangle.
+        if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
+          __m256 depthVec = _mm256_loadu_ps(pixelDepth);
 
-            __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
+          __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
 
-            __m256 invZValues = _mm256_rcp_ps(zValues);
+          __m256 invZValues = _mm256_rcp_ps(zValues);
 
-            __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
+          __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-            __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
+          __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
 
-            __m256 uValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, u2u0), invZValues, _mm256_fmadd_ps(u0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues)));
-            __m256 vValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, v2v0), invZValues, _mm256_fmadd_ps(v0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), invZValues)));
+          __m256 uValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, u2u0), invZValues, _mm256_fmadd_ps(u0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues)));
+          __m256 vValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, v2v0), invZValues, _mm256_fmadd_ps(v0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), invZValues)));
 
-            // We must round prior to multiplying the stride and channels.
-            // If this isn't done, we may jump to a completely different set of pixels because of rounding.
+          // We must round prior to multiplying the stride and channels.
+          // If this isn't done, we may jump to a completely different set of pixels because of rounding.
 #ifdef __clang__
-            vValues = _mm256_round_ps(vValues, _MM_FROUND_FLOOR);
+          vValues = _mm256_round_ps(vValues, _MM_FROUND_FLOOR);
 #else
-            vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);
+          vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);
 #endif
 
-            __m256i colorValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(vValues, yStride, uValues));
+          __m256i colorValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(vValues, yStride, uValues));
 
-            // Note: we're assuming texture data is stored in ARGB format.
-            // If it isn't, we need to shuffle and handle alpha here as well.
-            // This can be handled outside of the render loop in the texture loading code.
+          // Note: we're assuming texture data is stored in ARGB format.
+          // If it isn't, we need to shuffle and handle alpha here as well.
+          // This can be handled outside of the render loop in the texture loading code.
 
-            // NOTE: Gathers are faster in the general case except on some early HW that didn't optimize for it!
-            //  If we plan on optimizing for all cases, we will need to take this into account.
-            //  This memory read is by far the biggest bottleneck here.
-            __m256i loadedColors = _mm256_mask_i32gather_epi32(_mm256_setzero_si256(), (const int*)textureData, colorValues, finalCombinedMask, 4);
+          // NOTE: Gathers are faster in the general case except on some early HW that didn't optimize for it!
+          //  If we plan on optimizing for all cases, we will need to take this into account.
+          //  This memory read is by far the biggest bottleneck here.
+          __m256i loadedColors = _mm256_mask_i32gather_epi32(_mm256_setzero_si256(), (const int*)textureData, colorValues, finalCombinedMask, 4);
 
-            _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, loadedColors);
-            _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
-          }
-
-          weights0 = _mm256_sub_ps(weights0, xStep0);
-          weights1 = _mm256_sub_ps(weights1, xStep1);
-          weights2 = _mm256_sub_ps(weights2, xStep2);
+          _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, loadedColors);
+          _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
         }
 
-        weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
-        weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
-        weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
+        w += 8;
+        pixels += 8;
+        pixelDepth += 8;
+        weights0 = _mm256_sub_ps(weights0, xStep0);
+        weights1 = _mm256_sub_ps(weights1, xStep1);
+        weights2 = _mm256_sub_ps(weights2, xStep2);
+
+        if (w >= maxX) {
+          w = minX;
+          ++h;
+          pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
+          pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+          weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
+          weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
+          weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
+          weights0 = weightInit0;
+          weights1 = weightInit1;
+          weights2 = weightInit2;
+        }
       }
     }
   }

@@ -89,7 +89,7 @@ void IndexBuffer::AppendClipData(const int32* data, const int32 length) {
     return;
   }
 
-  memcpy(mClipData + mClipLength, data, length * sizeof(size_t));
+  memcpy(mClipData + mClipLength, data, length * sizeof(int32));
   mClipLength += length;
 }
 

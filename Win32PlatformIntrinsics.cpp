@@ -843,6 +843,7 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
     __m128 vec = _mm_loadu_ps(vertexData);
     __m128 perspectiveZ = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
     __m128 invPerspectiveZ = _mm_rcp_ps(perspectiveZ);
+    __m128 invPerspectiveZScalar = _mm_move_ss(_mm_setzero_ps(), invPerspectiveZ);
     __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b10101010)));
 
     // [0] = _
@@ -871,10 +872,11 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
 
     /*
       NOTE: In most cases this is actually faster than doing a load and masked store.
-        Main theory being, we don't typically need to write the entire register back to memory.
+        Reason being, recent architectures have optimized scalar floating point code paths.
+        In this case, the architecture can ignore the upper 96 bits and perform the operations slightly faster.
     */
     for (int32 j = 4; j < stride; ++j) {
-      _mm_store_ss(vertexData + j, _mm_mul_ss(_mm_load_ss(vertexData + j), invPerspectiveZ));
+      _mm_store_ss(vertexData + j, _mm_mul_ss(_mm_load_ss(vertexData + j), invPerspectiveZScalar));
     }
   }
 }
@@ -936,9 +938,8 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
     // Homogenize
     __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
     __m128 invPerspectiveZ = _mm_rcp_ps(perspectiveTerm);
-    __m128 homogenized = _mm_mul_ps(vec, invPerspectiveZ);
-
     __m128 invPerspectiveZScalar = _mm_move_ss(_mm_setzero_ps(), invPerspectiveZ);
+    __m128 homogenized = _mm_mul_ps(vec, invPerspectiveZ);
 
     // Window transform
     __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(homogenized), 0b10101010)));

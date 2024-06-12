@@ -4,6 +4,7 @@
 #include "FileString.h"
 #include "ZString.h"
 #include "Serializer.h"
+#include "ISerializable.h"
 
 namespace ZSharp {
 
@@ -14,7 +15,7 @@ enum class AssetType {
   Audio
 };
 
-class Asset final {
+class Asset final : public ISerializable {
   public:
   Asset();
 
@@ -41,6 +42,10 @@ class Asset final {
   const MemoryDeserializer& Loader() const;
 
   AssetType Type() const;
+
+  virtual void Serialize(ISerializer& serializer) override;
+
+  virtual void Deserialize(IDeserializer& deserializer) override;
 
   private:
   size_t mSize;

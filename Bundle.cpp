@@ -57,7 +57,12 @@ bool Bundle::Deserialize(MemoryDeserializer& deserializer) {
     return false;
   }
 
-  mAssets.Deserialize(deserializer);
+  size_t numAssets = 0;
+  deserializer.Deserialize(&numAssets, sizeof(numAssets));
+  mAssets.Resize(numAssets);
+  for (size_t i = 0; i < numAssets; ++i) {
+    mAssets[i].Deserialize(deserializer);
+  }
 
   // TODO: Add this to the serializer so that we don't make assumptions.
   const size_t padding = sizeof(size_t);

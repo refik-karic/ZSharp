@@ -13,7 +13,11 @@ bool GenerateBundle(const FileString& filename, Array<Asset>& assets, MemorySeri
     return false;
   }
 
-  assets.Serialize(fileSerializer);
+  size_t numAssets = assets.Size();
+  fileSerializer.Serialize(&numAssets, sizeof(numAssets));
+  for (Asset& asset : assets) {
+    asset.Serialize(fileSerializer);
+  }
 
   if (!fileSerializer.Serialize(data.Data(), data.Size())) {
     return false;

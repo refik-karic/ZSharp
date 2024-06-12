@@ -49,4 +49,25 @@ const MemoryDeserializer& Asset::Loader() const {
 AssetType Asset::Type() const {
   return mAssetType;
 }
+
+void Asset::Serialize(ISerializer& serializer) {
+  serializer.Serialize(&mSize, sizeof(mSize));
+  mName.Serialize(serializer);
+  mExtension.Serialize(serializer);
+  serializer.Serialize(&mLoose, sizeof(mLoose));
+  mLoosePath.GetAbsolutePath().Serialize(serializer);
+  serializer.Serialize(&mAssetType, sizeof(mAssetType));
+}
+
+void Asset::Deserialize(IDeserializer& deserializer) {
+  deserializer.Deserialize(&mSize, sizeof(mSize));
+  mName.Deserialize(deserializer);
+  mExtension.Deserialize(deserializer);
+  deserializer.Deserialize(&mLoose, sizeof(mLoose));
+  String loosePath;
+  loosePath.Deserialize(deserializer);
+  mLoosePath = loosePath;
+  deserializer.Deserialize(&mAssetType, sizeof(mAssetType));
+}
+
 }

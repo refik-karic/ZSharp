@@ -16,9 +16,9 @@
 
 namespace ZSharp {
 struct alignas(8) OBJFaceElement {
-  uint64 vertexIndex = 0;
-  uint64 uvIndex = 0;
-  uint64 normalIndex = 0;
+  uint32 vertexIndex = 0;
+  uint32 uvIndex = 0;
+  uint32 normalIndex = 0;
 };
 
 struct OBJFace {

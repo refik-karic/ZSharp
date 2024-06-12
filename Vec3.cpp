@@ -74,6 +74,12 @@ void Vec3::operator+=(const Vec3& vector) {
   mData[2] += vector.mData[2];
 }
 
+void Vec3::operator*=(float scalar) {
+  mData[0] *= scalar;
+  mData[1] *= scalar;
+  mData[2] *= scalar;
+}
+
 Vec3 Vec3::operator-(const Vec3& vector) const {
   Vec3 result(
     mData[0] - vector.mData[0],

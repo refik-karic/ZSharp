@@ -20,6 +20,7 @@
 
 namespace ZSharp {
 ConsoleVariable<bool> DebugTransforms("DebugTransforms", true);
+ConsoleVariable<float> CameraSpeed("CameraSpeed", 1.f);
 
 GameInstance::GameInstance() {
 
@@ -210,6 +211,8 @@ void GameInstance::TickFrontEnd() {
 
 void GameInstance::MoveCamera(Direction direction) {
   Vec3 cameraLook(mCamera.GetLook());
+
+  cameraLook *= (*CameraSpeed);
 
   switch (direction) {
   case Direction::FORWARD:

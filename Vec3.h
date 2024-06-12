@@ -34,6 +34,8 @@ public:
 
   void operator+=(const Vec3& vector);
 
+  void operator*=(float scalar);
+
   Vec3 operator-(const Vec3& vector) const;
 
   Vec3 operator-() const;

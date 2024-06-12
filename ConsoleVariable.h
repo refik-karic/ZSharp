@@ -33,6 +33,13 @@ struct ConsoleVariableConverter<bool> {
   }
 };
 
+template<>
+struct ConsoleVariableConverter<float> {
+  void operator()(const String& str, float& var) const {
+    var = str.ToFloat();
+  }
+};
+
 template<typename T>
 class ConsoleVariable {
   public:

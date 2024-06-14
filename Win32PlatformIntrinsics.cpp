@@ -1515,6 +1515,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
           vValues = _mm256_round_ps(vValues, _MM_ROUND_MODE_DOWN);
 #endif
 
+          uValues = _mm256_max_ps(_mm256_min_ps(uValues, maxUValue), _mm256_setzero_ps());
+          vValues = _mm256_max_ps(_mm256_min_ps(vValues, maxVValue), _mm256_setzero_ps());
+
           __m256i colorValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(vValues, yStride, uValues));
 
           // Note: we're assuming texture data is stored in ARGB format.

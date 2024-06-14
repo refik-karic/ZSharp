@@ -163,7 +163,7 @@ void Vec3::Clear() {
 }
 
 String Vec3::ToString() const {
-  String result(String::FromFormat("X={0}, Y={1}, Z={2}", mData[0], mData[1], mData[2]));
+  String result(String::FromFormat("X={0:4}, Y={1:4}, Z={2:4}", mData[0], mData[1], mData[2]));
   return result;
 }
 

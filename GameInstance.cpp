@@ -69,20 +69,15 @@ void GameInstance::TickWorld() {
     mThreadPool.WaitForJobs();
   }
 
+  Array<String> stats;
+
   size_t frameDeltaMs = (mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
   mLastFrameTime = PlatformHighResClock();
 
-  const String frameString(String::FromFormat("Frame: {0}\n", mFrameCount));
-  Logger::Log(LogCategory::Info, frameString);
-
-  const String deltaString(String::FromFormat("Frame Delta: {0}ms\n", frameDeltaMs));
-  Logger::Log(LogCategory::Info, deltaString);
-
-  const String cameraPosition(String::FromFormat("Camera: {0}\n", mCamera.Position().ToString()));
-  Logger::Log(LogCategory::Info, cameraPosition);
-
-  const String cameraView(String::FromFormat("Camera View: {0}\n", mCamera.GetLook().ToString()));
-  Logger::Log(LogCategory::Info, cameraView);
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame: {0}\n", mFrameCount)));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame Delta: {0}ms\n", frameDeltaMs)));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera: {0}\n", mCamera.Position().ToString())));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera View: {0}\n", mCamera.GetLook().ToString())));
 
   size_t numModels = mWorld.GetModels().Size();
   size_t numVerts = 0;
@@ -95,14 +90,9 @@ void GameInstance::TickWorld() {
     }
   }
 
-  const String modelString(String::FromFormat("Num Models: {0}\n", numModels));
-  Logger::Log(LogCategory::Info, modelString);
-
-  const String vertString(String::FromFormat("Num Verts: {0}\n", numVerts));
-  Logger::Log(LogCategory::Info, vertString);
-
-  const String triangleString(String::FromFormat("Num Triangles: {0}\n", numTriangles));
-  Logger::Log(LogCategory::Info, triangleString);
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Models: {0}\n", numModels)));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Verts: {0}\n", numVerts)));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Triangles: {0}\n", numTriangles)));
 
   ++mFrameCount;
 
@@ -132,7 +122,8 @@ void GameInstance::TickWorld() {
   size_t startPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
   mWorld.TickPhysics(physicsTickTime);
   size_t endPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
-  const String physicsTime(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics));
+
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics)));
 
   mRenderer.RenderNextFrame(mWorld, mCamera);
 
@@ -147,11 +138,10 @@ void GameInstance::TickWorld() {
   }
 
   float cullRatio = (float)remainingTriangles / (float)numTriangles;
-  const String remainingTriangleString(String::FromFormat("Post Clip/Cull Triangles: {0}, {1}%\n", remainingTriangles, cullRatio));
-  Logger::Log(LogCategory::Info, remainingTriangleString);
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Post Clip/Cull Triangles: {0}, {1:4}%\n", remainingTriangles, cullRatio)));
 
   if (mDrawStats) {
-    String renderFrameTimeString(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDelta(renderFrameTime, ClockUnits::Microseconds)));
+    stats.EmplaceBack(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDelta(renderFrameTime, ClockUnits::Microseconds)));
 
     size_t bufferWidth = mRenderer.GetFrameBuffer().GetWidth();
     uint8* buffer;
@@ -165,17 +155,11 @@ void GameInstance::TickWorld() {
       color = ZColors::BLACK;
     }
 
-    // TODO: Organize stats a bit better.
-    DrawText(frameString, 10, 10, buffer, bufferWidth, color);
-    DrawText(deltaString, 10, 20, buffer, bufferWidth, color);
-    DrawText(renderFrameTimeString, 10, 30, buffer, bufferWidth, color);
-    DrawText(cameraPosition, 10, 40, buffer, bufferWidth, color);
-    DrawText(cameraView, 10, 50, buffer, bufferWidth, color);
-    DrawText(physicsTime, 10, 60, buffer, bufferWidth, color);
-    DrawText(modelString, 10, 70, buffer, bufferWidth, color);
-    DrawText(vertString, 10, 80, buffer, bufferWidth, color);
-    DrawText(triangleString, 10, 90, buffer, bufferWidth, color);
-    DrawText(remainingTriangleString, 10, 100, buffer, bufferWidth, color);
+    size_t y = 10;
+    for (size_t i = 0; i < stats.Size(); ++i) {
+      DrawText(stats[i], 10, y, buffer, bufferWidth, color);
+      y += 10;
+    }
   }
 
   if (mDevConsole.IsOpen()) {

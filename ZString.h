@@ -59,7 +59,7 @@ class String final : public ISerializable {
 
     VariableArg(const String& arg);
 
-    String ToString() const;
+    String ToString(int32 numDigits = 0) const;
   };
 
   public:

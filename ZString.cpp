@@ -481,11 +481,17 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
 
     if (!isEscaped && (currentChar == '{')) {
       size_t jumpAhead = 0;
+      size_t numDigits = 0;
 
       for (const char* endFormat = str + 1; *endFormat != '\0'; ++endFormat) {
         if (*endFormat == '}') {
           jumpAhead = (endFormat - str);
           break;
+        }
+        else if (*endFormat == ':') {
+          if (endFormat[1] != '}') {
+            numDigits = endFormat - str + 1;
+          }
         }
       }
 
@@ -508,7 +514,13 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
 
       // Append the VariableArg based on its type.
       const VariableArg& arg = args[argIndex];
-      Append(arg.ToString().Str());
+      if (numDigits != 0) {
+        int32 digits = atoi(str + numDigits);
+        Append(arg.ToString(digits).Str());
+      }
+      else {
+        Append(arg.ToString().Str());
+      }
 
       str += jumpAhead;
       lastPosition = str + 1;
@@ -558,7 +570,7 @@ String::VariableArg::VariableArg(const String& arg)
   mData.string_class_value = &arg;
 }
 
-String String::VariableArg::ToString() const {
+String String::VariableArg::ToString(int32 numDigits) const {
   String result;
 
   switch (mType) {
@@ -610,7 +622,7 @@ String String::VariableArg::ToString() const {
       const size_t bufferSize = 64;
       char buffer[bufferSize];
       buffer[0] = '\0';
-      const int32 digits = FLT_DECIMAL_DIG;
+      const int32 digits = (numDigits == 0) ? FLT_DECIMAL_DIG : numDigits;
       const float val = mData.float_value;
       const char* str = _gcvt(val, digits, buffer);
       result.Append(str);

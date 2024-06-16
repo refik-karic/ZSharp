@@ -67,7 +67,7 @@ class String final : public ISerializable {
 
   String(const char* str);
 
-  String(const char* str, size_t offset, size_t size);
+  String(const char* str, size_t offset, size_t length);
 
   String(const String& rhs);
 
@@ -181,7 +181,7 @@ class String final : public ISerializable {
     ShortString shortStr;
   } mOverlapData;
 
-  bool IsShort(const char* str) const;
+  bool IsShort(const char* str, size_t& length) const;
 
   bool IsMarkedShort() const;
 
@@ -192,7 +192,7 @@ class String final : public ISerializable {
 
   uint16 GetShortLength() const;
 
-  void CopyShort(const char* str);
+  void CopyShort(const char* str, size_t length);
 
   void AppendShort(const char* str, size_t offset, size_t length);
 
@@ -205,7 +205,7 @@ class String final : public ISerializable {
 
   void FreeLong();
 
-  void CopyLong(const char* str);
+  void CopyLong(const char* str, size_t length);
 
   void AppendLong(const char* str, size_t offset, size_t length);
 
@@ -216,7 +216,7 @@ class String final : public ISerializable {
 
   char* GetMutableString();
 
-  size_t GetCombinedSize(const char* str);
+  size_t GetCombinedSize(size_t length);
 
   bool FitsInSmall(size_t size);
 

@@ -151,12 +151,12 @@ size_t PlatformAlignmentGranularity() {
 }
 
 String PlatformCPUVendor() {
-  String vendor((const char*)(CPUIDSection00() + 1), 0, 12);
+  String vendor((const char*)(CPUIDSection00() + 1));
   return vendor;
 }
 
 String PlatformCPUBrand() {
-  String brand((const char*)CPUIDSectionBrand(), 0, 48);
+  String brand((const char*)CPUIDSectionBrand());
   return brand;
 }
 

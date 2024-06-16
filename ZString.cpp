@@ -19,20 +19,33 @@ static const uint16 ShortMaskClear = 0x7FFFU;
 static const size_t LongMaskClear = 0x7FFFFFFFFFFFFFFFULL;
 
 String::String() {
-  Copy("");
+  SetShortLength(0);
+  mOverlapData.shortStr.data[0] = NULL;
+  MarkShort(true);
 }
 
 String::String(const char* str) {
   Copy(str);
 }
 
-String::String(const char* str, size_t offset, size_t end) {
-  Copy("");
-  Append(str, offset, end);
+String::String(const char* str, size_t offset, size_t length) {
+  if (FitsInSmall(length)) {
+    CopyShort(str + offset, length);
+  }
+  else {
+    CopyLong(str + offset, length);
+  }
 }
 
 String::String(const String& rhs) {
-  Copy(rhs.Str());
+  const char* str = rhs.Str();
+  size_t length = rhs.Length();
+  if (rhs.IsMarkedShort()) {
+    CopyShort(str, length);
+  }
+  else {
+    CopyLong(str, length);
+  }
 }
 
 String::~String() {
@@ -51,7 +64,14 @@ String* String::operator=(const String& rhs) {
       FreeLong();
     }
 
-    Copy(rhs.Str());
+    const char* str = rhs.Str();
+    size_t length = rhs.Length();
+    if (rhs.IsMarkedShort()) {
+      CopyShort(str, length);
+    }
+    else {
+      CopyLong(str, length);
+    }
   }
 
   return this;
@@ -89,12 +109,18 @@ const char& String::operator[](const size_t index) {
 }
 
 void String::Append(const String& str) {
-  Append(str.Str());
+  size_t length = str.Length();
+  if (FitsInSmall(GetCombinedSize(length) + 1)) {
+    AppendShort(str.Str(), 0, length);
+  }
+  else {
+    AppendLong(str.Str(), 0, length);
+  }
 }
 
 void String::Append(const char* str, size_t offset, size_t size) {
-  size_t totalSize = Length() + size + 1;
-  if (FitsInSmall(totalSize)) {
+  size_t totalSize = GetCombinedSize(size);
+  if (FitsInSmall(totalSize + 1)) {
     AppendShort(str, offset, size);
   }
   else {
@@ -104,7 +130,7 @@ void String::Append(const char* str, size_t offset, size_t size) {
 
 void String::Append(const char* str) {
   size_t length = strlen(str);
-  if (FitsInSmall(GetCombinedSize(str) + 1)) {
+  if (FitsInSmall(GetCombinedSize(length) + 1)) {
     AppendShort(str, 0, length);
   }
   else {
@@ -343,8 +369,9 @@ void String::Deserialize(IDeserializer& deserializer) {
   PlatformFree(buffer);
 }
 
-bool String::IsShort(const char* str) const {
-  return (strlen(str) + 1) < MinCapacity;
+bool String::IsShort(const char* str, size_t& length) const {
+  length = strlen(str);
+  return (length + 1) < MinCapacity;
 }
 
 bool String::IsMarkedShort() const {
@@ -363,12 +390,11 @@ uint16 String::GetShortLength() const {
   return mOverlapData.shortStr.size & ShortMaskClear;
 }
 
-void String::CopyShort(const char* str) {
-  size_t length = strlen(str);
+void String::CopyShort(const char* str, size_t length) {
   SetShortLength(length);
   if (length > 0) {
-    memcpy(mOverlapData.shortStr.data, str, GetShortLength());
-    mOverlapData.shortStr.data[GetShortLength()] = NULL;
+    memcpy(mOverlapData.shortStr.data, str, length);
+    mOverlapData.shortStr.data[length] = NULL;
   }
   else {
     mOverlapData.shortStr.data[0] = NULL;
@@ -406,37 +432,34 @@ void String::FreeLong() {
   }
 }
 
-void String::CopyLong(const char* str) {
-  SetLongLength(strlen(str));
+void String::CopyLong(const char* str, size_t length) {
+  SetLongLength(length);
   AllocateLong();
-  memcpy(mOverlapData.longStr.data, str, GetLongLength());
-  mOverlapData.longStr.data[GetLongLength()] = NULL;
+  memcpy(mOverlapData.longStr.data, str, length);
+  mOverlapData.longStr.data[length] = NULL;
   MarkShort(false);
 }
 
 void String::AppendLong(const char* str, size_t offset, size_t length) {
-  size_t combinedLength = Length() + length;
+  size_t combinedLength = GetCombinedSize(length);
+
+  char* resizedStr = nullptr;
+  size_t currentPosition = Length();
 
   if (IsMarkedShort()) {
-    char oldData[MinCapacity];
     size_t shortLength = GetShortLength();
-    memcpy(oldData, GetString(), shortLength);
-    SetLongLength(shortLength);
-    AllocateLong();
-    MarkShort(false);
-
-    char* mutableStr = GetMutableString();
-    memcpy(mutableStr, oldData, shortLength);
-    mutableStr[shortLength] = NULL;
+    const char* shortStr = GetString();
+    resizedStr = static_cast<char*>(PlatformMalloc(combinedLength + 1));
+    memcpy(resizedStr, shortStr, shortLength);
+  }
+  else {
+    resizedStr = static_cast<char*>(PlatformReAlloc(mOverlapData.longStr.data, combinedLength + 1));
   }
 
-  char* resizedStr = static_cast<char*>(PlatformReAlloc(mOverlapData.longStr.data, combinedLength + 1));
   ZAssert(resizedStr != nullptr);
   mOverlapData.longStr.data = resizedStr;
   MarkShort(false);
   SetLongLength(combinedLength);
-
-  size_t currentPosition = strlen(GetMutableString());
 
   char* mutableStr = GetMutableString() + currentPosition;
   const char* strOffset = str + offset;
@@ -445,11 +468,13 @@ void String::AppendLong(const char* str, size_t offset, size_t length) {
 }
 
 void String::Copy(const char* str) {
-  if (IsShort(str)) {
-    CopyShort(str);
+  size_t length = 0;
+  bool shortString = IsShort(str, length);
+  if (shortString) {
+    CopyShort(str, length);
   }
   else {
-    CopyLong(str);
+    CopyLong(str, length);
   }
 }
 
@@ -461,8 +486,8 @@ char* String::GetMutableString() {
   return (IsMarkedShort()) ? mOverlapData.shortStr.data : mOverlapData.longStr.data;
 }
 
-size_t String::GetCombinedSize(const char* str) {
-  return strlen(str) + Length();
+size_t String::GetCombinedSize(size_t length) {
+  return length + Length();
 }
 
 bool String::FitsInSmall(size_t size) {
@@ -516,10 +541,10 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
       const VariableArg& arg = args[argIndex];
       if (numDigits != 0) {
         int32 digits = atoi(str + numDigits);
-        Append(arg.ToString(digits).Str());
+        Append(arg.ToString(digits));
       }
       else {
-        Append(arg.ToString().Str());
+        Append(arg.ToString());
       }
 
       str += jumpAhead;

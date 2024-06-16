@@ -95,7 +95,7 @@ void IniFile::ParseFile() {
           if (delimLocation != nullptr) {
             size_t keyLength = delimLocation - currentLine.Str();
             String key(currentLine.Str(), 0, keyLength);
-            String value(currentLine.Str(), keyLength + 1, currentLine.Length());
+            String value(currentLine.Str(), keyLength + 1, currentLine.Length() - keyLength - 1);
 
             if (activeSection != nullptr) {
               activeSection->mPairs.EmplaceBack(key, value);

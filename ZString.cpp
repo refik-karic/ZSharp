@@ -618,61 +618,59 @@ String String::VariableArg::ToString(int32 numDigits) const {
   switch (mType) {
     case Type::SIZE_T:
     {
-      const size_t bufferSize = 64;
-      char buffer[bufferSize];
-      buffer[0] = '\0';
-      const char* str = _ui64toa(mData.size_value, buffer, 10);
-      result.Append(str);
+      char buffer[64];
+      size_t length = snprintf(buffer, sizeof(buffer), "%llu", mData.size_value);
+      result.Append(buffer, 0, length);
     }
       break;
     case Type::BOOL:
     {
       const char* str = (mData.bool_value) ? "1" : "0";
-      result.Append(str);
+      result.Append(str, 0, 1);
     }
     break;
     case Type::INT32:
     {
-      const size_t bufferSize = 64;
-      char buffer[bufferSize];
-      buffer[0] = '\0';
-      const char* str = _itoa(mData.int32_value, buffer, 10);
-      result.Append(str);
+      char buffer[64];
+      size_t length = snprintf(buffer, sizeof(buffer), "%d", mData.int32_value);
+      result.Append(buffer, 0, length);
     }
       break;
     case Type::UINT32:
     {
-      ZAssert(false); // Not implemented.
+      char buffer[64];
+      size_t length = snprintf(buffer, sizeof(buffer), "%u", mData.uint32_value);
+      result.Append(buffer, 0, length);
     }
       break;
     case Type::INT64:
     {
-      const size_t bufferSize = 64;
-      char buffer[bufferSize];
-      buffer[0] = '\0';
-      const char* str = _i64toa(mData.int64_value, buffer, 10);
-      result.Append(str);
+      char buffer[64];
+      size_t length = snprintf(buffer, sizeof(buffer), "%lld", mData.int64_value);
+      result.Append(buffer, 0, length);
     }
       break;
     case Type::UINT64:
     {
-      ZAssert(false); // Not implemented.
+      char buffer[64];
+      size_t length = snprintf(buffer, sizeof(buffer), "%llu", mData.uint64_value);
+      result.Append(buffer, 0, length);
     }
       break;
     case Type::FLOAT:
     {
-      const size_t bufferSize = 64;
-      char buffer[bufferSize];
-      buffer[0] = '\0';
-      const int32 digits = (numDigits == 0) ? FLT_DECIMAL_DIG : numDigits;
-      const float val = mData.float_value;
-      const char* str = _gcvt(val, digits, buffer);
-      result.Append(str);
+      char buffer[64];
+      int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
+      size_t length = snprintf(buffer, sizeof(buffer), "%.*f", significantFigures, mData.float_value);
+      result.Append(buffer, 0, length);
     }
       break;
     case Type::DOUBLE:
     {
-      ZAssert(false); // Not implemented.
+      char buffer[64];
+      int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
+      size_t length = snprintf(buffer, sizeof(buffer), "%.*lf", significantFigures, mData.double_value);
+      result.Append(buffer, 0, length);
     }
       break;
     case Type::CONST_STRING:

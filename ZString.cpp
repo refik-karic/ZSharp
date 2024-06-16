@@ -360,13 +360,30 @@ void String::Deserialize(IDeserializer& deserializer) {
   size_t length = 0;
   deserializer.Deserialize(&length, sizeof(length));
 
-  char* buffer = (char*)PlatformMalloc(length + 1);
-  deserializer.Deserialize(buffer, length);
-  buffer[length] = '\0';
+  if (!IsMarkedShort()) {
+    FreeLong();
+    SetLongLength(0);
+  }
+  else {
+    SetShortLength(0);
+  }
 
-  Append(buffer);
+  char* str = nullptr;
 
-  PlatformFree(buffer);
+  if (FitsInSmall(length + 1)) {
+    SetShortLength(length);
+    MarkShort(true);
+    str = GetMutableString();
+  }
+  else {
+    SetLongLength(length);
+    MarkShort(false);
+    AllocateLong();
+    str = GetMutableString();
+  }
+
+  deserializer.Deserialize(str, length);
+  str[length] = NULL;
 }
 
 bool String::IsShort(const char* str, size_t& length) const {

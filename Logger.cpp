@@ -98,32 +98,32 @@ bool Logger::IsExcessiveSize(const size_t nextMessageLength) const {
 }
 
 void Logger::LogPrologue() {
-  String preamble;
-  preamble.Append("\n\n==========Begin Sys Info==========\n");
-  preamble.Appendf("CPU: ID={0}, Brand={1}\n", 
+  String prologue;
+  prologue.Append("\n\n==========Begin Sys Info==========\n");
+  prologue.Appendf("CPU: ID={0}, Brand={1}\n",
     PlatformCPUVendor(), 
     PlatformCPUBrand());
-  preamble.Appendf("Cores: Physical={0}, Logical={1}\n", 
+  prologue.Appendf("Cores: Physical={0}, Logical={1}\n",
     PlatformGetNumPhysicalCores(), 
     PlatformGetNumLogicalCores());
-  preamble.Appendf("SIMD: 4-Wide={0}, 8-Wide={1}, 16-Wide={2}\n", 
+  prologue.Appendf("SIMD: 4-Wide={0}, 8-Wide={1}, 16-Wide={2}\n",
     PlatformSupportsSIMDLanes(SIMDLaneWidth::Four),
     PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight),
     PlatformSupportsSIMDLanes(SIMDLaneWidth::Sixteen));
-  preamble.Appendf("OS: Username={0}, Machine={1}\n", 
+  prologue.Appendf("OS: Username={0}, Machine={1}\n",
     PlatformGetUsername(), 
     PlatformGetMachineName());
-  preamble.Appendf("Build: {0}\n",
+  prologue.Appendf("Build: {0}\n",
     PlatformGetBuildType());
 
   Array<String> displays(PlatformEnumDisplayInfo());
   for (size_t i = 0; i < displays.Size(); ++i) {
-    preamble.Append(displays[i]);
+    prologue.Append(displays[i]);
   }
 
-  preamble.Append("==========End Sys Info==========\n\n");
+  prologue.Append("==========End Sys Info==========\n\n");
 
-  InternalLog(LogCategory::System, preamble);
+  InternalLog(LogCategory::System, prologue);
 }
 
 }

@@ -6,8 +6,6 @@
 #include "ZAssert.h"
 #include "PlatformMemory.h"
 
-#include <cfloat>
-#include <cstdarg>
 #include <cstdlib>
 #include <cstring>
 #include <cwchar>
@@ -424,7 +422,7 @@ void String::AppendShort(const char* str, size_t offset, size_t length) {
   const char* offsetString = str + offset;
   memcpy(mOverlapData.shortStr.data + shortLength, offsetString, length);
   mOverlapData.shortStr.data[shortLength + length] = NULL;
-  SetShortLength(strlen(mOverlapData.shortStr.data));
+  SetShortLength(shortLength + length);
   MarkShort(true);
 }
 
@@ -689,7 +687,9 @@ String String::VariableArg::ToString(int32 numDigits) const {
 }
 
 WideString::WideString() {
-  Copy(L"");
+  SetShortLength(0);
+  mOverlapData.shortStr.data[0] = L'\0';
+  MarkShort(true);
 }
 
 WideString::WideString(const wchar_t* str) {
@@ -697,12 +697,23 @@ WideString::WideString(const wchar_t* str) {
 }
 
 WideString::WideString(const wchar_t* str, size_t offset, size_t end) {
-  Copy(L"");
-  Append(str, offset, end);
+  if (FitsInSmall(end)) {
+    CopyShort(str + offset, end);
+  }
+  else {
+    CopyLong(str + offset, end);
+  }
 }
 
 WideString::WideString(const WideString& rhs) {
-  Copy(rhs.Str());
+  const wchar_t* str = rhs.Str();
+  size_t length = rhs.Length();
+  if (rhs.IsMarkedShort()) {
+    CopyShort(str, length);
+  }
+  else {
+    CopyLong(str, length);
+  }
 }
 
 WideString::~WideString() {
@@ -721,7 +732,14 @@ WideString* WideString::operator=(const WideString& rhs) {
       FreeLong();
     }
 
-    Copy(rhs.Str());
+    const wchar_t* str = rhs.Str();
+    size_t length = rhs.Length();
+    if (rhs.IsMarkedShort()) {
+      CopyShort(str, length);
+    }
+    else {
+      CopyLong(str, length);
+    }
   }
 
   return this;
@@ -751,12 +769,18 @@ const wchar_t& WideString::operator[](const size_t index) {
 }
 
 void WideString::Append(const WideString& str) {
-  Append(str.Str());
+  size_t length = str.Length();
+  if (FitsInSmall(GetCombinedSize(length) + 1)) {
+    AppendShort(str.Str(), 0, length);
+  }
+  else {
+    AppendLong(str.Str(), 0, length);
+  }
 }
 
 void WideString::Append(const wchar_t* str, size_t offset, size_t size) {
-  size_t totalSize = Length() + size + 1;
-  if (FitsInSmall(totalSize)) {
+  size_t totalSize = GetCombinedSize(size);
+  if (FitsInSmall(totalSize + 1)) {
     AppendShort(str, offset, size);
   }
   else {
@@ -766,7 +790,7 @@ void WideString::Append(const wchar_t* str, size_t offset, size_t size) {
 
 void WideString::Append(const wchar_t* str) {
   size_t length = wcslen(str);
-  if (FitsInSmall(GetCombinedSize(str) + 1)) {
+  if (FitsInSmall(GetCombinedSize(length) + 1)) {
     AppendShort(str, 0, length);
   }
   else {
@@ -995,17 +1019,35 @@ void WideString::Deserialize(IDeserializer& deserializer) {
   size_t length = 0;
   deserializer.Deserialize(&length, sizeof(length));
 
-  wchar_t* buffer = (wchar_t*)PlatformMalloc(length + 1);
-  deserializer.Deserialize(buffer, length * sizeof(wchar_t));
-  buffer[length] = L'\0';
+  if (!IsMarkedShort()) {
+    FreeLong();
+    SetLongLength(0);
+  }
+  else {
+    SetShortLength(0);
+  }
 
-  Append(buffer);
+  wchar_t* str = nullptr;
 
-  PlatformFree(buffer);
+  if (FitsInSmall(length + 1)) {
+    SetShortLength(length);
+    MarkShort(true);
+    str = GetMutableString();
+  }
+  else {
+    SetLongLength(length);
+    MarkShort(false);
+    AllocateLong();
+    str = GetMutableString();
+  }
+
+  deserializer.Deserialize(str, length * sizeof(wchar_t));
+  str[length] = L'\0';
 }
 
-bool WideString::IsShort(const wchar_t* str) const {
-  return (wcslen(str) + 1) < MinCapacity;
+bool WideString::IsShort(const wchar_t* str, size_t& length) const {
+  length = wcslen(str);
+  return (length + 1) < MinCapacity;
 }
 
 bool WideString::IsMarkedShort() const {
@@ -1024,12 +1066,11 @@ wchar_t WideString::GetShortLength() const {
   return mOverlapData.shortStr.size & ShortMaskClear;
 }
 
-void WideString::CopyShort(const wchar_t* str) {
-  size_t length = wcslen(str);
+void WideString::CopyShort(const wchar_t* str, size_t length) {
   SetShortLength(length);
   if (length > 0) {
-    memcpy(mOverlapData.shortStr.data, str, GetShortLength() * sizeof(wchar_t));
-    mOverlapData.shortStr.data[GetShortLength()] = L'\0';
+    memcpy(mOverlapData.shortStr.data, str, length * sizeof(wchar_t));
+    mOverlapData.shortStr.data[length] = L'\0';
   }
   else {
     mOverlapData.shortStr.data[0] = L'\0';
@@ -1042,7 +1083,7 @@ void WideString::AppendShort(const wchar_t* str, size_t offset, size_t length) {
   const wchar_t* offsetString = str + offset;
   memcpy(mOverlapData.shortStr.data + shortLength, offsetString, length * sizeof(wchar_t));
   mOverlapData.shortStr.data[shortLength + length] = L'\0';
-  SetShortLength(wcslen(mOverlapData.shortStr.data));
+  SetShortLength(shortLength + length);
   MarkShort(true);
 }
 
@@ -1067,50 +1108,49 @@ void WideString::FreeLong() {
   }
 }
 
-void WideString::CopyLong(const wchar_t* str) {
-  SetLongLength(wcslen(str));
+void WideString::CopyLong(const wchar_t* str, size_t length) {
+  SetLongLength(length);
   AllocateLong();
-  memcpy(mOverlapData.longStr.data, str, GetLongLength() * sizeof(wchar_t));
-  mOverlapData.longStr.data[GetLongLength()] = L'\0';
+  memcpy(mOverlapData.longStr.data, str, length * sizeof(wchar_t));
+  mOverlapData.longStr.data[length] = L'\0';
   MarkShort(false);
 }
 
 void WideString::AppendLong(const wchar_t* str, size_t offset, size_t length) {
-  size_t combinedLength = Length() + length;
+  size_t combinedLength = GetCombinedSize(length);
+
+  wchar_t* resizedStr = nullptr;
+  size_t currentPosition = Length();
 
   if (IsMarkedShort()) {
-    wchar_t oldData[MinCapacity];
     size_t shortLength = GetShortLength();
-    memcpy(oldData, GetString(), shortLength * sizeof(wchar_t));
-    SetLongLength(shortLength);
-    AllocateLong();
-    MarkShort(false);
-
-    wchar_t* mutableStr = GetMutableString();
-    memcpy(mutableStr, oldData, shortLength * sizeof(wchar_t));
-    mutableStr[shortLength] = L'\0';
+    const wchar_t* shortStr = GetString();
+    resizedStr = static_cast<wchar_t*>(PlatformMalloc((combinedLength + 1) * sizeof(wchar_t)));
+    memcpy(resizedStr, shortStr, shortLength * sizeof(wchar_t));
+  }
+  else {
+    resizedStr = static_cast<wchar_t*>(PlatformReAlloc(mOverlapData.longStr.data, (combinedLength + 1) * sizeof(wchar_t)));
   }
 
-  SetLongLength(combinedLength);
-  wchar_t* resizedStr = static_cast<wchar_t*>(PlatformReAlloc(mOverlapData.longStr.data, (combinedLength + 1) * sizeof(wchar_t)));
   ZAssert(resizedStr != nullptr);
   mOverlapData.longStr.data = resizedStr;
-
-  size_t currentPosition = wcslen(GetMutableString());
+  MarkShort(false);
+  SetLongLength(combinedLength);
 
   wchar_t* mutableStr = GetMutableString() + currentPosition;
   const wchar_t* strOffset = str + offset;
   memcpy(mutableStr, strOffset, length * sizeof(wchar_t));
   mutableStr[length] = L'\0';
-  MarkShort(false);
 }
 
 void WideString::Copy(const wchar_t* str) {
-  if (IsShort(str)) {
-    CopyShort(str);
+  size_t length = 0;
+  bool shortString = IsShort(str, length);
+  if (shortString) {
+    CopyShort(str, length);
   }
   else {
-    CopyLong(str);
+    CopyLong(str, length);
   }
 }
 
@@ -1122,8 +1162,8 @@ wchar_t* WideString::GetMutableString() {
   return (IsMarkedShort()) ? mOverlapData.shortStr.data : mOverlapData.longStr.data;
 }
 
-size_t WideString::GetCombinedSize(const wchar_t* str) {
-  return wcslen(str) + Length();
+size_t WideString::GetCombinedSize(size_t length) {
+  return length + Length();
 }
 
 bool WideString::FitsInSmall(size_t size) {
@@ -1141,11 +1181,17 @@ void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* ar
 
     if (!isEscaped && (currentChar == '{')) {
       size_t jumpAhead = 0;
+      size_t numDigits = 0;
 
       for (const wchar_t* endFormat = str + 1; *endFormat != '\0'; ++endFormat) {
         if (*endFormat == '}') {
           jumpAhead = (endFormat - str) + 1;
           break;
+        }
+        else if (*endFormat == ':') {
+          if (endFormat[1] != '}') {
+            numDigits = endFormat - str + 1;
+          }
         }
       }
 
@@ -1168,7 +1214,13 @@ void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* ar
 
       // Append the VariableArg based on its type.
       const VariableArg& arg = args[argIndex];
-      Append(arg.ToString().Str());
+      if (numDigits != 0) {
+        int32 digits = static_cast<int32>(wcstol(str + numDigits, NULL, 10));
+        Append(arg.ToString(digits));
+      }
+      else {
+        Append(arg.ToString());
+      }
 
       str += jumpAhead;
       lastPosition = str;
@@ -1188,42 +1240,52 @@ WideString::VariableArg::VariableArg(const float arg)
   mData.float_value = arg;
 }
 
-WideString WideString::VariableArg::ToString() const {
+WideString WideString::VariableArg::ToString(int32 numDigits) const {
   WideString result;
 
   switch (mType) {
   case Type::INT32:
   {
-    const size_t bufferSize = 64;
-    wchar_t buffer[bufferSize];
-    buffer[0] = '\0';
-    const wchar_t* str = _itow(mData.int32_value, buffer, 10);
-    result.Append(str);
+    wchar_t buffer[64];
+    size_t length = swprintf(buffer, sizeof(buffer), L"%d", mData.int32_value);
+    result.Append(buffer, 0, length);
   }
   break;
   case Type::UINT32:
   {
-    ZAssert(false); // Not implemented.
+    wchar_t buffer[64];
+    size_t length = swprintf(buffer, sizeof(buffer), L"%u", mData.uint32_value);
+    result.Append(buffer, 0, length);
   }
   break;
   case Type::INT64:
   {
-    ZAssert(false); // Not implemented.
+    wchar_t buffer[64];
+    size_t length = swprintf(buffer, sizeof(buffer), L"%lld", mData.int64_value);
+    result.Append(buffer, 0, length);
   }
   break;
   case Type::UINT64:
   {
-    ZAssert(false); // Not implemented.
+    wchar_t buffer[64];
+    size_t length = swprintf(buffer, sizeof(buffer), L"%llu", mData.uint64_value);
+    result.Append(buffer, 0, length);
   }
   break;
   case Type::FLOAT:
   {
-    ZAssert(false); // Not implemented.
+    wchar_t buffer[64];
+    int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
+    size_t length = swprintf(buffer, sizeof(buffer), L"%.*f", significantFigures, mData.float_value);
+    result.Append(buffer, 0, length);
   }
   break;
   case Type::DOUBLE:
   {
-    ZAssert(false); // Not implemented.
+    wchar_t buffer[64];
+    int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
+    size_t length = swprintf(buffer, sizeof(buffer), L"%.*lf", significantFigures, mData.double_value);
+    result.Append(buffer, 0, length);
   }
   break;
   }

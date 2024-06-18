@@ -254,7 +254,7 @@ private:
 
     VariableArg(const float arg);
 
-    WideString ToString() const;
+    WideString ToString(int32 numDigits = 0) const;
   };
 
 public:
@@ -368,7 +368,7 @@ private:
     ShortString shortStr;
   } mOverlapData;
 
-  bool IsShort(const wchar_t* str) const;
+  bool IsShort(const wchar_t* str, size_t& length) const;
 
   bool IsMarkedShort() const;
 
@@ -379,7 +379,7 @@ private:
 
   wchar_t GetShortLength() const;
 
-  void CopyShort(const wchar_t* str);
+  void CopyShort(const wchar_t* str, size_t length);
 
   void AppendShort(const wchar_t* str, size_t offset, size_t length);
 
@@ -392,7 +392,7 @@ private:
 
   void FreeLong();
 
-  void CopyLong(const wchar_t* str);
+  void CopyLong(const wchar_t* str, size_t length);
 
   void AppendLong(const wchar_t* str, size_t offset, size_t length);
 
@@ -403,7 +403,7 @@ private:
 
   wchar_t* GetMutableString();
 
-  size_t GetCombinedSize(const wchar_t* str);
+  size_t GetCombinedSize(size_t length);
 
   bool FitsInSmall(size_t size);
 

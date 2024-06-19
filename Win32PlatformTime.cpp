@@ -113,39 +113,30 @@ size_t PlatformHighResClockDelta(size_t startingTime, ClockUnits units) {
 }
 
 String PlatformSystemTimeFormat() {
-  const size_t bufferSize = 64;
-  char timeString[bufferSize];
+  char timeString[128];
 
   SYSTEMTIME systemTime;
   GetLocalTime(&systemTime);
 
   String result;
 
-  if (GetTimeFormatA(LOCALE_NAME_USER_DEFAULT,
+  int32 timeLength = GetTimeFormatA(LOCALE_NAME_USER_DEFAULT,
     0,
     &systemTime,
     NULL,
     timeString,
-    bufferSize)) {
-    result.Append(timeString);
-  }
-  else {
-    return String("");
-  }
+    sizeof(timeString));
 
-  memset(timeString, 0, bufferSize);
-
-  if (GetDateFormatA(LOCALE_NAME_USER_DEFAULT,
+  int32 dateLength = GetDateFormatA(LOCALE_NAME_USER_DEFAULT,
     DATE_SHORTDATE,
     &systemTime,
     NULL,
-    timeString,
-    bufferSize)) {
-    result.Append(" ");
-    result.Append(timeString);
-  }
-  else {
-    return String("");
+    timeString + timeLength,
+    sizeof(timeString));
+
+  if (timeLength > 0 && dateLength > 0) {
+    timeString[timeLength - 1] = ' ';
+    result.Append(timeString, 0, timeLength + dateLength - 1);
   }
 
   return result;

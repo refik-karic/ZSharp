@@ -113,7 +113,7 @@ size_t PlatformHighResClockDelta(size_t startingTime, ClockUnits units) {
 }
 
 String PlatformSystemTimeFormat() {
-  char timeString[128];
+  char timeString[64];
 
   SYSTEMTIME systemTime;
   GetLocalTime(&systemTime);
@@ -132,7 +132,7 @@ String PlatformSystemTimeFormat() {
     &systemTime,
     NULL,
     timeString + timeLength,
-    sizeof(timeString));
+    sizeof(timeString) - timeLength);
 
   if (timeLength > 0 && dateLength > 0) {
     timeString[timeLength - 1] = ' ';

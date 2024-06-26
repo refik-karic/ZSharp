@@ -7,6 +7,7 @@
 #include "PlatformIntrinsics.h"
 #include "PlatformMisc.h"
 #include "PlatformTime.h"
+#include "Span.h"
 
 namespace ZSharp {
 
@@ -26,31 +27,51 @@ void Logger::InternalLog(LogCategory category, const String& message) {
   String logMessage;
 
   bool logStdOutput = true;
-  const char* logCategory;
+  const char* logCategory = "";
+  size_t categoryLength = 0;
 
   switch (category) {
     case LogCategory::Warning:
+    {
       logCategory = "[Warning]";
+      categoryLength = sizeof("[Warning]") - 1;
+    }
       break;
     case LogCategory::Error:
+    {
       logCategory = "[Error]";
+      categoryLength = sizeof("[Error]") - 1;
+    }
       break;
     case LogCategory::Info:
+    {
       logCategory = "[Info]";
+      categoryLength = sizeof("[Info]") - 1;
+    }
       break;
     case LogCategory::Debug:
+    {
       logCategory = "[Debug]";
+      categoryLength = sizeof("[Debug]") - 1;
+    }
       break;
     case LogCategory::Perf:
+    {
       logCategory = "[Perf]";
+      categoryLength = sizeof("[Perf]") - 1;
+    }
       break;
     case LogCategory::System:
+    {
       logCategory = "[System]";
+      categoryLength = sizeof("[System]") - 1;
       logStdOutput = false;
+    }
       break;
   }
 
-  logMessage.Appendf("{0} [{1}] {2}", logCategory, PlatformSystemTimeFormat(), message);
+  Span<const char> categoryString(logCategory, categoryLength);
+  logMessage.Appendf("{0} [{1}] {2}", categoryString, PlatformSystemTimeFormat(), message);
 
   // Log to 3 locations:
   //  1) Console (if process contains one)

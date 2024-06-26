@@ -610,6 +610,11 @@ String::VariableArg::VariableArg(const String& arg)
   mData.string_class_value = &arg;
 }
 
+String::VariableArg::VariableArg(const Span<const char>& arg)
+  : mType(Type::SPAN_CLASS) {
+  mData.span_class_value = &arg;
+}
+
 String String::VariableArg::ToString(int32 numDigits) const {
   String result;
 
@@ -679,6 +684,13 @@ String String::VariableArg::ToString(int32 numDigits) const {
     case Type::STRING_CLASS:
     {
       result.Append(*(mData.string_class_value));
+    }
+    break;
+    case Type::SPAN_CLASS:
+    {
+      const char* data = mData.span_class_value->GetData();
+      size_t length = mData.span_class_value->Size();
+      result.Append(data, 0, length);
     }
     break;
   }

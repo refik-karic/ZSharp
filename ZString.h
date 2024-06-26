@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 #include "ISerializable.h"
+#include "Span.h"
 
 namespace ZSharp {
 
@@ -24,7 +25,8 @@ class String final : public ISerializable {
       FLOAT,
       DOUBLE,
       CONST_STRING,
-      STRING_CLASS
+      STRING_CLASS,
+      SPAN_CLASS
     };
 
     Type mType;
@@ -40,6 +42,7 @@ class String final : public ISerializable {
       double double_value;
       const char* string_value;
       const String* string_class_value;
+      const Span<const char>* span_class_value;
     } mData;
 
     public:
@@ -58,6 +61,8 @@ class String final : public ISerializable {
     VariableArg(const char* arg);
 
     VariableArg(const String& arg);
+
+    VariableArg(const Span<const char>& arg);
 
     String ToString(int32 numDigits = 0) const;
   };

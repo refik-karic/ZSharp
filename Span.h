@@ -44,7 +44,7 @@ class Span final {
     T* mPtr;
   };
 
-  Span(const T* data, size_t size) 
+  Span(T* data, size_t size) 
     : mData(data), mSize(size) {
 
   }
@@ -62,12 +62,12 @@ class Span final {
   }
 
   T& operator[](size_t index) {
-    ZAssert(index < N);
+    ZAssert(index < mSize);
     return mData[index];
   }
 
   const T& operator[](size_t index) const {
-    ZAssert(index < N);
+    ZAssert(index < mSize);
     return mData[index];
   }
 

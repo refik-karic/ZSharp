@@ -136,6 +136,8 @@ void Logger::LogPrologue() {
     PlatformGetMachineName());
   prologue.Appendf("Build: {0}\n",
     PlatformGetBuildType());
+  prologue.Appendf("Toolchain: {0}\n",
+    PlatformGetToolchain());
 
   Array<String> displays(PlatformEnumDisplayInfo());
   for (size_t i = 0; i < displays.Size(); ++i) {

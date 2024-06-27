@@ -14,6 +14,17 @@ String PlatformGetBuildType() {
   return buildType;
 }
 
+String PlatformGetToolchain() {
+#ifdef __clang__
+  String toolchain(String::FromFormat("Clang {0}", __clang_version__));
+#elif _MSC_VER
+  String toolchain(String::FromFormat("MSVC {0}", _MSC_VER));
+#else
+  String toolchain("Unknown");
+#endif
+  return toolchain;
+}
+
 String PlatformGetUsername() {
   char buffer[UNLEN + 1];
   memset(buffer, 0, sizeof(buffer));

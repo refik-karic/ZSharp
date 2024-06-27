@@ -64,7 +64,7 @@ class String final : public ISerializable {
 
     VariableArg(const Span<const char>& arg);
 
-    String ToString(int32 numDigits = 0) const;
+    void ToString(String& str, int32 numDigits = 0) const;
   };
 
   public:
@@ -259,7 +259,7 @@ private:
 
     VariableArg(const float arg);
 
-    WideString ToString(int32 numDigits = 0) const;
+    void ToString(WideString& str, int32 numDigits = 0) const;
   };
 
 public:

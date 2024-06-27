@@ -1,5 +1,3 @@
-#define _CRT_SECURE_NO_WARNINGS 1
-
 #include "ZString.h"
 #include "Array.h"
 
@@ -556,10 +554,10 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
       const VariableArg& arg = args[argIndex];
       if (numDigits != 0) {
         int32 digits = atoi(str + numDigits);
-        Append(arg.ToString(digits));
+        arg.ToString(*this, digits);
       }
       else {
-        Append(arg.ToString());
+        arg.ToString(*this);
       }
 
       str += jumpAhead;
@@ -615,49 +613,47 @@ String::VariableArg::VariableArg(const Span<const char>& arg)
   mData.span_class_value = &arg;
 }
 
-String String::VariableArg::ToString(int32 numDigits) const {
-  String result;
-
+void String::VariableArg::ToString(String& str, int32 numDigits) const {
   switch (mType) {
     case Type::SIZE_T:
     {
       char buffer[64];
       size_t length = snprintf(buffer, sizeof(buffer), "%llu", mData.size_value);
-      result.Append(buffer, 0, length);
+      str.Append(buffer, 0, length);
     }
       break;
     case Type::BOOL:
     {
-      const char* str = (mData.bool_value) ? "1" : "0";
-      result.Append(str, 0, 1);
+      const char* boolString = (mData.bool_value) ? "1" : "0";
+      str.Append(boolString, 0, 1);
     }
     break;
     case Type::INT32:
     {
       char buffer[64];
       size_t length = snprintf(buffer, sizeof(buffer), "%d", mData.int32_value);
-      result.Append(buffer, 0, length);
+      str.Append(buffer, 0, length);
     }
       break;
     case Type::UINT32:
     {
       char buffer[64];
       size_t length = snprintf(buffer, sizeof(buffer), "%u", mData.uint32_value);
-      result.Append(buffer, 0, length);
+      str.Append(buffer, 0, length);
     }
       break;
     case Type::INT64:
     {
       char buffer[64];
       size_t length = snprintf(buffer, sizeof(buffer), "%lld", mData.int64_value);
-      result.Append(buffer, 0, length);
+      str.Append(buffer, 0, length);
     }
       break;
     case Type::UINT64:
     {
       char buffer[64];
       size_t length = snprintf(buffer, sizeof(buffer), "%llu", mData.uint64_value);
-      result.Append(buffer, 0, length);
+      str.Append(buffer, 0, length);
     }
       break;
     case Type::FLOAT:
@@ -665,7 +661,7 @@ String String::VariableArg::ToString(int32 numDigits) const {
       char buffer[64];
       int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
       size_t length = snprintf(buffer, sizeof(buffer), "%.*f", significantFigures, mData.float_value);
-      result.Append(buffer, 0, length);
+      str.Append(buffer, 0, length);
     }
       break;
     case Type::DOUBLE:
@@ -673,29 +669,27 @@ String String::VariableArg::ToString(int32 numDigits) const {
       char buffer[64];
       int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
       size_t length = snprintf(buffer, sizeof(buffer), "%.*lf", significantFigures, mData.double_value);
-      result.Append(buffer, 0, length);
+      str.Append(buffer, 0, length);
     }
       break;
     case Type::CONST_STRING:
     {
-      result.Append(mData.string_value);
+      str.Append(mData.string_value);
     }
       break;
     case Type::STRING_CLASS:
     {
-      result.Append(*(mData.string_class_value));
+      str.Append(*(mData.string_class_value));
     }
     break;
     case Type::SPAN_CLASS:
     {
       const char* data = mData.span_class_value->GetData();
       size_t length = mData.span_class_value->Size();
-      result.Append(data, 0, length);
+      str.Append(data, 0, length);
     }
     break;
   }
-
-  return result;
 }
 
 WideString::WideString() {
@@ -1228,10 +1222,10 @@ void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* ar
       const VariableArg& arg = args[argIndex];
       if (numDigits != 0) {
         int32 digits = static_cast<int32>(wcstol(str + numDigits, NULL, 10));
-        Append(arg.ToString(digits));
+        arg.ToString(*this, digits);
       }
       else {
-        Append(arg.ToString());
+        arg.ToString(*this);
       }
 
       str += jumpAhead;
@@ -1252,57 +1246,53 @@ WideString::VariableArg::VariableArg(const float arg)
   mData.float_value = arg;
 }
 
-WideString WideString::VariableArg::ToString(int32 numDigits) const {
-  WideString result;
-
+void WideString::VariableArg::ToString(WideString& str, int32 numDigits) const {
   switch (mType) {
-  case Type::INT32:
-  {
-    wchar_t buffer[64];
-    size_t length = swprintf(buffer, sizeof(buffer), L"%d", mData.int32_value);
-    result.Append(buffer, 0, length);
+    case Type::INT32:
+    {
+      wchar_t buffer[64];
+      size_t length = swprintf(buffer, sizeof(buffer), L"%d", mData.int32_value);
+      str.Append(buffer, 0, length);
+    }
+    break;
+    case Type::UINT32:
+    {
+      wchar_t buffer[64];
+      size_t length = swprintf(buffer, sizeof(buffer), L"%u", mData.uint32_value);
+      str.Append(buffer, 0, length);
+    }
+    break;
+    case Type::INT64:
+    {
+      wchar_t buffer[64];
+      size_t length = swprintf(buffer, sizeof(buffer), L"%lld", mData.int64_value);
+      str.Append(buffer, 0, length);
+    }
+    break;
+    case Type::UINT64:
+    {
+      wchar_t buffer[64];
+      size_t length = swprintf(buffer, sizeof(buffer), L"%llu", mData.uint64_value);
+      str.Append(buffer, 0, length);
+    }
+    break;
+    case Type::FLOAT:
+    {
+      wchar_t buffer[64];
+      int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
+      size_t length = swprintf(buffer, sizeof(buffer), L"%.*f", significantFigures, mData.float_value);
+      str.Append(buffer, 0, length);
+    }
+    break;
+    case Type::DOUBLE:
+    {
+      wchar_t buffer[64];
+      int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
+      size_t length = swprintf(buffer, sizeof(buffer), L"%.*lf", significantFigures, mData.double_value);
+      str.Append(buffer, 0, length);
+    }
+    break;
   }
-  break;
-  case Type::UINT32:
-  {
-    wchar_t buffer[64];
-    size_t length = swprintf(buffer, sizeof(buffer), L"%u", mData.uint32_value);
-    result.Append(buffer, 0, length);
-  }
-  break;
-  case Type::INT64:
-  {
-    wchar_t buffer[64];
-    size_t length = swprintf(buffer, sizeof(buffer), L"%lld", mData.int64_value);
-    result.Append(buffer, 0, length);
-  }
-  break;
-  case Type::UINT64:
-  {
-    wchar_t buffer[64];
-    size_t length = swprintf(buffer, sizeof(buffer), L"%llu", mData.uint64_value);
-    result.Append(buffer, 0, length);
-  }
-  break;
-  case Type::FLOAT:
-  {
-    wchar_t buffer[64];
-    int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
-    size_t length = swprintf(buffer, sizeof(buffer), L"%.*f", significantFigures, mData.float_value);
-    result.Append(buffer, 0, length);
-  }
-  break;
-  case Type::DOUBLE:
-  {
-    wchar_t buffer[64];
-    int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
-    size_t length = swprintf(buffer, sizeof(buffer), L"%.*lf", significantFigures, mData.double_value);
-    result.Append(buffer, 0, length);
-  }
-  break;
-  }
-
-  return result;
 }
 
 }

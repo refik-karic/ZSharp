@@ -242,8 +242,10 @@ bool PlatformUpdateFileModificationTime(PlatformFileHandle* handle) {
 
 String PlatformGetExecutableName() {
   char path[_MAX_PATH];
-  if (GetModuleFileNameA(NULL, path, _MAX_PATH)) {
-    FileString receivedPath(path);
+  DWORD length = GetModuleFileNameA(NULL, path, _MAX_PATH);
+  if (length > 0) {
+    String strPath(path, 0, length);
+    FileString receivedPath(strPath);
     return receivedPath.GetFilename();
   }
   else {
@@ -267,8 +269,10 @@ FileString PlatformGetUserDesktopPath() {
 
 FileString PlatformGetExecutableDirectory() {
   char path[_MAX_PATH];
-  if (GetModuleFileNameA(NULL, path, _MAX_PATH)) {
-    FileString receivedPath(path);
+  DWORD length = GetModuleFileNameA(NULL, path, _MAX_PATH);
+  if (length > 0) {
+    String strPath(path, 0, length);
+    FileString receivedPath(strPath);
     receivedPath.SetFilename("");
     return receivedPath;
   }
@@ -280,8 +284,10 @@ FileString PlatformGetExecutableDirectory() {
 
 FileString PlatformGetWorkingDirectory() {
   char path[_MAX_PATH];
-  if (GetCurrentDirectoryA(_MAX_PATH, path)) {
-    FileString receivedPath(path);
+  DWORD length = GetCurrentDirectoryA(_MAX_PATH, path);
+  if (length > 0) {
+    String strPath(path, 0, length);
+    FileString receivedPath(strPath);
     receivedPath.SetFilename("");
     return receivedPath;
   }

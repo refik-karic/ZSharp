@@ -10,7 +10,7 @@
 
 namespace ZSharp {
 String PlatformGetBuildType() {
-  String buildType(BUILD_TYPE);
+  String buildType(BUILD_TYPE, 0, sizeof(BUILD_TYPE) - 1);
   return buildType;
 }
 
@@ -30,7 +30,7 @@ String PlatformGetUsername() {
   memset(buffer, 0, sizeof(buffer));
   DWORD size = sizeof(buffer);
   if (GetUserNameA(buffer, &size)) {
-    const String username(buffer);
+    String username(buffer, 0, size - 1);
     return username;
   }
   else {
@@ -44,7 +44,7 @@ String PlatformGetMachineName() {
   DWORD size = sizeof(buffer);
 
   if (GetComputerNameA(buffer, &size)) {
-    const String name(buffer);
+    String name(buffer, 0, size);
     return name;
   }
   else {

@@ -55,7 +55,8 @@ String FileString::GetExtension() const {
 }
 
 String FileString::GetAbsolutePath() const {
-  return mAbsolutePath;
+  String path(mAbsolutePath, 0, mPathLength);
+  return path;
 }
 
 void FileString::SetFilename(const String& filename) {

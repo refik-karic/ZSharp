@@ -11,6 +11,7 @@
 #include "Serializer.h"
 #include "FileString.h"
 #include "ZString.h"
+#include "Span.h"
 
 #include "ShadingMode.h"
 
@@ -68,17 +69,17 @@ class OBJFile final {
 
   void ParseRaw(const FileString& objFilePath);
 
-  void ParseOBJLine(const char* currentLine, size_t length, const FileString& objFilePath);
+  void ParseOBJLine(Span<const char>& line, const FileString& objFilePath);
 
   void ParseMTLLine(const char* currentLine, size_t length, const FileString& objFilePath);
 
-  void ParseVec3(float fillVec[3], String& line, float fallback);
+  void ParseVec3(float fillVec[3], Span<const char>& line, float fallback);
 
-  void ParseVec4(float fillVec[4], String& line, float fallback);
+  void ParseVec4(float fillVec[4], Span<const char>& line, float fallback);
 
-  void ParseFace(OBJFace& fillFace, String& line);
+  void ParseFace(OBJFace& fillFace, Span<const char>& line);
 
-  void ParseMaterial(String& line, const FileString& objFilePath);
+  void ParseMaterial(Span<const char>& line, const FileString& objFilePath);
 
   void CalculateBoundingBox();
 };

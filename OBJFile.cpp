@@ -88,14 +88,16 @@ void OBJFile::ParseRaw(const FileString& objFilePath) {
   for (size_t offset = 0; offset < fileSize; ++offset) {
     if (fileBuffer[offset] == '\n') {
       size_t lineLength = offset - lastLineIndex;
-      ParseOBJLine(fileBuffer + lastLineIndex, lineLength, objFilePath);
+      Span<const char> line(fileBuffer + lastLineIndex, lineLength);
+      ParseOBJLine(line, objFilePath);
       lastLineIndex = offset + 1;
     }
   }
 }
 
-void OBJFile::ParseOBJLine(const char* currentLine, size_t length, const FileString& objFilePath) {
-  const char* rawLine = currentLine;
+void OBJFile::ParseOBJLine(Span<const char>& line, const FileString& objFilePath) {
+  const char* rawLine = line.GetData();
+  const size_t length = line.Size();
 
   // All lines in the input file must be terminated with a newline.
   // The parser will fail to read the last line properly if this is the case.
@@ -105,27 +107,26 @@ void OBJFile::ParseOBJLine(const char* currentLine, size_t length, const FileStr
       if (rawLine[1] == 'n') {
         // Vertex Normals.
         float vertex[3];
-        String choppedLine(rawLine + 3, 0, length - 3);
+        Span<const char> choppedLine(rawLine + 3, length - 3);
         ParseVec3(vertex, choppedLine, 0.0f);
         mNormals.EmplaceBack(vertex);
       }
       else if (rawLine[1] == 'p') {
         // Vertex Parameters.
         // For curves and surfaces, ignoring for now.
-        String choppedLine(rawLine, 0, length);
-        Logger::Log(LogCategory::Info, String::FromFormat("Vertex Parameters: [{0}]\n", choppedLine));
+        Logger::Log(LogCategory::Info, String::FromFormat("Vertex Parameters: [{0}]\n", line));
       }
       else if (rawLine[1] == 't') {
         // Vertex Texture Coordinates (U, V, W).
         float vertex[3];
-        String choppedLine(rawLine + 3, 0, length - 3);
+        Span<const char> choppedLine(rawLine + 3, length - 3);
         ParseVec3(vertex, choppedLine, 0.0f);
         mUVCoords.EmplaceBack(vertex);
       }
       else {
         // Vertex Data.
         float vertex[4];
-        String choppedLine(rawLine + 2, 0, length - 2);
+        Span<const char> choppedLine(rawLine + 2, length - 2);
         ParseVec4(vertex, choppedLine, 1.0f);
         mVerts.EmplaceBack(vertex);
       }
@@ -134,7 +135,7 @@ void OBJFile::ParseOBJLine(const char* currentLine, size_t length, const FileStr
       // Vertex face.
     {
       OBJFace face;
-      String choppedLine(rawLine + 2, 0, length - 2);
+      Span<const char> choppedLine(rawLine + 2, length - 2);
       ParseFace(face, choppedLine);
       mFaces.PushBack(face);
     }
@@ -142,20 +143,18 @@ void OBJFile::ParseOBJLine(const char* currentLine, size_t length, const FileStr
     case 'l':
     {
       // Line.
-      String choppedLine(rawLine, 0, length);
-      Logger::Log(LogCategory::Info, String::FromFormat("Line: [{0}]\n", choppedLine));
+      Logger::Log(LogCategory::Info, String::FromFormat("Line: [{0}]\n", line));
     }
     break;
     case 'm':
     {
-      String choppedLine(rawLine + 7, 0, length - 7);
+      Span<const char> choppedLine(rawLine + 7, length - 7);
       ParseMaterial(choppedLine, objFilePath);
     }
       break;
     default:
     {
-      String choppedLine(rawLine, 0, length);
-      Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
+      Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", line));
     }
     break;
   }
@@ -262,101 +261,113 @@ void OBJFile::ParseMTLLine(const char* currentLine, size_t length, const FileStr
   }
 }
 
-void OBJFile::ParseVec3(float fillVec[3], String& line, float fallback) {
+void OBJFile::ParseVec3(float fillVec[3], Span<const char>& line, float fallback) {
+  const char* endOfLine = strchr(line.GetData(), '\n');
+
   for (int32 i = 0; i < 3; ++i) {
-    if (!line.IsEmpty()) {
-      fillVec[i] = line.ToFloat();
+    if (line.Size() > 0) {
+      fillVec[i] = strtof(line.GetData(), NULL);
     }
     else {
       fillVec[i] = fallback;
       return;
     }
 
-    const char* delimiter = line.FindFirst(' ');
-    if (delimiter == nullptr) {
-      line.Clear();
+    const char* delimiter = strchr(line.GetData(), ' ');
+    if (endOfLine < delimiter) {
+      line = Span("", 0);
     }
     else {
-      line = String(delimiter + 1);
+      size_t length = delimiter - line.GetData();
+      line = Span(delimiter + 1, line.Size() - length - 1);
     }
   }
 }
 
-void OBJFile::ParseVec4(float fillVec[4], String& line, float fallback) {
+void OBJFile::ParseVec4(float fillVec[4], Span<const char>& line, float fallback) {
+  const char* endOfLine = strchr(line.GetData(), '\n');
+
   for (int32 i = 0; i < 4; ++i) {
-    if (!line.IsEmpty()) {
-      fillVec[i] = line.ToFloat();
+    if (line.Size() > 0) {
+      fillVec[i] = strtof(line.GetData(), NULL);
     }
     else {
       fillVec[i] = fallback;
       return;
     }
 
-    const char* delimiter = line.FindFirst(' ');
-    if (delimiter == nullptr) {
-      line.Clear();
+    const char* delimiter = strchr(line.GetData(), ' ');
+    if (endOfLine < delimiter) {
+      line = Span("", 0);
     }
     else {
-      line = String(delimiter + 1);
+      size_t length = delimiter - line.GetData();
+      line = Span(delimiter + 1, line.Size() - length - 1);
     }
   }
 }
 
-void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
+void OBJFile::ParseFace(OBJFace& fillFace, Span<const char>& line) {
   for (int32 i = 0; i < 3; ++i) {
-    if (!line.IsEmpty()) {
-      uint32 vertexIndex = line.ToUint32() - 1;
+    if (line.Size() > 0) {
+      uint32 vertexIndex = strtoul(line.GetData(), NULL, 10) - 1;
       fillFace.triangleFace[i].vertexIndex = vertexIndex;
     }
     else {
       return;
     }
 
-    const char* indexDelimiter = line.FindFirst('/');
+    const char* indexDelimiter = strchr(line.GetData(), '/');
 
     if (indexDelimiter == nullptr) {
-      const char* faceDelimiter = line.FindFirst(' ');
+      const char* faceDelimiter = strchr(line.GetData(), ' ');
+
       if (faceDelimiter != nullptr) {
-        line = String(faceDelimiter + 1);
+        size_t length = faceDelimiter - line.GetData();
+        line = Span(faceDelimiter + 1, line.Size() - length - 1);
       }
 
       continue;
     }
 
-    line = String(indexDelimiter + 1);
+    size_t length = indexDelimiter - line.GetData();
+    line = Span(indexDelimiter + 1, line.Size() - length - 1);
 
-    if (!line.IsEmpty()) {
-      uint32 textureIndex = line.ToUint32() - 1;
+    if (line.Size() > 0) {
+      uint32 textureIndex = strtoul(line.GetData(), NULL, 10) - 1;
       fillFace.triangleFace[i].uvIndex = textureIndex;
     }
     else {
       return;
     }
 
-    indexDelimiter = line.FindFirst('/');
+    indexDelimiter = strchr(line.GetData(), '/');
 
     if (indexDelimiter == nullptr) {
-      const char* faceDelimiter = line.FindFirst(' ');
+      const char* faceDelimiter = strchr(line.GetData(), ' ');
       if (faceDelimiter != nullptr) {
-        line = String(faceDelimiter + 1);
+        length = faceDelimiter - line.GetData();
+        line = Span(faceDelimiter + 1, line.Size() - length - 1);
       }
 
       continue;
     }
 
-    line = String(indexDelimiter + 1);
+    length = indexDelimiter - line.GetData();
+    line = Span(indexDelimiter + 1, line.Size() - length - 1);
 
-    if (!line.IsEmpty()) {
-      uint32 normalIndex = line.ToUint32() - 1;
+    if (line.Size() > 0) {
+      uint32 normalIndex = strtoul(line.GetData(), NULL, 10) - 1;
       fillFace.triangleFace[i].normalIndex = normalIndex;
     }
     else {
       return;
     }
 
-    const char* faceDelimiter = line.FindFirst(' ');
+    const char* faceDelimiter = strchr(line.GetData(), ' ');
     if (faceDelimiter != nullptr) {
-      line = String(faceDelimiter + 1);
+      length = faceDelimiter - line.GetData();
+      line = Span(faceDelimiter + 1, line.Size() - length - 1);
     }
     else {
       break;
@@ -364,9 +375,9 @@ void OBJFile::ParseFace(OBJFace& fillFace, String& line) {
   }
 }
 
-void OBJFile::ParseMaterial(String& line, const FileString& objFilePath) {
+void OBJFile::ParseMaterial(Span<const char>& line, const FileString& objFilePath) {
   FileString materialPath(objFilePath);
-  materialPath.SetFilename(line);
+  materialPath.SetFilename(String(line.GetData(), 0, line.Size()));
 
   MemoryMappedFileReader reader(materialPath);
   if (!reader.IsOpen()) {

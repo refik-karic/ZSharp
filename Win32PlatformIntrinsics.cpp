@@ -518,6 +518,61 @@ void Unaligned_GenerateMipLevel(uint8* nextMip, size_t nextWidth, size_t nextHei
   }
 }
 
+void Unaligned_DrawDebugText(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color) {
+  size_t xOffset = x;
+  size_t yOffset = y;
+
+  const char* curChar = message.Str();
+  const size_t stride = width * sizeof(uint32);
+  const uint32 colorValue = color.Color();
+
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    __m256i bitMask = _mm256_set_epi32(1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1);
+    __m256i shiftMask = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
+    __m256i colors = _mm256_set1_epi32(colorValue);
+
+    for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
+      const char fontChar = *curChar;
+      for (size_t curX = 0; curX < 8; ++curX) {
+        uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
+        __m256i font = _mm256_set1_epi32(lut[fontChar][curX]);
+        __m256i mask = _mm256_and_si256(font, bitMask);
+        mask = _mm256_sllv_epi32(mask, shiftMask);
+        _mm256_maskstore_epi32((int*)bufferPosition, mask, colors);
+      }
+
+      xOffset += 8;
+      ++curChar;
+    }
+  }
+  else {
+    __m128i bitMaskLo = _mm_set_epi32(1 << 3, 1 << 2, 1 << 1, 1);
+    __m128i bitMaskHi = _mm_set_epi32(1 << 7, 1 << 6, 1 << 5, 1 << 4);
+    __m128i shiftMaskLo = _mm_set_epi32(28, 29, 30, 31);
+    __m128i shiftMaskHi = _mm_set_epi32(24, 25, 26, 27);
+    __m128i colors = _mm_set1_epi32(colorValue);
+
+    for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
+      const char fontChar = *curChar;
+      for (size_t curX = 0; curX < 8; ++curX) {
+        uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
+        __m128i bufferLo = _mm_loadu_si128((__m128i*)bufferPosition);
+        __m128i bufferHi = _mm_loadu_si128(((__m128i*)bufferPosition) + 1);
+        __m128i font = _mm_set1_epi32(lut[fontChar][curX]);
+        __m128i maskLo = _mm_and_si128(font, bitMaskLo);
+        __m128i maskHi = _mm_and_si128(font, bitMaskHi);
+        maskLo = _mm_sllv_epi32(maskLo, shiftMaskLo);
+        maskHi = _mm_sllv_epi32(maskHi, shiftMaskHi);
+        _mm_store_si128((__m128i*)bufferPosition, _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(bufferLo), _mm_castsi128_ps(colors), _mm_castsi128_ps(maskLo))));
+        _mm_store_si128(((__m128i*)bufferPosition) + 1, _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(bufferHi), _mm_castsi128_ps(colors), _mm_castsi128_ps(maskHi))));
+      }
+
+      xOffset += 8;
+      ++curChar;
+    }
+  }
+}
+
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride, int32 length) {
   /*
     We preload 4 registers with all of the matrix X, Y, Z, W values.

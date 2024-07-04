@@ -5,6 +5,7 @@
 #include "Texture.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
+#include "ZColor.h"
 
 namespace ZSharp {
 
@@ -66,6 +67,8 @@ void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes);
 void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height);
 
 void Unaligned_GenerateMipLevel(uint8* nextMip, size_t nextWidth, size_t nextHeight, uint8* lastMip, size_t lastWidth, size_t lastHeight);
+
+void Unaligned_DrawDebugText(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color);
 
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride, int32 length);
 

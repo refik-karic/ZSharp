@@ -165,9 +165,8 @@ class alignas(32) Array final : public ISerializable {
     T* result;
 
     if (mCapacity <= mSize) {
-      Resize(mSize + 1);
-      mData[mSize - 1] = data;
-      result = mData + mSize - 1;
+      ResizeNoInit(mSize + 1);
+      result = new(mData + mSize - 1) T(data);
     }
     else {
       result = new(mData + mSize) T(data);
@@ -182,7 +181,7 @@ class alignas(32) Array final : public ISerializable {
     T* result;
 
     if (mCapacity <= mSize) {
-      Resize(mSize + 1);
+      ResizeNoInit(mSize + 1);
       result = new(mData + mSize - 1) T(args...);
     }
     else {
@@ -284,6 +283,24 @@ class alignas(32) Array final : public ISerializable {
     mData = static_cast<T*>(PlatformMalloc(totalSize));
     mSize = size;
     mCapacity = slack;
+  }
+
+  void ResizeNoInit(size_t size) {
+    if (mData == nullptr) {
+      FreshAllocNoInit(size);
+    }
+    else if (mSize != size) {
+      mCapacity = size * 2;
+
+      if (mSize < size) {
+        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
+      }
+      else {
+        ZAssert(false);
+      }
+
+      mSize = size;
+    }
   }
 
   void Free() {

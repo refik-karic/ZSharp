@@ -81,6 +81,10 @@ int* CPUIDSectionBrand() {
   return buffer;
 }
 
+FORCE_INLINE __m128i Not128(const __m128i v) {
+  return _mm_xor_si128(_mm_cmpeq_epi32(v, v), v);
+}
+
 FORCE_INLINE __m256i Not256(const __m256i v) {
   return _mm256_xor_si256(_mm256_cmpeq_epi32(v, v), v);
 }
@@ -1211,11 +1215,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
         }
 
         w += 8;
-        pixels += 8;
-        pixelDepth += 8;
-        weights0 = _mm256_sub_ps(weights0, xStep0);
-        weights1 = _mm256_sub_ps(weights1, xStep1);
-        weights2 = _mm256_sub_ps(weights2, xStep2);
 
         if (w >= maxX) {
           w = minX;
@@ -1228,6 +1227,13 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
           weights0 = weightInit0;
           weights1 = weightInit1;
           weights2 = weightInit2;
+        }
+        else {
+          pixels += 8;
+          pixelDepth += 8;
+          weights0 = _mm256_sub_ps(weights0, xStep0);
+          weights1 = _mm256_sub_ps(weights1, xStep1);
+          weights2 = _mm256_sub_ps(weights2, xStep2);
         }
       }
     }
@@ -1589,11 +1595,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         }
 
         w += 8;
-        pixels += 8;
-        pixelDepth += 8;
-        weights0 = _mm256_sub_ps(weights0, xStep0);
-        weights1 = _mm256_sub_ps(weights1, xStep1);
-        weights2 = _mm256_sub_ps(weights2, xStep2);
 
         if (w >= maxX) {
           w = minX;
@@ -1606,6 +1607,13 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
           weights0 = weightInit0;
           weights1 = weightInit1;
           weights2 = weightInit2;
+        }
+        else {
+          pixels += 8;
+          pixelDepth += 8;
+          weights0 = _mm256_sub_ps(weights0, xStep0);
+          weights1 = _mm256_sub_ps(weights1, xStep1);
+          weights2 = _mm256_sub_ps(weights2, xStep2);
         }
       }
     }

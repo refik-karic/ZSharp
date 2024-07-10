@@ -138,6 +138,8 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   const float* windowTransformVec1 = *mWindowTransform[1];
 
   if (clipBounds == ClipBounds::Inside) {
+    NamedScopedTimer(TransformDirect);
+
     Aligned_TransformDirectScreenSpace(vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride,
       (const float(*)[4])*mPerspectiveTransform, windowTransformVec0, windowTransformVec1, mWidth, mHeight);
   }

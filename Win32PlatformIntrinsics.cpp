@@ -995,19 +995,12 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
     vec = _mm_add_ps(vec, _mm_mul_ps(matrixW, vecW));
 
     // Homogenize
-    __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
-    __m128 invPerspectiveZ = _mm_rcp_ps(perspectiveTerm);
+    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111)));
     __m128 invPerspectiveZScalar = _mm_move_ss(_mm_setzero_ps(), invPerspectiveZ);
     __m128 homogenized = _mm_mul_ps(vec, invPerspectiveZ);
 
     // Window transform
     __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(homogenized), 0b10101010)));
-
-    // [0] = _
-    // [1] = _
-    // [2] = perspectiveZ
-    // [3] = invPerspectiveZ
-    perspectiveTerm = _mm_blend_ps(perspectiveTerm, invPerspectiveZ, 0b1000);
 
     // Homogenize with Z
     __m128 result = _mm_mul_ps(homogenized, invDivisor);
@@ -1021,9 +1014,9 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
 
     // [0] = dotX
     // [1] = dotY
-    // [2] = perspectiveZ
+    // [2] = _
     // [3] = invPerspectiveZ
-    result = _mm_blend_ps(result, perspectiveTerm, 0b1100);
+    result = _mm_blend_ps(result, invPerspectiveZ, 0b1000);
 
     _mm_storeu_ps(vecData, result);
 

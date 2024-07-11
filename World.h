@@ -53,7 +53,7 @@ class World final {
 
   ConsoleVariable<void> mWorldReloadVar;
 
-  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride);
+  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, const ShadingModeOrder& order, int32 stride);
 
   void LoadModels();
 

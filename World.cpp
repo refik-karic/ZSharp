@@ -60,28 +60,28 @@ void World::Load() {
     const float Y = 5.f;
     const float Z = 0.f;
     const float W = 1.f;
-    const float v1[]{ -X, 0.f, Z, W, 1.f, 0.f, 0.f };
-    const float v2[]{ 0.f, Y, Z, W, 0.0f, 1.f, 0.f };
-    const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
+    const float v1[]{ -X, 0.f, Z, W, 1.f, 0.f, 0.f, 0.f };
+    const float v2[]{ 0.f, Y, Z, W, 0.0f, 1.f, 0.f, 0.f };
+    const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f, 0.f };
 
     ShadingModeOrder order;
-    order.EmplaceBack(ShadingModes::RGB, 3);
+    order.EmplaceBack(ShadingModes::RGB, 4);
 
-    DebugLoadTriangle(v3, v2, v1, order, 7);
+    DebugLoadTriangle(v3, v2, v1, order, 8);
   }
   else if (*DebugTriangleTex) {
     const float X = 5.f;
     const float Y = 5.f;
     const float Z = 0.f;
     const float W = 1.f;
-    const float v1[]{ -X, 0.f, Z, W, 1.f, 1.f };
-    const float v2[]{ 0.f, Y, Z, W, 0.f, 1.f };
-    const float v3[]{ X, 0.f, Z, W, 0.5f, 0.f };
+    const float v1[]{ -X, 0.f, Z, W, 1.f, 1.f, 0.f, 0.f };
+    const float v2[]{ 0.f, Y, Z, W, 0.f, 1.f, 0.f, 0.f };
+    const float v3[]{ X, 0.f, Z, W, 0.5f, 0.f, 0.f, 0.f };
 
     ShadingModeOrder order;
-    order.EmplaceBack(ShadingModes::UV, 2);
+    order.EmplaceBack(ShadingModes::UV, 4);
 
-    DebugLoadTriangle(v3, v2, v1, order, 6);
+    DebugLoadTriangle(v3, v2, v1, order, 8);
   }
   else {
     ZConfig& config = ZConfig::Get();
@@ -95,14 +95,14 @@ void World::Load() {
       const float Y = 5.f;
       const float Z = 0.f;
       const float W = 1.f;
-      const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f, 0.f };
-      const float v2[]{ 0.f, Y, Z, W, 1.0f, 0.f, 0.f };
-      const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f };
+      const float v1[]{ -X, 0.f, Z, W, 0.f, 1.f, 0.f, 0.f };
+      const float v2[]{ 0.f, Y, Z, W, 1.0f, 0.f, 0.f, 0.f };
+      const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f, 0.f };
 
       ShadingModeOrder order;
-      order.EmplaceBack(ShadingModes::RGB, 3);
+      order.EmplaceBack(ShadingModes::RGB, 4);
 
-      DebugLoadTriangle(v3, v2, v1, order, 7);
+      DebugLoadTriangle(v3, v2, v1, order, 8);
     }
   }
 }
@@ -247,14 +247,14 @@ void World::LoadModels() {
   }
 }
 
-void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, ShadingModeOrder order, int32 stride) {
+void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, const ShadingModeOrder& order, int32 stride) {
   Model& model = mActiveModels.EmplaceBack(order, stride);
   VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
   IndexBuffer& indexBuffer = mIndexBuffers.EmplaceBack();
 
   model.CreateNewMesh();
 
-  const bool isTextureMapped = order.Contains(ShadingMode(ShadingModes::UV, 2));
+  const bool isTextureMapped = order.Contains(ShadingMode(ShadingModes::UV, 4));
 
   if (isTextureMapped) {
     Bundle& bundle = Bundle::Get();
@@ -319,6 +319,18 @@ void World::LoadOBJ(Model& model, Asset& asset) {
 
   OBJFile objFile;
   objFile.Deserialize(objDeserializer);
+  
+  {
+    size_t shadingStride = 0;
+    for (ShadingMode& mode : objFile.ShadingOrder()) {
+      shadingStride += mode.length;
+    }
+
+    if (shadingStride > 0 && ((shadingStride % 4) != 0)) {
+      ShadingMode emptyMode(ShadingModes::None, shadingStride % 4);
+      objFile.ShadingOrder().PushBack(emptyMode);
+    }
+  }
 
   model.CreateNewMesh();
   model.SetShadingOrder(objFile.ShadingOrder());
@@ -345,9 +357,9 @@ void World::LoadOBJ(Model& model, Asset& asset) {
   }
   else {
     objFile.ShadingOrder().Clear();
-    objFile.ShadingOrder().EmplaceBack(ShadingModes::RGB, 3);
+    objFile.ShadingOrder().EmplaceBack(ShadingModes::RGB, 4);
     model.SetShadingOrder(objFile.ShadingOrder());
-    model.SetStride(7);
+    model.SetStride(8);
   }
 
   const int32 stride = objFile.Stride();
@@ -385,7 +397,7 @@ void World::LoadOBJ(Model& model, Asset& asset) {
     for (int32 i = 0, triIndex = 0; i < numVerts; ++i) {
       ZAssert(vertData[3] == 1.f);
 
-      const size_t index = i * 7;
+      const size_t index = i * stride;
       mesh.SetData(vertData, index, 4 * sizeof(float));
 
       switch (triIndex % 3) {

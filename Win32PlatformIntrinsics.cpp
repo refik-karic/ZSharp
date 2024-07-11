@@ -900,16 +900,8 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
     float* vertexData = data + (i * stride);
 
     __m128 vec = _mm_loadu_ps(vertexData);
-    __m128 perspectiveZ = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
-    __m128 invPerspectiveZ = _mm_rcp_ps(perspectiveZ);
-    __m128 invPerspectiveZScalar = _mm_move_ss(_mm_setzero_ps(), invPerspectiveZ);
+    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111)));
     __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b10101010)));
-
-    // [0] = _
-    // [1] = _
-    // [2] = perspectiveZ
-    // [3] = invPerspectiveZ
-    perspectiveZ = _mm_blend_ps(perspectiveZ, invPerspectiveZ, 0b1000);
 
     // Homogenize with Z
     __m128 result = _mm_mul_ps(vec, invDivisor);
@@ -923,19 +915,14 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
 
     // [0] = dotX
     // [1] = dotY
-    // [2] = perspectiveZ
+    // [2] = _
     // [3] = invPerspectiveZ
-    result = _mm_blend_ps(result, perspectiveZ, 0b1100);
+    result = _mm_blend_ps(result, invPerspectiveZ, 0b1000);
 
     _mm_storeu_ps(vertexData, result);
 
-    /*
-      NOTE: In most cases this is actually faster than doing a load and masked store.
-        Reason being, recent architectures have optimized scalar floating point code paths.
-        In this case, the architecture can ignore the upper 96 bits and perform the operations slightly faster.
-    */
-    for (int32 j = 4; j < stride; ++j) {
-      _mm_store_ss(vertexData + j, _mm_mul_ss(_mm_load_ss(vertexData + j), invPerspectiveZScalar));
+    for (int32 j = 4; j < stride; j += 4) {
+      _mm_storeu_ps(vertexData + j, _mm_mul_ps(_mm_loadu_ps(vertexData + j), invPerspectiveZ));
     }
   }
 }
@@ -996,7 +983,6 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
 
     // Homogenize
     __m128 invPerspectiveZ = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111)));
-    __m128 invPerspectiveZScalar = _mm_move_ss(_mm_setzero_ps(), invPerspectiveZ);
     __m128 homogenized = _mm_mul_ps(vec, invPerspectiveZ);
 
     // Window transform
@@ -1020,13 +1006,8 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
 
     _mm_storeu_ps(vecData, result);
 
-    /*
-      NOTE: In most cases this is actually faster than doing a load and masked store.
-        Reason being, recent architectures have optimized scalar floating point code paths.
-        In this case, the architecture can ignore the upper 96 bits and perform the operations slightly faster.
-    */
-    for (int32 j = 4; j < stride; ++j) {
-      _mm_store_ss(vecData + j, _mm_mul_ss(_mm_load_ss(vecData + j), invPerspectiveZScalar));
+    for (int32 j = 4; j < stride; j+=4) {
+      _mm_storeu_ps(vecData + j, _mm_mul_ps(_mm_loadu_ps(vecData + j), invPerspectiveZ));
     }
   }
 }
@@ -1054,6 +1035,12 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    __m256 rgbScale = _mm256_set1_ps(255.f);
+    __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
+    __m256 stepMultiplier = _mm256_set1_ps(8.f);
+    __m256i initialColor = _mm256_set1_epi32(0xFF000000);
+    __m256i weightMask = _mm256_set1_epi32(0x80000000);
+
     for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
       const float* v2 = vertices + indices[i + 1];
@@ -1109,7 +1096,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
       // We want the RGB values to be scaled by 255 in the end.
       // Doing that here saves us from having to apply the scale at each pixel.
-      __m256 rgbScale = _mm256_set1_ps(255.f);
       __m256 scaleFactor = _mm256_mul_ps(invArea, rgbScale);
 
       __m256 r0 = _mm256_set1_ps(v1[4]);
@@ -1152,9 +1138,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       __m256 yStep1 = x0x2;
       __m256 yStep2 = x1x0;
 
-      __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
-      __m256 stepMultiplier = _mm256_set1_ps(8.f);
-
       weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
       weightInit1 = _mm256_sub_ps(weightInit1, _mm256_mul_ps(initMultiplier, xStep1));
       weightInit2 = _mm256_sub_ps(weightInit2, _mm256_mul_ps(initMultiplier, xStep2));
@@ -1162,9 +1145,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       xStep0 = _mm256_mul_ps(stepMultiplier, xStep0);
       xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
       xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
-
-      __m256i initialColor = _mm256_set1_epi32(0xFF000000);
-      __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
       uint32* pixels = ((uint32*)(framebuffer)) + (minX + (minY * sMaxWidth));
       float* pixelDepth = depthBuffer + (minX + (minY * sMaxWidth));
@@ -1232,6 +1212,11 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
     }
   }
   else {
+    __m128 initMultiplier = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
+    __m128 stepMultiplier = _mm_set_ps1(4.f);
+    __m128i initialColor = _mm_set1_epi32(0xFF00);
+    __m128 rgbScale = _mm_set_ps1(255.f);
+
     for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
       const float* v2 = vertices + indices[i + 1];
@@ -1279,7 +1264,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
       // We want the RGB values to be scaled by 255 in the end.
       // Doing that here saves us from having to apply the scale at each pixel.
-      __m128 rgbScale = _mm_set_ps1(255.f);
       __m128 scaleFactor = _mm_mul_ps(invArea, rgbScale);
 
       __m128 r0 = _mm_set_ps1(v1[4]);
@@ -1328,9 +1312,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       __m128 yStep1 = x0x2;
       __m128 yStep2 = x1x0;
 
-      __m128 initMultiplier = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
-      __m128 stepMultiplier = _mm_set_ps1(4.f);
-
       weightInit0 = _mm_sub_ps(weightInit0, _mm_mul_ps(initMultiplier, xStep0));
       weightInit1 = _mm_sub_ps(weightInit1, _mm_mul_ps(initMultiplier, xStep1));
       weightInit2 = _mm_sub_ps(weightInit2, _mm_mul_ps(initMultiplier, xStep2));
@@ -1338,8 +1319,6 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
       xStep0 = _mm_mul_ps(stepMultiplier, xStep0);
       xStep1 = _mm_mul_ps(stepMultiplier, xStep1);
       xStep2 = _mm_mul_ps(stepMultiplier, xStep2);
-
-      __m128i initialColor = _mm_set1_epi32(0xFF00);
 
       for (int32 h = minY; h < maxY; ++h) {
         __m128 weights0 = weightInit0;
@@ -1424,6 +1403,16 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
   uint32* textureData = (uint32*)texture->Data(mipLevel);
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    __m256 yStride = _mm256_set1_ps((float)(texHeight));
+
+    __m256 maxUValue = _mm256_set1_ps((float)(texWidth - 1));
+    __m256 maxVValue = _mm256_set1_ps((float)(texHeight - 1));
+
+    __m256i weightMask = _mm256_set1_epi32(0x80000000);
+
+    __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
+    __m256 stepMultiplier = _mm256_set1_ps(8.f);
+
     for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
       const float* v2 = vertices + indices[i + 1];
@@ -1477,11 +1466,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
       __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
 
-      __m256 yStride = _mm256_set1_ps((float)(texHeight));
-
-      __m256 maxUValue = _mm256_set1_ps((float)(texWidth - 1));
-      __m256 maxVValue = _mm256_set1_ps((float)(texHeight - 1));
-
       __m256 uScaleFactor = _mm256_mul_ps(invArea, maxUValue);
       __m256 vScaleFactor = _mm256_mul_ps(invArea, maxVValue);
 
@@ -1520,9 +1504,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       __m256 yStep1 = x0x2;
       __m256 yStep2 = x1x0;
 
-      __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
-      __m256 stepMultiplier = _mm256_set1_ps(8.f);
-
       weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
       weightInit1 = _mm256_sub_ps(weightInit1, _mm256_mul_ps(initMultiplier, xStep1));
       weightInit2 = _mm256_sub_ps(weightInit2, _mm256_mul_ps(initMultiplier, xStep2));
@@ -1530,8 +1511,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       xStep0 = _mm256_mul_ps(stepMultiplier, xStep0);
       xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
       xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
-
-      __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
       uint32* pixels = ((uint32*)(framebuffer)) + (minX + (minY * sMaxWidth));
       float* pixelDepth = depthBuffer + (minX + (minY * sMaxWidth));
@@ -1612,6 +1591,14 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
     }
   }
   else {
+    __m128 yStride = _mm_set_ps1((float)(texHeight));
+
+    __m128 maxUValue = _mm_set_ps1((float)(texWidth - 1));
+    __m128 maxVValue = _mm_set_ps1((float)(texHeight - 1));
+
+    __m128 initMultiplier = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
+    __m128 stepMultiplier = _mm_set_ps1(4.f);
+
     for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
       const float* v2 = vertices + indices[i + 1];
@@ -1657,11 +1644,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       __m128 z1z0 = _mm_sub_ps(invVert1, invVert0);
       __m128 z2z0 = _mm_sub_ps(invVert2, invVert0);
 
-      __m128 yStride = _mm_set_ps1((float)(texHeight));
-
-      __m128 maxUValue = _mm_set_ps1((float)(texWidth - 1));
-      __m128 maxVValue = _mm_set_ps1((float)(texHeight - 1));
-
       __m128 uScaleFactor = _mm_mul_ps(invArea, maxUValue);
       __m128 vScaleFactor = _mm_mul_ps(invArea, maxVValue);
 
@@ -1700,9 +1682,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       __m128 yStep1 = x0x2;
       __m128 yStep2 = x1x0;
 
-      __m128 initMultiplier = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
-      __m128 stepMultiplier = _mm_set_ps1(4.f);
-
       weightInit0 = _mm_sub_ps(weightInit0, _mm_mul_ps(initMultiplier, xStep0));
       weightInit1 = _mm_sub_ps(weightInit1, _mm_mul_ps(initMultiplier, xStep1));
       weightInit2 = _mm_sub_ps(weightInit2, _mm_mul_ps(initMultiplier, xStep2));
@@ -1710,8 +1689,6 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       xStep0 = _mm_mul_ps(stepMultiplier, xStep0);
       xStep1 = _mm_mul_ps(stepMultiplier, xStep1);
       xStep2 = _mm_mul_ps(stepMultiplier, xStep2);
-
-      __m128 minValue = _mm_setzero_ps();
 
       for (int32 h = minY; h < maxY; ++h) {
         __m128 weights0 = weightInit0;
@@ -1756,9 +1733,9 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
             // Clamp UV so that we don't index outside of the texture.
             uValues = _mm_min_ps(uValues, maxUValue);
-            uValues = _mm_max_ps(uValues, minValue);
+            uValues = _mm_max_ps(uValues, _mm_setzero_ps());
             vValues = _mm_min_ps(vValues, maxVValue);
-            vValues = _mm_max_ps(vValues, minValue);
+            vValues = _mm_max_ps(vValues, _mm_setzero_ps());
 
             // We must round prior to multiplying the stride and channels.
             // If this isn't done, we may jump to a completely different set of pixels because of rounding.

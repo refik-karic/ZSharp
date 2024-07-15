@@ -109,13 +109,14 @@ void Camera::Tick() {
 
   mStandardNearPlane = -(mNearPlane / mFarPlane);
   const float standardFarPlane = -1.f;
+  const float standardNearPlane = -.001f;
 
   Mat4x4 unhing;
-  unhing[0][0] = standardFarPlane - mStandardNearPlane;
-  unhing[1][1] = standardFarPlane - mStandardNearPlane;
+  unhing[0][0] = standardFarPlane;
+  unhing[1][1] = standardFarPlane;
   unhing[2][2] = standardFarPlane;
-  unhing[2][3] = mStandardNearPlane;
-  unhing[3][2] = -(standardFarPlane - mStandardNearPlane);
+  unhing[2][3] = standardNearPlane;
+  unhing[3][2] = -(standardFarPlane - standardNearPlane);
 
   mPerspectiveTransform = (unhing * (scale * (uToE * translation)));
 }

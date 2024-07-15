@@ -156,7 +156,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge, currentEdge, stride);
 
     currentEdge[0] = -1.f;
-    currentEdge[1] = 0.f;
+    currentEdge[1] = 0.f; 
     numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge, currentEdge, stride);
 
     currentEdge[0] = 0.f;

@@ -27,7 +27,7 @@
 static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
 static ZSharp::WideString TimerName(L"MainLoop");
 UINT MinTimerPeriod = 0;
-DWORD WindowStyle = WS_OVERLAPPEDWINDOW | WS_VISIBLE;
+DWORD WindowStyle = WS_BORDER | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
 
 ZSharp::ConsoleVariable<bool> UncappedFPS("UncappedFPS", false);
 ZSharp::ConsoleVariable<ZSharp::int32> LockedFPS("LockedFPS", 60);
@@ -233,9 +233,8 @@ HWND Win32PlatformApplication::SetupWindow() {
 
   const ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
 
-  DWORD windowStyle = WS_BORDER | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
   RECT clientRect{ 0L, 0L, static_cast<long>(config.GetViewportWidth().Value()), static_cast<long>(config.GetViewportHeight().Value()) };
-  AdjustWindowRectEx(&clientRect, windowStyle, false, WS_EX_OVERLAPPEDWINDOW);
+  AdjustWindowRectEx(&clientRect, WindowStyle, false, WS_EX_OVERLAPPEDWINDOW);
 
   return CreateWindowExW(
     WS_EX_OVERLAPPEDWINDOW,

@@ -156,7 +156,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge, currentEdge, stride);
 
     currentEdge[0] = -1.f;
-    currentEdge[1] = 0.f; 
+    currentEdge[1] = 0.f;
     numClippedVerts = SutherlandHodgmanClip(clipBuffer, numClippedVerts, currentEdge, currentEdge, stride);
 
     currentEdge[0] = 0.f;
@@ -444,7 +444,7 @@ void TriangulateAABBWithColor(const AABB& aabb, VertexBuffer& vertexBuffer, Inde
   const float G = color.G() / 255.f;
   const float B = color.B() / 255.f;
 
-  const int32 aabbStride = 4 + 3; // XYZW, RGB
+  const int32 aabbStride = 4 + 4; // XYZW, RGBX
   vertexBuffer.Resize(8 * aabbStride, aabbStride);
 
   float aabbVerts[8 * aabbStride];
@@ -457,69 +457,77 @@ void TriangulateAABBWithColor(const AABB& aabb, VertexBuffer& vertexBuffer, Inde
   aabbVerts[4] = R;
   aabbVerts[5] = G;
   aabbVerts[6] = B;
+  aabbVerts[7] = 0.f;
 
   // v2
-  aabbVerts[7] = maxVec[0];
-  aabbVerts[8] = minVec[1];
-  aabbVerts[9] = maxVec[2];
-  aabbVerts[10] = 1.f;
-  aabbVerts[11] = R;
-  aabbVerts[12] = G;
-  aabbVerts[13] = B;
+  aabbVerts[8] = maxVec[0];
+  aabbVerts[9] = minVec[1];
+  aabbVerts[10] = maxVec[2];
+  aabbVerts[11] = 1.f;
+  aabbVerts[12] = R;
+  aabbVerts[13] = G;
+  aabbVerts[14] = B;
+  aabbVerts[15] = 0.f;
 
   // v3
-  aabbVerts[14] = maxVec[0];
-  aabbVerts[15] = maxVec[1];
-  aabbVerts[16] = maxVec[2];
-  aabbVerts[17] = 1.f;
-  aabbVerts[18] = R;
-  aabbVerts[19] = G;
-  aabbVerts[20] = B;
+  aabbVerts[16] = maxVec[0];
+  aabbVerts[17] = maxVec[1];
+  aabbVerts[18] = maxVec[2];
+  aabbVerts[19] = 1.f;
+  aabbVerts[20] = R;
+  aabbVerts[21] = G;
+  aabbVerts[22] = B;
+  aabbVerts[23] = 0.f;
 
   // v4
-  aabbVerts[21] = minVec[0];
-  aabbVerts[22] = maxVec[1];
-  aabbVerts[23] = maxVec[2];
-  aabbVerts[24] = 1.f;
-  aabbVerts[25] = R;
-  aabbVerts[26] = G;
-  aabbVerts[27] = B;
+  aabbVerts[24] = minVec[0];
+  aabbVerts[25] = maxVec[1];
+  aabbVerts[26] = maxVec[2];
+  aabbVerts[27] = 1.f;
+  aabbVerts[28] = R;
+  aabbVerts[29] = G;
+  aabbVerts[30] = B;
+  aabbVerts[31] = 0.f;
 
   // v5
-  aabbVerts[28] = minVec[0];
-  aabbVerts[29] = minVec[1];
-  aabbVerts[30] = minVec[2];
-  aabbVerts[31] = 1.f;
-  aabbVerts[32] = R;
-  aabbVerts[33] = G;
-  aabbVerts[34] = B;
+  aabbVerts[32] = minVec[0];
+  aabbVerts[33] = minVec[1];
+  aabbVerts[34] = minVec[2];
+  aabbVerts[35] = 1.f;
+  aabbVerts[36] = R;
+  aabbVerts[37] = G;
+  aabbVerts[38] = B;
+  aabbVerts[39] = 0.f;
 
   // v6
-  aabbVerts[35] = maxVec[0];
-  aabbVerts[36] = minVec[1];
-  aabbVerts[37] = minVec[2];
-  aabbVerts[38] = 1.f;
-  aabbVerts[39] = R;
-  aabbVerts[40] = G;
-  aabbVerts[41] = B;
+  aabbVerts[40] = maxVec[0];
+  aabbVerts[41] = minVec[1];
+  aabbVerts[42] = minVec[2];
+  aabbVerts[43] = 1.f;
+  aabbVerts[44] = R;
+  aabbVerts[45] = G;
+  aabbVerts[46] = B;
+  aabbVerts[47] = 0.f;
 
   // v7
-  aabbVerts[42] = maxVec[0];
-  aabbVerts[43] = maxVec[1];
-  aabbVerts[44] = minVec[2];
-  aabbVerts[45] = 1.f;
-  aabbVerts[46] = R;
-  aabbVerts[47] = G;
-  aabbVerts[48] = B;
+  aabbVerts[48] = maxVec[0];
+  aabbVerts[49] = maxVec[1];
+  aabbVerts[50] = minVec[2];
+  aabbVerts[51] = 1.f;
+  aabbVerts[52] = R;
+  aabbVerts[53] = G;
+  aabbVerts[54] = B;
+  aabbVerts[55] = 0.f;
 
   // v8
-  aabbVerts[49] = minVec[0];
-  aabbVerts[50] = maxVec[1];
-  aabbVerts[51] = minVec[2];
-  aabbVerts[52] = 1.f;
-  aabbVerts[53] = R;
-  aabbVerts[54] = G;
-  aabbVerts[55] = B;
+  aabbVerts[56] = minVec[0];
+  aabbVerts[57] = maxVec[1];
+  aabbVerts[58] = minVec[2];
+  aabbVerts[59] = 1.f;
+  aabbVerts[60] = R;
+  aabbVerts[61] = G;
+  aabbVerts[62] = B;
+  aabbVerts[63] = 0.f;
 
   vertexBuffer.CopyInputData(aabbVerts, 0, 8 * aabbStride);
 

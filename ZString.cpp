@@ -1221,21 +1221,21 @@ void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* ar
 
   const wchar_t* lastPosition = format;
   const wchar_t* lastChar = nullptr;
-  for (const wchar_t* str = format; *str != '\0'; ++str) {
+  for (const wchar_t* str = format; *str != L'\0'; ++str) {
     wchar_t currentChar = *str;
-    bool isEscaped = (lastChar != nullptr) ? ((*lastChar) == '\\') : false;
+    bool isEscaped = (lastChar != nullptr) ? ((*lastChar) == L'\\') : false;
 
-    if (!isEscaped && (currentChar == '{')) {
+    if (!isEscaped && (currentChar == L'{')) {
       size_t jumpAhead = 0;
       size_t numDigits = 0;
 
-      for (const wchar_t* endFormat = str + 1; *endFormat != '\0'; ++endFormat) {
-        if (*endFormat == '}') {
+      for (const wchar_t* endFormat = str + 1; *endFormat != L'\0'; ++endFormat) {
+        if (*endFormat == L'}') {
           jumpAhead = (endFormat - str) + 1;
           break;
         }
-        else if (*endFormat == ':') {
-          if (endFormat[1] != '}') {
+        else if (*endFormat == L':') {
+          if (endFormat[1] != L'}') {
             numDigits = endFormat - str + 1;
           }
         }

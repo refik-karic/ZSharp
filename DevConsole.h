@@ -4,6 +4,7 @@
 #include "InputManager.h"
 #include "List.h"
 #include "ZString.h"
+#include "Trie.h"
 
 namespace ZSharp {
 
@@ -30,6 +31,9 @@ class DevConsole final {
   List<String> mHistory;
   size_t mHistoryPos = 0;
 
+  Trie mSuggestions;
+  String mLastSuggestion;
+
   void OnKeyDown(uint8 key);
 
   void OnKeyUp(uint8 key);
@@ -39,6 +43,8 @@ class DevConsole final {
   void OnMiscKeyUp(MiscKey key);
 
   void OnResize(size_t width, size_t height);
+
+  void UpdateSuggestions();
 };
 
 }

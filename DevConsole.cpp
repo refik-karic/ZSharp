@@ -60,10 +60,10 @@ void DevConsole::Draw(uint32* buffer) {
 
   ZColor clearColor(ZColors::BLACK);
   ZColor textColor(ZColors::WHITE);
+  ZColor historyColor(ZColors::GRAY);
   Aligned_Memset(mScreen, clearColor.Color(), mWidth * mHeight * sizeof(uint32));
 
   {
-    ZColor historyColor(ZColors::GRAY);
     List<String>::Iterator iter = mHistory.rbegin();
     int32 currentHeight = (int32)mHeight - 30;
 
@@ -82,6 +82,8 @@ void DevConsole::Draw(uint32* buffer) {
   const String message(mActiveBuffer, 0, mCaret);
 
   const String formattedMessage(String::FromFormat("> {0}_", message));
+  const String formattedSuggestion(String::FromFormat("> {0}", mLastSuggestion));
+  DrawText(formattedSuggestion, 10, mHeight - 15, (uint8*)mScreen, mWidth, historyColor);
   DrawText(formattedMessage, 10, mHeight - 15, (uint8*)mScreen, mWidth, textColor);
 
   Unaligned_BlendBuffers(mScreen, buffer, mWidth, mHeight, mOpacity);
@@ -90,6 +92,11 @@ void DevConsole::Draw(uint32* buffer) {
 void DevConsole::OnKeyDown(uint8 key) {
   if (key == '`') {
     mOpen = !mOpen;
+
+    if (mOpen) {
+      UpdateSuggestions();
+    }
+
     return;
   }
 
@@ -99,6 +106,10 @@ void DevConsole::OnKeyDown(uint8 key) {
 
   if (isalpha(key) || isdigit(key) || isspace(key) || key == ',' || key == '.') {
     mActiveBuffer[mCaret++] = key;
+
+    String substring((const char*)mActiveBuffer, 0, mCaret);
+    Pair<Trie::Iterator, Trie::Iterator> lastSuggestion = mSuggestions.NextWords(substring);
+    mLastSuggestion = *(lastSuggestion.mKey);
   }
 }
 
@@ -114,6 +125,10 @@ void DevConsole::OnMiscKeyDown(MiscKey key) {
   if (key == MiscKey::BACKSPACE) {
     if (mCaret > 0) {
       --mCaret;
+
+      String substring((const char*)mActiveBuffer, 0, mCaret);
+      Pair<Trie::Iterator, Trie::Iterator> lastSuggestion = mSuggestions.NextWords(substring);
+      mLastSuggestion = *(lastSuggestion.mKey);
     }
 
     return;
@@ -134,6 +149,12 @@ void DevConsole::OnMiscKeyDown(MiscKey key) {
       mHistoryPos = (mHistoryPos + 1) % mHistory.Size();
       return;
     }
+  }
+  else if (key == MiscKey::RIGHT_ARROW) {
+    size_t caretPos = mLastSuggestion.Length();
+    memcpy(mActiveBuffer, mLastSuggestion.Str(), caretPos);
+    mCaret = caretPos;
+    return;
   }
 
   if (key == MiscKey::ENTER) {
@@ -162,6 +183,7 @@ void DevConsole::OnMiscKeyDown(MiscKey key) {
     mHistory.Add(message);
     mCaret = 0;
     mHistoryPos = 0;
+    mLastSuggestion = "";
     return;
   }
 }
@@ -178,6 +200,16 @@ void DevConsole::OnResize(size_t width, size_t height) {
   mWidth = width;
   mHeight = height / 3;
   mScreen = (uint32*)PlatformAlignedMalloc(mWidth * mHeight * sizeof(uint32), PlatformAlignmentGranularity());
+}
+
+void DevConsole::UpdateSuggestions() {
+  for (Pair<String, Delegate<const String&>>& kvp : GlobalConsoleCommands()) {
+    mSuggestions.Add(String::FromFormat("{0} _", kvp.mKey));
+  }
+  
+  for (Pair<String, Delegate<void>>& kvp : GlobalConsoleCommandsValueless()) {
+    mSuggestions.Add(kvp.mKey);
+  }
 }
 
 }

@@ -70,6 +70,7 @@ set(ZSharp_Header_Files
     ThreadPool.h
     Tree.h
     Triangle.h
+    Trie.h
     UIBase.h
     UIButton.h
     UIContainer.h

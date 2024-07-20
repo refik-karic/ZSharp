@@ -218,6 +218,26 @@ void String::Trim(const Array<char>& values) {
   }
 }
 
+void String::Reverse() {
+  size_t length = Length();
+  
+  if (length <= 1) {
+    return;
+  }
+  
+  char* left = GetMutableString();
+  char* right = left + length - 1;
+
+  char tmp;
+  while (left < right) {
+    tmp = *left;
+    *left = *right;
+    *right = tmp;
+    ++left;
+    --right;
+  }
+}
+
 size_t String::Length() const {
   return IsMarkedShort() ? GetShortLength() : GetLongLength();
 }
@@ -885,6 +905,26 @@ void WideString::Trim(wchar_t value) {
 void WideString::Trim(const Array<wchar_t>& values) {
   for (wchar_t& value : values) {
     Trim(value);
+  }
+}
+
+void WideString::Reverse() {
+  size_t length = Length();
+
+  if (length <= 1) {
+    return;
+  }
+
+  wchar_t* left = GetMutableString();
+  wchar_t* right = left + length - 1;
+
+  wchar_t tmp;
+  while (left < right) {
+    tmp = *left;
+    *left = *right;
+    *right = tmp;
+    ++left;
+    --right;
   }
 }
 

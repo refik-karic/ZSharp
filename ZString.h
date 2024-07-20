@@ -133,6 +133,8 @@ class String final : public ISerializable {
 
   void Trim(const Array<char>& values);
 
+  void Reverse();
+
   size_t Length() const;
 
   String SubStr(size_t start, size_t end) const;
@@ -316,6 +318,8 @@ public:
   void Trim(wchar_t value);
 
   void Trim(const Array<wchar_t>& values);
+
+  void Reverse();
 
   size_t Length() const;
 

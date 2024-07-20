@@ -32,6 +32,17 @@ class alignas(32) Array final : public ISerializable {
       return temp;
     }
 
+    Iterator& operator--() {
+      mPtr--;
+      return *this;
+    }
+
+    Iterator operator--(int) {
+      Iterator temp(mPtr);
+      --(*this);
+      return temp;
+    }
+
     bool operator==(const Iterator& rhs) {
       return mPtr == rhs.mPtr;
     }
@@ -215,6 +226,14 @@ class alignas(32) Array final : public ISerializable {
 
   Iterator end() const {
     return Iterator(mData + mSize);
+  }
+
+  Iterator rbegin() const {
+    return Iterator(mData + mSize - 1);
+  }
+
+  Iterator rend() const {
+    return Iterator(mData - 1);
   }
 
   virtual void Serialize(ISerializer& serializer) override {

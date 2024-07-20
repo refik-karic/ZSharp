@@ -16,14 +16,30 @@ class HashTable final {
 
   class Iterator {
     public:
-    Iterator(typename Array<List<Pair<Key, Value>>>::Iterator begin, typename Array<List<Pair<Key, Value>>>::Iterator end)
+    Iterator(typename Array<List<Pair<Key, Value>>>::Iterator begin, 
+      typename Array<List<Pair<Key, Value>>>::Iterator end,
+      bool reverse)
       : mStorageIter(begin), mStorageEnd(end), mBucketIter((*begin).begin()) {
-      for (; mStorageIter != mStorageEnd; ++mStorageIter) {
-        List<Pair<Key, Value>>& list = (*mStorageIter);
+      if (reverse) {
+        mBucketIter = (*begin).rbegin();
 
-        if (list.Size() > 0) {
-          mBucketIter = list.begin();
-          break;
+        for (; mStorageIter != mStorageEnd; --mStorageIter) {
+          List<Pair<Key, Value>>& list = (*mStorageIter);
+
+          if (list.Size() > 0) {
+            mBucketIter = list.rbegin();
+            break;
+          }
+        }
+      }
+      else {
+        for (; mStorageIter != mStorageEnd; ++mStorageIter) {
+          List<Pair<Key, Value>>& list = (*mStorageIter);
+
+          if (list.Size() > 0) {
+            mBucketIter = list.begin();
+            break;
+          }
         }
       }
     }
@@ -38,6 +54,24 @@ class HashTable final {
 
           if (list.Size() > 0) {
             mBucketIter = list.begin();
+            break;
+          }
+        }
+      }
+
+      return *this;
+    }
+
+    Iterator& operator--() {
+      mBucketIter--;
+
+      if (mBucketIter == (*mStorageIter).rend()) {
+        mStorageIter--;
+        for (; mStorageIter != mStorageEnd; --mStorageIter) {
+          List<Pair<Key, Value>>& list = (*mStorageIter);
+
+          if (list.Size() > 0) {
+            mBucketIter = list.rbegin();
             break;
           }
         }
@@ -75,12 +109,12 @@ class HashTable final {
   };
 
   HashTable()
-    : mSize(0), mStorage(mMinCapacity) {
+    : mSize(0), mStorage(4096), mMinCapacity(4096) {
 
   }
 
   HashTable(size_t initialCapacity)
-    : mSize(0), mStorage(initialCapacity) {
+    : mSize(0), mStorage(initialCapacity), mMinCapacity(initialCapacity) {
 
   }
 
@@ -89,7 +123,7 @@ class HashTable final {
   }
 
   HashTable(const HashTable& rhs)
-    : mSize(rhs.mSize), mStorage(rhs.mStorage) {
+    : mSize(rhs.mSize), mStorage(rhs.mStorage), mMinCapacity(rhs.mMinCapacity) {
   }
   
   void operator=(const HashTable& rhs) {
@@ -99,6 +133,7 @@ class HashTable final {
 
     mSize = rhs.mSize;
     mStorage = rhs.mStorage;
+    mMinCapacity = rhs.mMinCapacity;
   }
 
   Value& operator[](const Key& key) {
@@ -148,7 +183,7 @@ class HashTable final {
     
     if (wasRemoved) {
       const size_t threshold = Capacity() / 4;
-      if (mSize < threshold) {
+      if (mSize < threshold && mSize > mMinCapacity) {
         const size_t halvedCapacity = (Capacity() / 2);
         size_t capacity = (halvedCapacity < mMinCapacity) ? mMinCapacity : halvedCapacity;
         Resize(capacity);
@@ -201,16 +236,24 @@ class HashTable final {
   }
 
   Iterator begin() const {
-    return Iterator(mStorage.begin(), mStorage.end());
+    return Iterator(mStorage.begin(), mStorage.end(), false);
   }
 
   Iterator end() const {
-    return Iterator(mStorage.end(), mStorage.end());
+    return Iterator(mStorage.end(), mStorage.end(), false);
+  }
+
+  Iterator rbegin() const {
+    return Iterator(mStorage.rbegin(), mStorage.rend(), true);
+  }
+
+  Iterator rend() const {
+    return Iterator(mStorage.rend(), mStorage.rend(), true);
   }
 
   private:
-  const size_t mMinCapacity = 4096;
   size_t mSize;
+  size_t mMinCapacity;
   Array<List<Pair<Key, Value>>> mStorage;
 
   uint32 HashedIndex(const Key& key) const {

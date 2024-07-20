@@ -3,7 +3,7 @@ The core implementation of the 3D Software Renderer.
 
 ## High level features
 * General Data Structures
-  * Resizable Array, HashMap, Graph, Stack, List, Pair, Mutable Short/Wide String, Red/Black Tree, Min/Max Heap
+  * Resizable Array, HashMap, Graph, Stack, List, Pair, Mutable Short/Wide String, Red/Black Tree, Min/Max Heap, Trie
 * 3D Data Structures
   * Vec3/4, Mat2x3/3x3/4x4, Quaternion, AABB
 * Platform Agnostic APIs
@@ -23,5 +23,6 @@ The core implementation of the 3D Software Renderer.
   * Debug visualizers
   * INI files
   * Asserts
+  * Developer console with history and autocomplete
 * Asset parsing and usage
-  * OBJ, PNG, MP3, INI
+  * OBJ, PNG, JPEG, MP3, INI

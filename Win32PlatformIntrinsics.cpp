@@ -637,21 +637,14 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride
 }
 
 void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
-  float* pixel = buffer;
+  float* depth = buffer;
 
   ZColor black(ZColors::BLACK);
   ZColor white(ZColors::WHITE);
 
-  // TODO: Find a better way to scale the depth values.
-  //  This is just a good guess.
-  float invDenominatorScalar = 1.f / -6.f;
-
   size_t currentIndex = 0;
 
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    __m256 subFactor = _mm256_set1_ps(6.f);
-    __m256 invDenominator = _mm256_set1_ps(invDenominatorScalar);
-
     __m256 rbVec = _mm256_set1_ps((float)black.R());
     __m256 gbVec = _mm256_set1_ps((float)black.G());
     __m256 bbVec = _mm256_set1_ps((float)black.B());
@@ -662,11 +655,16 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
 
     __m256i initialColor = _mm256_set1_epi32(0xFF000000);
 
+    __m256 zNear = _mm256_set1_ps(0.333f);
+    __m256 zFar = _mm256_set1_ps(1.f);
+    __m256 zNearNumerator = _mm256_mul_ps(zNear, _mm256_set1_ps(2.f));
+    __m256 zDenominatorFarNearSub = _mm256_sub_ps(zFar, zNear);
+    __m256 zDenominatorFarNearAdd = _mm256_add_ps(zFar, zNear);
+
     for (size_t h = 0; h < height; ++h) {
-      for (size_t w = 0; w + 8 < width; w += 8, currentIndex += 8, pixel += 8) {
-        __m256 numerator = _mm256_load_ps(pixel);
-        numerator = _mm256_sub_ps(numerator, subFactor);
-        __m256 parametricT = _mm256_mul_ps(numerator, invDenominator);
+      for (size_t w = 0; w + 8 < width; w += 8, currentIndex += 8, depth += 8) {
+        __m256 depthValues = _mm256_load_ps(depth);
+        __m256 parametricT = _mm256_div_ps(zNearNumerator, _mm256_sub_ps(zDenominatorFarNearAdd, _mm256_mul_ps(depthValues, zDenominatorFarNearSub)));
 
         __m256 lerpedR = Lerp256(rbVec, rwVec, parametricT);
         __m256 lerpedG = Lerp256(gbVec, gwVec, parametricT);
@@ -684,14 +682,11 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
         finalColor = _mm256_or_si256(finalColor, convG);
         finalColor = _mm256_or_si256(finalColor, convB);
 
-        _mm256_storeu_si256((__m256i*)pixel, finalColor);
+        _mm256_storeu_si256((__m256i*)depth, finalColor);
       }
     }
   }
   else {
-    __m128 subFactor = _mm_set_ps1(6.f);
-    __m128 invDenominator = _mm_set_ps1(invDenominatorScalar);
-
     __m128 rbVec = _mm_set_ps1((float)black.R());
     __m128 gbVec = _mm_set_ps1((float)black.G());
     __m128 bbVec = _mm_set_ps1((float)black.B());
@@ -702,11 +697,16 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
 
     __m128i initialColor = _mm_set1_epi32(0xFF000000);
 
+    __m128 zNear = _mm_set_ps1(0.333f);
+    __m128 zFar = _mm_set_ps1(1.f);
+    __m128 zNearNumerator = _mm_mul_ps(zNear, _mm_set_ps1(2.f));
+    __m128 zDenominatorFarNearSub = _mm_sub_ps(zFar, zNear);
+    __m128 zDenominatorFarNearAdd = _mm_add_ps(zFar, zNear);
+
     for (size_t h = 0; h < height; ++h) {
-      for (size_t w = 0; w + 4 < width; w += 4, currentIndex += 4, pixel += 4) {
-        __m128 numerator = _mm_load_ps(pixel);
-        numerator = _mm_sub_ps(numerator, subFactor);
-        __m128 parametricT = _mm_mul_ps(numerator, invDenominator);
+      for (size_t w = 0; w + 4 < width; w += 4, currentIndex += 4, depth += 4) {
+        __m128 depthValues = _mm_load_ps(depth);
+        __m128 parametricT = _mm_div_ps(zNearNumerator, _mm_sub_ps(zDenominatorFarNearAdd, _mm_mul_ps(depthValues, zDenominatorFarNearSub)));
 
         __m128 lerpedR = Lerp128(rbVec, rwVec, parametricT);
         __m128 lerpedG = Lerp128(gbVec, gwVec, parametricT);
@@ -724,41 +724,34 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
         finalColor = _mm_or_si128(finalColor, convG);
         finalColor = _mm_or_si128(finalColor, convB);
 
-        _mm_storeu_si128((__m128i*)pixel, finalColor);
+        _mm_storeu_si128((__m128i*)depth, finalColor);
       }
     }
   }
 
   size_t endBuffer = width * height;
 
-  for (size_t w = currentIndex; w < endBuffer; ++w) {
-    float numerator = *pixel - 6.f;
-    float t = numerator * invDenominatorScalar;
+  float zNear = 0.333f;
+  float zFar = 1.f;
+  float zNearNumerator = zNear * 2.f;
+  float zDenominatorFarNearSub = zFar - zNear;
+  float zDenominatorFarNearAdd = zFar + zNear;
 
-    (*((uint32*)pixel)) = ZColor::LerpColors(black, white, t);
-    ++pixel;
+  for (size_t w = currentIndex; w < endBuffer; ++w) {
+    float parametricT = zNearNumerator / (zDenominatorFarNearAdd - ((*depth) * zDenominatorFarNearSub));
+    (*((uint32*)depth)) = ZColor::LerpColors(black, white, parametricT);
+    ++depth;
   }
 }
 
 void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
-    for (int32 i = 0; i < length; i += stride) {
-      float* nextVec = data + i;
-      __m128 vec = _mm_loadu_ps(nextVec);
-      __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
-      __m128 result = _mm_mul_ps(vec, _mm_rcp_ps(perspectiveTerm));
-      result = _mm_blend_ps(result, perspectiveTerm, 0b1000);
-      _mm_storeu_ps(nextVec, result);
-    }
-  }
-  else {
-    for (int32 i = 0; i < length; i += stride) {
-      float* vec = data + i;
-      const float invDivisor = 1.f / vec[3];
-      vec[0] *= invDivisor;
-      vec[1] *= invDivisor;
-      vec[2] *= invDivisor;
-    }
+  for (int32 i = 0; i < length; i += stride) {
+    float* nextVec = data + i;
+    __m128 vec = _mm_loadu_ps(nextVec);
+    __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
+    __m128 result = _mm_mul_ps(vec, _mm_rcp_ps(perspectiveTerm));
+    result = _mm_blend_ps(result, perspectiveTerm, 0b1000);
+    _mm_storeu_ps(nextVec, result);
   }
 }
 
@@ -768,23 +761,28 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
     __m256i bufferOpacity = _mm256_set1_epi16((short)(255.f * (1.f - opacity)));
 
     // Need this to clear high 8 bits of the 16 unpacked value
-    __m256i zero = _mm256_setzero_si256();
+    __m256i xScale = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+    __m256i maxWidth = _mm256_set1_epi32((int)width);
 
     for (size_t y = 0; y < height; ++y) {
       for (size_t x = 0; x < width; x += 8) {
         size_t index = (y * width) + x;
 
+        __m256i xIndices = _mm256_set1_epi32((int)x);
+        xIndices = _mm256_add_epi32(xIndices, xScale);
+        __m256i mask = _mm256_cmpgt_epi32(maxWidth, xIndices);
+
         // Load 8 pixels at a time
         // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
         // The best we can do is 16bit arithmetic
-        __m256i devColor = _mm256_loadu_si256((__m256i*)(devBuffer + index));
-        __m256i bufferColor = _mm256_loadu_si256((__m256i*)(frameBuffer + index));
+        __m256i devColor = _mm256_maskload_epi32((int*)devBuffer + index, mask);
+        __m256i bufferColor = _mm256_maskload_epi32((int*)frameBuffer + index, mask);
 
-        __m256i devLo16 = _mm256_unpacklo_epi8(devColor, zero); // 4x 32bit BGRA, [0,1]
-        __m256i devHi16 = _mm256_unpackhi_epi8(devColor, zero); // 4x 32bit BGRA, [2,3]
+        __m256i devLo16 = _mm256_unpacklo_epi8(devColor, _mm256_setzero_si256()); // 4x 32bit BGRA, [0,1]
+        __m256i devHi16 = _mm256_unpackhi_epi8(devColor, _mm256_setzero_si256()); // 4x 32bit BGRA, [2,3]
 
-        __m256i bufLo16 = _mm256_unpacklo_epi8(bufferColor, zero);
-        __m256i bufHi16 = _mm256_unpackhi_epi8(bufferColor, zero);
+        __m256i bufLo16 = _mm256_unpacklo_epi8(bufferColor, _mm256_setzero_si256());
+        __m256i bufHi16 = _mm256_unpackhi_epi8(bufferColor, _mm256_setzero_si256());
 
         devLo16 = _mm256_mullo_epi16(devLo16, devOpacity);
         devHi16 = _mm256_mullo_epi16(devHi16, devOpacity);
@@ -803,7 +801,7 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
         __m256i hiResult = _mm256_add_epi16(devHi16, bufHi16);
 
         // Pack the 16bit results into 8bit values and store it back to memory
-        _mm256_storeu_si256((__m256i*)(frameBuffer + index), _mm256_packus_epi16(loResult, hiResult));
+        _mm256_maskstore_epi32((int*)frameBuffer + index, mask, _mm256_packus_epi16(loResult, hiResult));
       }
     }
   }
@@ -1163,17 +1161,15 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
         if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
           __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
 
-          __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
+          __m256 zValues = _mm256_rcp_ps(_mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0)));
 
-          __m256 invZValues = _mm256_rcp_ps(zValues);
-
-          __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
+          __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_LT_OQ);
 
           __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
 
-          __m256i rValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, r2r0), invZValues, _mm256_fmadd_ps(r0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), invZValues))));
-          __m256i gValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, g2g0), invZValues, _mm256_fmadd_ps(g0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), invZValues))));
-          __m256i bValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, b2b0), invZValues, _mm256_fmadd_ps(b0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), invZValues))));
+          __m256i rValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, r2r0), zValues, _mm256_fmadd_ps(r0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), zValues))));
+          __m256i gValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, g2g0), zValues, _mm256_fmadd_ps(g0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), zValues))));
+          __m256i bValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, b2b0), zValues, _mm256_fmadd_ps(b0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, b1b0), zValues))));
 
           rValues = _mm256_slli_epi32(rValues, 16);
           gValues = _mm256_slli_epi32(gValues, 8);
@@ -1529,16 +1525,14 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
           __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
 
-          __m256 zValues = _mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0));
+          __m256 zValues = _mm256_rcp_ps(_mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0)));
 
-          __m256 invZValues = _mm256_rcp_ps(zValues);
-
-          __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
+          __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_LT_OQ);
 
           __m256i finalCombinedMask = Not256(_mm256_castps_si256(_mm256_or_ps(combinedWeights, depthMask)));
 
-          __m256 uValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, u2u0), invZValues, _mm256_fmadd_ps(u0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), invZValues)));
-          __m256 vValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, v2v0), invZValues, _mm256_fmadd_ps(v0, invZValues, _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), invZValues)));
+          __m256 uValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, u2u0), zValues, _mm256_fmadd_ps(u0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), zValues)));
+          __m256 vValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, v2v0), zValues, _mm256_fmadd_ps(v0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), zValues)));
 
           // We must round prior to multiplying the stride and channels.
           // If this isn't done, we may jump to a completely different set of pixels because of rounding.

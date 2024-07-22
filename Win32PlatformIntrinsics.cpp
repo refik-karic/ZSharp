@@ -756,27 +756,26 @@ void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
 }
 
 void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width, size_t height, float opacity) {
+  short devOpacityValue = (short)(255.f * opacity);
+  short bufferOpacityValue = (short)(255.f * (1.f - opacity));
+  
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    __m256i devOpacity = _mm256_set1_epi16((short)(255.f * opacity));
-    __m256i bufferOpacity = _mm256_set1_epi16((short)(255.f * (1.f - opacity)));
+    __m256i devOpacity = _mm256_set1_epi16(devOpacityValue);
+    __m256i bufferOpacity = _mm256_set1_epi16(bufferOpacityValue);
 
     // Need this to clear high 8 bits of the 16 unpacked value
     __m256i xScale = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
-    __m256i maxWidth = _mm256_set1_epi32((int)width);
 
     for (size_t y = 0; y < height; ++y) {
-      for (size_t x = 0; x < width; x += 8) {
+      size_t x = 0;
+      for (; x + 8 < width; x += 8) {
         size_t index = (y * width) + x;
-
-        __m256i xIndices = _mm256_set1_epi32((int)x);
-        xIndices = _mm256_add_epi32(xIndices, xScale);
-        __m256i mask = _mm256_cmpgt_epi32(maxWidth, xIndices);
 
         // Load 8 pixels at a time
         // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
         // The best we can do is 16bit arithmetic
-        __m256i devColor = _mm256_maskload_epi32((int*)devBuffer + index, mask);
-        __m256i bufferColor = _mm256_maskload_epi32((int*)frameBuffer + index, mask);
+        __m256i devColor = _mm256_loadu_si256((__m256i*)(devBuffer + index));
+        __m256i bufferColor = _mm256_loadu_si256((__m256i*)(frameBuffer + index));
 
         __m256i devLo16 = _mm256_unpacklo_epi8(devColor, _mm256_setzero_si256()); // 4x 32bit BGRA, [0,1]
         __m256i devHi16 = _mm256_unpackhi_epi8(devColor, _mm256_setzero_si256()); // 4x 32bit BGRA, [2,3]
@@ -801,19 +800,59 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
         __m256i hiResult = _mm256_add_epi16(devHi16, bufHi16);
 
         // Pack the 16bit results into 8bit values and store it back to memory
-        _mm256_maskstore_epi32((int*)frameBuffer + index, mask, _mm256_packus_epi16(loResult, hiResult));
+        _mm256_storeu_si256((__m256i*)(frameBuffer + index), _mm256_packus_epi16(loResult, hiResult));
+      }
+
+      for (; x < width; ++x) {
+        size_t index = (y * width) + x;
+        uint8* devPixels = (uint8*)(devBuffer + index);
+        uint8* bufPixels = (uint8*)(frameBuffer + index);
+        
+        short devB = devPixels[0];
+        short devG = devPixels[1];
+        short devR = devPixels[2];
+        short devA = devPixels[3];
+
+        short bufB = bufPixels[0];
+        short bufG = bufPixels[1];
+        short bufR = bufPixels[2];
+        short bufA = bufPixels[3];
+
+        devB *= devOpacityValue;
+        devG *= devOpacityValue;
+        devR *= devOpacityValue;
+        devA *= devOpacityValue;
+        devB >>= 8;
+        devG >>= 8;
+        devR >>= 8;
+        devA >>= 8;
+
+        bufB *= bufferOpacityValue;
+        bufG *= bufferOpacityValue;
+        bufR *= bufferOpacityValue;
+        bufA *= bufferOpacityValue;
+        bufB >>= 8;
+        bufG >>= 8;
+        bufR >>= 8;
+        bufA >>= 8;
+
+        bufPixels[0] = (uint8)(bufB + devB);
+        bufPixels[1] = (uint8)(bufG + devG);
+        bufPixels[2] = (uint8)(bufR + devR);
+        bufPixels[3] = (uint8)(bufA + devA);
       }
     }
   }
   else {
-    __m128i devOpacity = _mm_set1_epi16((short)(255.f * opacity));
-    __m128i bufferOpacity = _mm_set1_epi16((short)(255.f * (1.f - opacity)));
+    __m128i devOpacity = _mm_set1_epi16(devOpacityValue);
+    __m128i bufferOpacity = _mm_set1_epi16(bufferOpacityValue);
 
     // Need this to clear high 8 bits of the 16 unpacked value
     __m128i zero = _mm_setzero_si128();
 
     for (size_t y = 0; y < height; ++y) {
-      for (size_t x = 0; x < width; x += 4) {
+      size_t x = 0;
+      for (; x + 4 < width; x += 4) {
         size_t index = (y * width) + x;
 
         // Load 4 pixels at a time
@@ -846,6 +885,45 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
 
         // Pack the 16bit results into 8bit values and store it back to memory
         _mm_storeu_si128((__m128i*)(frameBuffer + index), _mm_packus_epi16(loResult, hiResult));
+      }
+
+      for (; x < width; ++x) {
+        size_t index = (y * width) + x;
+        uint8* devPixels = (uint8*)(devBuffer + index);
+        uint8* bufPixels = (uint8*)(frameBuffer + index);
+
+        short devB = devPixels[0];
+        short devG = devPixels[1];
+        short devR = devPixels[2];
+        short devA = devPixels[3];
+
+        short bufB = bufPixels[0];
+        short bufG = bufPixels[1];
+        short bufR = bufPixels[2];
+        short bufA = bufPixels[3];
+
+        devB *= devOpacityValue;
+        devG *= devOpacityValue;
+        devR *= devOpacityValue;
+        devA *= devOpacityValue;
+        devB >>= 8;
+        devG >>= 8;
+        devR >>= 8;
+        devA >>= 8;
+
+        bufB *= bufferOpacityValue;
+        bufG *= bufferOpacityValue;
+        bufR *= bufferOpacityValue;
+        bufA *= bufferOpacityValue;
+        bufB >>= 8;
+        bufG >>= 8;
+        bufR >>= 8;
+        bufA >>= 8;
+
+        bufPixels[0] = (uint8)(bufB + devB);
+        bufPixels[1] = (uint8)(bufG + devG);
+        bufPixels[2] = (uint8)(bufR + devR);
+        bufPixels[3] = (uint8)(bufA + devA);
       }
     }
   }
@@ -1339,24 +1417,23 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
             __m128 weightedVerts1 = _mm_mul_ps(weights1, z1z0);
             __m128 weightedVerts2 = _mm_mul_ps(weights2, z2z0);
 
-            __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
-            __m128 invZValues = _mm_rcp_ps(zValues);
+            __m128 zValues = _mm_rcp_ps(_mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2));
 
-            __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
+            __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_LT_OQ);
 
             __m128i finalCombinedMask = _mm_castps_si128(_mm_or_ps(combinedWeights, depthMask));
 
-            __m128 weightedAttr00 = _mm_mul_ps(r0, invZValues);
-            __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, r1r0), invZValues);
-            __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, r2r0), invZValues);
+            __m128 weightedAttr00 = _mm_mul_ps(r0, zValues);
+            __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, r1r0), zValues);
+            __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, r2r0), zValues);
 
-            __m128 weightedAttr10 = _mm_mul_ps(g0, invZValues);
-            __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, g1g0), invZValues);
-            __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, g2g0), invZValues);
+            __m128 weightedAttr10 = _mm_mul_ps(g0, zValues);
+            __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, g1g0), zValues);
+            __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, g2g0), zValues);
 
-            __m128 weightedAttr20 = _mm_mul_ps(b0, invZValues);
-            __m128 weightedAttr21 = _mm_mul_ps(_mm_mul_ps(weights1, b1b0), invZValues);
-            __m128 weightedAttr22 = _mm_mul_ps(_mm_mul_ps(weights2, b2b0), invZValues);
+            __m128 weightedAttr20 = _mm_mul_ps(b0, zValues);
+            __m128 weightedAttr21 = _mm_mul_ps(_mm_mul_ps(weights1, b1b0), zValues);
+            __m128 weightedAttr22 = _mm_mul_ps(_mm_mul_ps(weights2, b2b0), zValues);
 
             __m128i rValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr00, weightedAttr01), weightedAttr02));
             __m128i gValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
@@ -1707,20 +1784,19 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
             __m128 weightedVerts1 = _mm_mul_ps(weights1, z1z0);
             __m128 weightedVerts2 = _mm_mul_ps(weights2, z2z0);
 
-            __m128 zValues = _mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2);
-            __m128 invZValues = _mm_rcp_ps(zValues);
+            __m128 zValues = _mm_rcp_ps(_mm_add_ps(_mm_add_ps(weightedVerts0, weightedVerts1), weightedVerts2));
 
-            __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
+            __m128 depthMask = _mm_cmp_ps(zValues, depthVec, _CMP_LT_OQ);
 
             __m128i finalCombinedMask = _mm_castps_si128(_mm_or_ps(combinedWeights, depthMask));
 
-            __m128 weightedAttr00 = _mm_mul_ps(u0, invZValues);
-            __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, u1u0), invZValues);
-            __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, u2u0), invZValues);
+            __m128 weightedAttr00 = _mm_mul_ps(u0, zValues);
+            __m128 weightedAttr01 = _mm_mul_ps(_mm_mul_ps(weights1, u1u0), zValues);
+            __m128 weightedAttr02 = _mm_mul_ps(_mm_mul_ps(weights2, u2u0), zValues);
 
-            __m128 weightedAttr10 = _mm_mul_ps(v0, invZValues);
-            __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, v1v0), invZValues);
-            __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, v2v0), invZValues);
+            __m128 weightedAttr10 = _mm_mul_ps(v0, zValues);
+            __m128 weightedAttr11 = _mm_mul_ps(_mm_mul_ps(weights1, v1v0), zValues);
+            __m128 weightedAttr12 = _mm_mul_ps(_mm_mul_ps(weights2, v2v0), zValues);
 
             __m128 uValues = _mm_add_ps(_mm_add_ps(weightedAttr00, weightedAttr01), weightedAttr02);
             __m128 vValues = _mm_add_ps(_mm_add_ps(weightedAttr10, weightedAttr11), weightedAttr12);

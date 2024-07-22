@@ -16,6 +16,7 @@ class String final : public ISerializable {
   class VariableArg {
     private:
     enum Type {
+      CHAR,
       SIZE_T,
       BOOL,
       INT32,
@@ -32,6 +33,7 @@ class String final : public ISerializable {
     Type mType;
 
     union {
+      char char_value;
       size_t size_value;
       bool bool_value;
       int32 int32_value;
@@ -47,6 +49,8 @@ class String final : public ISerializable {
 
     public:
     VariableArg() = delete; // Explicit type construction only.
+
+    VariableArg(const char arg);
 
     VariableArg(const size_t arg);
 
@@ -68,6 +72,53 @@ class String final : public ISerializable {
   };
 
   public:
+
+  class Iterator {
+  public:
+    Iterator(const char* data) : mPtr(data) {}
+
+    Iterator& operator++() {
+      mPtr++;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator temp(*this);
+      ++(*this);
+      return temp;
+    }
+
+    Iterator& operator--() {
+      mPtr--;
+      return *this;
+    }
+
+    Iterator operator--(int) {
+      Iterator temp(mPtr);
+      --(*this);
+      return temp;
+    }
+
+    bool operator==(const Iterator& rhs) {
+      return mPtr == rhs.mPtr;
+    }
+
+    bool operator!=(const Iterator& rhs) {
+      return mPtr != rhs.mPtr;
+    }
+
+    const char& operator*() const {
+      return *mPtr;
+    }
+
+    const char* operator->() {
+      return mPtr;
+    }
+
+    private:
+    const char* mPtr;
+  };
+
   String();
 
   String(const char* str);
@@ -169,6 +220,22 @@ class String final : public ISerializable {
 
   virtual void Deserialize(IDeserializer& deserializer) override;
 
+  Iterator begin() const {
+    return Iterator(GetString());
+  }
+
+  Iterator end() const {
+    return Iterator(GetString() + Length());
+  }
+
+  Iterator rbegin() const {
+    return Iterator(GetString() + Length() - 1);
+  }
+
+  Iterator rend() const {
+    return Iterator(GetString() - 1);
+  }
+
   private:
   struct LongString {
     size_t size;
@@ -231,10 +298,11 @@ class String final : public ISerializable {
 };
 
 class WideString final : public ISerializable {
-private:
-  class VariableArg {
   private:
+  class VariableArg {
+    private:
     enum Type {
+      WCHAR,
       INT32,
       UINT32,
       INT64,
@@ -246,6 +314,7 @@ private:
     Type mType;
 
     union {
+      wchar_t wchar_value;
       int32 int32_value;
       uint32 uint32_value;
       int64 int64_value;
@@ -254,17 +323,74 @@ private:
       double double_value;
     } mData;
 
-  public:
+    public:
     VariableArg() = delete; // Explicit type construction only.
+
+    VariableArg(const wchar_t arg);
 
     VariableArg(const int32 arg);
 
+    VariableArg(const uint32 arg);
+
+    VariableArg(const int64 arg);
+
+    VariableArg(const uint64 arg);
+
     VariableArg(const float arg);
+
+    VariableArg(const double arg);
 
     void ToString(WideString& str, int32 numDigits = 0) const;
   };
 
-public:
+  public:
+
+  class Iterator {
+    public:
+    Iterator(const wchar_t* data) : mPtr(data) {}
+
+    Iterator& operator++() {
+      mPtr++;
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      Iterator temp(*this);
+      ++(*this);
+      return temp;
+    }
+
+    Iterator& operator--() {
+      mPtr--;
+      return *this;
+    }
+
+    Iterator operator--(int) {
+      Iterator temp(mPtr);
+      --(*this);
+      return temp;
+    }
+
+    bool operator==(const Iterator& rhs) {
+      return mPtr == rhs.mPtr;
+    }
+
+    bool operator!=(const Iterator& rhs) {
+      return mPtr != rhs.mPtr;
+    }
+
+    const wchar_t& operator*() const {
+      return *mPtr;
+    }
+
+    const wchar_t* operator->() {
+      return mPtr;
+    }
+
+    private:
+    const wchar_t* mPtr;
+  };
+
   WideString();
 
   WideString(const wchar_t* str);
@@ -311,6 +437,13 @@ public:
     VariadicArgsAppend(formatStr, inArgs, sizeof...(args));
   }
 
+  template<typename... Args>
+  static WideString FromFormat(const wchar_t* formatStr, const Args&... args) {
+    WideString str;
+    str.Appendf(formatStr, args...);
+    return str;
+  }
+
   bool IsEmpty() const;
 
   void Clear();
@@ -355,7 +488,23 @@ public:
 
   virtual void Deserialize(IDeserializer& deserializer) override;
 
-private:
+  Iterator begin() const {
+    return Iterator(GetString());
+  }
+
+  Iterator end() const {
+    return Iterator(GetString() + Length());
+  }
+
+  Iterator rbegin() const {
+    return Iterator(GetString() + Length() - 1);
+  }
+
+  Iterator rend() const {
+    return Iterator(GetString() - 1);
+  }
+
+  private:
   struct LongString {
     size_t size;
     size_t capacity;

@@ -593,6 +593,11 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
   Append(lastPosition, 0, str - lastPosition);
 }
 
+String::VariableArg::VariableArg(const char arg) 
+  : mType(Type::CHAR) {
+  mData.char_value = arg;
+}
+
 String::VariableArg::VariableArg(const size_t arg)
   : mType(Type::SIZE_T) {
   mData.size_value = arg;
@@ -646,6 +651,12 @@ void String::VariableArg::ToString(String& str, int32 numDigits) const {
     {
       const char* boolString = (mData.bool_value) ? "1" : "0";
       str.Append(boolString, 0, 1);
+    }
+    break;
+    case Type::CHAR:
+    {
+      const char charStr[] = { mData.char_value };
+      str.Append(charStr, 0, 1);
     }
     break;
     case Type::INT32:
@@ -1276,9 +1287,29 @@ void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* ar
   }
 }
 
+WideString::VariableArg::VariableArg(const wchar_t arg) 
+  : mType(Type::WCHAR) {
+  mData.wchar_value = arg;
+}
+
 WideString::VariableArg::VariableArg(const int32 arg)
   : mType(Type::INT32) {
   mData.int32_value = arg;
+}
+
+WideString::VariableArg::VariableArg(const uint32 arg)
+  : mType(Type::UINT32) {
+  mData.uint32_value = arg;
+}
+
+WideString::VariableArg::VariableArg(const int64 arg)
+  : mType(Type::INT64) {
+  mData.int64_value = arg;
+}
+
+WideString::VariableArg::VariableArg(const uint64 arg)
+  : mType(Type::UINT64) {
+  mData.uint64_value = arg;
 }
 
 WideString::VariableArg::VariableArg(const float arg)
@@ -1286,8 +1317,19 @@ WideString::VariableArg::VariableArg(const float arg)
   mData.float_value = arg;
 }
 
+WideString::VariableArg::VariableArg(const double arg)
+  : mType(Type::DOUBLE) {
+  mData.double_value = arg;
+}
+
 void WideString::VariableArg::ToString(WideString& str, int32 numDigits) const {
   switch (mType) {
+    case Type::WCHAR:
+    {
+      wchar_t buffer[] = { mData.wchar_value };
+      str.Append(buffer, 0, 1);
+    }
+    break;
     case Type::INT32:
     {
       wchar_t buffer[64];

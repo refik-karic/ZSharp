@@ -36,6 +36,8 @@ class FrontEnd final {
   void OnStartButtonClicked();
 
   void OnQuitButtonClicked();
+
+  int32 LoadBackgroundImage(const String& imageName);
 };
 
 }

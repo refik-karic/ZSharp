@@ -3,6 +3,7 @@
 #include "PlatformMemory.h"
 #include "ZConfig.h"
 #include "ZAssert.h"
+#include "Bundle.h"
 #include "Delegate.h"
 #include "InputManager.h"
 #include "UIButton.h"
@@ -10,6 +11,7 @@
 #include "UILabel.h"
 #include "UIGrid.h"
 #include "PlatformApplication.h"
+#include "TexturePool.h"
 #include "ZString.h"
 #include "PlatformMisc.h"
 
@@ -148,7 +150,11 @@ void FrontEnd::Load() {
   UIGridRow row1(.2f, "DemoRow1");
   UIGridRow row2(.1f, "DemoRow2");
 
+  UIImage* backgroundImage = new UIImage(width, height, "DemoBackgroundImage");
+  backgroundImage->SetTextureId(LoadBackgroundImage("wall_256"));
+
   UIGrid* grid = new UIGrid(width, height, "DemoGrid");
+  grid->SetBackgroundImage(backgroundImage);
   grid->AddItem(linearPanel0);
   grid->AddItem(centerPanel);
   grid->AddItem(lowerGrid);
@@ -165,9 +171,6 @@ void FrontEnd::Load() {
 void FrontEnd::Unload() {
   mVisible = false;
   mLoaded = false;
-
-  delete mFrame;
-  mFrame = nullptr;
 }
 
 void FrontEnd::Tick() {
@@ -198,6 +201,11 @@ void FrontEnd::OnMouseMove(int32 x, int32 y, bool mouseDown) {
 
   ZAssert(mFrame != nullptr);
   mFrame->OnMouseMove(x, y, mouseDown);
+
+  if (!mLoaded) {
+    delete mFrame;
+    mFrame = nullptr;
+  }
 }
 
 void FrontEnd::OnStartButtonClicked() {
@@ -206,6 +214,18 @@ void FrontEnd::OnStartButtonClicked() {
 
 void FrontEnd::OnQuitButtonClicked() {
   GetApplication()->Shutdown();
+}
+
+int32 FrontEnd::LoadBackgroundImage(const String& imageName) {
+  Bundle& bundle = Bundle::Get();
+  Asset* textureAsset = bundle.GetAsset(imageName);
+
+  if (textureAsset == nullptr) {
+    ZAssert(false);
+    return - 1;
+  }
+
+  return TexturePool::Get().LoadTexture(*textureAsset);
 }
 
 }

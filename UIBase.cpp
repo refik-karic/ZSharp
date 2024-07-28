@@ -10,6 +10,12 @@ UIBase::UIBase(size_t width, size_t height, const String& name)
   : mWidth(width), mHeight(height), mName(name), mX(0), mY(0), mGridRow(0), mGridColumn(0), mBorderThickness(0), mBorderColor(0), mMouseOver(false)  {
 }
 
+UIBase::~UIBase() {
+  if (OnClickDelegate.IsBound()) {
+    OnClickDelegate.Unbind();
+  }
+}
+
 void UIBase::Layout(size_t x, size_t y) {
   (void)x;
   (void)y;

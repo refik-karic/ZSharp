@@ -77,6 +77,7 @@ set(ZSharp_Header_Files
     UIElement.h
     UIFrame.h
     UIGrid.h
+    UIImage.h
     UILabel.h
     UILinearPanel.h
     Vec3.h
@@ -144,6 +145,7 @@ set(ZSharp_Source_Files
     UIElement.cpp
     UIFrame.cpp
     UIGrid.cpp
+    UIImage.cpp
     UILabel.cpp
     UILinearPanel.cpp
     Vec3.cpp

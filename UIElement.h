@@ -14,6 +14,8 @@ class UIElement : public UIBase {
 
   UIElement(size_t width, size_t height, const String& name);
 
+  virtual ~UIElement() = default;
+
   virtual void SetBackgroundColor(const ZColor& color);
 
   virtual void SetHighlightColor(const ZColor& color);

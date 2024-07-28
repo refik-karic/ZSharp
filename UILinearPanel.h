@@ -17,7 +17,7 @@ class UILinearPanel : public UIContainer {
 
   UILinearPanel(size_t width, size_t height, const String& name, UILinearFlow flow);
 
-  ~UILinearPanel();
+  virtual ~UILinearPanel();
 
   virtual void Layout(size_t x, size_t y) override;
 

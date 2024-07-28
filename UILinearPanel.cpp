@@ -14,6 +14,8 @@ UILinearPanel::~UILinearPanel() {
       delete item;
     }
   }
+
+  mItems.Clear();
 }
 
 void UILinearPanel::Layout(size_t x, size_t y) {

@@ -13,7 +13,7 @@ class UIButton : public UIElement {
 
   UIButton(size_t width, size_t height, const String& name);
 
-  ~UIButton();
+  virtual ~UIButton();
 
   virtual void Layout(size_t x, size_t y) override;
 

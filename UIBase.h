@@ -30,6 +30,8 @@ class UIBase {
 
   UIBase(size_t width, size_t height, const String& name);
 
+  virtual ~UIBase();
+
   virtual void Layout(size_t x, size_t y);
 
   virtual void HitTest(int32 x, int32 y, bool mouseDown);

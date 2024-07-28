@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 #include "UIBase.h"
+#include "UIImage.h"
 
 namespace ZSharp {
 
@@ -13,10 +14,17 @@ class UIContainer : public UIBase {
 
   UIContainer(size_t width, size_t height, const String& name);
 
+  virtual ~UIContainer();
+
+  void SetBackgroundImage(UIImage* image);
+
   void SetSpacing(size_t space);
 
   protected:
+  void DrawBackgroundImage(uint8* screen, size_t width, size_t height);
+
   size_t mItemSpacing;
+  UIImage* mBackgroundImage = nullptr;
 };
 
 }

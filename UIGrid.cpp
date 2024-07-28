@@ -101,6 +101,10 @@ void UIGrid::Draw(uint8* screen, size_t width, size_t height) {
     return;
   }
 
+  if (mBackgroundImage != nullptr) {
+    DrawBackgroundImage(screen, width, height);
+  }
+
   for (UIBase* item : mItems) {
     item->Draw(screen, width, height);
   }

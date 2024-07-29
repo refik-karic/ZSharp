@@ -151,7 +151,7 @@ void FrontEnd::Load() {
   UIGridRow row2(.1f, "DemoRow2");
 
   UIImage* backgroundImage = new UIImage(width, height, "DemoBackgroundImage");
-  backgroundImage->SetTextureId(LoadBackgroundImage("wall_256"));
+  backgroundImage->SetTextureId(LoadBackgroundImage("mainmenu_background"));
 
   UIGrid* grid = new UIGrid(width, height, "DemoGrid");
   grid->SetBackgroundImage(backgroundImage);

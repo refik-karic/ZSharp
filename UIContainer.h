@@ -25,6 +25,9 @@ class UIContainer : public UIBase {
 
   size_t mItemSpacing;
   UIImage* mBackgroundImage = nullptr;
+  uint8* mImageData = nullptr;
+  size_t mImageWidth = 0;
+  size_t mImageHeight = 0;
 };
 
 }

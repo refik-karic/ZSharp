@@ -101,6 +101,10 @@ void Texture::GenerateMips() {
   }
 }
 
+size_t Texture::NumMips() const {
+  return mMipChain.Size();
+}
+
 uint8* InsertAlphaChannel(uint8* data, size_t width, size_t height) {
   uint8* alphaImage = (uint8*)PlatformMalloc(width * height * 4);
   Unaligned_BGRToBGRA(data, alphaImage, width * height * 3);

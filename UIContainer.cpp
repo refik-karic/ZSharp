@@ -1,5 +1,8 @@
 #include "UIContainer.h"
 
+#include "PlatformIntrinsics.h"
+#include "ScopedTimer.h"
+
 #include <cstring>
 
 namespace ZSharp {
@@ -11,6 +14,10 @@ UIContainer::UIContainer(size_t width, size_t height, const String& name)
 UIContainer::~UIContainer() {
   if (mBackgroundImage != nullptr) {
     delete mBackgroundImage;
+  }
+
+  if (mImageData != nullptr) {
+    delete mImageData;
   }
 }
 
@@ -27,28 +34,39 @@ void UIContainer::SetSpacing(size_t space) {
 }
 
 void UIContainer::DrawBackgroundImage(uint8* screen, size_t width, size_t height) {
-  Texture* texture = mBackgroundImage->GetTexture();
-  size_t textureWidth = texture->Width(0);
-  size_t textureHeight = texture->Height(0);
-  size_t textureStride = textureWidth * 4;
-  uint8* textureData = texture->Data(0);
+  NamedScopedTimer(UIContainerDrawBackgroundImage);
 
-  size_t screenStride = width * 4;
-  size_t copyStride = textureStride;
+  if (mImageWidth != width || mImageHeight != height) {
+    if (mImageData != nullptr) {
+      mImageData = (uint8*)PlatformReAlloc(mImageData, width * height * 4);
+    }
+    else {
+      mImageData = (uint8*)PlatformMalloc(width * height * 4);
+    }
 
-  if (height < textureHeight) {
-    textureHeight = height;
+    Texture* texture = mBackgroundImage->GetTexture();
+
+    size_t textureWidth = 0;
+    size_t textureHeight = 0;
+    uint8* textureData = nullptr;
+
+    for (size_t i = 0; i < texture->NumMips(); ++i) {
+      textureWidth = texture->Width(i);
+      textureHeight = texture->Height(i);
+      textureData = texture->Data(i);
+
+      if (textureWidth < width && textureHeight < height) {
+        break;
+      }
+    }
+
+
+    Unaligned_BilinearScaleImage(textureData, textureWidth, textureHeight, mImageData, width, height);
+    mImageWidth = width;
+    mImageHeight = height;
   }
 
-  if (width < textureWidth) {
-    copyStride = width * 4;
-  }
-
-  for (size_t y = 0; y < textureHeight; ++y) {
-    uint8* current = textureData + (y * textureStride);
-    uint8* currentScreen = screen + (y * screenStride);
-    memcpy(currentScreen, current, copyStride);
-  }
+  Aligned_Memcpy(screen, mImageData, width * height * 4);
 }
 
 }

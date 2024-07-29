@@ -472,6 +472,212 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
   }
 }
 
+void Unaligned_BilinearScaleImage(uint8* source, size_t sourceWidth, size_t sourceHeight, uint8* dest, size_t destWidth, size_t destHeight) {
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    float ratioXValue = ((float)sourceWidth - 1) / ((float)destWidth - 1);
+    float ratioYValue = ((float)sourceHeight - 1) / ((float)destHeight - 1);
+    __m128 ratioX = _mm_set_ps1(ratioXValue);
+    __m128 ratioY = _mm_set_ps1(ratioYValue);
+
+    __m128 xScale = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
+    const size_t sourceStride = sourceWidth * 4;
+    __m128 strideScale = _mm_set_ps1((float)(sourceStride));
+    __m128 indexScale = _mm_set_ps1(4.f);
+    __m128 lerpOne = _mm_set_ps1(1.f);
+
+    __m128i bShuffle = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 12,
+      0x80U, 0x80U, 0x80U, 8,
+      0x80U, 0x80U, 0x80U, 4,
+      0x80U, 0x80U, 0x80U, 0
+    );
+
+    __m128i gShuffle = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 13,
+      0x80U, 0x80U, 0x80U, 9,
+      0x80U, 0x80U, 0x80U, 5,
+      0x80U, 0x80U, 0x80U, 1
+    );
+
+    __m128i rShuffle = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 14,
+      0x80U, 0x80U, 0x80U, 10,
+      0x80U, 0x80U, 0x80U, 6,
+      0x80U, 0x80U, 0x80U, 2
+    );
+
+    __m128i aShuffle = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 15,
+      0x80U, 0x80U, 0x80U, 11,
+      0x80U, 0x80U, 0x80U, 7,
+      0x80U, 0x80U, 0x80U, 3
+    );
+
+    for (size_t y = 0; y < destHeight; ++y) {
+      uint8* destRow = dest + (y * destWidth * 4);
+      __m128 yValues = _mm_set_ps1((float)y);
+
+      size_t x = 0;
+      for (; x + 4 < destWidth; x += 4) {
+        __m128 xValues = _mm_add_ps(_mm_set_ps1((float)x), xScale);
+
+        __m128 xRatios = _mm_mul_ps(ratioX, xValues);
+        __m128 yRatios = _mm_mul_ps(ratioY, yValues);
+
+        __m128 xLeft = _mm_floor_ps(xRatios);
+        __m128 yLeft = _mm_floor_ps(yRatios);
+        __m128 xRight = _mm_ceil_ps(xRatios);
+        __m128 yRight = _mm_ceil_ps(yRatios);
+
+        __m128 xWeight = _mm_sub_ps(xRatios, xLeft);
+        __m128 yWeight = _mm_sub_ps(yRatios, yLeft);
+
+        __m128 xLeftInt = _mm_mul_ps(xLeft, indexScale);
+        __m128 yLeftInt = yLeft;
+        __m128 xRightInt = _mm_mul_ps(xRight, indexScale);
+        __m128 yRightInt = yRight;
+
+        __m128i topLeftIndices = _mm_cvtps_epi32(_mm_add_ps(_mm_mul_ps(yLeftInt, strideScale), xLeftInt));
+        __m128i topRightIndices = _mm_cvtps_epi32(_mm_add_ps(_mm_mul_ps(yLeftInt, strideScale), xRightInt));
+        __m128i bottomLeftIndices = _mm_cvtps_epi32(_mm_add_ps(_mm_mul_ps(yRightInt, strideScale), xLeftInt));
+        __m128i bottomRightIndices = _mm_cvtps_epi32(_mm_add_ps(_mm_mul_ps(yRightInt, strideScale), xRightInt));
+
+        __m128i topLeft = _mm_i32gather_epi32((int32*)source, topLeftIndices, 1);
+        __m128i topRight = _mm_i32gather_epi32((int32*)source, topRightIndices, 1);
+        __m128i bottomLeft = _mm_i32gather_epi32((int32*)source, bottomLeftIndices, 1);
+        __m128i bottomRight = _mm_i32gather_epi32((int32*)source, bottomRightIndices, 1);
+
+        __m128 topLeftScale = _mm_mul_ps(_mm_sub_ps(lerpOne, xWeight), _mm_sub_ps(lerpOne, yWeight));
+        __m128 topRightScale = _mm_mul_ps(xWeight, _mm_sub_ps(lerpOne, yWeight));
+        __m128 bottomLeftScale = _mm_mul_ps(yWeight, _mm_sub_ps(lerpOne, xWeight));
+        __m128 bottomRightScale = _mm_mul_ps(xWeight, yWeight);
+
+        __m128i topLeftColor = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(_mm_add_ps(
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, aShuffle)), topLeftScale),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, aShuffle)), topRightScale)),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, aShuffle)), bottomLeftScale)),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, aShuffle)), bottomRightScale)));
+
+        __m128i topRightColor = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(_mm_add_ps(
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, rShuffle)), topLeftScale),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, rShuffle)), topRightScale)),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, rShuffle)), bottomLeftScale)),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, rShuffle)), bottomRightScale)));
+
+        __m128i bottomLeftColor = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(_mm_add_ps(
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, gShuffle)), topLeftScale),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, gShuffle)), topRightScale)),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, gShuffle)), bottomLeftScale)),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, gShuffle)), bottomRightScale)));
+
+        __m128i bottomRightColor = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(_mm_add_ps(
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, bShuffle)), topLeftScale),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, bShuffle)), topRightScale)),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, bShuffle)), bottomLeftScale)),
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, bShuffle)), bottomRightScale)));
+
+        topLeftColor = _mm_slli_epi32(topLeftColor, 24);
+        topRightColor = _mm_slli_epi32(topRightColor, 16);
+        bottomLeftColor = _mm_slli_epi32(bottomLeftColor, 8);
+
+        __m128i finalColor = _mm_or_si128(_mm_or_si128(_mm_or_si128(topLeftColor, topRightColor), bottomLeftColor), bottomRightColor);
+
+        _mm_storeu_si128((__m128i*)(destRow + (x * 4)), finalColor);
+      }
+
+      for (; x < destWidth; ++x) {
+        float xRatio = ratioXValue * x;
+        float yRatio = ratioYValue * y;
+
+        size_t xLeft = (size_t)floorf(xRatio);
+        size_t yLeft = (size_t)floorf(yRatio);
+        size_t xRight = (size_t)ceilf(xRatio);
+        size_t yRight = (size_t)ceilf(yRatio);
+
+        float xWeight = xRatio - xLeft;
+        float yWeight = yRatio - yLeft;
+
+        uint8* topLeft = source + (yLeft * sourceStride) + (xLeft * 4);
+        uint8* topRight = source + (yLeft * sourceStride) + (xRight * 4);
+        uint8* bottomLeft = source + (yRight * sourceStride) + (xLeft * 4);
+        uint8* bottomRight = source + (yRight * sourceStride) + (xRight * 4);
+
+        float topLeftScale = (1.f - xWeight) * (1.f - yWeight);
+        float topRightScale = xWeight * (1.f - yWeight);
+        float bottomLeftScale = yWeight * (1.f - xWeight);
+        float bottomRightScale = xWeight * yWeight;
+
+        destRow[(x * 4)] = (uint8)(topLeft[0] * topLeftScale +
+          topRight[0] * topRightScale +
+          bottomLeft[0] * bottomLeftScale +
+          bottomRight[0] * bottomRightScale);
+        destRow[(x * 4) + 1] = (uint8)(topLeft[1] * topLeftScale +
+          topRight[1] * topRightScale +
+          bottomLeft[1] * bottomLeftScale +
+          bottomRight[1] * bottomRightScale);
+        destRow[(x * 4) + 2] = (uint8)(topLeft[2] * topLeftScale +
+          topRight[2] * topRightScale +
+          bottomLeft[2] * bottomLeftScale +
+          bottomRight[2] * bottomRightScale);
+        destRow[(x * 4) + 3] = (uint8)(topLeft[3] * topLeftScale +
+          topRight[3] * topRightScale +
+          bottomLeft[3] * bottomLeftScale +
+          bottomRight[3] * bottomRightScale);
+      }
+    }
+  }
+  else {
+    float ratioX = ((float)sourceWidth - 1) / ((float)destWidth - 1);
+    float ratioY = ((float)sourceHeight - 1) / ((float)destHeight - 1);
+
+    size_t sourceStride = sourceWidth * 4;
+    size_t destStride = destWidth * 4;
+
+    for (size_t y = 0; y < destHeight; ++y) {
+      uint8* destRow = dest + (y * destStride);
+      for (size_t x = 0; x < destWidth; ++x) {
+        float xRatio = ratioX * x;
+        float yRatio = ratioY * y;
+
+        size_t xLeft = (size_t)floorf(xRatio);
+        size_t yLeft = (size_t)floorf(yRatio);
+        size_t xRight = (size_t)ceilf(xRatio);
+        size_t yRight = (size_t)ceilf(yRatio);
+
+        float xWeight = xRatio - xLeft;
+        float yWeight = yRatio - yLeft;
+
+        uint8* topLeft = source + (yLeft * sourceStride) + (xLeft * 4);
+        uint8* topRight = source + (yLeft * sourceStride) + (xRight * 4);
+        uint8* bottomLeft = source + (yRight * sourceStride) + (xLeft * 4);
+        uint8* bottomRight = source + (yRight * sourceStride) + (xRight * 4);
+
+        float topLeftScale = (1.f - xWeight) * (1.f - yWeight);
+        float topRightScale = xWeight * (1.f - yWeight);
+        float bottomLeftScale = yWeight * (1.f - xWeight);
+        float bottomRightScale = xWeight * yWeight;
+
+        destRow[(x * 4)] = (uint8)(topLeft[0] * topLeftScale +
+          topRight[0] * topRightScale +
+          bottomLeft[0] * bottomLeftScale +
+          bottomRight[0] * bottomRightScale);
+        destRow[(x * 4) + 1] = (uint8)(topLeft[1] * topLeftScale +
+          topRight[1] * topRightScale +
+          bottomLeft[1] * bottomLeftScale +
+          bottomRight[1] * bottomRightScale);
+        destRow[(x * 4) + 2] = (uint8)(topLeft[2] * topLeftScale +
+          topRight[2] * topRightScale +
+          bottomLeft[2] * bottomLeftScale +
+          bottomRight[2] * bottomRightScale);
+        destRow[(x * 4) + 3] = (uint8)(topLeft[3] * topLeftScale +
+          topRight[3] * topRightScale +
+          bottomLeft[3] * bottomLeftScale +
+          bottomRight[3] * bottomRightScale);
+      }
+    }
+  }
+}
+
 void Unaligned_GenerateMipLevel(uint8* nextMip, size_t nextWidth, size_t nextHeight, uint8* lastMip, size_t lastWidth, size_t lastHeight) {
   (void)lastHeight;
   size_t nextMipStride = nextWidth * 4;

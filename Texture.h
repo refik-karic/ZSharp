@@ -67,6 +67,8 @@ class Texture final {
 
   void GenerateMips();
 
+  size_t NumMips() const;
+
   private:
   size_t mNumChannels = 0;
   struct MipMap {

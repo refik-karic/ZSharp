@@ -36,6 +36,10 @@ void UIContainer::SetSpacing(size_t space) {
 void UIContainer::DrawBackgroundImage(uint8* screen, size_t width, size_t height) {
   NamedScopedTimer(UIContainerDrawBackgroundImage);
 
+  if (mBackgroundImage == nullptr || mBackgroundImage->GetTexture() == nullptr) {
+    return;
+  }
+
   if (mImageWidth != width || mImageHeight != height) {
     if (mImageData != nullptr) {
       mImageData = (uint8*)PlatformReAlloc(mImageData, width * height * 4);

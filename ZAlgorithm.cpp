@@ -50,7 +50,7 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     const float* v2 = vertexBufferData + i2;
     const float* v3 = vertexBufferData + i3;
 
-    float clipBuffer[ScatchSize] = {};
+    float clipBuffer[ScatchSize];
     memcpy(clipBuffer, v1, vertByteSize);
     memcpy(clipBuffer + stride, v2, vertByteSize);
     memcpy(clipBuffer + (stride * 2), v3, vertByteSize);
@@ -124,7 +124,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
     const float* v2 = vertexBufferData + i2;
     const float* v3 = vertexBufferData + i3;
 
-    float clipBuffer[ScatchSize] = {};
+    float clipBuffer[ScatchSize];
     memcpy(clipBuffer, v1, vertByteSize);
     memcpy(clipBuffer + stride, v2, vertByteSize);
     memcpy(clipBuffer + (stride * 2), v3, vertByteSize);
@@ -266,14 +266,15 @@ int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const 
         */
 
         // Clipped vertex.
-        memcpy(clipBuffer + (numOutputVerts * stride),
-          clipPoint, 
-          sizeof(clipPoint));
+        clipBuffer[(numOutputVerts * stride)] = clipPoint[0];
+        clipBuffer[(numOutputVerts * stride) + 1] = clipPoint[1];
+        clipBuffer[(numOutputVerts * stride) + 2] = clipPoint[2];
+        clipBuffer[(numOutputVerts * stride) + 3] = clipPoint[3];
 
         // Clipped attributes.
         float* attributeOffset = (clipBuffer + (numOutputVerts * stride)) + 4;
-        for (int32 j = 0; j < stride - 4; ++j) {
-          attributeOffset[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
+        for (int32 j = 0; j < stride - 4; j+=4) {
+          Unaligned_LerpAttribute(currentAttributes + j, nextAttributes + j, attributeOffset + j, parametricValue);
         }
         ++numOutputVerts;
       }
@@ -285,14 +286,15 @@ int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const 
         ++numOutputVerts;
 
         // Clipped vertex.
-        memcpy(clipBuffer + (numOutputVerts * stride),
-          clipPoint, 
-          sizeof(clipPoint));
+        clipBuffer[(numOutputVerts * stride)] = clipPoint[0];
+        clipBuffer[(numOutputVerts * stride) + 1] = clipPoint[1];
+        clipBuffer[(numOutputVerts * stride) + 2] = clipPoint[2];
+        clipBuffer[(numOutputVerts * stride) + 3] = clipPoint[3];
 
         // Clipped attributes.
         float* attributeOffset = (clipBuffer + (numOutputVerts * stride)) + 4;
-        for (int32 j = 0; j < stride - 4; ++j) {
-          attributeOffset[j] = Lerp(currentAttributes[j], nextAttributes[j], parametricValue);
+        for (int32 j = 0; j < stride - 4; j+=4) {
+          Unaligned_LerpAttribute(currentAttributes + j, nextAttributes + j, attributeOffset + j, parametricValue);
         }
         ++numOutputVerts;
       }

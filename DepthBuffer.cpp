@@ -38,7 +38,7 @@ void DepthBuffer::Clear(size_t begin, size_t size) {
     return;
   }
 
-  const float clearValue = -INFINITY;
+  const float clearValue = -1.f;
 
   size_t nearestSize = RoundDownNearestMultiple(size, 4);
   if (nearestSize > 0) {

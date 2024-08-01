@@ -148,7 +148,7 @@ void GameInstance::TickWorld() {
     ZColor color;
     if (mVisualizeDepth) {
       buffer = mRenderer.GetDepth();
-      color = ZColors::WHITE;
+      color = ZColors::GREEN;
     }
     else {
       buffer = mRenderer.GetFrameBuffer().GetBuffer();
@@ -261,7 +261,7 @@ void GameInstance::PauseTransforms() {
 }
 
 void GameInstance::Initialize(bool skipTitleScreen) {
-  if (skipTitleScreen) {
+  if (!skipTitleScreen) {
     LoadWorld();
   }
   else {

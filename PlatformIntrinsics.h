@@ -58,6 +58,8 @@ bool Unaligned_InsidePlane(const float point[4], const float clipEdge[4], const 
 
 void Unaligned_ParametricVector4D(const float point, const float start[4], const float end[4], float outVec[4]);
 
+void Unaligned_LerpAttribute(const float attributeA[4], const float attributeB[4], float outAttribute[4], float parametricT);
+
 void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result);
 
 void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes);

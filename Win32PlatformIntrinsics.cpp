@@ -243,6 +243,10 @@ void Unaligned_ParametricVector4D(const float point, const float start[4], const
   _mm_storeu_ps(outVec, _mm_add_ps(_mm_mul_ps(_mm_sub_ps(endVec, startVec), pointVec), startVec));
 }
 
+void Unaligned_LerpAttribute(const float attributeA[4], const float attributeB[4], float outAttribute[4], float parametricT) {
+  _mm_storeu_ps(outAttribute, Lerp128(_mm_loadu_ps(attributeA), _mm_loadu_ps(attributeB), _mm_set_ps1(parametricT)));
+}
+
 void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result) {
   __m128 a0 = _mm_set_ps1(a[0]);
   __m128 a1 = _mm_set_ps1(a[1]);
@@ -848,8 +852,6 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
   ZColor black(ZColors::BLACK);
   ZColor white(ZColors::WHITE);
 
-  size_t currentIndex = 0;
-
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     __m256 rbVec = _mm256_set1_ps((float)black.R());
     __m256 gbVec = _mm256_set1_ps((float)black.G());
@@ -861,20 +863,15 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
 
     __m256i initialColor = _mm256_set1_epi32(0xFF000000);
 
-    __m256 zNear = _mm256_set1_ps(0.333f);
-    __m256 zFar = _mm256_set1_ps(1.f);
-    __m256 zNearNumerator = _mm256_mul_ps(zNear, _mm256_set1_ps(2.f));
-    __m256 zDenominatorFarNearSub = _mm256_sub_ps(zFar, zNear);
-    __m256 zDenominatorFarNearAdd = _mm256_add_ps(zFar, zNear);
-
     for (size_t h = 0; h < height; ++h) {
-      for (size_t w = 0; w + 8 < width; w += 8, currentIndex += 8, depth += 8) {
-        __m256 depthValues = _mm256_load_ps(depth);
-        __m256 parametricT = _mm256_div_ps(zNearNumerator, _mm256_sub_ps(zDenominatorFarNearAdd, _mm256_mul_ps(depthValues, zDenominatorFarNearSub)));
+      float* currentDepth = (depth + (h * width));
+      size_t w = 0;
+      for (; w + 8 < width; w += 8, currentDepth += 8) {
+        __m256 depthValues = _mm256_load_ps(currentDepth);
 
-        __m256 lerpedR = Lerp256(rbVec, rwVec, parametricT);
-        __m256 lerpedG = Lerp256(gbVec, gwVec, parametricT);
-        __m256 lerpedB = Lerp256(bbVec, bwVec, parametricT);
+        __m256 lerpedR = Lerp256(rwVec, rbVec, depthValues);
+        __m256 lerpedG = Lerp256(gwVec, gbVec, depthValues);
+        __m256 lerpedB = Lerp256(bwVec, bbVec, depthValues);
 
         __m256i convR = _mm256_cvtps_epi32(lerpedR);
         __m256i convG = _mm256_cvtps_epi32(lerpedG);
@@ -888,7 +885,12 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
         finalColor = _mm256_or_si256(finalColor, convG);
         finalColor = _mm256_or_si256(finalColor, convB);
 
-        _mm256_storeu_si256((__m256i*)depth, finalColor);
+        _mm256_storeu_si256((__m256i*)currentDepth, finalColor);
+      }
+
+      for (; w < width; ++w, ++currentDepth) {
+        float parametricT = *currentDepth;
+        (*((uint32*)currentDepth)) = ZColor::LerpColors(white, black, parametricT);
       }
     }
   }
@@ -903,20 +905,15 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
 
     __m128i initialColor = _mm_set1_epi32(0xFF000000);
 
-    __m128 zNear = _mm_set_ps1(0.333f);
-    __m128 zFar = _mm_set_ps1(1.f);
-    __m128 zNearNumerator = _mm_mul_ps(zNear, _mm_set_ps1(2.f));
-    __m128 zDenominatorFarNearSub = _mm_sub_ps(zFar, zNear);
-    __m128 zDenominatorFarNearAdd = _mm_add_ps(zFar, zNear);
-
     for (size_t h = 0; h < height; ++h) {
-      for (size_t w = 0; w + 4 < width; w += 4, currentIndex += 4, depth += 4) {
-        __m128 depthValues = _mm_load_ps(depth);
-        __m128 parametricT = _mm_div_ps(zNearNumerator, _mm_sub_ps(zDenominatorFarNearAdd, _mm_mul_ps(depthValues, zDenominatorFarNearSub)));
+      float* currentDepth = (depth + (h * width));
+      size_t w = 0;
+      for (; w + 4 < width; w += 4, currentDepth += 4) {
+        __m128 depthValues = _mm_loadu_ps(currentDepth);
 
-        __m128 lerpedR = Lerp128(rbVec, rwVec, parametricT);
-        __m128 lerpedG = Lerp128(gbVec, gwVec, parametricT);
-        __m128 lerpedB = Lerp128(bbVec, bwVec, parametricT);
+        __m128 lerpedR = Lerp128(rwVec, rbVec, depthValues);
+        __m128 lerpedG = Lerp128(gwVec, gbVec, depthValues);
+        __m128 lerpedB = Lerp128(bwVec, bbVec, depthValues);
 
         __m128i convR = _mm_cvtps_epi32(lerpedR);
         __m128i convG = _mm_cvtps_epi32(lerpedG);
@@ -930,23 +927,14 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
         finalColor = _mm_or_si128(finalColor, convG);
         finalColor = _mm_or_si128(finalColor, convB);
 
-        _mm_storeu_si128((__m128i*)depth, finalColor);
+        _mm_storeu_si128((__m128i*)currentDepth, finalColor);
+      }
+
+      for (; w < width; ++w, ++currentDepth) {
+        float parametricT = *currentDepth;
+        (*((uint32*)currentDepth)) = ZColor::LerpColors(white, black, parametricT);
       }
     }
-  }
-
-  size_t endBuffer = width * height;
-
-  float zNear = 0.333f;
-  float zFar = 1.f;
-  float zNearNumerator = zNear * 2.f;
-  float zDenominatorFarNearSub = zFar - zNear;
-  float zDenominatorFarNearAdd = zFar + zNear;
-
-  for (size_t w = currentIndex; w < endBuffer; ++w) {
-    float parametricT = zNearNumerator / (zDenominatorFarNearAdd - ((*depth) * zDenominatorFarNearSub));
-    (*((uint32*)depth)) = ZColor::LerpColors(black, white, parametricT);
-    ++depth;
   }
 }
 
@@ -968,9 +956,6 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     __m256i devOpacity = _mm256_set1_epi16(devOpacityValue);
     __m256i bufferOpacity = _mm256_set1_epi16(bufferOpacityValue);
-
-    // Need this to clear high 8 bits of the 16 unpacked value
-    __m256i xScale = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
 
     for (size_t y = 0; y < height; ++y) {
       size_t x = 0;

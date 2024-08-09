@@ -72,24 +72,45 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
   case WM_MOUSEMOVE:
     app.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
     return 0;
-  case WM_CHAR:
-  {
-    // TODO: WM_CHAR doesn't tell us when the key is down or up.
-    //  Revisit in the future in case we actually need key down/up for something.
-    app.OnKeyDown(static_cast<ZSharp::uint8>(wParam));
-  }
-    return 0;
   case WM_KEYDOWN:
   {
-    if (!isalpha((int)wParam) && !isspace((int)wParam)) {
+    if (IsSpecialKey((ZSharp::int32)wParam)) {
       app.OnKeyDown(static_cast<ZSharp::uint8>(wParam));
+    }
+    else {
+      UINT scanCode = MapVirtualKeyExW((UINT)wParam, MAPVK_VK_TO_VSC, 0);
+      BYTE buff[256] = {};
+      WORD keys[2] = {};
+      if (ToAscii((UINT)wParam, scanCode, buff, keys, 0)) {
+        if (isalpha(keys[0]) && !isdigit(keys[0])) {
+          if (GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)) {
+            keys[0] = (WORD)toupper(keys[0]);
+          }
+        }
+
+        app.OnKeyDown(static_cast<ZSharp::uint8>(keys[0]));
+      }
     }
   }
     return 0;
   case WM_KEYUP:
   {
-    if (!isalpha((int)wParam) && !isspace((int)wParam)) {
+    if (IsSpecialKey((ZSharp::int32)wParam)) {
       app.OnKeyUp(static_cast<ZSharp::uint8>(wParam));
+    }
+    else {
+      UINT scanCode = MapVirtualKeyExW((UINT)wParam, MAPVK_VK_TO_VSC, 0);
+      BYTE buff[256] = {};
+      WORD keys[2] = {};
+      if (ToAscii((UINT)wParam, scanCode, buff, keys, 0)) {
+        if (isalpha(keys[0]) && !isdigit(keys[0])) {
+          if (GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)) {
+            keys[0] = (WORD)toupper(keys[0]);
+          }
+        }
+
+        app.OnKeyUp(static_cast<ZSharp::uint8>(keys[0]));
+      }
     }
   }
     return 0;
@@ -130,7 +151,6 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
     for (MSG msg; mWindowHandle != nullptr;) {
       while (PeekMessageW(&msg, mWindowHandle, 0, 0, 0)) {
         if (GetMessageW(&msg, mWindowHandle, 0, 0)) {
-          TranslateMessage(&msg);
           DispatchMessageW(&msg);
         }
       }
@@ -649,6 +669,17 @@ void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds) {
     &Win32PlatformApplication::OnTimerThunk,
     this,
     true);
+}
+
+bool Win32PlatformApplication::IsSpecialKey(ZSharp::int32 key) {
+  return key == VK_SPACE || 
+    key == VK_ESCAPE ||
+    key == VK_UP ||
+    key == VK_LEFT ||
+    key == VK_RIGHT ||
+    key == VK_DOWN ||
+    key == VK_RETURN ||
+    key == VK_BACK;
 }
 
 #endif

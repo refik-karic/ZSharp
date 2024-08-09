@@ -79,6 +79,8 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   void PauseTimer();
 
   void StartTimer(ZSharp::int64 relativeNanoseconds);
+
+  static bool IsSpecialKey(ZSharp::int32 key);
 };
 
 #endif

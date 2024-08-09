@@ -27,7 +27,7 @@ class DevConsole final {
   bool mOpen = false;
 
   size_t mCaret = 0;
-  int8 mActiveBuffer[512];
+  int8* mActiveBuffer;
   List<String> mHistory;
   size_t mHistoryPos = 0;
 

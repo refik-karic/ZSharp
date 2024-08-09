@@ -69,6 +69,7 @@ void InputManager::Process() {
 
   OnMouseMoveDelegate.Broadcast(mCurrentMouseX, mCurrentMouseY, mMousePressed);
 
+  // TOOD: Need to fix the key up win32 code to avoid having to clear this on each frame.
   mKeyboard.Fill(KeyState::Clear);
   mMiscKeys.Fill(KeyState::Clear);
 }
@@ -76,4 +77,13 @@ void InputManager::Process() {
 bool InputManager::IsMousePressed() const {
   return mMousePressed;
 }
+
+InputManager::KeyState InputManager::GetKeyState(uint8 key) {
+  return mKeyboard[key];
+}
+
+InputManager::KeyState InputManager::GetMiscKeyState(MiscKey key) {
+  return mMiscKeys[static_cast<uint8>(key)];
+}
+
 }

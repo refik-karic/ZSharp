@@ -21,6 +21,8 @@ DevConsole::DevConsole() {
     return;
   }
 
+  mActiveBuffer = (int8*)PlatformMalloc(512);
+
   InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));
@@ -36,6 +38,10 @@ DevConsole::DevConsole() {
 DevConsole::~DevConsole() {
   if (PlatformGetBuildType() == "Release") {
     return;
+  }
+
+  if (mActiveBuffer != nullptr) {
+    PlatformFree(mActiveBuffer);
   }
 
   InputManager& inputManager = InputManager::Get();

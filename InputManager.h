@@ -55,6 +55,10 @@ class InputManager final {
 
   bool IsMousePressed() const;
 
+  KeyState GetKeyState(uint8 key);
+
+  KeyState GetMiscKeyState(MiscKey key);
+
   private:
   InputManager();
 

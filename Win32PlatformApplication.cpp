@@ -78,7 +78,7 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     //  Revisit in the future in case we actually need key down/up for something.
     app.OnKeyDown(static_cast<ZSharp::uint8>(wParam));
   }
-    break;
+    return 0;
   case WM_KEYDOWN:
   {
     if (!isalpha((int)wParam) && !isspace((int)wParam)) {

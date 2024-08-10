@@ -39,6 +39,13 @@ Camera::~Camera() {
   OnWindowSizeChangedDelegate().Remove(Delegate<size_t, size_t>::FromMember<Camera, &Camera::OnResize>(this));
 }
 
+void Camera::ResetOrientation() {
+  mLook.Clear();
+  mUp.Clear();
+  mLook[2] = -1.f;
+  mUp[1] = 1.f;
+}
+
 Vec3 Camera::GetLook() const {
   return mLook;
 }

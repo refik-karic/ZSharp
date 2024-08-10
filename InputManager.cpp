@@ -1,4 +1,5 @@
 #include "InputManager.h"
+#include "PlatformApplication.h"
 
 namespace ZSharp {
 InputManager::InputManager()
@@ -69,7 +70,6 @@ void InputManager::Process() {
 
   OnMouseMoveDelegate.Broadcast(mCurrentMouseX, mCurrentMouseY, mMousePressed);
 
-  // TOOD: Need to fix the key up win32 code to avoid having to clear this on each frame.
   mKeyboard.Fill(KeyState::Clear);
   mMiscKeys.Fill(KeyState::Clear);
 }
@@ -79,11 +79,11 @@ bool InputManager::IsMousePressed() const {
 }
 
 InputManager::KeyState InputManager::GetKeyState(uint8 key) {
-  return mKeyboard[key];
+  return IsKeyPressed(key) ? KeyState::Down : KeyState::Up;
 }
 
 InputManager::KeyState InputManager::GetMiscKeyState(MiscKey key) {
-  return mMiscKeys[static_cast<uint8>(key)];
+  return IsKeyPressed(static_cast<uint8>(key)) ? KeyState::Down : KeyState::Up;
 }
 
 }

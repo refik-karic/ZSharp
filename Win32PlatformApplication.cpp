@@ -44,6 +44,12 @@ PlatformApplication* GetApplication() {
   return &app;
 }
 
+bool IsKeyPressed(uint8 key) {
+  HKL keyboard = GetKeyboardLayout(0);
+  short virtualKey = VkKeyScanExA(key, keyboard);
+  return GetAsyncKeyState(virtualKey);
+}
+
 }
 
 Win32PlatformApplication& Win32PlatformApplication::Get() {
@@ -82,13 +88,12 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
       BYTE buff[256] = {};
       WORD keys[2] = {};
       if (ToAscii((UINT)wParam, scanCode, buff, keys, 0)) {
-        if (isalpha(keys[0]) && !isdigit(keys[0])) {
-          if (GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)) {
-            keys[0] = (WORD)toupper(keys[0]);
-          }
+        int firstKey = keys[0];
+        if (isalpha(firstKey) && !isdigit(firstKey) && IsShiftPressed()) {
+          firstKey = (WORD)toupper(firstKey);
         }
 
-        app.OnKeyDown(static_cast<ZSharp::uint8>(keys[0]));
+        app.OnKeyDown(static_cast<ZSharp::uint8>(firstKey));
       }
     }
   }
@@ -103,13 +108,12 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
       BYTE buff[256] = {};
       WORD keys[2] = {};
       if (ToAscii((UINT)wParam, scanCode, buff, keys, 0)) {
-        if (isalpha(keys[0]) && !isdigit(keys[0])) {
-          if (GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT)) {
-            keys[0] = (WORD)toupper(keys[0]);
-          }
+        int firstKey = keys[0];
+        if (isalpha(firstKey) && !isdigit(firstKey) && IsShiftPressed()) {
+          firstKey = (WORD)toupper(firstKey);
         }
 
-        app.OnKeyUp(static_cast<ZSharp::uint8>(keys[0]));
+        app.OnKeyUp(static_cast<ZSharp::uint8>(firstKey));
       }
     }
   }
@@ -680,6 +684,10 @@ bool Win32PlatformApplication::IsSpecialKey(ZSharp::int32 key) {
     key == VK_DOWN ||
     key == VK_RETURN ||
     key == VK_BACK;
+}
+
+bool Win32PlatformApplication::IsShiftPressed() {
+  return GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
 }
 
 #endif

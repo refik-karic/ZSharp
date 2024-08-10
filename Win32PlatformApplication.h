@@ -81,6 +81,8 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   void StartTimer(ZSharp::int64 relativeNanoseconds);
 
   static bool IsSpecialKey(ZSharp::int32 key);
+
+  static bool IsShiftPressed();
 };
 
 #endif

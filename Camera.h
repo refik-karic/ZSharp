@@ -23,6 +23,8 @@ class Camera final : public WorldObject {
 
   ~Camera();
 
+  void ResetOrientation();
+
   Vec3 GetLook() const;
 
   Vec3 GetUp() const;

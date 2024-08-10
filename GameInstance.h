@@ -64,6 +64,8 @@ class GameInstance final {
 
   DevConsole mDevConsole;
 
+  ConsoleVariable<void> mCameraReset;
+
   void PauseTransforms();
 
   void LoadWorld();
@@ -83,6 +85,8 @@ class GameInstance final {
   Vec3 ProjectClick(float x, float y);
 
   void ChangeSpeed(int64 amount);
+
+  void ResetCamera();
 
   void OnKeyDown(uint8 key);
 

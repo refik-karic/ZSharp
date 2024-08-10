@@ -22,7 +22,8 @@ namespace ZSharp {
 ConsoleVariable<bool> DebugTransforms("DebugTransforms", true);
 ConsoleVariable<float> CameraSpeed("CameraSpeed", 1.f);
 
-GameInstance::GameInstance() {
+GameInstance::GameInstance()
+  : mCameraReset("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this)) {
 
 }
 
@@ -256,6 +257,13 @@ void GameInstance::ChangeSpeed(int64 amount) {
   }
 }
 
+void GameInstance::ResetCamera() {
+  if (!mFrontEnd.IsVisible() && mWorld.IsLoaded()) {
+    mCamera.ResetOrientation();
+    mCamera.Position() = Vec3(0.f, 5.f, 50.f);
+  }
+}
+
 void GameInstance::PauseTransforms() {
   mPauseTransforms = !mPauseTransforms;
 }
@@ -333,6 +341,8 @@ void GameInstance::OnKeyDown(uint8 key) {
     return;
   }
 
+  InputManager& input = InputManager::Get();
+
   switch (key) {
   case 'p':
     PauseTransforms();
@@ -344,16 +354,52 @@ void GameInstance::OnKeyDown(uint8 key) {
     mRenderer.ToggleRenderMode(RenderMode::FLAT);
     break;
   case 'w':
+  {
+    if (input.GetKeyState('a') == InputManager::KeyState::Down) {
+      MoveCamera(GameInstance::Direction::LEFT);
+    }
+    else if (input.GetKeyState('d') == InputManager::KeyState::Down) {
+      MoveCamera(GameInstance::Direction::RIGHT);
+    }
+
     MoveCamera(GameInstance::Direction::FORWARD);
+  }
     break;
   case 's':
+  {
+    if (input.GetKeyState('a') == InputManager::KeyState::Down) {
+      MoveCamera(GameInstance::Direction::LEFT);
+    }
+    else if (input.GetKeyState('d') == InputManager::KeyState::Down) {
+      MoveCamera(GameInstance::Direction::RIGHT);
+    }
+
     MoveCamera(GameInstance::Direction::BACK);
+  }
     break;
   case 'a':
+  {
+    if (input.GetKeyState('w') == InputManager::KeyState::Down) {
+      MoveCamera(GameInstance::Direction::FORWARD);
+    }
+    else if (input.GetKeyState('s') == InputManager::KeyState::Down) {
+      MoveCamera(GameInstance::Direction::BACK);
+    }
+
     MoveCamera(GameInstance::Direction::LEFT);
+  }
     break;
   case 'd':
+  {
+    if (input.GetKeyState('w') == InputManager::KeyState::Down) {
+      MoveCamera(GameInstance::Direction::FORWARD);
+    }
+    else if (input.GetKeyState('s') == InputManager::KeyState::Down) {
+      MoveCamera(GameInstance::Direction::BACK);
+    }
+
     MoveCamera(GameInstance::Direction::RIGHT);
+  }
     break;
   case 'q':
     RotateCamera(Mat4x4::Axis::Y, 1.0F);

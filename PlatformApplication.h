@@ -25,4 +25,6 @@ class PlatformApplication {
 
 PlatformApplication* GetApplication();
 
+bool IsKeyPressed(uint8 key);
+
 }

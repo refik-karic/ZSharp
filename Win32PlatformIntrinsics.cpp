@@ -1428,7 +1428,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
 
         // If all mask bits are set then none of these pixels are inside the triangle.
         if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
-          __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
+          __m256 depthVec = _mm256_loadu_ps(pixelDepth);
 
           __m256 zValues = _mm256_rcp_ps(_mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0)));
 
@@ -1682,18 +1682,18 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       const float* v2 = vertices + indices[i + 1];
       const float* v3 = vertices + indices[i + 2];
 
-      __m256 x0 = _mm256_broadcastss_ps(_mm_load_ps1(v1));
-      __m256 x1 = _mm256_broadcastss_ps(_mm_load_ps1(v2));
-      __m256 x2 = _mm256_broadcastss_ps(_mm_load_ps1(v3));
+      __m128 x0 = _mm_load_ss(v1);
+      __m128 x1 = _mm_load_ss(v2);
+      __m128 x2 = _mm_load_ss(v3);
 
-      __m256 y0 = _mm256_broadcastss_ps(_mm_load_ps1(v1 + 1));
-      __m256 y1 = _mm256_broadcastss_ps(_mm_load_ps1(v2 + 1));
-      __m256 y2 = _mm256_broadcastss_ps(_mm_load_ps1(v3 + 1));
+      __m128 y0 = _mm_load_ss(v1 + 1);
+      __m128 y1 = _mm_load_ss(v2 + 1);
+      __m128 y2 = _mm_load_ss(v3 + 1);
 
-      __m256 fminX = _mm256_min_ps(_mm256_min_ps(x0, x1), x2);
-      __m256 fminY = _mm256_min_ps(_mm256_min_ps(y0, y1), y2);
-      __m256 fmaxX = _mm256_max_ps(_mm256_max_ps(x0, x1), x2);
-      __m256 fmaxY = _mm256_max_ps(_mm256_max_ps(y0, y1), y2);
+      __m128 fminX = _mm_min_ss(_mm_min_ss(x0, x1), x2);
+      __m128 fminY = _mm_min_ss(_mm_min_ss(y0, y1), y2);
+      __m128 fmaxX = _mm_max_ss(_mm_max_ss(x0, x1), x2);
+      __m128 fmaxY = _mm_max_ss(_mm_max_ss(y0, y1), y2);
 
 #ifdef __clang__
       fminX = _mm256_round_ps(fminX, _MM_FROUND_FLOOR);
@@ -1702,52 +1702,55 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
       fmaxX = _mm256_round_ps(fmaxX, _MM_FROUND_CEIL);
       fmaxY = _mm256_round_ps(fmaxY, _MM_FROUND_CEIL);
 #else
-      fminX = _mm256_round_ps(fminX, _MM_ROUND_MODE_DOWN);
-      fminY = _mm256_round_ps(fminY, _MM_ROUND_MODE_DOWN);
+      fminX = _mm_round_ps(fminX, _MM_ROUND_MODE_DOWN);
+      fminY = _mm_round_ps(fminY, _MM_ROUND_MODE_DOWN);
 
-      fmaxX = _mm256_round_ps(fmaxX, _MM_ROUND_MODE_UP);
-      fmaxY = _mm256_round_ps(fmaxY, _MM_ROUND_MODE_UP);
+      fmaxX = _mm_round_ps(fmaxX, _MM_ROUND_MODE_UP);
+      fmaxY = _mm_round_ps(fmaxY, _MM_ROUND_MODE_UP);
 #endif
 
-      int32 minX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminX));
-      int32 maxX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxX));
-      int32 minY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminY));
-      int32 maxY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxY));
+      int32 minX = _mm_cvtss_si32(fminX);
+      int32 maxX = _mm_cvtss_si32(fmaxX);
+      int32 minY = _mm_cvtss_si32(fminY);
+      int32 maxY = _mm_cvtss_si32(fmaxY);
 
-      __m256 x1x0 = _mm256_sub_ps(x1, x0);
-      __m256 x2x1 = _mm256_sub_ps(x2, x1);
-      __m256 x0x2 = _mm256_sub_ps(x0, x2);
-      __m256 y1y0 = _mm256_sub_ps(y1, y0);
-      __m256 y2y0 = _mm256_sub_ps(y2, y0);
+      __m128 x1x0 = _mm_sub_ss(x1, x0);
+      __m128 x2x1 = _mm_sub_ss(x2, x1);
+      __m128 x0x2 = _mm_sub_ps(x0, x2);
+      __m128 y1y0 = _mm_sub_ps(y1, y0);
+      __m128 y2y0 = _mm_sub_ps(y2, y0);
 
-      __m256 invArea = _mm256_rcp_ps(_mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(x2, x0), y1y0), _mm256_mul_ps(y2y0, x1x0)));
+      __m128 invArea = _mm_rcp_ss(_mm_sub_ss(_mm_mul_ss(_mm_sub_ss(x2, x0), y1y0), _mm_mul_ss(y2y0, x1x0)));
         
-      __m256 z0 = _mm256_set1_ps(v1[3]);
-      __m256 invVert0 = _mm256_mul_ps(z0, invArea);
-      __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
-      __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
+      __m128 tmpZ = _mm_load_ss(v1 + 3);
+      __m256 z0 = _mm256_broadcastss_ps(tmpZ);
+      __m128 invVert0 = _mm_mul_ss(tmpZ, invArea);
+      __m128 invVert1 = _mm_mul_ss(_mm_load_ss(v2 + 3), invArea);
+      __m128 invVert2 = _mm_mul_ss(_mm_load_ss(v3 + 3), invArea);
 
-      __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
-      __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
+      __m256 z1z0 = _mm256_broadcastss_ps(_mm_sub_ss(invVert1, invVert0));
+      __m256 z2z0 = _mm256_broadcastss_ps(_mm_sub_ss(invVert2, invVert0));
 
-      __m256 uScaleFactor = _mm256_mul_ps(invArea, maxUValue);
-      __m256 vScaleFactor = _mm256_mul_ps(invArea, maxVValue);
+      __m128 uScaleFactor = _mm_mul_ss(invArea, _mm256_extractf128_ps(maxUValue, 0));
+      __m128 vScaleFactor = _mm_mul_ss(invArea, _mm256_extractf128_ps(maxVValue, 0));
 
-      __m256 u0 = _mm256_set1_ps(v1[4]);
-      __m256 invAttr00 = _mm256_mul_ps(u0, uScaleFactor);
-      __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), uScaleFactor);
-      __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), uScaleFactor);
+      __m128 tmpU = _mm_load_ss(v1 + 4);
+      __m256 u0 = _mm256_broadcastss_ps(tmpU);
+      __m128 invAttr00 = _mm_mul_ss(tmpU, uScaleFactor);
+      __m128 invAttr01 = _mm_mul_ss(_mm_load_ss(v2 + 4), uScaleFactor);
+      __m128 invAttr02 = _mm_mul_ss(_mm_load_ss(v3 + 4), uScaleFactor);
       u0 = _mm256_mul_ps(u0, maxUValue);
-      __m256 u1u0 = _mm256_sub_ps(invAttr01, invAttr00);
-      __m256 u2u0 = _mm256_sub_ps(invAttr02, invAttr00);
+      __m256 u1u0 = _mm256_broadcastss_ps(_mm_sub_ss(invAttr01, invAttr00));
+      __m256 u2u0 = _mm256_broadcastss_ps(_mm_sub_ss(invAttr02, invAttr00));
 
-      __m256 v0 = _mm256_set1_ps(v1[5]);
-      __m256 invAttr10 = _mm256_mul_ps(v0, vScaleFactor);
-      __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), vScaleFactor);
-      __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), vScaleFactor);
+      __m128 tmpV = _mm_load_ss(v1 + 5);
+      __m256 v0 = _mm256_broadcastss_ps(tmpV);
+      __m128 invAttr10 = _mm_mul_ss(tmpV, vScaleFactor);
+      __m128 invAttr11 = _mm_mul_ss(_mm_load_ss(v2 + 5), vScaleFactor);
+      __m128 invAttr12 = _mm_mul_ss(_mm_load_ss(v3 + 5), vScaleFactor);
       v0 = _mm256_mul_ps(v0, maxVValue);
-      __m256 v1v0 = _mm256_sub_ps(invAttr11, invAttr10);
-      __m256 v2v0 = _mm256_sub_ps(invAttr12, invAttr10);
+      __m256 v1v0 = _mm256_broadcastss_ps(_mm_sub_ss(invAttr11, invAttr10));
+      __m256 v2v0 = _mm256_broadcastss_ps(_mm_sub_ss(invAttr12, invAttr10));
 
       // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
       /*
@@ -1756,17 +1759,17 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
         __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
         __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
       */
-      __m256 weightInit0 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x1), _mm256_sub_ps(y2, y1)), _mm256_mul_ps(_mm256_sub_ps(fminY, y1), x2x1));
-      __m256 weightInit1 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x2), _mm256_sub_ps(y0, y2)), _mm256_mul_ps(_mm256_sub_ps(fminY, y2), x0x2));
-      __m256 weightInit2 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x0), y1y0), _mm256_mul_ps(_mm256_sub_ps(fminY, y0), x1x0));
+      __m256 weightInit0 = _mm256_broadcastss_ps(_mm_sub_ss(_mm_mul_ss(_mm_sub_ss(fminX, x1), _mm_sub_ss(y2, y1)), _mm_mul_ss(_mm_sub_ss(fminY, y1), x2x1)));
+      __m256 weightInit1 = _mm256_broadcastss_ps(_mm_sub_ss(_mm_mul_ss(_mm_sub_ss(fminX, x2), _mm_sub_ss(y0, y2)), _mm_mul_ss(_mm_sub_ss(fminY, y2), x0x2)));
+      __m256 weightInit2 = _mm256_broadcastss_ps(_mm_sub_ss(_mm_mul_ss(_mm_sub_ss(fminX, x0), y1y0), _mm_mul_ss(_mm_sub_ss(fminY, y0), x1x0)));
 
-      __m256 xStep0 = _mm256_sub_ps(y1, y2);
-      __m256 xStep1 = y2y0;
-      __m256 xStep2 = _mm256_sub_ps(y0, y1);
+      __m256 xStep0 = _mm256_broadcastss_ps(_mm_sub_ss(y1, y2));
+      __m256 xStep1 = _mm256_broadcastss_ps(y2y0);
+      __m256 xStep2 = _mm256_broadcastss_ps(_mm_sub_ss(y0, y1));
 
-      __m256 yStep0 = x2x1;
-      __m256 yStep1 = x0x2;
-      __m256 yStep2 = x1x0;
+      __m256 yStep0 = _mm256_broadcastss_ps(x2x1);
+      __m256 yStep1 = _mm256_broadcastss_ps(x0x2);
+      __m256 yStep2 = _mm256_broadcastss_ps(x1x0);
 
       weightInit0 = _mm256_sub_ps(weightInit0, _mm256_mul_ps(initMultiplier, xStep0));
       weightInit1 = _mm256_sub_ps(weightInit1, _mm256_mul_ps(initMultiplier, xStep1));
@@ -1791,7 +1794,7 @@ void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const i
 
         // If all mask bits are set then none of these pixels are inside the triangle.
         if (!_mm256_testc_si256(_mm256_castps_si256(combinedWeights), weightMask)) {
-          __m256 depthVec = _mm256_maskload_ps(pixelDepth, Not256(_mm256_castps_si256(combinedWeights)));
+          __m256 depthVec = _mm256_loadu_ps(pixelDepth);
 
           __m256 zValues = _mm256_rcp_ps(_mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0)));
 

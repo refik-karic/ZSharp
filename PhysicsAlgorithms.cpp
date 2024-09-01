@@ -6,7 +6,7 @@
 namespace ZSharp {
 
 // TODO: This is arbitrarily assigned. We need a cohesive unit system for this to make sense.
-const float GravityPerSecond = -0.0001f; //-0.0001f;
+const float GravityPerSecond = -1.0e-4f;
 
 // TODO: Does this value make sense?
 const float IntervalEpsilon = 1.0e-4f;

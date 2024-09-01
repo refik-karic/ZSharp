@@ -21,6 +21,7 @@
 namespace ZSharp {
 ConsoleVariable<bool> DebugTransforms("DebugTransforms", true);
 ConsoleVariable<float> CameraSpeed("CameraSpeed", 1.f);
+ConsoleVariable<float> CameraRotation("CameraRotation", 5.f);
 
 GameInstance::GameInstance()
   : mCameraReset("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this)) {
@@ -466,9 +467,7 @@ Vec3 GameInstance::ProjectClick(float x, float y) {
   float width = (float)config.GetViewportWidth().Value();
   float height = (float)config.GetViewportHeight().Value();
 
-  // TODO: The bigger the radius, the slower the rotation.
-  // Maybe we could use this to adjust the speed at which the camera spins?
-  float radius = width * 5.f;
+  float radius = width * (*CameraRotation);
 
   float newX = ((x - (width / 2.f)) / radius);
   float newY = ((y - (height / 2.f)) / radius);

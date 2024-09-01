@@ -4,6 +4,8 @@
 
 namespace ZSharp {
 
+const size_t SerializerPadding = sizeof(size_t);
+
 class ISerializer {
   public:
 

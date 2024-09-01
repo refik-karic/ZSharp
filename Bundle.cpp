@@ -64,8 +64,7 @@ bool Bundle::Deserialize(MemoryDeserializer& deserializer) {
     mAssets[i].Deserialize(deserializer);
   }
 
-  // TODO: Add this to the serializer so that we don't make assumptions.
-  const size_t padding = sizeof(size_t);
+  const size_t padding = SerializerPadding;
 
   // Skip over memory block size.
   deserializer.Reassign(deserializer.BaseAddress() + deserializer.Offset() + padding);

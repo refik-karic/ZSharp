@@ -306,7 +306,7 @@ int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const 
   return numOutputVerts;
 }
 
-void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer) {
+void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
   NamedScopedTimer(BackfaceCull);
   
   ZAssert((indexBuffer.GetIndexSize() % 3) == 0);
@@ -315,9 +315,7 @@ void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& ind
     return;
   }
 
-  const float* view = *viewer;
-
-  Aligned_BackfaceCull(indexBuffer, vertexBuffer, view);
+  Aligned_BackfaceCull(indexBuffer, vertexBuffer);
 }
 
 void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {

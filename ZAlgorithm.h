@@ -1,7 +1,6 @@
 #pragma once
 
 #include "IndexBuffer.h"
-#include "Vec3.h"
 #include "VertexBuffer.h"
 #include "PlatformDefines.h"
 #include "AABB.h"
@@ -21,7 +20,7 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 
 int32 SutherlandHodgmanClip(float* inputVerts, const int32 numInputVerts, const float clipEdge[4], const float edgeNormal[4], int32 stride);
 
-void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Vec3& viewer);
+void CullBackFacingPrimitives(const VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 
 void TriangulateAABB(const AABB& aabb, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
 

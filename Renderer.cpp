@@ -49,8 +49,6 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
     indexBuffer.Reset();
     model.FillBuffers(vertexBuffer, indexBuffer);
 
-    vertexBuffer.ApplyTransform(model.ObjectTransform());
-
     const AABB aabb(AABB::TransformAndRealign(model.BoundingBox(), model.ObjectTransform()));
     ClipBounds clipBounds;
     {
@@ -58,7 +56,10 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
       IndexBuffer aabbIndexBuffer;
       TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer);
 
-      clipBounds = camera.ClipBoundsCheck(aabbVertexBuffer, aabbIndexBuffer);
+      Mat4x4 identity;
+      identity.Identity();
+
+      clipBounds = camera.ClipBoundsCheck(aabbVertexBuffer, aabbIndexBuffer, identity);
 
       if (*VisualizeAABB) {
         const ZColor aabbColor(ZColors::GREEN);
@@ -67,12 +68,12 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
         aabbIndexBuffer.Clear();
         TriangulateAABBWithColor(aabb, aabbVertexBuffer, aabbIndexBuffer, aabbColor);
 
-        camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds);
+        camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds, identity);
         DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer, aabbVertexBuffer.WasClipped());
       }
     }
-
-    camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds);
+    
+    camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds, model.ObjectTransform());
 
     switch (mRenderMode) {
       case RenderMode::FLAT:

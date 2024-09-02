@@ -1120,13 +1120,15 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
   }
 }
 
-void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]) {
-  __m128 view = _mm_loadu_ps(viewer);
+void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer) {
+  /*
+    NOTE: We're performing backface culling in NDC space, post-perspective transform.
+  */
 
   int32* indexData = indexBuffer.GetInputData();
   const float* vertexData = vertexBuffer[0];
 
-  __m128i dotSign = _mm_set_epi32(0, 0, 0, 0x80000000);
+  __m128i dotSign = _mm_set_epi32(0, 0x80000000, 0, 0);
 
   for (int32 i = indexBuffer.GetIndexSize(); i >= 3; i -= 3) {
     int32 i1 = indexData[i - 3];
@@ -1147,11 +1149,7 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
 
     __m128 normal = _mm_sub_ps(_mm_mul_ps(p1p0Shuffled0, p2p0Shuffled0), _mm_mul_ps(p1p0Shuffled1, p2p0Shuffled1));
 
-    __m128 dotIntermediate = _mm_mul_ps(_mm_sub_ps(v1, view), normal);
-
-    dotIntermediate = _mm_hadd_ps(_mm_hadd_ps(dotIntermediate, dotIntermediate), _mm_setzero_ps());
-
-    if (_mm_testz_si128(_mm_castps_si128(dotIntermediate), dotSign)) {
+    if (!_mm_testz_si128(_mm_castps_si128(normal), dotSign)) {
       indexBuffer.RemoveTriangle(i - 3);
     }
   }
@@ -1275,6 +1273,44 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
 
     for (int32 j = 4; j < stride; j+=4) {
       _mm_storeu_ps(vecData + j, _mm_mul_ps(_mm_loadu_ps(vecData + j), invPerspectiveZ));
+    }
+  }
+}
+
+void Aligned_HomogenizeTransformScreenSpace(float* data, int32 stride, int32 length, const float windowTransform0[3], const float windowTransform1[3], const float width, const float height) {
+  __m128 window0 = _mm_set_ps(0.f, windowTransform0[2], windowTransform0[1], windowTransform0[0]);
+  __m128 window1 = _mm_set_ps(0.f, windowTransform1[2], windowTransform1[1], windowTransform1[0]);
+
+  __m128 maxXY = _mm_set_ps(0.f, 0.f, height, width);
+  
+  for (int32 i = 0; i < length; i += stride) {
+    float* nextVec = data + i;
+    __m128 vec = _mm_loadu_ps(nextVec);
+    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111)));
+    __m128 result = _mm_mul_ps(vec, invPerspectiveZ);
+
+    __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(result), 0b10101010)));
+
+    // Homogenize with Z
+    result = _mm_mul_ps(result, invDivisor);
+
+    // Apply Window transform.
+    __m128 dotX = _mm_mul_ps(result, window0);
+    __m128 dotY = _mm_mul_ps(result, window1);
+
+    result = _mm_hadd_ps(_mm_hadd_ps(dotX, dotY), _mm_setzero_ps());
+    result = _mm_min_ps(_mm_max_ps(result, _mm_setzero_ps()), maxXY);
+
+    // [0] = dotX
+    // [1] = dotY
+    // [2] = _
+    // [3] = invPerspectiveZ
+    result = _mm_blend_ps(result, invPerspectiveZ, 0b1000);
+
+    _mm_storeu_ps(nextVec, result);
+
+    for (int32 j = 4; j < stride; j += 4) {
+      _mm_storeu_ps(nextVec + j, _mm_mul_ps(_mm_loadu_ps(nextVec + j), invPerspectiveZ));
     }
   }
 }

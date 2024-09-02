@@ -128,17 +128,13 @@ void Camera::Tick() {
   mPerspectiveTransform = (unhing * (scale * (uToE * translation)));
 }
 
-void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds) {
+void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds, const Mat4x4& objectTransform) {
   NamedScopedTimer(PerspectiveProjection);
 
   if (clipBounds == ClipBounds::Outside) {
     vertexBuffer.Reset();
     indexBuffer.Reset();
     return;
-  }
-
-  if (*BackfaceCull) {
-    CullBackFacingPrimitives(vertexBuffer, indexBuffer, mPosition);
   }
 
   const int32 stride = vertexBuffer.GetStride();
@@ -148,12 +144,21 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   if (clipBounds == ClipBounds::Inside) {
     NamedScopedTimer(TransformDirect);
 
-    Aligned_TransformDirectScreenSpace(vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride,
-      (const float(*)[4])*mPerspectiveTransform, windowTransformVec0, windowTransformVec1, mWidth, mHeight);
+    Aligned_Mat4x4Transform((const float(*)[4])*(mPerspectiveTransform * objectTransform), vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
+
+    if (*BackfaceCull) {
+      CullBackFacingPrimitives(vertexBuffer, indexBuffer);
+    }
+
+    Aligned_HomogenizeTransformScreenSpace(vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride, windowTransformVec0, windowTransformVec1, mWidth, mHeight);
   }
   else {
     // Apply the perspective projection transform to all input vertices.
-    Aligned_Mat4x4Transform((const float(*)[4])*mPerspectiveTransform, vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
+    Aligned_Mat4x4Transform((const float(*)[4])*(mPerspectiveTransform * objectTransform), vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
+
+    if (*BackfaceCull) {
+      CullBackFacingPrimitives(vertexBuffer, indexBuffer);
+    }
 
     // Clip against near plane to avoid things behind camera reappearing.
     // This clip is special because it needs to append clip data and shuffle it back to the beginning.
@@ -189,13 +194,13 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
   }
 }
 
-ClipBounds Camera::ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
+ClipBounds Camera::ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Mat4x4& objectTransform) {
   NamedScopedTimer(ClipBoundsCheck);
 
   const size_t inIndexSize = indexBuffer.GetIndexSize();
 
   // Apply the perspective projection transform to all input vertices.
-  Aligned_Mat4x4Transform((const float(*)[4])* mPerspectiveTransform, vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+  Aligned_Mat4x4Transform((const float(*)[4])*(mPerspectiveTransform * objectTransform), vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
 
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.

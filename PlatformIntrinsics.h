@@ -82,12 +82,16 @@ void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length);
 
 void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width, size_t height, float opacity);
 
-void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer, const float viewer[3]);
+void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer);
 
 void Aligned_WindowTransform(float* data, int32 stride, int32 length, const float windowTransform0[3], const float windowTransform1[3], const float width, const float height);
 
 void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
   const float matrix[4][4], const float windowTransform0[3], const float windowTransform1[3],
+  const float width, const float height);
+
+void Aligned_HomogenizeTransformScreenSpace(float* data, int32 stride, int32 length,
+  const float windowTransform0[3], const float windowTransform1[3],
   const float width, const float height);
 
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);

@@ -33,9 +33,9 @@ class Camera final : public WorldObject {
 
   void Tick();
 
-  void PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds);
+  void PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds, const Mat4x4& objectTransform);
 
-  ClipBounds ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer);
+  ClipBounds ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Mat4x4& objectTransform);
 
   private:
   Vec3 mLook;

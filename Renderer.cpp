@@ -42,12 +42,6 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
   for (size_t i = 0; i < world.GetTotalModels(); ++i) {
     Model& model = world.GetModels()[i];
-    VertexBuffer& vertexBuffer = world.GetVertexBuffers()[i];
-    IndexBuffer& indexBuffer = world.GetIndexBuffers()[i];
-
-    vertexBuffer.Reset();
-    indexBuffer.Reset();
-    model.FillBuffers(vertexBuffer, indexBuffer);
 
     const AABB aabb(AABB::TransformAndRealign(model.BoundingBox(), model.ObjectTransform()));
     ClipBounds clipBounds;
@@ -72,7 +66,19 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
         DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer, aabbVertexBuffer.WasClipped());
       }
     }
-    
+
+    if (clipBounds == ClipBounds::Outside) {
+      continue;
+    }
+
+    VertexBuffer& vertexBuffer = world.GetVertexBuffers()[i];
+    IndexBuffer& indexBuffer = world.GetIndexBuffers()[i];
+
+    vertexBuffer.Reset();
+    indexBuffer.Reset();
+
+    model.FillBuffers(vertexBuffer, indexBuffer);
+
     camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds, model.ObjectTransform());
 
     switch (mRenderMode) {

@@ -65,6 +65,8 @@ void Model::SetStride(size_t stride) {
 }
 
 void Model::FillBuffers(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) const {
+  NamedScopedTimer(FillBuffers);
+
   for (const Mesh& mesh : mData) {
     if (mesh.GetTriangleFaceTable().Size() == 0 || mesh.GetVertTable().Size() == 0) {
       continue;

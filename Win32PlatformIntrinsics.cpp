@@ -102,6 +102,16 @@ FORCE_INLINE __m256 Lerp256(__m256 x1, __m256 x2, __m256 t) {
   return result;
 }
 
+FORCE_INLINE __m128 Cross128(__m128 a, __m128 b) {
+  __m128 a0 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(a), 0b11001001));
+  __m128 a1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(a), 0b11010010));
+
+  __m128 b0 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(b), 0b11010010));
+  __m128 b1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(b), 0b11001001));
+
+  return _mm_sub_ps(_mm_mul_ps(a0, b0), _mm_mul_ps(a1, b1));
+}
+
 namespace ZSharp {
 
 bool PlatformSupportsSIMDLanes(SIMDLaneWidth width) {
@@ -1122,7 +1132,7 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
 
 void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer) {
   /*
-    NOTE: We're performing backface culling in NDC space, post-perspective transform.
+    NOTE: We're performing backface culling in camera space, post-perspective transform.
   */
 
   int32* indexData = indexBuffer.GetInputData();
@@ -1141,13 +1151,7 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
     __m128 p1p0 = _mm_sub_ps(v2, v1);
     __m128 p2p0 = _mm_sub_ps(v3, v1);
 
-    __m128 p1p0Shuffled0 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(p1p0), 0b11001001));
-    __m128 p1p0Shuffled1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(p1p0), 0b11010010));
-
-    __m128 p2p0Shuffled0 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(p2p0), 0b11010010));
-    __m128 p2p0Shuffled1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(p2p0), 0b11001001));
-
-    __m128 normal = _mm_sub_ps(_mm_mul_ps(p1p0Shuffled0, p2p0Shuffled0), _mm_mul_ps(p1p0Shuffled1, p2p0Shuffled1));
+    __m128 normal = Cross128(p1p0, p2p0);
 
     if (!_mm_testz_si128(_mm_castps_si128(normal), dotSign)) {
       indexBuffer.RemoveTriangle(i - 3);

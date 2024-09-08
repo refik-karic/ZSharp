@@ -13,7 +13,7 @@
 #include "ZString.h"
 #include "Span.h"
 
-#include "ShadingMode.h"
+#include "ShaderDefinition.h"
 
 namespace ZSharp {
 struct alignas(8) OBJFaceElement {
@@ -48,7 +48,7 @@ class OBJFile final {
 
   int32 Stride() const;
 
-  ShadingModeOrder& ShadingOrder();
+  ShaderDefinition& Shader();
 
   String& AlbedoTexture();
 
@@ -63,7 +63,7 @@ class OBJFile final {
 
   String mAlbedoTexture;
 
-  ShadingModeOrder mShadingOrder;
+  ShaderDefinition mShader;
 
   AABB mBoundingBox;
 

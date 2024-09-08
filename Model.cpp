@@ -5,12 +5,12 @@
 #include "PlatformIntrinsics.h"
 
 namespace ZSharp {
-Model::Model(const ShadingModeOrder& order, size_t stride)
-  : mShadingOrder(order), mStride(stride) {
+Model::Model(const ShaderDefinition& shader, size_t stride)
+  : mShader(shader), mStride(stride) {
 }
 
 Model::Model(const Model& copy) 
-  : mShadingOrder(copy.mShadingOrder), mStride(copy.mStride), mData(copy.mData) {
+  : mShader(copy.mShader), mStride(copy.mStride), mData(copy.mData) {
 }
 
 void Model::operator=(const Model& rhs) {
@@ -18,7 +18,7 @@ void Model::operator=(const Model& rhs) {
     return;
   }
 
-  mShadingOrder = rhs.mShadingOrder;
+  mShader = rhs.mShader;
   mStride = rhs.mStride;
   mData = rhs.mData;
 }
@@ -48,12 +48,12 @@ size_t Model::Stride() const {
   return mStride;
 }
 
-const ShadingModeOrder& Model::ShadingOrder() const {
-  return mShadingOrder;
+const ShaderDefinition& Model::GetShader() const {
+  return mShader;
 }
 
-void Model::SetShadingOrder(const ShadingModeOrder& order) {
-  mShadingOrder = order;
+void Model::SetShader(const ShaderDefinition& shader) {
+  mShader = shader;
 }
 
 void Model::SetStride(size_t stride) {

@@ -81,16 +81,18 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds, model.ObjectTransform());
 
+    const ShaderDefinition& shader = model.GetShader();
+
     switch (mRenderMode) {
       case RenderMode::FLAT:
       {
-        switch (model.ShadingOrder()[0].mode) {
-          case ShadingModes::RGB:
+        switch (shader.GetShadingMethod()) {
+          case ShadingMethod::RGB:
           {
             DrawTrianglesFlatRGB(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
           }
             break;
-          case ShadingModes::UV:
+          case ShadingMethod::UV:
           {
             Texture* texture = TexturePool::Get().GetTexture(model.TextureId());
             DrawTrianglesFlatUV(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), texture, *MipOverride);
@@ -103,8 +105,8 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
         break;
       case RenderMode::WIREFRAME:
       {
-        switch (model.ShadingOrder()[0].mode) {
-          case ShadingModes::RGB:
+        switch (shader.GetShadingMethod()) {
+          case ShadingMethod::RGB:
           {
             DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
           }

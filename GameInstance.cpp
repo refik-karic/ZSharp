@@ -10,7 +10,6 @@
 #include "PlatformMemory.h"
 #include "PlatformAudio.h"
 #include "ScopedTimer.h"
-#include "ShadingMode.h"
 #include "ZConfig.h"
 #include "ZString.h"
 

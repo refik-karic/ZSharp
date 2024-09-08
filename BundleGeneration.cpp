@@ -35,7 +35,10 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
   objfile.LoadFromFile(filename);
 
   if (!objfile.AlbedoTexture().IsEmpty()) {
-    objfile.ShadingOrder().EmplaceBack(ShadingModes::UV, 2);
+    ShaderDefinition& shader = objfile.Shader();
+    shader.SetShadingMethod(ShadingMethod::UV);
+    shader.SetAttributeLength(4);
+    shader.SetAttributeStride(4);
   }
 
   MemorySerializer objSerializer;

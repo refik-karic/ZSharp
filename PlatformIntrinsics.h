@@ -96,10 +96,10 @@ void Aligned_HomogenizeTransformScreenSpace(float* data, int32 stride, int32 len
 
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
 
-void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const int32 end,
+void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int32 end,
   const float maxWidth, uint8* framebuffer, float* depthBuffer);
 
-void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end,
+void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int32 end,
   const float maxWidth, uint8* framebuffer, float* depthBuffer, const Texture* texture, size_t mipLevel);
 
 }

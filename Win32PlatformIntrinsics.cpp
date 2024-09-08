@@ -1338,7 +1338,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
-void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const int32 end, const float maxWidth, uint8* framebuffer, float* depthBuffer) {
+void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int32 end, const float maxWidth, uint8* framebuffer, float* depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
@@ -1697,7 +1697,7 @@ void Unaligned_FlatShadeRGB(const float* vertices, const int32* indices, const i
   }
 }
 
-void Unaligned_FlatShadeUVs(const float* vertices, const int32* indices, const int32 end, const float maxWidth, uint8* framebuffer, float* depthBuffer, const Texture* texture, size_t mipLevel) {
+void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int32 end, const float maxWidth, uint8* framebuffer, float* depthBuffer, const Texture* texture, size_t mipLevel) {
   const int32 sMaxWidth = (int32)maxWidth;
   // We want the UV values to be scaled by the width/height.
   // Doing that here saves us from having to do that at each pixel.

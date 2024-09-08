@@ -353,7 +353,7 @@ void DrawTrianglesFlatRGB(Framebuffer& framebuffer, DepthBuffer& depthBuffer, co
     }
   }
 #else
-  Unaligned_FlatShadeRGB(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
+  Unaligned_Shader_RGB(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
 #endif
 }
 
@@ -470,7 +470,7 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
     }
   }
 #else
-  Unaligned_FlatShadeUVs(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture, mipLevel);
+  Unaligned_Shader_UV(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture, mipLevel);
 #endif
 }
 

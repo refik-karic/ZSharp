@@ -23,7 +23,7 @@ void OBJFile::Serialize(MemorySerializer& serializer) {
   mNormals.Serialize(serializer);
   mUVCoords.Serialize(serializer);
   mFaces.Serialize(serializer);
-  mShadingOrder.Serialize(serializer);
+  mShader.Serialize(serializer);
   mAlbedoTexture.Serialize(serializer);
   mBoundingBox.Serialize(serializer);
 }
@@ -33,7 +33,7 @@ void OBJFile::Deserialize(MemoryDeserializer& deserializer) {
   mNormals.Deserialize(deserializer);
   mUVCoords.Deserialize(deserializer);
   mFaces.Deserialize(deserializer);
-  mShadingOrder.Deserialize(deserializer);
+  mShader.Deserialize(deserializer);
   mAlbedoTexture.Deserialize(deserializer);
   mBoundingBox.Deserialize(deserializer);
 }
@@ -60,15 +60,12 @@ Array<OBJFace>& OBJFile::Faces() {
 
 int32 OBJFile::Stride() const {
   int32 stride = 4;
-  for (ShadingMode& mode : mShadingOrder) {
-    stride += (int32)mode.length;
-  }
-
+  stride += (int32)mShader.GetAttributeStride();
   return stride;
 }
 
-ShadingModeOrder& OBJFile::ShadingOrder() {
-  return mShadingOrder;
+ShaderDefinition& OBJFile::Shader() {
+  return mShader;
 }
 
 String& OBJFile::AlbedoTexture() {

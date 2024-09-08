@@ -6,7 +6,7 @@
 #include "Array.h"
 #include "IndexBuffer.h"
 #include "Mesh.h"
-#include "ShadingMode.h"
+#include "ShaderDefinition.h"
 #include "Vec4.h"
 #include "VertexBuffer.h"
 #include "PhysicsObject.h"
@@ -18,7 +18,7 @@ class Model final : public PhysicsObject {
 
   Model() = default;
 
-  Model(const ShadingModeOrder& order, size_t stride);
+  Model(const ShaderDefinition& shader, size_t stride);
 
   Model(const Model& copy);
 
@@ -36,9 +36,9 @@ class Model final : public PhysicsObject {
 
   size_t Stride() const;
 
-  const ShadingModeOrder& ShadingOrder() const;
+  const ShaderDefinition& GetShader() const;
 
-  void SetShadingOrder(const ShadingModeOrder& order);
+  void SetShader(const ShaderDefinition& shader);
 
   void SetStride(size_t stride);
 
@@ -49,7 +49,7 @@ class Model final : public PhysicsObject {
   AABB ComputeBoundingBox() const;
 
   private:
-  ShadingModeOrder mShadingOrder;
+  ShaderDefinition mShader;
   size_t mStride;
   Array<Mesh> mData;
   int32 mTextureId = -1;

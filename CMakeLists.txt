@@ -62,7 +62,7 @@ set(ZSharp_Header_Files
     Renderer.h
     ScopedTimer.h
     Serializer.h
-    ShadingMode.h
+    ShaderDefinition.h
     Span.h
     Stack.h
     Texture.h
@@ -134,6 +134,7 @@ set(ZSharp_Source_Files
     Random.cpp
     Renderer.cpp
     Serializer.cpp
+    ShaderDefinition.cpp
     ScopedTimer.cpp
     Texture.cpp
     TexturePool.cpp

@@ -6,7 +6,7 @@
 #include "IndexBuffer.h"
 #include "Model.h"
 #include "PhysicsObject.h"
-#include "ShadingMode.h"
+#include "ShaderDefinition.h"
 #include "VertexBuffer.h"
 #include "PlatformAudio.h"
 #include "MP3.h"
@@ -53,7 +53,7 @@ class World final {
 
   ConsoleVariable<void> mWorldReloadVar;
 
-  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, const ShadingModeOrder& order, int32 stride);
+  void DebugLoadTriangle(const float* v1, const float* v2, const float* v3, const ShaderDefinition& shader, int32 stride);
 
   void LoadModels();
 

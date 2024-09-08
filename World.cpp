@@ -64,10 +64,8 @@ void World::Load() {
     const float v2[]{ 0.f, Y, Z, W, 0.0f, 1.f, 0.f, 0.f };
     const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f, 0.f };
 
-    ShadingModeOrder order;
-    order.EmplaceBack(ShadingModes::RGB, 4);
-
-    DebugLoadTriangle(v3, v2, v1, order, 8);
+    ShaderDefinition shader(4, 4, ShadingMethod::RGB);
+    DebugLoadTriangle(v3, v2, v1, shader, 8);
   }
   else if (*DebugTriangleTex) {
     const float X = 5.f;
@@ -78,10 +76,8 @@ void World::Load() {
     const float v2[]{ 0.f, Y, Z, W, 0.f, 1.f, 0.f, 0.f };
     const float v3[]{ X, 0.f, Z, W, 0.5f, 0.f, 0.f, 0.f };
 
-    ShadingModeOrder order;
-    order.EmplaceBack(ShadingModes::UV, 4);
-
-    DebugLoadTriangle(v3, v2, v1, order, 8);
+    ShaderDefinition shader(4, 4, ShadingMethod::UV);
+    DebugLoadTriangle(v3, v2, v1, shader, 8);
   }
   else {
     ZConfig& config = ZConfig::Get();
@@ -99,10 +95,8 @@ void World::Load() {
       const float v2[]{ 0.f, Y, Z, W, 1.0f, 0.f, 0.f, 0.f };
       const float v3[]{ X, 0.f, Z, W, 0.0f, 0.f, 1.f, 0.f };
 
-      ShadingModeOrder order;
-      order.EmplaceBack(ShadingModes::RGB, 4);
-
-      DebugLoadTriangle(v3, v2, v1, order, 8);
+      ShaderDefinition shader(4, 4, ShadingMethod::RGB);
+      DebugLoadTriangle(v3, v2, v1, shader, 8);
     }
   }
 }
@@ -247,14 +241,14 @@ void World::LoadModels() {
   }
 }
 
-void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, const ShadingModeOrder& order, int32 stride) {
-  Model& model = mActiveModels.EmplaceBack(order, stride);
+void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, const ShaderDefinition& shader, int32 stride) {
+  Model& model = mActiveModels.EmplaceBack(shader, stride);
   VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
   IndexBuffer& indexBuffer = mIndexBuffers.EmplaceBack();
 
   model.CreateNewMesh();
 
-  const bool isTextureMapped = order.Contains(ShadingMode(ShadingModes::UV, 4));
+  const bool isTextureMapped = shader.GetShadingMethod() == ShadingMethod::UV;
 
   if (isTextureMapped) {
     Bundle& bundle = Bundle::Get();
@@ -320,29 +314,19 @@ void World::LoadOBJ(Model& model, Asset& asset) {
   OBJFile objFile;
   objFile.Deserialize(objDeserializer);
   
-  {
-    size_t shadingStride = 0;
-    for (ShadingMode& mode : objFile.ShadingOrder()) {
-      shadingStride += mode.length;
-    }
-
-    if (shadingStride > 0 && ((shadingStride % 4) != 0)) {
-      ShadingMode emptyMode(ShadingModes::None, shadingStride % 4);
-      objFile.ShadingOrder().PushBack(emptyMode);
-    }
-  }
-
   model.CreateNewMesh();
-  model.SetShadingOrder(objFile.ShadingOrder());
+  model.SetShader(objFile.Shader());
   model.SetStride(objFile.Stride());
   model.BoundingBox() = objFile.BoundingBox();
   Mesh& mesh = model[0];
 
-  bool isTextureMapped = objFile.ShadingOrder().Contains(ShadingMode(ShadingModes::UV, 2));
+  bool isTextureMapped = objFile.Shader().GetShadingMethod() == ShadingMethod::UV;
 
   if (*DebugModelsRGB) {
     isTextureMapped = false;
   }
+
+  int32 stride = objFile.Stride();
 
   if (isTextureMapped) {
     Bundle& bundle = Bundle::Get();
@@ -356,13 +340,11 @@ void World::LoadOBJ(Model& model, Asset& asset) {
     model.TextureId() = TexturePool::Get().LoadTexture(*textureAsset);
   }
   else {
-    objFile.ShadingOrder().Clear();
-    objFile.ShadingOrder().EmplaceBack(ShadingModes::RGB, 4);
-    model.SetShadingOrder(objFile.ShadingOrder());
+    ShaderDefinition rbgShader(4, 4, ShadingMethod::RGB);
+    model.SetShader(rbgShader);
     model.SetStride(8);
+    stride = 8;
   }
-
-  const int32 stride = objFile.Stride();
 
   int32 vertSize = (int32)objFile.Verts().Size() * stride;
   int32 indexSize = (int32)objFile.Faces().Size();

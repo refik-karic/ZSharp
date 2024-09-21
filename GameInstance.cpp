@@ -323,12 +323,12 @@ void GameInstance::RunBackgroundJobs() {
     return;
   }
 
-  mThreadPool.Wake();
-
-  ParallelRange range = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearBuffers>(this);
+  ParallelRange frameBufferClear = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearFrameBuffer>(this);
+  ParallelRange depthBufferClear = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearDepthBuffer>(this);
   size_t size = mRenderer.GetFrameBuffer().GetSize();
 
-  mThreadPool.Execute(range, nullptr, size, 4, true);
+  mThreadPool.Execute(frameBufferClear, mRenderer.GetFrameBuffer().GetBuffer(), size, 4);
+  mThreadPool.Execute(depthBufferClear, mRenderer.GetDepthBuffer().GetBuffer(), size, 4);
 }
 
 void GameInstance::WaitForBackgroundJobs() {
@@ -453,12 +453,21 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
   RotateTrackball(quat);
 }
 
-void GameInstance::FastClearBuffers(size_t begin, size_t end, void* data) {
-  (void)data;
+void GameInstance::FastClearFrameBuffer(Span<uint8> data) {
+  Framebuffer& frameBuffer = mRenderer.GetFrameBuffer();
+  ZColor clearColor(ZColors::ORANGE);
+  const size_t chunkSize = 4;
+  size_t start = data.GetData() - frameBuffer.GetBuffer();
+  size_t length = data.Size();
+  frameBuffer.Clear(clearColor, start * chunkSize, length * chunkSize);
+}
 
-  ZColor orange(ZColors::ORANGE);
-  mRenderer.GetFrameBuffer().Clear(orange, begin, end - begin);
-  mRenderer.GetDepthBuffer().Clear(begin, end - begin);
+void GameInstance::FastClearDepthBuffer(Span<uint8> data) {
+  DepthBuffer& depthBuffer = mRenderer.GetDepthBuffer();
+  size_t start = data.GetData() - ((uint8*)depthBuffer.GetBuffer());
+  size_t length = data.Size();
+  const size_t chunkSize = 4;
+  depthBuffer.Clear(start * chunkSize, length * chunkSize);
 }
 
 Vec3 GameInstance::ProjectClick(float x, float y) {

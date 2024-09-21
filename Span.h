@@ -44,6 +44,8 @@ class Span final {
     T* mPtr;
   };
 
+  Span() = default;
+
   Span(T* data, size_t size) 
     : mData(data), mSize(size) {
 

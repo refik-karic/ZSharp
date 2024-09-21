@@ -160,10 +160,17 @@ class List final {
       return;
     }
 
-    Node* nextNode = mHead->mNext;
-    DeleteNode(mHead);
-    mHead = nextNode;
-    mHead->mPrev = nullptr;
+    if (mHead == mTail) {
+      DeleteNode(mHead);
+      mHead = nullptr;
+      mTail = nullptr;
+    }
+    else {
+      Node* nextNode = mHead->mNext;
+      DeleteNode(mHead);
+      mHead = nextNode;
+      mHead->mPrev = nullptr;
+    }
   }
 
   void RemoveBack() {
@@ -171,10 +178,17 @@ class List final {
       return;
     }
 
-    Node* prevNode = mTail->mPrev;
-    DeleteNode(mTail);
-    mTail = prevNode;
-    mTail->mNext = nullptr;
+    if (mHead == mTail) {
+      DeleteNode(mTail);
+      mHead = nullptr;
+      mTail = nullptr;
+    }
+    else {
+      Node* prevNode = mTail->mPrev;
+      DeleteNode(mTail);
+      mTail = prevNode;
+      mTail->mNext = nullptr;
+    }
   }
 
   bool Contains(const T& item) const {
@@ -191,6 +205,10 @@ class List final {
     return mSize;
   }
 
+  bool IsEmpty() const {
+    return mSize == 0;
+  }
+
   void Clear() {
     if (mHead == nullptr) {
       return;
@@ -205,6 +223,7 @@ class List final {
     DeleteNode(mHead);
 
     mHead = nullptr;
+    mTail = nullptr;
   }
 
   Iterator begin() const {

@@ -12,25 +12,37 @@ int32 BackgroundWorker(void* data) {
 
   while (true) {
     if (control.status == ThreadControl::RunStatus::RUNNING) {
-      if (control.func.IsBound() && (workerControl.begin != workerControl.end)) {
-        control.func(workerControl.begin, workerControl.end, control.data);
+      if (!workerControl.jobs.IsEmpty()) {
+        ThreadJob& job = *(workerControl.jobs.begin());
+        job.func(job.data);
 
-        workerControl.begin = 0;
-        workerControl.end = 0;
-
-        control.lock.Aquire();
-
-        control.remainingJobs--;
-
-        if (control.remainingJobs == 0) {
-          PlatformClearMonitor(control.monitor);
-          control.status = ThreadControl::RunStatus::SLEEP;
-          PlatformSignalMonitor(control.asyncMonitor);
-        }
-
-        control.lock.Release();
+        workerControl.jobLock.Aquire();
+        workerControl.jobs.RemoveFront();
+        workerControl.jobLock.Release();
       }
-      else {
+
+      control.lock.Aquire();
+
+      if (control.status == ThreadControl::RunStatus::SLEEP) {
+        control.lock.Release();
+        continue;
+      }
+
+      size_t remainingJobs = 0;
+
+      for (WorkerThreadControl& worker : control.workers) {
+        remainingJobs += worker.jobs.Size();
+      }
+
+      if (remainingJobs == 0) {
+        PlatformClearMonitor(control.monitor);
+        control.status = ThreadControl::RunStatus::SLEEP;
+        PlatformSignalMonitor(control.asyncMonitor);
+      }
+
+      control.lock.Release();
+
+      if (remainingJobs > 0) {
         PlatformBusySpin();
       }
     }
@@ -48,19 +60,19 @@ int32 BackgroundWorker(void* data) {
 ThreadPool::ThreadPool() {
   size_t numCores = PlatformGetNumPhysicalCores();
   mPool.Resize(numCores);
-  mWorkerControl.Resize(numCores);
 
   mControl.monitor = PlatformCreateMonitor();
   mControl.asyncMonitor = PlatformCreateMonitor();
+  mControl.workers.Resize(numCores);
 
-  for (size_t i = 0; i < mWorkerControl.Size(); ++i) {
-    WorkerThreadControl& control = mWorkerControl[i];
+  for (size_t i = 0; i < numCores; ++i) {
+    WorkerThreadControl& control = mControl.workers[i];
     control.masterControl = &mControl;
     control.id = i;
   }
 
   for (size_t i = 0; i < numCores; ++i) {
-    mPool[i] = PlatformCreateThread(&BackgroundWorker, &(mWorkerControl[i]));
+    mPool[i] = PlatformCreateThread(&BackgroundWorker, &(mControl.workers[i]));
   }
 
   PlatformPinThreadsToProcessors(mPool.GetData(), mPool.Size(), false);
@@ -78,10 +90,6 @@ ThreadPool::~ThreadPool() {
 }
 
 void ThreadPool::Wake() {
-  mControl.data = nullptr;
-  mControl.func.Unbind();
-  mControl.remainingJobs = 0;
-
   mControl.status = ThreadControl::RunStatus::RUNNING;
 
   PlatformSignalMonitor(mControl.monitor);
@@ -96,51 +104,40 @@ void ThreadPool::WaitForJobs() {
   PlatformWaitMonitor(mControl.asyncMonitor);
 }
 
-void ThreadPool::Execute(ParallelRange& range, void* data, size_t length, size_t chunkMultiple, bool async) {
+void ThreadPool::Execute(ParallelRange& range, void* data, size_t length, size_t chunkMultiple) {
   size_t numThreads = mPool.Size();
   
   if (length == 0) {
     return;
   }
 
-  if (length < numThreads) {
-    mWorkerControl[0].begin = 0;
-    mWorkerControl[0].end = length;
-    mControl.remainingJobs++;
+  // If we can't evenly distribute the work among threads, throw everything on one worker thread.
+  if (length < numThreads || (length % chunkMultiple) != 0) {
+    Span<uint8> threadData((uint8*)data, length);
+    ThreadJob job;
+    job.data = threadData;
+    job.func = range;
+
+    WorkerThreadControl& worker = mControl.workers[0];
+    worker.jobLock.Aquire();
+    worker.jobs.Add(job);
+    worker.jobLock.Release();
   }
   else {
-    size_t chunkSize = length / numThreads;
-    if ((chunkSize % chunkMultiple) == 0) {
-      for (size_t i = 0, j = 0; i < length; i += chunkSize, ++j) {
-        mWorkerControl[j].begin = i;
-        mWorkerControl[j].end = i + chunkSize;
-        mControl.remainingJobs++;
-      }
-    }
-    else {
-      size_t multiple = RoundDownNearestMultiple(chunkSize, chunkMultiple);
-      size_t i = 0;
-      for (size_t j = 0; j < numThreads; i += multiple, ++j) {
-        mWorkerControl[j].begin = i;
-
-        if (j == numThreads - 1) {
-          mWorkerControl[j].end = length;
-        }
-        else {
-          mWorkerControl[j].end = i + multiple;
-        }
-
-        mControl.remainingJobs++;
-      }
+    size_t chunkSize = (length / chunkMultiple) / numThreads;
+    for (size_t i = 0, j = 0; j < numThreads; i += chunkSize, ++j) {
+      Span<uint8> threadData(((uint8*)data) + i, chunkSize);
+      ThreadJob job;
+      job.data = threadData;
+      job.func = range;
+      WorkerThreadControl& worker = mControl.workers[j];
+      worker.jobLock.Aquire();
+      worker.jobs.Add(job);
+      worker.jobLock.Release();
     }
   }
 
-  mControl.data = data;
-  mControl.func = range;
-
-  if (!async) {
-    PlatformWaitMonitor(mControl.asyncMonitor);
-  }
+  Wake();
 }
 
 }

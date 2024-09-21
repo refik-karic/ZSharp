@@ -7,6 +7,7 @@
 #include "Mat4x4.h"
 #include "Quaternion.h"
 #include "Renderer.h"
+#include "Span.h"
 #include "ThreadPool.h"
 #include "Vec3.h"
 #include "World.h"
@@ -98,7 +99,9 @@ class GameInstance final {
 
   void OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y);
 
-  void FastClearBuffers(size_t begin, size_t end, void* data);
+  void FastClearFrameBuffer(Span<uint8> data);
+
+  void FastClearDepthBuffer(Span<uint8> data);
 };
 
 }

@@ -2,8 +2,6 @@
 
 #include "CommonMath.h"
 
-#include <cmath>
-
 namespace ZSharp {
 AABB::AABB() 
   : mMin(0.f), mMax(0.f) {

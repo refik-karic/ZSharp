@@ -4,12 +4,21 @@
 
 #include "Array.h"
 #include "Delegate.h"
+#include "List.h"
 #include "PlatformThread.h"
 #include "PlatformAtomic.h"
+#include "Span.h"
 
 namespace ZSharp {
 
-typedef Delegate<size_t, size_t, void*> ParallelRange;
+typedef Delegate<Span<uint8>> ParallelRange;
+
+struct ThreadJob {
+  ParallelRange func;
+  Span<uint8> data;
+};
+
+struct WorkerThreadControl;
 
 struct ThreadControl {
   enum class RunStatus {
@@ -22,16 +31,14 @@ struct ThreadControl {
   PlatformMutex lock;
   PlatformMonitor* monitor;
   PlatformMonitor* asyncMonitor;
-  size_t remainingJobs = 0;
-  ParallelRange func;
-  void* data;
+  Array<WorkerThreadControl> workers;
 };
 
 struct WorkerThreadControl {
   ThreadControl* masterControl = nullptr;
   size_t id = 0;
-  size_t begin = 0;
-  size_t end = 0;
+  PlatformMutex jobLock;
+  List<ThreadJob> jobs;
 };
 
 class ThreadPool final {
@@ -47,13 +54,12 @@ class ThreadPool final {
 
   void Sleep();
 
-  void Execute(ParallelRange& range, void* data, size_t length, size_t chunkMultiple, bool async);
+  void Execute(ParallelRange& range, void* data, size_t length, size_t chunkMultiple);
 
   void WaitForJobs();
 
   private:
   Array<PlatformThread*> mPool;
-  Array<WorkerThreadControl> mWorkerControl;
   ThreadControl mControl;
 };
 

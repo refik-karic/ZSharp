@@ -805,48 +805,30 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride
     This saves us some arithmetic. We only have to perform 4 multiplies and 4 adds per vertex in the end.
   */
 
-  __m128 matrixX = _mm_set_ps(matrix[3][0], matrix[2][0], matrix[1][0], matrix[0][0]);
-  __m128 matrixY = _mm_set_ps(matrix[3][1], matrix[2][1], matrix[1][1], matrix[0][1]);
-  __m128 matrixZ = _mm_set_ps(matrix[3][2], matrix[2][2], matrix[1][2], matrix[0][2]);
-  __m128 matrixW = _mm_set_ps(matrix[3][3], matrix[2][3], matrix[1][3], matrix[0][3]);
+  __m128 matrixX = _mm_loadu_ps(matrix[0]);
+  __m128 matrixY = _mm_loadu_ps(matrix[1]);
+  __m128 matrixZ = _mm_loadu_ps(matrix[2]);
+  __m128 matrixW = _mm_loadu_ps(matrix[3]);
 
-  __m128i xShuffle = _mm_set_epi8(
-    3, 2, 1, 0,
-    3, 2, 1, 0,
-    3, 2, 1, 0,
-    3, 2, 1, 0
-  );
+  __m128 loXY = _mm_unpacklo_ps(matrixX, matrixY);
+  __m128 loZW = _mm_unpacklo_ps(matrixZ, matrixW);
+  __m128 hiXY = _mm_unpackhi_ps(matrixX, matrixY);
+  __m128 hiZW = _mm_unpackhi_ps(matrixZ, matrixW);
 
-  __m128i yShuffle = _mm_set_epi8(
-    7, 6, 5, 4,
-    7, 6, 5, 4,
-    7, 6, 5, 4,
-    7, 6, 5, 4
-  );
-
-  __m128i zShuffle = _mm_set_epi8(
-    11, 10, 9, 8,
-    11, 10, 9, 8,
-    11, 10, 9, 8,
-    11, 10, 9, 8
-  );
-
-  __m128i wShuffle = _mm_set_epi8(
-    15, 14, 13, 12,
-    15, 14, 13, 12,
-    15, 14, 13, 12,
-    15, 14, 13, 12
-  );
+  matrixX = _mm_shuffle_ps(loXY, loZW, 0b01000100);
+  matrixY = _mm_shuffle_ps(loXY, loZW, 0b11101110);
+  matrixZ = _mm_shuffle_ps(hiXY, hiZW, 0b01000100);
+  matrixW = _mm_shuffle_ps(hiXY, hiZW, 0b11101110);
 
   for (size_t i = 0; i < length; i += stride) {
     float* vecData = data + i;
 
     __m128 xyzw = _mm_loadu_ps(vecData);
 
-    __m128 vecX = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), xShuffle));
-    __m128 vecY = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), yShuffle));
-    __m128 vecZ = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), zShuffle));
-    __m128 vecW = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), wShuffle));
+    __m128 vecX = _mm_shuffle_ps(xyzw, xyzw, 0b00000000);
+    __m128 vecY = _mm_shuffle_ps(xyzw, xyzw, 0b01010101);
+    __m128 vecZ = _mm_shuffle_ps(xyzw, xyzw, 0b10101010);
+    __m128 vecW = _mm_shuffle_ps(xyzw, xyzw, 0b11111111);
 
     __m128 result = _mm_add_ps(_mm_mul_ps(matrixX, vecX), _mm_mul_ps(matrixY, vecY));
     result = _mm_add_ps(result, _mm_mul_ps(matrixZ, vecZ));
@@ -1197,10 +1179,20 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
 }
 
 void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length, const float matrix[4][4], const float windowTransform0[3], const float windowTransform1[3], const float width, const float height) {
-  __m128 matrixX = _mm_set_ps(matrix[3][0], matrix[2][0], matrix[1][0], matrix[0][0]);
-  __m128 matrixY = _mm_set_ps(matrix[3][1], matrix[2][1], matrix[1][1], matrix[0][1]);
-  __m128 matrixZ = _mm_set_ps(matrix[3][2], matrix[2][2], matrix[1][2], matrix[0][2]);
-  __m128 matrixW = _mm_set_ps(matrix[3][3], matrix[2][3], matrix[1][3], matrix[0][3]);
+  __m128 matrixX = _mm_loadu_ps(matrix[0]);
+  __m128 matrixY = _mm_loadu_ps(matrix[1]);
+  __m128 matrixZ = _mm_loadu_ps(matrix[2]);
+  __m128 matrixW = _mm_loadu_ps(matrix[3]);
+
+  __m128 loXY = _mm_unpacklo_ps(matrixX, matrixY);
+  __m128 loZW = _mm_unpacklo_ps(matrixZ, matrixW);
+  __m128 hiXY = _mm_unpackhi_ps(matrixX, matrixY);
+  __m128 hiZW = _mm_unpackhi_ps(matrixZ, matrixW);
+
+  matrixX = _mm_shuffle_ps(loXY, loZW, 0b01000100);
+  matrixY = _mm_shuffle_ps(loXY, loZW, 0b11101110);
+  matrixZ = _mm_shuffle_ps(hiXY, hiZW, 0b01000100);
+  matrixW = _mm_shuffle_ps(hiXY, hiZW, 0b11101110);
 
   __m128 window0 = _mm_set_ps(0.f, windowTransform0[2], windowTransform0[1], windowTransform0[0]);
   __m128 window1 = _mm_set_ps(0.f, windowTransform1[2], windowTransform1[1], windowTransform1[0]);
@@ -1290,10 +1282,10 @@ void Aligned_HomogenizeTransformScreenSpace(float* data, int32 stride, int32 len
   for (int32 i = 0; i < length; i += stride) {
     float* nextVec = data + i;
     __m128 vec = _mm_loadu_ps(nextVec);
-    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111)));
+    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_shuffle_ps(vec, vec, 0b11111111));
     __m128 result = _mm_mul_ps(vec, invPerspectiveZ);
 
-    __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(result), 0b10101010)));
+    __m128 invDivisor = _mm_rcp_ps(_mm_shuffle_ps(result, result, 0b10101010));
 
     // Homogenize with Z
     result = _mm_mul_ps(result, invDivisor);
@@ -1519,8 +1511,9 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
   else {
     __m128 initMultiplier = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
     __m128 stepMultiplier = _mm_set_ps1(4.f);
-    __m128i initialColor = _mm_set1_epi32(0xFF00);
+    __m128i initialColor = _mm_set1_epi32(0xFF000000);
     __m128 rgbScale = _mm_set_ps1(255.f);
+    __m128i weightMask = _mm_set1_epi32(0x80000000);
 
     for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
@@ -1636,10 +1629,9 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
         for (int32 w = minX; w < maxX; w += 4, pixels += 4, pixelDepth += 4) {
           // Fetch all sign bits and OR them together
           __m128 combinedWeights = _mm_or_ps(_mm_or_ps(weights0, weights1), weights2);
-          int32 combinedMask = _mm_movemask_ps(combinedWeights);
 
           // If all mask bits are set then none of these pixels are inside the triangle.
-          if (combinedMask != 0x0F) {
+          if (!_mm_testc_si128(_mm_castps_si128(combinedWeights), weightMask)) {
             // Our 4-wide alignment doesn't match at the moment. Possibly revisit in the future.
             __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
             __m128 depthVec = _mm_loadu_ps(pixelDepth);
@@ -1670,11 +1662,12 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
             __m128i gValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr10, weightedAttr11), weightedAttr12));
             __m128i bValues = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(weightedAttr20, weightedAttr21), weightedAttr22));
 
+            rValues = _mm_slli_epi32(rValues, 16);
+            gValues = _mm_slli_epi32(gValues, 8);
+
             __m128i finalColor = initialColor;
             finalColor = _mm_or_si128(finalColor, rValues);
-            finalColor = _mm_slli_epi32(finalColor, 0x08);
             finalColor = _mm_or_si128(finalColor, gValues);
-            finalColor = _mm_slli_epi32(finalColor, 0x08);
             finalColor = _mm_or_si128(finalColor, bValues);
 
             __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(finalColor), _mm_castsi128_ps(pixelVec), _mm_castsi128_ps(finalCombinedMask)));
@@ -1900,6 +1893,7 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
 
     __m128 initMultiplier = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
     __m128 stepMultiplier = _mm_set_ps1(4.f);
+    __m128i weightMask = _mm_set1_epi32(0x80000000);
 
     for (int32 i = 0; i < end; i += 3) {
       const float* v1 = vertices + indices[i];
@@ -2003,10 +1997,9 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
         for (int32 w = minX; w < maxX; w += 4, pixels += 4, pixelDepth += 4) {
           // Fetch all sign bits and OR them together
           __m128 combinedWeights = _mm_or_ps(_mm_or_ps(weights0, weights1), weights2);
-          int32 combinedMask = _mm_movemask_ps(combinedWeights);
 
           // If all mask bits are set then none of these pixels are inside the triangle.
-          if ((combinedMask & 0x0F) != 0x0F) {
+          if (!_mm_testc_si128(_mm_castps_si128(combinedWeights), weightMask)) {
             // Our 4-wide alignment doesn't match at the moment. Possibly revisit in the future.
             __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
             __m128 depthVec = _mm_loadu_ps(pixelDepth);
@@ -2050,7 +2043,12 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
 
             __m128i colorValues = _mm_cvtps_epi32(vValues);
 
-            __m128i loadedColors = _mm_set_epi32(textureData[_mm_extract_epi32(colorValues, 0b11)], textureData[_mm_extract_epi32(colorValues, 0b10)], textureData[_mm_extract_epi32(colorValues, 0b01)], textureData[_mm_extract_epi32(colorValues, 0b00)]);
+            __m128i tex3 = _mm_loadu_si32(textureData + _mm_extract_epi32(colorValues, 0b11));
+            __m128i tex2 = _mm_loadu_si32(textureData + _mm_extract_epi32(colorValues, 0b10));
+            __m128i tex1 = _mm_loadu_si32(textureData + _mm_extract_epi32(colorValues, 0b01));
+            __m128i tex0 = _mm_loadu_si32(textureData + _mm_extract_epi32(colorValues, 0b00));
+
+            __m128i loadedColors = _mm_unpacklo_epi64(_mm_unpacklo_epi32(tex0, tex1), _mm_unpacklo_epi32(tex2, tex3));
 
             __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(loadedColors), _mm_castsi128_ps(pixelVec), _mm_castsi128_ps(finalCombinedMask)));
             __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, _mm_castsi128_ps(finalCombinedMask));

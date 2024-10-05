@@ -1151,8 +1151,8 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
     float* vertexData = data + (i * stride);
 
     __m128 vec = _mm_loadu_ps(vertexData);
-    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111)));
-    __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b10101010)));
+    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_shuffle_ps(vec, vec, 0b11111111));
+    __m128 invDivisor = _mm_rcp_ps(_mm_shuffle_ps(vec, vec, 0b10101010));
 
     // Homogenize with Z
     __m128 result = _mm_mul_ps(vec, invDivisor);
@@ -1199,55 +1199,27 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
 
   __m128 maxXY = _mm_set_ps(0.f, 0.f, height, width);
 
-  __m128i xShuffle = _mm_set_epi8(
-    3, 2, 1, 0,
-    3, 2, 1, 0,
-    3, 2, 1, 0,
-    3, 2, 1, 0
-  );
-
-  __m128i yShuffle = _mm_set_epi8(
-    7, 6, 5, 4,
-    7, 6, 5, 4,
-    7, 6, 5, 4,
-    7, 6, 5, 4
-  );
-
-  __m128i zShuffle = _mm_set_epi8(
-    11, 10, 9, 8,
-    11, 10, 9, 8,
-    11, 10, 9, 8,
-    11, 10, 9, 8
-  );
-
-  __m128i wShuffle = _mm_set_epi8(
-    15, 14, 13, 12,
-    15, 14, 13, 12,
-    15, 14, 13, 12,
-    15, 14, 13, 12
-  );
-
   for (size_t i = 0; i < length; i += stride) {
     float* vecData = data + i;
 
     // Perspective projection
     __m128 xyzw = _mm_loadu_ps(vecData);
 
-    __m128 vecX = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), xShuffle));
-    __m128 vecY = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), yShuffle));
-    __m128 vecZ = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), zShuffle));
-    __m128 vecW = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(xyzw), wShuffle));
+    __m128 vecX = _mm_shuffle_ps(xyzw, xyzw, 0b00000000);
+    __m128 vecY = _mm_shuffle_ps(xyzw, xyzw, 0b01010101);
+    __m128 vecZ = _mm_shuffle_ps(xyzw, xyzw, 0b10101010);
+    __m128 vecW = _mm_shuffle_ps(xyzw, xyzw, 0b11111111);
 
     __m128 vec = _mm_add_ps(_mm_mul_ps(matrixX, vecX), _mm_mul_ps(matrixY, vecY));
     vec = _mm_add_ps(vec, _mm_mul_ps(matrixZ, vecZ));
     vec = _mm_add_ps(vec, _mm_mul_ps(matrixW, vecW));
 
     // Homogenize
-    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111)));
+    __m128 invPerspectiveZ = _mm_rcp_ps(_mm_shuffle_ps(vec, vec, 0b11111111));
     __m128 homogenized = _mm_mul_ps(vec, invPerspectiveZ);
 
     // Window transform
-    __m128 invDivisor = _mm_rcp_ps(_mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(homogenized), 0b10101010)));
+    __m128 invDivisor = _mm_rcp_ps(_mm_shuffle_ps(homogenized, homogenized, 0b10101010));
 
     // Homogenize with Z
     __m128 result = _mm_mul_ps(homogenized, invDivisor);

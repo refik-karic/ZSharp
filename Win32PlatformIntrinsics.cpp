@@ -934,7 +934,7 @@ void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
   for (int32 i = 0; i < length; i += stride) {
     float* nextVec = data + i;
     __m128 vec = _mm_loadu_ps(nextVec);
-    __m128 perspectiveTerm = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(vec), 0b11111111));
+    __m128 perspectiveTerm = _mm_shuffle_ps(vec, vec, 0b11111111);
     __m128 result = _mm_mul_ps(vec, _mm_rcp_ps(perspectiveTerm));
     result = _mm_blend_ps(result, perspectiveTerm, 0b1000);
     _mm_storeu_ps(nextVec, result);
@@ -1312,18 +1312,31 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
     __m256i initialColor = _mm256_set1_epi32(0xFF000000);
     __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
+    //__m256i xShuffle = _mm256_setzero_si256(); // Can be generated on the fly.
+    __m256i yShuffle = _mm256_set1_epi32(1);
+    __m256i zShuffle = _mm256_set1_epi32(3);
+    __m256i rShuffle = _mm256_set1_epi32(4);
+    __m256i gShuffle = _mm256_set1_epi32(5);
+    __m256i bShuffle = _mm256_set1_epi32(6);
+
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      __m128i packedIndices = _mm_loadu_si128((__m128i*)(indices + i));
 
-      __m256 x0 = _mm256_broadcastss_ps(_mm_load_ps1(v1));
-      __m256 x1 = _mm256_broadcastss_ps(_mm_load_ps1(v2));
-      __m256 x2 = _mm256_broadcastss_ps(_mm_load_ps1(v3));
+      const float* v1 = vertices + _mm_extract_epi32(packedIndices, 0);
+      const float* v2 = vertices + _mm_extract_epi32(packedIndices, 1);
+      const float* v3 = vertices + _mm_extract_epi32(packedIndices, 2);
 
-      __m256 y0 = _mm256_broadcastss_ps(_mm_load_ps1(v1 + 1));
-      __m256 y1 = _mm256_broadcastss_ps(_mm_load_ps1(v2 + 1));
-      __m256 y2 = _mm256_broadcastss_ps(_mm_load_ps1(v3 + 1));
+      __m256 v1All = _mm256_loadu_ps(v1);
+      __m256 v2All = _mm256_loadu_ps(v2);
+      __m256 v3All = _mm256_loadu_ps(v3);
+
+      __m256 x0 = _mm256_permutevar8x32_ps(v1All, _mm256_setzero_si256());
+      __m256 x1 = _mm256_permutevar8x32_ps(v2All, _mm256_setzero_si256());
+      __m256 x2 = _mm256_permutevar8x32_ps(v3All, _mm256_setzero_si256());
+
+      __m256 y0 = _mm256_permutevar8x32_ps(v1All, yShuffle);
+      __m256 y1 = _mm256_permutevar8x32_ps(v2All, yShuffle);
+      __m256 y2 = _mm256_permutevar8x32_ps(v3All, yShuffle);
 
       __m256 fminX = _mm256_min_ps(_mm256_min_ps(x0, x1), x2);
       __m256 fminY = _mm256_min_ps(_mm256_min_ps(y0, y1), y2);
@@ -1357,10 +1370,11 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
 
       __m256 invArea = _mm256_rcp_ps(_mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(x2, x0), y1y0), _mm256_mul_ps(y2y0, x1x0)));
 
-      __m256 z0 = _mm256_set1_ps(v1[3]);
+      __m256 z0 = _mm256_permutevar8x32_ps(v1All, zShuffle);
+
       __m256 invVert0 = _mm256_mul_ps(z0, invArea);
-      __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
-      __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
+      __m256 invVert1 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v2All, zShuffle), invArea);
+      __m256 invVert2 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v3All, zShuffle), invArea);
 
       __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
       __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
@@ -1369,30 +1383,34 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
       // Doing that here saves us from having to apply the scale at each pixel.
       __m256 scaleFactor = _mm256_mul_ps(invArea, rgbScale);
 
-      __m256 r0 = _mm256_set1_ps(v1[4]);
-      __m256 invAttr00 = _mm256_mul_ps(r0, scaleFactor);
-      __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), scaleFactor);
-      __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), scaleFactor);
+      __m256 rgbScaledV1 = _mm256_mul_ps(v1All, rgbScale);
 
-      r0 = _mm256_mul_ps(r0, rgbScale);
+      __m256 r0 = _mm256_permutevar8x32_ps(rgbScaledV1, rShuffle);
+      __m256 g0 = _mm256_permutevar8x32_ps(rgbScaledV1, gShuffle);
+      __m256 b0 = _mm256_permutevar8x32_ps(rgbScaledV1, bShuffle);
+
+      __m256 scaledV1 = _mm256_mul_ps(v1All, scaleFactor);
+      __m256 scaledV2 = _mm256_mul_ps(v2All, scaleFactor);
+      __m256 scaledV3 = _mm256_mul_ps(v3All, scaleFactor);
+
+      __m256 invAttr00 = _mm256_permutevar8x32_ps(scaledV1, rShuffle);
+      __m256 invAttr01 = _mm256_permutevar8x32_ps(scaledV2, rShuffle);
+      __m256 invAttr02 = _mm256_permutevar8x32_ps(scaledV3, rShuffle);
+
       __m256 r1r0 = _mm256_sub_ps(invAttr01, invAttr00);
       __m256 r2r0 = _mm256_sub_ps(invAttr02, invAttr00);
 
-      __m256 g0 = _mm256_set1_ps(v1[5]);
-      __m256 invAttr10 = _mm256_mul_ps(g0, scaleFactor);
-      __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), scaleFactor);
-      __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), scaleFactor);
+      __m256 invAttr10 = _mm256_permutevar8x32_ps(scaledV1, gShuffle);
+      __m256 invAttr11 = _mm256_permutevar8x32_ps(scaledV2, gShuffle);
+      __m256 invAttr12 = _mm256_permutevar8x32_ps(scaledV3, gShuffle);
 
-      g0 = _mm256_mul_ps(g0, rgbScale);
       __m256 g1g0 = _mm256_sub_ps(invAttr11, invAttr10);
       __m256 g2g0 = _mm256_sub_ps(invAttr12, invAttr10);
 
-      __m256 b0 = _mm256_set1_ps(v1[6]);
-      __m256 invAttr20 = _mm256_mul_ps(b0, scaleFactor);
-      __m256 invAttr21 = _mm256_mul_ps(_mm256_set1_ps(v2[6]), scaleFactor);
-      __m256 invAttr22 = _mm256_mul_ps(_mm256_set1_ps(v3[6]), scaleFactor);
+      __m256 invAttr20 = _mm256_permutevar8x32_ps(scaledV1, bShuffle);
+      __m256 invAttr21 = _mm256_permutevar8x32_ps(scaledV2, bShuffle);
+      __m256 invAttr22 = _mm256_permutevar8x32_ps(scaledV3, bShuffle);
 
-      b0 = _mm256_mul_ps(b0, rgbScale);
       __m256 b1b0 = _mm256_sub_ps(invAttr21, invAttr20);
       __m256 b2b0 = _mm256_sub_ps(invAttr22, invAttr20);
 
@@ -1488,17 +1506,26 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
     __m128i weightMask = _mm_set1_epi32(0x80000000);
 
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      __m128i packedIndices = _mm_loadu_si128((__m128i*)(indices + i));
 
-      __m128 x0 = _mm_load_ps1(v1);
-      __m128 x1 = _mm_load_ps1(v2);
-      __m128 x2 = _mm_load_ps1(v3);
+      const float* v1 = vertices + _mm_extract_epi32(packedIndices, 0);
+      const float* v2 = vertices + _mm_extract_epi32(packedIndices, 1);
+      const float* v3 = vertices + _mm_extract_epi32(packedIndices, 2);
 
-      __m128 y0 = _mm_load_ps1(v1 + 1);
-      __m128 y1 = _mm_load_ps1(v2 + 1);
-      __m128 y2 = _mm_load_ps1(v3 + 1);
+      __m128 v1All = _mm_loadu_ps(v1);
+      __m128 v2All = _mm_loadu_ps(v2);
+      __m128 v3All = _mm_loadu_ps(v3);
+      __m128 v1Attrs = _mm_loadu_ps(v1 + 4);
+      __m128 v2Attrs = _mm_loadu_ps(v2 + 4);
+      __m128 v3Attrs = _mm_loadu_ps(v3 + 4);
+
+      __m128 x0 = _mm_shuffle_ps(v1All, v1All, 0b00000000);
+      __m128 x1 = _mm_shuffle_ps(v2All, v2All, 0b00000000);
+      __m128 x2 = _mm_shuffle_ps(v3All, v3All, 0b00000000);
+
+      __m128 y0 = _mm_shuffle_ps(v1All, v1All, 0b01010101);
+      __m128 y1 = _mm_shuffle_ps(v2All, v2All, 0b01010101);
+      __m128 y2 = _mm_shuffle_ps(v3All, v3All, 0b01010101);
 
       __m128 fminX = _mm_min_ps(_mm_min_ps(x0, x1), x2);
       __m128 fminY = _mm_min_ps(_mm_min_ps(y0, y1), y2);
@@ -1524,10 +1551,10 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
 
       __m128 invArea = _mm_rcp_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(x2, x0), y1y0), _mm_mul_ps(y2y0, x1x0)));
 
-      __m128 z0 = _mm_set_ps1(v1[3]);
+      __m128 z0 = _mm_shuffle_ps(v1All, v1All, 0b11111111);
       __m128 invVert0 = _mm_mul_ps(z0, invArea);
-      __m128 invVert1 = _mm_mul_ps(_mm_set_ps1(v2[3]), invArea);
-      __m128 invVert2 = _mm_mul_ps(_mm_set_ps1(v3[3]), invArea);
+      __m128 invVert1 = _mm_mul_ps(_mm_shuffle_ps(v2All, v2All, 0b11111111), invArea);
+      __m128 invVert2 = _mm_mul_ps(_mm_shuffle_ps(v3All, v3All, 0b11111111), invArea);
 
       __m128 z1z0 = _mm_sub_ps(invVert1, invVert0);
       __m128 z2z0 = _mm_sub_ps(invVert2, invVert0);
@@ -1536,30 +1563,34 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
       // Doing that here saves us from having to apply the scale at each pixel.
       __m128 scaleFactor = _mm_mul_ps(invArea, rgbScale);
 
-      __m128 r0 = _mm_set_ps1(v1[4]);
-      __m128 invAttr00 = _mm_mul_ps(r0, scaleFactor);
-      __m128 invAttr01 = _mm_mul_ps(_mm_set_ps1(v2[4]), scaleFactor);
-      __m128 invAttr02 = _mm_mul_ps(_mm_set_ps1(v3[4]), scaleFactor);
+      __m128 rgbScaledV1 = _mm_mul_ps(v1Attrs, rgbScale);
 
-      r0 = _mm_mul_ps(r0, rgbScale);
+      __m128 r0 = _mm_shuffle_ps(rgbScaledV1, rgbScaledV1, 0b00000000);
+      __m128 g0 = _mm_shuffle_ps(rgbScaledV1, rgbScaledV1, 0b01010101);
+      __m128 b0 = _mm_shuffle_ps(rgbScaledV1, rgbScaledV1, 0b10101010);
+
+      __m128 scaledV1 = _mm_mul_ps(v1Attrs, scaleFactor);
+      __m128 scaledV2 = _mm_mul_ps(v2Attrs, scaleFactor);
+      __m128 scaledV3 = _mm_mul_ps(v3Attrs, scaleFactor);
+
+      __m128 invAttr00 = _mm_shuffle_ps(scaledV1, scaledV1, 0b00000000);
+      __m128 invAttr01 = _mm_shuffle_ps(scaledV2, scaledV2, 0b00000000);
+      __m128 invAttr02 = _mm_shuffle_ps(scaledV3, scaledV3, 0b00000000);
+
       __m128 r1r0 = _mm_sub_ps(invAttr01, invAttr00);
       __m128 r2r0 = _mm_sub_ps(invAttr02, invAttr00);
 
-      __m128 g0 = _mm_set_ps1(v1[5]);
-      __m128 invAttr10 = _mm_mul_ps(g0, scaleFactor);
-      __m128 invAttr11 = _mm_mul_ps(_mm_set_ps1(v2[5]), scaleFactor);
-      __m128 invAttr12 = _mm_mul_ps(_mm_set_ps1(v3[5]), scaleFactor);
+      __m128 invAttr10 = _mm_shuffle_ps(scaledV1, scaledV1, 0b01010101);
+      __m128 invAttr11 = _mm_shuffle_ps(scaledV2, scaledV2, 0b01010101);
+      __m128 invAttr12 = _mm_shuffle_ps(scaledV3, scaledV3, 0b01010101);
 
-      g0 = _mm_mul_ps(g0, rgbScale);
       __m128 g1g0 = _mm_sub_ps(invAttr11, invAttr10);
       __m128 g2g0 = _mm_sub_ps(invAttr12, invAttr10);
 
-      __m128 b0 = _mm_set_ps1(v1[6]);
-      __m128 invAttr20 = _mm_mul_ps(b0, scaleFactor);
-      __m128 invAttr21 = _mm_mul_ps(_mm_set_ps1(v2[6]), scaleFactor);
-      __m128 invAttr22 = _mm_mul_ps(_mm_set_ps1(v3[6]), scaleFactor);
+      __m128 invAttr20 = _mm_shuffle_ps(scaledV1, scaledV1, 0b10101010);
+      __m128 invAttr21 = _mm_shuffle_ps(scaledV2, scaledV2, 0b10101010);
+      __m128 invAttr22 = _mm_shuffle_ps(scaledV3, scaledV3, 0b10101010);
 
-      b0 = _mm_mul_ps(b0, rgbScale);
       __m128 b1b0 = _mm_sub_ps(invAttr21, invAttr20);
       __m128 b2b0 = _mm_sub_ps(invAttr22, invAttr20);
 
@@ -1682,18 +1713,30 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
     __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
     __m256 stepMultiplier = _mm256_set1_ps(8.f);
 
+    //__m256i xShuffle = _mm256_setzero_si256(); // Can be generated on the fly.
+    __m256i yShuffle = _mm256_set1_epi32(1);
+    __m256i zShuffle = _mm256_set1_epi32(3);
+    __m256i uShuffle = _mm256_set1_epi32(4);
+    __m256i vShuffle = _mm256_set1_epi32(5);
+
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      __m128i packedIndices = _mm_loadu_si128((__m128i*)(indices + i));
 
-      __m256 x0 = _mm256_broadcastss_ps(_mm_load_ps1(v1));
-      __m256 x1 = _mm256_broadcastss_ps(_mm_load_ps1(v2));
-      __m256 x2 = _mm256_broadcastss_ps(_mm_load_ps1(v3));
+      const float* v1 = vertices + _mm_extract_epi32(packedIndices, 0);
+      const float* v2 = vertices + _mm_extract_epi32(packedIndices, 1);
+      const float* v3 = vertices + _mm_extract_epi32(packedIndices, 2);
 
-      __m256 y0 = _mm256_broadcastss_ps(_mm_load_ps1(v1 + 1));
-      __m256 y1 = _mm256_broadcastss_ps(_mm_load_ps1(v2 + 1));
-      __m256 y2 = _mm256_broadcastss_ps(_mm_load_ps1(v3 + 1));
+      __m256 v1All = _mm256_loadu_ps(v1);
+      __m256 v2All = _mm256_loadu_ps(v2);
+      __m256 v3All = _mm256_loadu_ps(v3);
+
+      __m256 x0 = _mm256_permutevar8x32_ps(v1All, _mm256_setzero_si256());
+      __m256 x1 = _mm256_permutevar8x32_ps(v2All, _mm256_setzero_si256());
+      __m256 x2 = _mm256_permutevar8x32_ps(v3All, _mm256_setzero_si256());
+
+      __m256 y0 = _mm256_permutevar8x32_ps(v1All, yShuffle);
+      __m256 y1 = _mm256_permutevar8x32_ps(v2All, yShuffle);
+      __m256 y2 = _mm256_permutevar8x32_ps(v3All, yShuffle);
 
       __m256 fminX = _mm256_min_ps(_mm256_min_ps(x0, x1), x2);
       __m256 fminY = _mm256_min_ps(_mm256_min_ps(y0, y1), y2);
@@ -1727,10 +1770,10 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
 
       __m256 invArea = _mm256_rcp_ps(_mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(x2, x0), y1y0), _mm256_mul_ps(y2y0, x1x0)));
 
-      __m256 z0 = _mm256_set1_ps(v1[3]);
+      __m256 z0 = _mm256_permutevar8x32_ps(v1All, zShuffle);
       __m256 invVert0 = _mm256_mul_ps(z0, invArea);
-      __m256 invVert1 = _mm256_mul_ps(_mm256_set1_ps(v2[3]), invArea);
-      __m256 invVert2 = _mm256_mul_ps(_mm256_set1_ps(v3[3]), invArea);
+      __m256 invVert1 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v2All, zShuffle), invArea);
+      __m256 invVert2 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v3All, zShuffle), invArea);
 
       __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
       __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
@@ -1738,18 +1781,18 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
       __m256 uScaleFactor = _mm256_mul_ps(invArea, maxUValue);
       __m256 vScaleFactor = _mm256_mul_ps(invArea, maxVValue);
 
-      __m256 u0 = _mm256_set1_ps(v1[4]);
+      __m256 u0 = _mm256_permutevar8x32_ps(v1All, uShuffle);
       __m256 invAttr00 = _mm256_mul_ps(u0, uScaleFactor);
-      __m256 invAttr01 = _mm256_mul_ps(_mm256_set1_ps(v2[4]), uScaleFactor);
-      __m256 invAttr02 = _mm256_mul_ps(_mm256_set1_ps(v3[4]), uScaleFactor);
+      __m256 invAttr01 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v2All, uShuffle), uScaleFactor);
+      __m256 invAttr02 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v3All, uShuffle), uScaleFactor);
       u0 = _mm256_mul_ps(u0, maxUValue);
       __m256 u1u0 = _mm256_sub_ps(invAttr01, invAttr00);
       __m256 u2u0 = _mm256_sub_ps(invAttr02, invAttr00);
 
-      __m256 v0 = _mm256_set1_ps(v1[5]);
+      __m256 v0 = _mm256_permutevar8x32_ps(v1All, vShuffle);
       __m256 invAttr10 = _mm256_mul_ps(v0, vScaleFactor);
-      __m256 invAttr11 = _mm256_mul_ps(_mm256_set1_ps(v2[5]), vScaleFactor);
-      __m256 invAttr12 = _mm256_mul_ps(_mm256_set1_ps(v3[5]), vScaleFactor);
+      __m256 invAttr11 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v2All, vShuffle), vScaleFactor);
+      __m256 invAttr12 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v3All, vShuffle), vScaleFactor);
       v0 = _mm256_mul_ps(v0, maxVValue);
       __m256 v1v0 = _mm256_sub_ps(invAttr11, invAttr10);
       __m256 v2v0 = _mm256_sub_ps(invAttr12, invAttr10);
@@ -1868,17 +1911,26 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
     __m128i weightMask = _mm_set1_epi32(0x80000000);
 
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      __m128i packedIndices = _mm_loadu_si128((__m128i*)(indices + i));
 
-      __m128 x0 = _mm_load_ps1(v1);
-      __m128 x1 = _mm_load_ps1(v2);
-      __m128 x2 = _mm_load_ps1(v3);
+      const float* v1 = vertices + _mm_extract_epi32(packedIndices, 0);
+      const float* v2 = vertices + _mm_extract_epi32(packedIndices, 1);
+      const float* v3 = vertices + _mm_extract_epi32(packedIndices, 2);
 
-      __m128 y0 = _mm_load_ps1(v1 + 1);
-      __m128 y1 = _mm_load_ps1(v2 + 1);
-      __m128 y2 = _mm_load_ps1(v3 + 1);
+      __m128 v1All = _mm_loadu_ps(v1);
+      __m128 v2All = _mm_loadu_ps(v2);
+      __m128 v3All = _mm_loadu_ps(v3);
+      __m128 v1Attrs = _mm_loadu_ps(v1 + 4);
+      __m128 v2Attrs = _mm_loadu_ps(v2 + 4);
+      __m128 v3Attrs = _mm_loadu_ps(v3 + 4);
+
+      __m128 x0 = _mm_shuffle_ps(v1All, v1All, 0b00000000);
+      __m128 x1 = _mm_shuffle_ps(v2All, v2All, 0b00000000);
+      __m128 x2 = _mm_shuffle_ps(v3All, v3All, 0b00000000);
+
+      __m128 y0 = _mm_shuffle_ps(v1All, v1All, 0b01010101);
+      __m128 y1 = _mm_shuffle_ps(v2All, v2All, 0b01010101);
+      __m128 y2 = _mm_shuffle_ps(v3All, v3All, 0b01010101);
 
       __m128 fminX = _mm_min_ps(_mm_min_ps(x0, x1), x2);
       __m128 fminY = _mm_min_ps(_mm_min_ps(y0, y1), y2);
@@ -1904,10 +1956,10 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
 
       __m128 invArea = _mm_rcp_ps(_mm_sub_ps(_mm_mul_ps(_mm_sub_ps(x2, x0), y1y0), _mm_mul_ps(y2y0, x1x0)));
 
-      __m128 z0 = _mm_set_ps1(v1[3]);
+      __m128 z0 = _mm_shuffle_ps(v1All, v1All, 0b11111111);
       __m128 invVert0 = _mm_mul_ps(z0, invArea);
-      __m128 invVert1 = _mm_mul_ps(_mm_set_ps1(v2[3]), invArea);
-      __m128 invVert2 = _mm_mul_ps(_mm_set_ps1(v3[3]), invArea);
+      __m128 invVert1 = _mm_mul_ps(_mm_shuffle_ps(v2All, v2All, 0b11111111), invArea);
+      __m128 invVert2 = _mm_mul_ps(_mm_shuffle_ps(v3All, v3All, 0b11111111), invArea);
 
       __m128 z1z0 = _mm_sub_ps(invVert1, invVert0);
       __m128 z2z0 = _mm_sub_ps(invVert2, invVert0);
@@ -1915,18 +1967,18 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
       __m128 uScaleFactor = _mm_mul_ps(invArea, maxUValue);
       __m128 vScaleFactor = _mm_mul_ps(invArea, maxVValue);
 
-      __m128 u0 = _mm_set_ps1(v1[4]);
+      __m128 u0 = _mm_shuffle_ps(v1Attrs, v1Attrs, 0b00000000);
       __m128 invAttr00 = _mm_mul_ps(u0, uScaleFactor);
-      __m128 invAttr01 = _mm_mul_ps(_mm_set_ps1(v2[4]), uScaleFactor);
-      __m128 invAttr02 = _mm_mul_ps(_mm_set_ps1(v3[4]), uScaleFactor);
+      __m128 invAttr01 = _mm_mul_ps(_mm_shuffle_ps(v2Attrs, v2Attrs, 0b00000000), uScaleFactor);
+      __m128 invAttr02 = _mm_mul_ps(_mm_shuffle_ps(v3Attrs, v3Attrs, 0b00000000), uScaleFactor);
       u0 = _mm_mul_ps(u0, maxUValue);
       __m128 u1u0 = _mm_sub_ps(invAttr01, invAttr00);
       __m128 u2u0 = _mm_sub_ps(invAttr02, invAttr00);
 
-      __m128 v0 = _mm_set_ps1(v1[5]);
+      __m128 v0 = _mm_shuffle_ps(v1Attrs, v1Attrs, 0b01010101);
       __m128 invAttr10 = _mm_mul_ps(v0, vScaleFactor);
-      __m128 invAttr11 = _mm_mul_ps(_mm_set_ps1(v2[5]), vScaleFactor);
-      __m128 invAttr12 = _mm_mul_ps(_mm_set_ps1(v3[5]), vScaleFactor);
+      __m128 invAttr11 = _mm_mul_ps(_mm_shuffle_ps(v2Attrs, v2Attrs, 0b01010101), vScaleFactor);
+      __m128 invAttr12 = _mm_mul_ps(_mm_shuffle_ps(v3Attrs, v3Attrs, 0b01010101), vScaleFactor);
       v0 = _mm_mul_ps(v0, maxVValue);
       __m128 v1v0 = _mm_sub_ps(invAttr11, invAttr10);
       __m128 v2v0 = _mm_sub_ps(invAttr12, invAttr10);

@@ -182,11 +182,11 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
     float* vertexClipData = nullptr;
 
     if (vertexBuffer.WasClipped()) {
-      vertClipLength = vertexBuffer.GetClipLength();
+      vertClipLength = vertexBuffer.GetClipLength() * stride;
       vertexClipData = vertexBuffer.GetClipData(0);
     }
     else {
-      vertClipLength = vertexBuffer.GetVertSize();
+      vertClipLength = vertexBuffer.GetVertSize() * stride;
       vertexClipData = vertexBuffer[0];
     }
 
@@ -197,10 +197,11 @@ void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& inde
 ClipBounds Camera::ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, const Mat4x4& objectTransform) {
   NamedScopedTimer(ClipBoundsCheck);
 
+  const int32 stride = vertexBuffer.GetStride();
   const size_t inIndexSize = indexBuffer.GetIndexSize();
 
   // Apply the perspective projection transform to all input vertices.
-  Aligned_Mat4x4Transform((const float(*)[4])*(mPerspectiveTransform * objectTransform), vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+  Aligned_Mat4x4Transform((const float(*)[4])*(mPerspectiveTransform * objectTransform), vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
 
   // Clip against near plane to avoid things behind camera reappearing.
   // This clip is special because it needs to append clip data and shuffle it back to the beginning.
@@ -217,7 +218,7 @@ ClipBounds Camera::ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& inde
   // Points at this stage must have Z > 0.
   // If Z < 0, points will re-appear in front of the camera.
   // If Z = 0, divide by 0 occurs and trashes the results.
-  Aligned_Vec4Homogenize(vertexBuffer[0], vertexBuffer.GetStride(), vertexBuffer.GetVertSize() * vertexBuffer.GetStride());
+  Aligned_Vec4Homogenize(vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);
 
   ClipTriangles(vertexBuffer, indexBuffer);
   

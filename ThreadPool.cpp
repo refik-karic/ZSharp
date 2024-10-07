@@ -12,14 +12,16 @@ int32 BackgroundWorker(void* data) {
 
   while (true) {
     if (control.status == ThreadControl::RunStatus::RUNNING) {
+      workerControl.jobLock.Aquire();
+
       if (!workerControl.jobs.IsEmpty()) {
         ThreadJob& job = *(workerControl.jobs.begin());
         job.func(job.data);
 
-        workerControl.jobLock.Aquire();
         workerControl.jobs.RemoveFront();
-        workerControl.jobLock.Release();
       }
+
+      workerControl.jobLock.Release();
 
       control.lock.Aquire();
 

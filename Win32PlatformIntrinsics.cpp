@@ -1147,8 +1147,8 @@ void Aligned_WindowTransform(float* data, int32 stride, int32 length, const floa
 
   __m128 maxXY = _mm_set_ps(0.f, 0.f, height, width);
 
-  for (int32 i = 0; i < length; ++i) {
-    float* vertexData = data + (i * stride);
+  for (int32 i = 0; i < length; i += stride) {
+    float* vertexData = data + i;
 
     __m128 vec = _mm_loadu_ps(vertexData);
     __m128 invPerspectiveZ = _mm_rcp_ps(_mm_shuffle_ps(vec, vec, 0b11111111));
@@ -1320,15 +1320,9 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
     __m256i bShuffle = _mm256_set1_epi32(6);
 
     for (int32 i = 0; i < end; i += 3) {
-      __m128i packedIndices = _mm_loadu_si128((__m128i*)(indices + i));
-
-      const float* v1 = vertices + _mm_extract_epi32(packedIndices, 0);
-      const float* v2 = vertices + _mm_extract_epi32(packedIndices, 1);
-      const float* v3 = vertices + _mm_extract_epi32(packedIndices, 2);
-
-      __m256 v1All = _mm256_loadu_ps(v1);
-      __m256 v2All = _mm256_loadu_ps(v2);
-      __m256 v3All = _mm256_loadu_ps(v3);
+      __m256 v1All = _mm256_loadu_ps(vertices + indices[i]);
+      __m256 v2All = _mm256_loadu_ps(vertices + indices[i + 1]);
+      __m256 v3All = _mm256_loadu_ps(vertices + indices[i + 2]);
 
       __m256 x0 = _mm256_permutevar8x32_ps(v1All, _mm256_setzero_si256());
       __m256 x1 = _mm256_permutevar8x32_ps(v2All, _mm256_setzero_si256());
@@ -1506,11 +1500,9 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
     __m128i weightMask = _mm_set1_epi32(0x80000000);
 
     for (int32 i = 0; i < end; i += 3) {
-      __m128i packedIndices = _mm_loadu_si128((__m128i*)(indices + i));
-
-      const float* v1 = vertices + _mm_extract_epi32(packedIndices, 0);
-      const float* v2 = vertices + _mm_extract_epi32(packedIndices, 1);
-      const float* v3 = vertices + _mm_extract_epi32(packedIndices, 2);
+      const float* v1 = vertices + indices[i];
+      const float* v2 = vertices + indices[i + 1];
+      const float* v3 = vertices + indices[i + 2];
 
       __m128 v1All = _mm_loadu_ps(v1);
       __m128 v2All = _mm_loadu_ps(v2);
@@ -1720,15 +1712,9 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
     __m256i vShuffle = _mm256_set1_epi32(5);
 
     for (int32 i = 0; i < end; i += 3) {
-      __m128i packedIndices = _mm_loadu_si128((__m128i*)(indices + i));
-
-      const float* v1 = vertices + _mm_extract_epi32(packedIndices, 0);
-      const float* v2 = vertices + _mm_extract_epi32(packedIndices, 1);
-      const float* v3 = vertices + _mm_extract_epi32(packedIndices, 2);
-
-      __m256 v1All = _mm256_loadu_ps(v1);
-      __m256 v2All = _mm256_loadu_ps(v2);
-      __m256 v3All = _mm256_loadu_ps(v3);
+      __m256 v1All = _mm256_loadu_ps(vertices + indices[i]);
+      __m256 v2All = _mm256_loadu_ps(vertices + indices[i + 1]);
+      __m256 v3All = _mm256_loadu_ps(vertices + indices[i + 2]);
 
       __m256 x0 = _mm256_permutevar8x32_ps(v1All, _mm256_setzero_si256());
       __m256 x1 = _mm256_permutevar8x32_ps(v2All, _mm256_setzero_si256());
@@ -1911,11 +1897,9 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
     __m128i weightMask = _mm_set1_epi32(0x80000000);
 
     for (int32 i = 0; i < end; i += 3) {
-      __m128i packedIndices = _mm_loadu_si128((__m128i*)(indices + i));
-
-      const float* v1 = vertices + _mm_extract_epi32(packedIndices, 0);
-      const float* v2 = vertices + _mm_extract_epi32(packedIndices, 1);
-      const float* v3 = vertices + _mm_extract_epi32(packedIndices, 2);
+      const float* v1 = vertices + indices[i];
+      const float* v2 = vertices + indices[i + 1];
+      const float* v3 = vertices + indices[i + 2];
 
       __m128 v1All = _mm_loadu_ps(v1);
       __m128 v2All = _mm_loadu_ps(v2);

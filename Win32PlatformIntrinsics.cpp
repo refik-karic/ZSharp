@@ -727,7 +727,7 @@ void Unaligned_GenerateMipLevel(uint8* nextMip, size_t nextWidth, size_t nextHei
 
       __m128i topData = _mm_loadu_si64(topLeft);
       __m128i bottomData = _mm_loadu_si64(bottomLeft);
-
+      
       __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeft);
       __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRight);
       __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeft);
@@ -757,11 +757,13 @@ void Unaligned_DrawDebugText(const uint8 lut[128][8], const String& message, siz
 
     for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
       const char fontChar = *curChar;
+      __m128i fontRow = _mm_loadu_si64(lut[fontChar]);
       for (size_t curX = 0; curX < 8; ++curX) {
         uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
-        __m256i font = _mm256_set1_epi32(lut[fontChar][curX]);
+        __m256i font = _mm256_broadcastb_epi8(fontRow);
         __m256i mask = _mm256_and_si256(font, bitMask);
         mask = _mm256_sllv_epi32(mask, shiftMask);
+        fontRow = _mm_srli_si128(fontRow, 1);
         _mm256_maskstore_epi32((int*)bufferPosition, mask, colors);
       }
 
@@ -778,11 +780,13 @@ void Unaligned_DrawDebugText(const uint8 lut[128][8], const String& message, siz
 
     for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
       const char fontChar = *curChar;
+      __m128i fontRow = _mm_loadu_si64(lut[fontChar]);
       for (size_t curX = 0; curX < 8; ++curX) {
         uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
         __m128i bufferLo = _mm_loadu_si128((__m128i*)bufferPosition);
         __m128i bufferHi = _mm_loadu_si128(((__m128i*)bufferPosition) + 1);
-        __m128i font = _mm_set1_epi32(lut[fontChar][curX]);
+        __m128i font = _mm_shuffle_epi8(fontRow, _mm_setzero_si128());
+        fontRow = _mm_srli_si128(fontRow, 1);
         __m128i maskLo = _mm_and_si128(font, bitMaskLo);
         __m128i maskHi = _mm_and_si128(font, bitMaskHi);
         maskLo = _mm_sllv_epi32(maskLo, shiftMaskLo);

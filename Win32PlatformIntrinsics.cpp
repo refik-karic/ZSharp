@@ -486,7 +486,7 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
   }
 }
 
-void Unaligned_BilinearScaleImage(uint8* source, size_t sourceWidth, size_t sourceHeight, uint8* dest, size_t destWidth, size_t destHeight) {
+void Unaligned_BilinearScaleImage(uint8* __restrict source, size_t sourceWidth, size_t sourceHeight, uint8* __restrict dest, size_t destWidth, size_t destHeight) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     float ratioXValue = ((float)sourceWidth - 1) / ((float)destWidth - 1);
     float ratioYValue = ((float)sourceHeight - 1) / ((float)destHeight - 1);
@@ -692,7 +692,7 @@ void Unaligned_BilinearScaleImage(uint8* source, size_t sourceWidth, size_t sour
   }
 }
 
-void Unaligned_GenerateMipLevel(uint8* nextMip, size_t nextWidth, size_t nextHeight, uint8* lastMip, size_t lastWidth, size_t lastHeight) {
+void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, size_t nextHeight, uint8* __restrict lastMip, size_t lastWidth, size_t lastHeight) {
   (void)lastHeight;
   size_t nextMipStride = nextWidth * 4;
   size_t lastMipStride = lastWidth * 4;
@@ -722,8 +722,8 @@ void Unaligned_GenerateMipLevel(uint8* nextMip, size_t nextWidth, size_t nextHei
     for (size_t x = 0; x < nextWidth; ++x) {
       const size_t xStride = x * 4;
 
-      uint8* topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
-      uint8* bottomLeft = topLeft + lastMipStride;
+      uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+      uint8* __restrict bottomLeft = topLeft + lastMipStride;
 
       __m128i topData = _mm_loadu_si64(topLeft);
       __m128i bottomData = _mm_loadu_si64(bottomLeft);
@@ -801,7 +801,7 @@ void Unaligned_DrawDebugText(const uint8 lut[128][8], const String& message, siz
   }
 }
 
-void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride, int32 length) {
+void Aligned_Mat4x4Transform(const float matrix[4][4], float* __restrict data, int32 stride, int32 length) {
   /*
     We preload 4 registers with all of the matrix X, Y, Z, W values.
     We also broadcast each vector component (X, Y, Z, W) to 4 registers.
@@ -825,7 +825,7 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* data, int32 stride
   matrixW = _mm_shuffle_ps(hiXY, hiZW, 0b11101110);
 
   for (size_t i = 0; i < length; i += stride) {
-    float* vecData = data + i;
+    float* __restrict vecData = data + i;
 
     __m128 xyzw = _mm_loadu_ps(vecData);
 
@@ -945,7 +945,7 @@ void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
   }
 }
 
-void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width, size_t height, float opacity) {
+void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict frameBuffer, size_t width, size_t height, float opacity) {
   short devOpacityValue = (short)(255.f * opacity);
   short bufferOpacityValue = (short)(255.f * (1.f - opacity));
   
@@ -992,8 +992,8 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
 
       for (; x < width; ++x) {
         size_t index = (y * width) + x;
-        uint8* devPixels = (uint8*)(devBuffer + index);
-        uint8* bufPixels = (uint8*)(frameBuffer + index);
+        uint8* __restrict devPixels = (uint8* __restrict)(devBuffer + index);
+        uint8* __restrict bufPixels = (uint8* __restrict)(frameBuffer + index);
         
         short devB = devPixels[0];
         short devG = devPixels[1];
@@ -1076,8 +1076,8 @@ void Unaligned_BlendBuffers(uint32* devBuffer, uint32* frameBuffer, size_t width
 
       for (; x < width; ++x) {
         size_t index = (y * width) + x;
-        uint8* devPixels = (uint8*)(devBuffer + index);
-        uint8* bufPixels = (uint8*)(frameBuffer + index);
+        uint8* __restrict devPixels = (uint8* __restrict)(devBuffer + index);
+        uint8* __restrict bufPixels = (uint8* __restrict)(frameBuffer + index);
 
         short devB = devPixels[0];
         short devG = devPixels[1];
@@ -1306,7 +1306,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
   _mm_storeu_ps(outMax, max);
 }
 
-void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int32 end, const float maxWidth, uint8* framebuffer, float* depthBuffer) {
+void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restrict indices, const int32 end, const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
@@ -1433,8 +1433,8 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
       xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
       xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
-      uint32* pixels = ((uint32*)(framebuffer)) + (minX + (minY * sMaxWidth));
-      float* pixelDepth = depthBuffer + (minX + (minY * sMaxWidth));
+      uint32* __restrict pixels = ((uint32* __restrict)(framebuffer)) + (minX + (minY * sMaxWidth));
+      float* __restrict pixelDepth = depthBuffer + (minX + (minY * sMaxWidth));
       int32 w = minX;
       int32 h = minY;
 
@@ -1468,7 +1468,7 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
           finalColor = _mm256_or_si256(finalColor, gValues);
           finalColor = _mm256_or_si256(finalColor, bValues);
 
-          _mm256_maskstore_epi32((int*)pixels, finalCombinedMask, finalColor);
+          _mm256_maskstore_epi32((int* __restrict)pixels, finalCombinedMask, finalColor);
           _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
         }
 
@@ -1477,7 +1477,7 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
         if (w >= maxX) {
           w = minX;
           ++h;
-          pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
+          pixels = ((uint32* __restrict)(framebuffer)) + (minX + (h * sMaxWidth));
           pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
           weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
           weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
@@ -1504,9 +1504,9 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
     __m128i weightMask = _mm_set1_epi32(0x80000000);
 
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      const float* __restrict v1 = vertices + indices[i];
+      const float* __restrict v2 = vertices + indices[i + 1];
+      const float* __restrict v3 = vertices + indices[i + 2];
 
       __m128 v1All = _mm_loadu_ps(v1);
       __m128 v2All = _mm_loadu_ps(v2);
@@ -1622,8 +1622,8 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
         __m128 weights1 = weightInit1;
         __m128 weights2 = weightInit2;
 
-        uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
-        float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+        uint32* __restrict pixels = ((uint32* __restrict)(framebuffer)) + (minX + (h * sMaxWidth));
+        float* __restrict pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
 
         for (int32 w = minX; w < maxX; w += 4, pixels += 4, pixelDepth += 4) {
           // Fetch all sign bits and OR them together
@@ -1632,7 +1632,7 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
           // If all mask bits are set then none of these pixels are inside the triangle.
           if (!_mm_testc_si128(_mm_castps_si128(combinedWeights), weightMask)) {
             // Our 4-wide alignment doesn't match at the moment. Possibly revisit in the future.
-            __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
+            __m128i pixelVec = _mm_loadu_si128((__m128i* __restrict)pixels);
             __m128 depthVec = _mm_loadu_ps(pixelDepth);
 
             __m128 weightedVerts0 = z0;
@@ -1672,7 +1672,7 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
             __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(finalColor), _mm_castsi128_ps(pixelVec), _mm_castsi128_ps(finalCombinedMask)));
             __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, _mm_castsi128_ps(finalCombinedMask));
 
-            _mm_storeu_si128((__m128i*)pixels, writebackColor);
+            _mm_storeu_si128((__m128i* __restrict)pixels, writebackColor);
             _mm_storeu_ps(pixelDepth, writebackDepth);
           }
 
@@ -1689,14 +1689,14 @@ void Unaligned_Shader_RGB(const float* vertices, const int32* indices, const int
   }
 }
 
-void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int32 end, const float maxWidth, uint8* framebuffer, float* depthBuffer, const Texture* texture, size_t mipLevel) {
+void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restrict indices, const int32 end, const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer, const Texture* __restrict texture, size_t mipLevel) {
   const int32 sMaxWidth = (int32)maxWidth;
   // We want the UV values to be scaled by the width/height.
   // Doing that here saves us from having to do that at each pixel.
   // We must still multiply the stride and channels separately because of rounding error.
   size_t texWidth = texture->Width(mipLevel);
   size_t texHeight = texture->Height(mipLevel);
-  uint32* textureData = (uint32*)texture->Data(mipLevel);
+  uint32* __restrict textureData = (uint32* __restrict)texture->Data(mipLevel);
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     __m256 yStride = _mm256_set1_ps((float)(texHeight));
@@ -1814,8 +1814,8 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
       xStep1 = _mm256_mul_ps(stepMultiplier, xStep1);
       xStep2 = _mm256_mul_ps(stepMultiplier, xStep2);
 
-      uint32* pixels = ((uint32*)(framebuffer)) + (minX + (minY * sMaxWidth));
-      float* pixelDepth = depthBuffer + (minX + (minY * sMaxWidth));
+      uint32* __restrict pixels = ((uint32* __restrict)(framebuffer)) + (minX + (minY * sMaxWidth));
+      float* __restrict pixelDepth = depthBuffer + (minX + (minY * sMaxWidth));
       int32 w = minX;
       int32 h = minY;
 
@@ -1871,7 +1871,7 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
         if (w >= maxX) {
           w = minX;
           ++h;
-          pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
+          pixels = ((uint32* __restrict)(framebuffer)) + (minX + (h * sMaxWidth));
           pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
           weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
           weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
@@ -1901,9 +1901,9 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
     __m128i weightMask = _mm_set1_epi32(0x80000000);
 
     for (int32 i = 0; i < end; i += 3) {
-      const float* v1 = vertices + indices[i];
-      const float* v2 = vertices + indices[i + 1];
-      const float* v3 = vertices + indices[i + 2];
+      const float* __restrict v1 = vertices + indices[i];
+      const float* __restrict v2 = vertices + indices[i + 1];
+      const float* __restrict v3 = vertices + indices[i + 2];
 
       __m128 v1All = _mm_loadu_ps(v1);
       __m128 v2All = _mm_loadu_ps(v2);
@@ -2003,8 +2003,8 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
         __m128 weights1 = weightInit1;
         __m128 weights2 = weightInit2;
 
-        uint32* pixels = ((uint32*)(framebuffer)) + (minX + (h * sMaxWidth));
-        float* pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+        uint32* __restrict pixels = ((uint32* __restrict)(framebuffer)) + (minX + (h * sMaxWidth));
+        float* __restrict pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
 
         for (int32 w = minX; w < maxX; w += 4, pixels += 4, pixelDepth += 4) {
           // Fetch all sign bits and OR them together
@@ -2013,7 +2013,7 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
           // If all mask bits are set then none of these pixels are inside the triangle.
           if (!_mm_testc_si128(_mm_castps_si128(combinedWeights), weightMask)) {
             // Our 4-wide alignment doesn't match at the moment. Possibly revisit in the future.
-            __m128i pixelVec = _mm_loadu_si128((__m128i*)pixels);
+            __m128i pixelVec = _mm_loadu_si128((__m128i* __restrict)pixels);
             __m128 depthVec = _mm_loadu_ps(pixelDepth);
 
             __m128 weightedVerts0 = z0;
@@ -2065,7 +2065,7 @@ void Unaligned_Shader_UV(const float* vertices, const int32* indices, const int3
             __m128i writebackColor = _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(loadedColors), _mm_castsi128_ps(pixelVec), _mm_castsi128_ps(finalCombinedMask)));
             __m128 writebackDepth = _mm_blendv_ps(zValues, depthVec, _mm_castsi128_ps(finalCombinedMask));
 
-            _mm_storeu_si128((__m128i*)pixels, writebackColor);
+            _mm_storeu_si128((__m128i* __restrict)pixels, writebackColor);
             _mm_storeu_ps(pixelDepth, writebackDepth);
           }
 

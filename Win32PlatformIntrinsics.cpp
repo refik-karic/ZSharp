@@ -1366,7 +1366,7 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
       __m256 y1y0 = _mm256_sub_ps(y1, y0);
       __m256 y2y0 = _mm256_sub_ps(y2, y0);
 
-      __m256 invArea = _mm256_rcp_ps(_mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(x2, x0), y1y0), _mm256_mul_ps(y2y0, x1x0)));
+      __m256 invArea = _mm256_rcp_ps(_mm256_fmsub_ps(_mm256_sub_ps(x2, x0), y1y0, _mm256_mul_ps(y2y0, x1x0)));
 
       __m256 z0 = _mm256_permutevar8x32_ps(v1All, zShuffle);
 
@@ -1413,9 +1413,9 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
       __m256 b2b0 = _mm256_sub_ps(invAttr22, invAttr20);
 
       // Calculate the step amount for each horizontal and vertical pixel out of the main loop.
-      __m256 weightInit0 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x1), _mm256_sub_ps(y2, y1)), _mm256_mul_ps(_mm256_sub_ps(fminY, y1), x2x1));
-      __m256 weightInit1 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x2), _mm256_sub_ps(y0, y2)), _mm256_mul_ps(_mm256_sub_ps(fminY, y2), x0x2));
-      __m256 weightInit2 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x0), y1y0), _mm256_mul_ps(_mm256_sub_ps(fminY, y0), x1x0));
+      __m256 weightInit0 = _mm256_fmsub_ps(_mm256_sub_ps(fminX, x1), _mm256_sub_ps(y2, y1), _mm256_mul_ps(_mm256_sub_ps(fminY, y1), x2x1));
+      __m256 weightInit1 = _mm256_fmsub_ps(_mm256_sub_ps(fminX, x2), _mm256_sub_ps(y0, y2), _mm256_mul_ps(_mm256_sub_ps(fminY, y2), x0x2));
+      __m256 weightInit2 = _mm256_fmsub_ps(_mm256_sub_ps(fminX, x0), y1y0, _mm256_mul_ps(_mm256_sub_ps(fminY, y0), x1x0));
 
       __m256 xStep0 = _mm256_sub_ps(y1, y2);
       __m256 xStep1 = y2y0;
@@ -1477,8 +1477,9 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
         if (w >= maxX) {
           w = minX;
           ++h;
-          pixels = ((uint32* __restrict)(framebuffer)) + (minX + (h * sMaxWidth));
-          pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+          int32 stepDelta = (minX + (h * sMaxWidth));
+          pixels = ((uint32 * __restrict)(framebuffer)) + stepDelta;
+          pixelDepth = depthBuffer + stepDelta;
           weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
           weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
           weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
@@ -1758,7 +1759,7 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
       __m256 y1y0 = _mm256_sub_ps(y1, y0);
       __m256 y2y0 = _mm256_sub_ps(y2, y0);
 
-      __m256 invArea = _mm256_rcp_ps(_mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(x2, x0), y1y0), _mm256_mul_ps(y2y0, x1x0)));
+      __m256 invArea = _mm256_rcp_ps(_mm256_fmsub_ps(_mm256_sub_ps(x2, x0), y1y0, _mm256_mul_ps(y2y0, x1x0)));
 
       __m256 z0 = _mm256_permutevar8x32_ps(v1All, zShuffle);
       __m256 invVert0 = _mm256_mul_ps(z0, invArea);
@@ -1794,9 +1795,9 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
         __m256 weightInit1 = _mm256_set1_ps(BarycentricArea2D(v3, v1, boundingBoxMin));
         __m256 weightInit2 = _mm256_set1_ps(BarycentricArea2D(v1, v2, boundingBoxMin));
       */
-      __m256 weightInit0 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x1), _mm256_sub_ps(y2, y1)), _mm256_mul_ps(_mm256_sub_ps(fminY, y1), x2x1));
-      __m256 weightInit1 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x2), _mm256_sub_ps(y0, y2)), _mm256_mul_ps(_mm256_sub_ps(fminY, y2), x0x2));
-      __m256 weightInit2 = _mm256_sub_ps(_mm256_mul_ps(_mm256_sub_ps(fminX, x0), y1y0), _mm256_mul_ps(_mm256_sub_ps(fminY, y0), x1x0));
+      __m256 weightInit0 = _mm256_fmsub_ps(_mm256_sub_ps(fminX, x1), _mm256_sub_ps(y2, y1), _mm256_mul_ps(_mm256_sub_ps(fminY, y1), x2x1));
+      __m256 weightInit1 = _mm256_fmsub_ps(_mm256_sub_ps(fminX, x2), _mm256_sub_ps(y0, y2), _mm256_mul_ps(_mm256_sub_ps(fminY, y2), x0x2));
+      __m256 weightInit2 = _mm256_fmsub_ps(_mm256_sub_ps(fminX, x0), y1y0, _mm256_mul_ps(_mm256_sub_ps(fminY, y0), x1x0));
 
       __m256 xStep0 = _mm256_sub_ps(y1, y2);
       __m256 xStep1 = y2y0;
@@ -1871,8 +1872,9 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
         if (w >= maxX) {
           w = minX;
           ++h;
-          pixels = ((uint32* __restrict)(framebuffer)) + (minX + (h * sMaxWidth));
-          pixelDepth = depthBuffer + (minX + (h * sMaxWidth));
+          int32 stepDelta = (minX + (h * sMaxWidth));
+          pixels = ((uint32* __restrict)(framebuffer)) + stepDelta;
+          pixelDepth = depthBuffer + stepDelta;
           weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
           weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
           weightInit2 = _mm256_sub_ps(weightInit2, yStep2);

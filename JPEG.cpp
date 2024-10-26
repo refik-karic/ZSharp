@@ -2042,8 +2042,8 @@ void jpeg_decoder::H1V1Convert(ChannelOrderJPG order) {
         __m128i mCbgLoResult = _mm_srai_epi32(_mm_add_epi32(mCrgLo, mCbgLo), 16);
         __m128i mCbgHiResult = _mm_srai_epi32(_mm_add_epi32(mCrgHi, mCbgHi), 16);
 
-        __m128i mCrgCbgSum = _mm_set_epi16((short)mCbgHiResult.m128i_i32[3], (short)mCbgHiResult.m128i_i32[2], (short)mCbgHiResult.m128i_i32[1], (short)mCbgHiResult.m128i_i32[0],
-          (short)mCbgLoResult.m128i_i32[3], (short)mCbgLoResult.m128i_i32[2], (short)mCbgLoResult.m128i_i32[1], (short)mCbgLoResult.m128i_i32[0]);
+        __m128i mCrgCbgSum = _mm_set_epi16((short)_mm_extract_epi32(mCbgHiResult, 3), (short)_mm_extract_epi32(mCbgHiResult, 2), (short)_mm_extract_epi32(mCbgHiResult, 1), (short)_mm_extract_epi32(mCbgHiResult, 0),
+          (short)_mm_extract_epi32(mCbgLoResult, 3), (short)_mm_extract_epi32(mCbgLoResult, 2), (short)_mm_extract_epi32(mCbgLoResult, 1), (short)_mm_extract_epi32(mCbgLoResult, 0));
 
         __m128i val0 = _mm_add_epi16(y, mCrr);
         __m128i val1 = _mm_add_epi16(y, mCrgCbgSum);
@@ -2091,8 +2091,8 @@ void jpeg_decoder::H1V1Convert(ChannelOrderJPG order) {
         __m128i mCbgLoResult = _mm_srai_epi32(_mm_add_epi32(mCrgLo, mCbgLo), 16);
         __m128i mCbgHiResult = _mm_srai_epi32(_mm_add_epi32(mCrgHi, mCbgHi), 16);
 
-        __m128i mCrgCbgSum = _mm_set_epi16((short)mCbgHiResult.m128i_i32[3], (short)mCbgHiResult.m128i_i32[2], (short)mCbgHiResult.m128i_i32[1], (short)mCbgHiResult.m128i_i32[0],
-          (short)mCbgLoResult.m128i_i32[3], (short)mCbgLoResult.m128i_i32[2], (short)mCbgLoResult.m128i_i32[1], (short)mCbgLoResult.m128i_i32[0]);
+        __m128i mCrgCbgSum = _mm_set_epi16((short)_mm_extract_epi32(mCbgHiResult, 3), (short)_mm_extract_epi32(mCbgHiResult, 2), (short)_mm_extract_epi32(mCbgHiResult, 1), (short)_mm_extract_epi32(mCbgHiResult, 0),
+          (short)_mm_extract_epi32(mCbgLoResult, 3), (short)_mm_extract_epi32(mCbgLoResult, 2), (short)_mm_extract_epi32(mCbgLoResult, 1), (short)_mm_extract_epi32(mCbgLoResult, 0));
 
         __m128i val0 = _mm_add_epi16(y, mCrr);
         __m128i val1 = _mm_add_epi16(y, mCrgCbgSum);

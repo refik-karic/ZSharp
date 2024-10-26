@@ -311,10 +311,22 @@ if(WIN32)
         /W4
         /WX
         /sdl-
-        /GL
         /GS-
         /Zi
         /diagnostics:caret
+        -flto
+        -fvirtual-function-elimination
+        -Wno-ignored-qualifiers
+        -Wno-char-subscripts
+        -Wno-sign-compare
+        -Wno-deprecated-copy-with-user-provided-copy
+        -Wno-reorder-ctor
+        -Wno-unused-but-set-variable
+        -Wno-unused-const-variable
+        -Wno-delete-non-abstract-non-virtual-dtor
+        -Wno-unused-private-field
+        -mavx2
+        -mfma
     )
   else()
     list(APPEND ZSharp_Compile_Options_Debug

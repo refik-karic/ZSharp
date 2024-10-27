@@ -38,6 +38,7 @@ struct WorkerThreadControl {
   ThreadControl* masterControl = nullptr;
   size_t id = 0;
   PlatformMutex jobLock;
+  PlatformMonitor* jobMonitor;
   List<ThreadJob> jobs;
 };
 

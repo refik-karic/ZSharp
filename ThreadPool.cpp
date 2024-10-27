@@ -12,16 +12,24 @@ int32 BackgroundWorker(void* data) {
 
   while (true) {
     if (control.status == ThreadControl::RunStatus::RUNNING) {
+      // Don't let anyone modify the job queue while we're inspecting it
+      // Use a separate monitor for testing when the job is complete or not
+      // This lets us add/remove jobs to the queue but also know whether a thread is still executing a final job before sleeping
+      PlatformClearMonitor(workerControl.jobMonitor);
       workerControl.jobLock.Aquire();
 
       if (!workerControl.jobs.IsEmpty()) {
-        ThreadJob& job = *(workerControl.jobs.begin());
-        job.func(job.data);
-
+        ThreadJob job(*(workerControl.jobs.begin()));
         workerControl.jobs.RemoveFront();
-      }
+        workerControl.jobLock.Release();
 
-      workerControl.jobLock.Release();
+        job.func(job.data);
+        PlatformSignalMonitor(workerControl.jobMonitor);
+      }
+      else {
+        workerControl.jobLock.Release();
+        PlatformSignalMonitor(workerControl.jobMonitor);
+      }
 
       control.lock.Aquire();
 
@@ -37,6 +45,11 @@ int32 BackgroundWorker(void* data) {
       }
 
       if (remainingJobs == 0) {
+        // Jobs that have been pop'd off the queue may still be running, wait until they're complete.
+        for (WorkerThreadControl& worker : control.workers) {
+          PlatformWaitMonitor(worker.jobMonitor);
+        }
+
         PlatformClearMonitor(control.monitor);
         control.status = ThreadControl::RunStatus::SLEEP;
         PlatformSignalMonitor(control.asyncMonitor);
@@ -71,6 +84,7 @@ ThreadPool::ThreadPool() {
     WorkerThreadControl& control = mControl.workers[i];
     control.masterControl = &mControl;
     control.id = i;
+    control.jobMonitor = PlatformCreateMonitor();
   }
 
   for (size_t i = 0; i < numCores; ++i) {
@@ -86,6 +100,10 @@ ThreadPool::~ThreadPool() {
   PlatformSignalMonitor(mControl.monitor);
 
   PlatformJoinThreadPool(mPool.GetData(), mPool.Size());
+
+  for (WorkerThreadControl& control : mControl.workers) {
+    PlatformDestroyMonitor(control.jobMonitor);
+  }
 
   PlatformDestroyMonitor(mControl.monitor);
   PlatformDestroyMonitor(mControl.asyncMonitor);

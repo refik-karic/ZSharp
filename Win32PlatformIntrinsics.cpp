@@ -1336,29 +1336,28 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
       __m256 y1 = _mm256_permutevar8x32_ps(v2All, yShuffle);
       __m256 y2 = _mm256_permutevar8x32_ps(v3All, yShuffle);
 
-      __m256 fminX = _mm256_min_ps(_mm256_min_ps(x0, x1), x2);
-      __m256 fminY = _mm256_min_ps(_mm256_min_ps(y0, y1), y2);
-      __m256 fmaxX = _mm256_max_ps(_mm256_max_ps(x0, x1), x2);
-      __m256 fmaxY = _mm256_max_ps(_mm256_max_ps(y0, y1), y2);
+      __m256 fmins = _mm256_min_ps(_mm256_min_ps(v1All, v2All), v3All);
+      __m256 fmaxs = _mm256_max_ps(_mm256_max_ps(v1All, v2All), v3All);
 
 #ifdef __clang__
-      fminX = _mm256_round_ps(fminX, _MM_FROUND_FLOOR);
-      fminY = _mm256_round_ps(fminY, _MM_FROUND_FLOOR);
-
-      fmaxX = _mm256_round_ps(fmaxX, _MM_FROUND_CEIL);
-      fmaxY = _mm256_round_ps(fmaxY, _MM_FROUND_CEIL);
+      fmins = _mm256_round_ps(fmins, _MM_FROUND_FLOOR);
+      fmaxs = _mm256_round_ps(fmaxs, _MM_FROUND_CEIL);
 #else
-      fminX = _mm256_round_ps(fminX, _MM_ROUND_MODE_DOWN);
-      fminY = _mm256_round_ps(fminY, _MM_ROUND_MODE_DOWN);
-
-      fmaxX = _mm256_round_ps(fmaxX, _MM_ROUND_MODE_UP);
-      fmaxY = _mm256_round_ps(fmaxY, _MM_ROUND_MODE_UP);
+      fmins = _mm256_round_ps(fmins, _MM_ROUND_MODE_DOWN);
+      fmaxs = _mm256_round_ps(fmaxs, _MM_ROUND_MODE_UP);
 #endif
 
-      int32 minX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminX));
-      int32 maxX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxX));
-      int32 minY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminY));
-      int32 maxY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxY));
+      __m256 fminX = _mm256_permutevar8x32_ps(fmins, _mm256_setzero_si256());
+      __m256 fminY = _mm256_permutevar8x32_ps(fmins, yShuffle);
+
+      __m128i imins = _mm256_castsi256_si128(_mm256_cvtps_epi32(fmins));
+      __m128i imaxs = _mm256_castsi256_si128(_mm256_cvtps_epi32(fmaxs));
+
+      int32 minX = _mm_extract_epi32(imins, 0);
+      int32 minY = _mm_extract_epi32(imins, 1);
+
+      int32 maxX = _mm_extract_epi32(imaxs, 0);
+      int32 maxY = _mm_extract_epi32(imaxs, 1);
 
       __m256 x1x0 = _mm256_sub_ps(x1, x0);
       __m256 x2x1 = _mm256_sub_ps(x2, x1);
@@ -1729,29 +1728,28 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
       __m256 y1 = _mm256_permutevar8x32_ps(v2All, yShuffle);
       __m256 y2 = _mm256_permutevar8x32_ps(v3All, yShuffle);
 
-      __m256 fminX = _mm256_min_ps(_mm256_min_ps(x0, x1), x2);
-      __m256 fminY = _mm256_min_ps(_mm256_min_ps(y0, y1), y2);
-      __m256 fmaxX = _mm256_max_ps(_mm256_max_ps(x0, x1), x2);
-      __m256 fmaxY = _mm256_max_ps(_mm256_max_ps(y0, y1), y2);
+      __m256 fmins = _mm256_min_ps(_mm256_min_ps(v1All, v2All), v3All);
+      __m256 fmaxs = _mm256_max_ps(_mm256_max_ps(v1All, v2All), v3All);
 
 #ifdef __clang__
-      fminX = _mm256_round_ps(fminX, _MM_FROUND_FLOOR);
-      fminY = _mm256_round_ps(fminY, _MM_FROUND_FLOOR);
-
-      fmaxX = _mm256_round_ps(fmaxX, _MM_FROUND_CEIL);
-      fmaxY = _mm256_round_ps(fmaxY, _MM_FROUND_CEIL);
+      fmins = _mm256_round_ps(fmins, _MM_FROUND_FLOOR);
+      fmaxs = _mm256_round_ps(fmaxs, _MM_FROUND_CEIL);
 #else
-      fminX = _mm256_round_ps(fminX, _MM_ROUND_MODE_DOWN);
-      fminY = _mm256_round_ps(fminY, _MM_ROUND_MODE_DOWN);
-
-      fmaxX = _mm256_round_ps(fmaxX, _MM_ROUND_MODE_UP);
-      fmaxY = _mm256_round_ps(fmaxY, _MM_ROUND_MODE_UP);
+      fmins = _mm256_round_ps(fmins, _MM_ROUND_MODE_DOWN);
+      fmaxs = _mm256_round_ps(fmaxs, _MM_ROUND_MODE_UP);
 #endif
 
-      int32 minX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminX));
-      int32 maxX = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxX));
-      int32 minY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fminY));
-      int32 maxY = _mm256_cvtsi256_si32(_mm256_cvtps_epi32(fmaxY));
+      __m256 fminX = _mm256_permutevar8x32_ps(fmins, _mm256_setzero_si256());
+      __m256 fminY = _mm256_permutevar8x32_ps(fmins, yShuffle);
+
+      __m128i imins = _mm256_castsi256_si128(_mm256_cvtps_epi32(fmins));
+      __m128i imaxs = _mm256_castsi256_si128(_mm256_cvtps_epi32(fmaxs));
+
+      int32 minX = _mm_extract_epi32(imins, 0);
+      int32 minY = _mm_extract_epi32(imins, 1);
+
+      int32 maxX = _mm_extract_epi32(imaxs, 0);
+      int32 maxY = _mm_extract_epi32(imaxs, 1);
 
       __m256 x1x0 = _mm256_sub_ps(x1, x0);
       __m256 x2x1 = _mm256_sub_ps(x2, x1);

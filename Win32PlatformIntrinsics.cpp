@@ -1849,9 +1849,9 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
             // NOTE: Gathers are faster in the general case except on some early HW that didn't optimize for it!
             //  If we plan on optimizing for all cases, we will need to take this into account.
             //  This memory read is by far the biggest bottleneck here.
-            __m256i loadedColors = _mm256_mask_i32gather_epi32(_mm256_setzero_si256(), (const int*)textureData, colorValues, finalCombinedMask, 4);
+            __m256i loadedColors = _mm256_mask_i32gather_epi32(pixelVec, (const int*)textureData, colorValues, finalCombinedMask, 4);
 
-            _mm256_storeu_si256((__m256i*)pixels, _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(pixelVec), _mm256_castsi256_ps(loadedColors), _mm256_castsi256_ps(finalCombinedMask))));
+            _mm256_storeu_si256((__m256i*)pixels, loadedColors);
             _mm256_storeu_ps(pixelDepth, _mm256_blendv_ps(depthVec, zValues, _mm256_castsi256_ps(finalCombinedMask)));
           }
 

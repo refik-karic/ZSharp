@@ -2038,11 +2038,7 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
 
             // We must round prior to multiplying the stride and channels.
             // If this isn't done, we may jump to a completely different set of pixels because of rounding.
-#ifdef __clang__
-            vValues = _mm_round_ps(vValues, _MM_FROUND_FLOOR);
-#else
-            vValues = _mm_round_ps(vValues, _MM_ROUND_MODE_DOWN);
-#endif
+            vValues = _mm_floor_ps(vValues);
 
             vValues = _mm_add_ps(_mm_mul_ps(vValues, yStride), uValues);
 

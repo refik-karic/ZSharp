@@ -1316,7 +1316,6 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
     __m256i initialColor = _mm256_set1_epi32(0xFF000000);
     __m256i weightMask = _mm256_set1_epi32(0x80000000);
 
-    //__m256i xShuffle = _mm256_setzero_si256(); // Can be generated on the fly.
     __m256i yShuffle = _mm256_set1_epi32(1);
     __m256i zShuffle = _mm256_set1_epi32(3);
     __m256i rShuffle = _mm256_set1_epi32(4);
@@ -1328,9 +1327,9 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
       __m256 v2All = _mm256_loadu_ps(vertices + indices[i + 1]);
       __m256 v3All = _mm256_loadu_ps(vertices + indices[i + 2]);
 
-      __m256 x0 = _mm256_permutevar8x32_ps(v1All, _mm256_setzero_si256());
-      __m256 x1 = _mm256_permutevar8x32_ps(v2All, _mm256_setzero_si256());
-      __m256 x2 = _mm256_permutevar8x32_ps(v3All, _mm256_setzero_si256());
+      __m256 x0 = _mm256_broadcastss_ps(_mm256_castps256_ps128(v1All));
+      __m256 x1 = _mm256_broadcastss_ps(_mm256_castps256_ps128(v2All));
+      __m256 x2 = _mm256_broadcastss_ps(_mm256_castps256_ps128(v3All));
 
       __m256 y0 = _mm256_permutevar8x32_ps(v1All, yShuffle);
       __m256 y1 = _mm256_permutevar8x32_ps(v2All, yShuffle);
@@ -1342,7 +1341,7 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
       fmins = _mm_round_ps(fmins, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
       fmaxs = _mm_round_ps(fmaxs, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC);
 
-      __m256 fminX = _mm256_permutevar8x32_ps(_mm256_castps128_ps256(fmins), _mm256_setzero_si256());
+      __m256 fminX = _mm256_broadcastss_ps(fmins);
       __m256 fminY = _mm256_permutevar8x32_ps(_mm256_castps128_ps256(fmins), yShuffle);
 
       __m128i imins = _mm_cvtps_epi32(fmins);
@@ -1706,7 +1705,6 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
     __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
     __m256 stepMultiplier = _mm256_set1_ps(8.f);
 
-    //__m256i xShuffle = _mm256_setzero_si256(); // Can be generated on the fly.
     __m256i yShuffle = _mm256_set1_epi32(1);
     __m256i zShuffle = _mm256_set1_epi32(3);
     __m256i uShuffle = _mm256_set1_epi32(4);
@@ -1717,9 +1715,9 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
       __m256 v2All = _mm256_loadu_ps(vertices + indices[i + 1]);
       __m256 v3All = _mm256_loadu_ps(vertices + indices[i + 2]);
 
-      __m256 x0 = _mm256_permutevar8x32_ps(v1All, _mm256_setzero_si256());
-      __m256 x1 = _mm256_permutevar8x32_ps(v2All, _mm256_setzero_si256());
-      __m256 x2 = _mm256_permutevar8x32_ps(v3All, _mm256_setzero_si256());
+      __m256 x0 = _mm256_broadcastss_ps(_mm256_castps256_ps128(v1All));
+      __m256 x1 = _mm256_broadcastss_ps(_mm256_castps256_ps128(v2All));
+      __m256 x2 = _mm256_broadcastss_ps(_mm256_castps256_ps128(v3All));
 
       __m256 y0 = _mm256_permutevar8x32_ps(v1All, yShuffle);
       __m256 y1 = _mm256_permutevar8x32_ps(v2All, yShuffle);
@@ -1731,7 +1729,7 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
       fmins = _mm_round_ps(fmins, _MM_FROUND_TO_NEG_INF | _MM_FROUND_NO_EXC);
       fmaxs = _mm_round_ps(fmaxs, _MM_FROUND_TO_POS_INF | _MM_FROUND_NO_EXC);
 
-      __m256 fminX = _mm256_permutevar8x32_ps(_mm256_castps128_ps256(fmins), _mm256_setzero_si256());
+      __m256 fminX = _mm256_broadcastss_ps(fmins);
       __m256 fminY = _mm256_permutevar8x32_ps(_mm256_castps128_ps256(fmins), yShuffle);
 
       __m128i imins = _mm_cvtps_epi32(fmins);

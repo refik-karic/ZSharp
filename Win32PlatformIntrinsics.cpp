@@ -1314,7 +1314,6 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
     __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
     __m256 stepMultiplier = _mm256_set1_ps(8.f);
     __m256i initialColor = _mm256_set1_epi32(0xFF000000);
-    __m256 weightMask = _mm256_set1_ps(-0.f);
 
     __m256i yShuffle = _mm256_set1_epi32(1);
     __m256i zShuffle = _mm256_set1_epi32(3);
@@ -1437,18 +1436,20 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
       __m256 weights2 = weightInit2;
 
       for (int32 h = minY, w = minX; h < maxY;) {
-        // OR all weights and invert the sign bits
-        __m256 combinedWeights = _mm256_xor_ps(_mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2), weightMask);
+        // OR all weights
+        __m256 signMask = _mm256_castsi256_ps(_mm256_cmpeq_epi16(_mm256_castps_si256(weights0), _mm256_castps_si256(weights0)));
+        __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
 
         // If all mask bits are set then none of these pixels are inside the triangle.
-        if (!_mm256_testz_ps(combinedWeights, combinedWeights)) {
+        if (!_mm256_testc_ps(combinedWeights, signMask)) {
           __m256 depthVec = _mm256_loadu_ps(pixelDepth);
 
           __m256 zValues = _mm256_rcp_ps(_mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0)));
 
           __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-          __m256i finalCombinedMask = _mm256_castps_si256(_mm256_and_ps(combinedWeights, depthMask));
+          // Weights are >= 0 when inside, invert when combining masks.
+          __m256i finalCombinedMask = _mm256_castps_si256(_mm256_andnot_ps(combinedWeights, depthMask));
 
           __m256i rValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, r2r0), zValues, _mm256_fmadd_ps(r0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, r1r0), zValues))));
           __m256i gValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(_mm256_mul_ps(weights2, g2g0), zValues, _mm256_fmadd_ps(g0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, g1g0), zValues))));
@@ -1700,8 +1701,6 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
     __m256 maxUValue = _mm256_set1_ps((float)(texWidth - 1));
     __m256 maxVValue = _mm256_set1_ps((float)(texHeight - 1));
 
-    __m256 weightMask = _mm256_set1_ps(-0.f);
-
     __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
     __m256 stepMultiplier = _mm256_set1_ps(8.f);
 
@@ -1814,18 +1813,20 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
       __m256 weights2 = weightInit2;
 
       for (int32 h = minY, w = minX; h < maxY;) {
-        // OR all weights and invert the sign bits
-        __m256 combinedWeights = _mm256_xor_ps(_mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2), weightMask);
+        // OR all weights
+        __m256 signMask = _mm256_castsi256_ps(_mm256_cmpeq_epi16(_mm256_castps_si256(weights0), _mm256_castps_si256(weights0)));
+        __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
 
         // If all mask bits are set then none of these pixels are inside the triangle.
-        if (!_mm256_testz_ps(combinedWeights, combinedWeights)) {
+        if (!_mm256_testc_ps(combinedWeights, signMask)) {
           __m256 depthVec = _mm256_loadu_ps(pixelDepth);
 
           __m256 zValues = _mm256_rcp_ps(_mm256_fmadd_ps(weights2, z2z0, _mm256_fmadd_ps(weights1, z1z0, z0)));
 
           __m256 depthMask = _mm256_cmp_ps(zValues, depthVec, _CMP_GT_OQ);
 
-          __m256i finalCombinedMask = _mm256_castps_si256(_mm256_and_ps(combinedWeights, depthMask));
+          // Weights are >= 0 when inside, invert when combining masks.
+          __m256i finalCombinedMask = _mm256_castps_si256(_mm256_andnot_ps(combinedWeights, depthMask));
 
           __m256 uValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, u2u0), zValues, _mm256_fmadd_ps(u0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, u1u0), zValues)));
           __m256 vValues = _mm256_fmadd_ps(_mm256_mul_ps(weights2, v2v0), zValues, _mm256_fmadd_ps(v0, zValues, _mm256_mul_ps(_mm256_mul_ps(weights1, v1v0), zValues)));

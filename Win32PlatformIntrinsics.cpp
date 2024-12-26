@@ -104,12 +104,14 @@ FORCE_INLINE __m256 Lerp256(__m256 x1, __m256 x2, __m256 t) {
 
 FORCE_INLINE __m128 Cross128(__m128 a, __m128 b) {
   __m128 a0 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(a), 0b11001001));
-  __m128 a1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(a), 0b11010010));
-
   __m128 b0 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(b), 0b11010010));
-  __m128 b1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(b), 0b11001001));
 
-  return _mm_sub_ps(_mm_mul_ps(a0, b0), _mm_mul_ps(a1, b1));
+  __m128 a0b = _mm_mul_ps(a0, b);
+  __m128 a0b0 = _mm_mul_ps(a0, b0);
+
+  __m128 b1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(a0b), 0b11001001));
+
+  return _mm_sub_ps(a0b0, b1);
 }
 
 namespace ZSharp {

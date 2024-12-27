@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 #include "PlatformDefines.h"
+#include "ConsoleVariable.h"
 
 #pragma warning(disable:4201) // nameless struct/union
 
@@ -69,5 +70,38 @@ enum ZColors : uint32 {
   WHITE = 0xFFFFFFFF,
 };
 
+template<>
+struct ConsoleVariableConverter<ZColor> {
+  void operator()(const String& str, ZColor& var) const {
+    // TODO: Add case insensitive compare function to avoid creating a lower case copy.
+    String ignoredcase(str);
+    ignoredcase.ToLower();
+
+    if (ignoredcase == "red") {
+      var = ZColor(ZColors::RED);
+    }
+    else if (ignoredcase == "blue") {
+      var = ZColor(ZColors::BLUE);
+    }
+    else if (ignoredcase == "green") {
+      var = ZColor(ZColors::GREEN);
+    }
+    else if (ignoredcase == "orange") {
+      var = ZColor(ZColors::ORANGE);
+    }
+    else if (ignoredcase == "yellow") {
+      var = ZColor(ZColors::YELLOW);
+    }
+    else if (ignoredcase == "black") {
+      var = ZColor(ZColors::BLACK);
+    }
+    else if (ignoredcase == "gray") {
+      var = ZColor(ZColors::GRAY);
+    }
+    else if (ignoredcase == "white") {
+      var = ZColor(ZColors::WHITE);
+    }
+  }
+};
 
 }

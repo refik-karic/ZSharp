@@ -135,6 +135,8 @@ class String final : public ISerializable {
 
   bool operator==(const String& rhs) const;
 
+  bool operator==(const char* rhs) const;
+
   bool operator>(const String& rhs) const;
 
   bool operator<(const String& rhs) const;
@@ -215,6 +217,10 @@ class String final : public ISerializable {
   float ToFloat() const;
 
   WideString ToWide() const;
+
+  void ToLower();
+
+  void ToUpper();
 
   virtual void Serialize(ISerializer& serializer) override;
 

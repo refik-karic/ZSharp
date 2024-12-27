@@ -21,6 +21,7 @@ namespace ZSharp {
 ConsoleVariable<bool> DebugTransforms("DebugTransforms", true);
 ConsoleVariable<float> CameraSpeed("CameraSpeed", 1.f);
 ConsoleVariable<float> CameraRotation("CameraRotation", 5.f);
+ConsoleVariable<ZColor> ClearColor("ClearColor", ZColor(ZColors::ORANGE));
 
 GameInstance::GameInstance()
   : mCameraReset("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this)) {
@@ -455,11 +456,10 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
 
 void GameInstance::FastClearFrameBuffer(Span<uint8> data) {
   Framebuffer& frameBuffer = mRenderer.GetFrameBuffer();
-  ZColor clearColor(ZColors::ORANGE);
   const size_t chunkSize = 4;
   size_t start = data.GetData() - frameBuffer.GetBuffer();
   size_t length = data.Size();
-  frameBuffer.Clear(clearColor, start * chunkSize, length * chunkSize);
+  frameBuffer.Clear(*ClearColor, start * chunkSize, length * chunkSize);
 }
 
 void GameInstance::FastClearDepthBuffer(Span<uint8> data) {

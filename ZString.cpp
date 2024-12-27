@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cwchar>
+#include <cctype>
 
 namespace ZSharp {
 
@@ -75,6 +76,10 @@ String* String::operator=(const String& rhs) {
 
 bool String::operator==(const String& rhs) const {
   return strcmp(Str(), rhs.Str()) == 0;
+}
+
+bool String::operator==(const char* rhs) const {
+  return strcmp(Str(), rhs) == 0;
 }
 
 bool String::operator>(const String& rhs) const {
@@ -363,6 +368,24 @@ WideString String::ToWide() const {
   mbstowcs(dest.GetData(), Str(), maxLength);
   WideString result(dest.GetData());
   return result;
+}
+
+void String::ToLower() {
+  char* str = GetMutableString();
+  size_t length = Length();
+
+  for (size_t i = 0; i < length; ++i) {
+    str[i] = (char)tolower(str[i]);
+  }
+}
+
+void String::ToUpper() {
+  char* str = GetMutableString();
+  size_t length = Length();
+
+  for (size_t i = 0; i < length; ++i) {
+    str[i] = (char)toupper(str[i]);
+  }
 }
 
 void String::Serialize(ISerializer& serializer) {

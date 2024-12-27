@@ -325,10 +325,10 @@ void GameInstance::RunBackgroundJobs() {
 
   ParallelRange frameBufferClear = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearFrameBuffer>(this);
   ParallelRange depthBufferClear = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearDepthBuffer>(this);
-  size_t size = mRenderer.GetFrameBuffer().GetSize();
+  size_t size = mRenderer.GetFrameBuffer().GetWidth() * mRenderer.GetFrameBuffer().GetHeight();
 
-  mThreadPool.Execute(frameBufferClear, mRenderer.GetFrameBuffer().GetBuffer(), size, 4);
-  mThreadPool.Execute(depthBufferClear, mRenderer.GetDepthBuffer().GetBuffer(), size, 4);
+  mThreadPool.Execute(frameBufferClear, mRenderer.GetFrameBuffer().GetBuffer(), size);
+  mThreadPool.Execute(depthBufferClear, mRenderer.GetDepthBuffer().GetBuffer(), size);
 }
 
 void GameInstance::WaitForBackgroundJobs() {

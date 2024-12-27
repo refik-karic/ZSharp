@@ -55,7 +55,7 @@ class ThreadPool final {
 
   void Sleep();
 
-  void Execute(ParallelRange& range, void* data, size_t length, size_t chunkMultiple);
+  void Execute(ParallelRange& range, void* data, size_t length);
 
   void WaitForJobs();
 

@@ -124,7 +124,7 @@ void ThreadPool::WaitForJobs() {
   PlatformWaitMonitor(mControl.asyncMonitor);
 }
 
-void ThreadPool::Execute(ParallelRange& range, void* data, size_t length, size_t chunkMultiple) {
+void ThreadPool::Execute(ParallelRange& range, void* data, size_t length) {
   size_t numThreads = mPool.Size();
   
   if (length == 0) {
@@ -132,7 +132,7 @@ void ThreadPool::Execute(ParallelRange& range, void* data, size_t length, size_t
   }
 
   // If we can't evenly distribute the work among threads, throw everything on one worker thread.
-  if (length < numThreads || (length % chunkMultiple) != 0) {
+  if (length < numThreads) {
     Span<uint8> threadData((uint8*)data, length);
     ThreadJob job;
     job.data = threadData;
@@ -144,9 +144,17 @@ void ThreadPool::Execute(ParallelRange& range, void* data, size_t length, size_t
     worker.jobLock.Release();
   }
   else {
-    size_t chunkSize = (length / chunkMultiple) / numThreads;
-    for (size_t i = 0, j = 0; j < numThreads; i += chunkSize, ++j) {
-      Span<uint8> threadData(((uint8*)data) + i, chunkSize);
+    size_t remainder = length % numThreads;
+    size_t chunkSize = (size_t)floorf((float)length / (float)numThreads);
+
+    for (size_t i = 0, j = 0; j < numThreads; ++j) {
+      size_t nextChunk = chunkSize;
+
+      if (j < remainder) {
+        ++nextChunk;
+      }
+
+      Span<uint8> threadData(((uint8*)data) + i, nextChunk);
       ThreadJob job;
       job.data = threadData;
       job.func = range;
@@ -154,6 +162,8 @@ void ThreadPool::Execute(ParallelRange& range, void* data, size_t length, size_t
       worker.jobLock.Aquire();
       worker.jobs.Add(job);
       worker.jobLock.Release();
+
+      i += nextChunk;
     }
   }
 

@@ -222,6 +222,10 @@ class String final : public ISerializable {
 
   void ToUpper();
 
+  bool CompareIgnoreCase(const String& rhs) const;
+
+  bool CompareIgnoreCase(const char* rhs) const;
+
   virtual void Serialize(ISerializer& serializer) override;
 
   virtual void Deserialize(IDeserializer& deserializer) override;
@@ -413,6 +417,8 @@ class WideString final : public ISerializable {
 
   bool operator==(const WideString& rhs) const;
 
+  bool operator==(const wchar_t* rhs) const;
+
   bool operator>(const WideString& rhs) const;
 
   bool operator<(const WideString& rhs) const;
@@ -489,6 +495,14 @@ class WideString final : public ISerializable {
   float ToFloat() const;
 
   String ToNarrow() const;
+
+  void ToLower();
+
+  void ToUpper();
+
+  bool CompareIgnoreCase(const WideString& rhs) const;
+
+  bool CompareIgnoreCase(const wchar_t* rhs) const;
 
   virtual void Serialize(ISerializer& serializer) override;
 

@@ -388,6 +388,40 @@ void String::ToUpper() {
   }
 }
 
+bool String::CompareIgnoreCase(const String& rhs) const {
+  size_t length = Length();
+  if (length != rhs.Length()) {
+    return false;
+  }
+
+  const char* l = Str();
+  const char* r = rhs.Str();
+  for (size_t i = 0; i < length; ++i) {
+    if (tolower(l[i]) != tolower(r[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool String::CompareIgnoreCase(const char* rhs) const {
+  size_t length = Length();
+  if (length != strlen(rhs)) {
+    return false;
+  }
+
+  const char* l = Str();
+  const char* r = rhs;
+  for (size_t i = 0; i < length; ++i) {
+    if (tolower(l[i]) != tolower(r[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void String::Serialize(ISerializer& serializer) {
   size_t length = Length();
   const char* str = Str();
@@ -809,6 +843,10 @@ bool WideString::operator==(const WideString& rhs) const {
   return wcscmp(Str(), rhs.Str()) == 0;
 }
 
+bool WideString::operator==(const wchar_t* rhs) const {
+  return wcscmp(Str(), rhs) == 0;
+}
+
 bool WideString::operator>(const WideString& rhs) const {
   return wcscmp(Str(), rhs.Str()) > 0;
 }
@@ -1086,6 +1124,58 @@ String WideString::ToNarrow() const {
   wcstombs(dest.GetData(), Str(), Length() + 1);
   String result(dest.GetData());
   return result;
+}
+
+void WideString::ToLower() {
+  wchar_t* str = GetMutableString();
+  size_t length = Length();
+
+  for (size_t i = 0; i < length; ++i) {
+    str[i] = (wchar_t)towlower(str[i]);
+  }
+}
+
+void WideString::ToUpper() {
+  wchar_t* str = GetMutableString();
+  size_t length = Length();
+
+  for (size_t i = 0; i < length; ++i) {
+    str[i] = (wchar_t)towupper(str[i]);
+  }
+}
+
+bool WideString::CompareIgnoreCase(const WideString& rhs) const {
+  size_t length = Length();
+  if (length != rhs.Length()) {
+    return false;
+  }
+
+  const wchar_t* l = Str();
+  const wchar_t* r = rhs.Str();
+  for (size_t i = 0; i < length; ++i) {
+    if (towlower(l[i]) != towlower(r[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+bool WideString::CompareIgnoreCase(const wchar_t* rhs) const {
+  size_t length = Length();
+  if (length != wcslen(rhs)) {
+    return false;
+  }
+
+  const wchar_t* l = Str();
+  const wchar_t* r = rhs;
+  for (size_t i = 0; i < length; ++i) {
+    if (towlower(l[i]) != towlower(r[i])) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void WideString::Serialize(ISerializer& serializer) {

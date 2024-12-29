@@ -1,6 +1,7 @@
 #include "Vec3.h"
 
 #include "CommonMath.h"
+#include "PlatformIntrinsics.h"
 
 #include <cmath>
 #include <cstring>
@@ -117,6 +118,7 @@ Vec3 Vec3::Cross(const Vec3& vec) const {
 }
 
 Vec3 Vec3::TripleCross(const Vec3& a, const Vec3& b) const {
+  // TODO: Rewrite this using intrinsics.
   const float xyz[3] = {
     (mData[1] * a.mData[2]) - (mData[2] * a.mData[1]),
     (mData[2] * a.mData[0]) - (mData[0] * a.mData[2]),
@@ -141,21 +143,18 @@ Vec3 Vec3::Parametric(const Vec3& rhs, float t) const {
 }
 
 float Vec3::Length() const {
-  return sqrtf((*this) * (*this));
+  return Unaligned_Vec3Length(mData);
 }
 
 void Vec3::Normalize() {
-  const float invSqrt(1.f / Length());
-  mData[0] *= invSqrt;
-  mData[1] *= invSqrt;
-  mData[2] *= invSqrt;
+  Unaligned_Vec3Normalize(mData);
 }
 
 void Vec3::Homogenize() {
-  const float invDivisor = 1.f / mData[2];
-  mData[0] *= invDivisor;
-  mData[1] *= invDivisor;
-  mData[2] *= invDivisor;
+  const float divisor = mData[2];
+  mData[0] /= divisor;
+  mData[1] /= divisor;
+  mData[2] /= divisor;
 }
 
 void Vec3::Clear() {

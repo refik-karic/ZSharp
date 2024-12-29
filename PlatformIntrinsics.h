@@ -52,6 +52,10 @@ void Unaligned_128MulByValue(const float* a, const float b, float* dest);
 
 float Unaligned_128MulSum(const float* a, const float* b);
 
+float Unaligned_Vec3Length(const float* a);
+
+void Unaligned_Vec3Normalize(float* a);
+
 float Unaligned_ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]);
 
 bool Unaligned_InsidePlane(const float point[4], const float clipEdge[4], const float normal[4]);

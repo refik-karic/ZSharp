@@ -222,6 +222,25 @@ float Unaligned_128MulSum(const float* a, const float* b) {
   return _mm_cvtss_f32(mulResult);
 }
 
+float Unaligned_Vec3Length(const float* a) {
+  __m128 x = _mm_load_ss(a);
+  __m128 y = _mm_load_ss(a + 1);
+  __m128 z = _mm_load_ss(a + 2);
+
+  return _mm_cvtss_f32(_mm_sqrt_ss(_mm_add_ss(_mm_add_ss(_mm_mul_ss(x, x), _mm_mul_ss(y, y)), _mm_mul_ss(z, z))));
+}
+
+void Unaligned_Vec3Normalize(float* a) {
+  __m128 x = _mm_load_ss(a);
+  __m128 y = _mm_load_ss(a + 1);
+  __m128 z = _mm_load_ss(a + 2);
+
+  __m128 sqrt = _mm_sqrt_ss(_mm_add_ss(_mm_add_ss(_mm_mul_ss(x, x), _mm_mul_ss(y, y)), _mm_mul_ss(z, z)));
+  _mm_store_ss(a, _mm_div_ss(x, sqrt));
+  _mm_store_ss(a + 1, _mm_div_ss(y, sqrt));
+  _mm_store_ss(a + 2, _mm_div_ss(z, sqrt));
+}
+
 float Unaligned_ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]) {
   __m128 startVec = _mm_loadu_ps(start);
   __m128 endVec = _mm_loadu_ps(end);

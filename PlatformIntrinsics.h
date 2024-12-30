@@ -31,6 +31,8 @@ void Aligned_128Sub(const float* a, const float* b, float* dest);
 
 void Aligned_128MulByValue(const float* a, const float b, float* dest);
 
+void Aligned_128MulByValueInPlace(float* a, const float b);
+
 float Aligned_128MulSum(const float* a, const float* b);
 
 /*
@@ -56,6 +58,14 @@ float Unaligned_Vec3Length(const float* a);
 
 void Unaligned_Vec3Normalize(float* a);
 
+float Unaligned_Vec4Length(const float* a);
+
+void Unaligned_Vec4Normalize(float* a);
+
+void Unaligned_Vec4Homogenize(float* a);
+
+void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __restrict a, float* __restrict b);
+
 float Unaligned_ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]);
 
 bool Unaligned_InsidePlane(const float point[4], const float clipEdge[4], const float normal[4]);
@@ -65,6 +75,8 @@ void Unaligned_ParametricVector4D(const float point, const float start[4], const
 void Unaligned_LerpAttribute(const float attributeA[4], const float attributeB[4], float outAttribute[4], float parametricT);
 
 void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result);
+
+void Unaligned_Mat4x4MulInPlace(float* a, const float* b);
 
 void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes);
 

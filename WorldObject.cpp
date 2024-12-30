@@ -57,12 +57,12 @@ Mat4x4 WorldObject::ObjectTransform() const {
 
   translation.SetTranslation(mTranslation);
 
-  resultTransform = resultTransform * position;
-  resultTransform = resultTransform * scale;
-  resultTransform = resultTransform * rotationX;
-  resultTransform = resultTransform * rotationY;
-  resultTransform = resultTransform * rotationZ;
-  resultTransform = resultTransform * translation;
+  resultTransform *= position;
+  resultTransform *= scale;
+  resultTransform *= rotationX;
+  resultTransform *= rotationY;
+  resultTransform *= rotationZ;
+  resultTransform *= translation;
   return resultTransform;
 }
 

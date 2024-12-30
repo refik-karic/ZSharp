@@ -8,8 +8,8 @@
 
 namespace ZSharp {
 
-Vec3::Vec3() {
-  Clear();
+Vec3::Vec3() 
+  : mData{} {
 }
 
 Vec3::Vec3(float* values) 
@@ -118,7 +118,6 @@ Vec3 Vec3::Cross(const Vec3& vec) const {
 }
 
 Vec3 Vec3::TripleCross(const Vec3& a, const Vec3& b) const {
-  // TODO: Rewrite this using intrinsics.
   const float xyz[3] = {
     (mData[1] * a.mData[2]) - (mData[2] * a.mData[1]),
     (mData[2] * a.mData[0]) - (mData[0] * a.mData[2]),

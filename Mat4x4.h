@@ -17,6 +17,8 @@ class Mat4x4 final {
 
   Mat4x4();
 
+  Mat4x4(const Vec4& a, const Vec4& b, const Vec4& c, const Vec4& d);
+
   Mat4x4(const Mat4x4& copy);
 
   void operator=(const Mat4x4& matrix);
@@ -31,7 +33,9 @@ class Mat4x4 final {
 
   Mat4x4 operator*(float scalar);
 
-  Mat4x4 operator*(const Mat4x4& matrix);
+  Mat4x4 operator*(const Mat4x4& matrix) const;
+
+  Mat4x4& operator*=(const Mat4x4& matrix);
 
   void Identity();
   

@@ -10,6 +10,10 @@ namespace ZSharp {
 Mat4x4::Mat4x4() {
 }
 
+Mat4x4::Mat4x4(const Vec4& a, const Vec4& b, const Vec4& c, const Vec4& d) 
+  : mData{a, b, c, d} {
+}
+
 Mat4x4::Mat4x4(const Mat4x4& copy)
   : mData{copy.mData[0], copy.mData[1], copy.mData[2], copy.mData[3]} {
 }
@@ -49,10 +53,15 @@ Mat4x4 Mat4x4::operator*(float scalar) {
   return result;
 }
 
-Mat4x4 Mat4x4::operator*(const Mat4x4& matrix) {
+Mat4x4 Mat4x4::operator*(const Mat4x4& matrix) const {
   Mat4x4 result;
   Unaligned_Mat4x4Mul((const float*)mData, (const float*)matrix.mData, (float*)result.mData);
   return result;
+}
+
+Mat4x4& Mat4x4::operator*=(const Mat4x4& matrix) {
+  Unaligned_Mat4x4MulInPlace((float*)mData, (const float*)matrix.mData);
+  return *this;
 }
 
 void Mat4x4::Identity() {
@@ -143,13 +152,9 @@ void Mat4x4::SetRotation(float angle, Axis axis) {
 }
 
 Vec4 Mat4x4::ApplyTransform(const Vec4& domain) const {
-  Vec4 codomainResult(
-    domain * mData[0],
-    domain * mData[1],
-    domain * mData[2],
-    domain * mData[3]
-  );
-  return codomainResult;
+  Vec4 result;
+  Unaligned_Mat4x4Vec4Transform((const float(*)[4])mData, *domain, *result);
+  return result;
 }
 
 }

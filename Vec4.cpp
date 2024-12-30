@@ -7,8 +7,8 @@
 
 namespace ZSharp {
 
-Vec4::Vec4() {
-  Clear();
+Vec4::Vec4() 
+  : mData{} {
 }
 
 Vec4::Vec4(float* values)
@@ -100,22 +100,24 @@ Vec4 Vec4::operator*(float scalar) const {
   return result;
 }
 
+void Vec4::operator*=(float scalar) {
+  Aligned_128MulByValueInPlace(mData, scalar);
+}
+
 float Vec4::operator*(const Vec4& vector) const {
   return Aligned_128MulSum(mData, vector.mData);
 }
 
 float Vec4::Length() const {
-  return sqrtf((*this) * (*this));
+  return Unaligned_Vec4Length(mData);
 }
 
 void Vec4::Normalize() {
-  const float invSqrt = 1.f / Length();
-  Aligned_128MulByValue(mData, invSqrt, mData);
+  Unaligned_Vec4Normalize(mData);
 }
 
 void Vec4::Homogenize() {
-  const float invDivisor = 1.f / mData[3];
-  Unaligned_128MulByValue(mData, invDivisor, mData);
+  Unaligned_Vec4Homogenize(mData);
 }
 
 void Vec4::Clear() {

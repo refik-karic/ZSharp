@@ -10,7 +10,6 @@
 #include "ZConfig.h"
 #include "PlatformIntrinsics.h"
 #include "ScopedTimer.h"
-#include "Logger.h"
 
 #define ROTATE_CAMERA_WORLD_CENTER 1
 
@@ -89,21 +88,6 @@ void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
 
 void Camera::Tick() {
   NamedScopedTimer(CameraTick);
-
-#if 0
-  // Vec3/Vec4 intrinsic perf testing
-  {
-    NamedScopedTimer(Vec3Perf);
-    float totalLength = 0.f;
-    for (size_t i = 0; i < 10000; ++i) {
-      Vec3 wTest(mLook);
-      wTest = wTest * 5.f;
-      totalLength += wTest[0];
-    }
-
-    Logger::Log(LogCategory::Perf, String::FromFormat("Total Length: {0}\n", totalLength));
-  }
-#endif
 
   Vec3 w(-mLook);
   w.Normalize();

@@ -44,6 +44,8 @@ class alignas(16) Vec4 final {
 
   Vec4 operator*(float scalar) const;
 
+  void operator*=(float scalar);
+
   float operator*(const Vec4& vector) const;
 
   float Length() const;

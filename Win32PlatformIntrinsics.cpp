@@ -188,6 +188,10 @@ void Aligned_128MulByValue(const float* a, const float b, float* dest) {
   _mm_store_ps(dest, _mm_mul_ps(_mm_load_ps(a), _mm_set_ps1(b)));
 }
 
+void Aligned_128MulByValueInPlace(float* a, const float b) {
+  _mm_store_ps(a, _mm_mul_ps(_mm_load_ps(a), _mm_set_ps1(b)));
+}
+
 float Aligned_128MulSum(const float* a, const float* b) {
   __m128 mulResult = _mm_mul_ps(_mm_load_ps(a), _mm_load_ps(b));
   mulResult = _mm_hadd_ps(mulResult, mulResult);
@@ -239,6 +243,69 @@ void Unaligned_Vec3Normalize(float* a) {
   _mm_store_ss(a, _mm_div_ss(x, sqrt));
   _mm_store_ss(a + 1, _mm_div_ss(y, sqrt));
   _mm_store_ss(a + 2, _mm_div_ss(z, sqrt));
+}
+
+float Unaligned_Vec4Length(const float* a) {
+  __m128 x = _mm_load_ss(a);
+  __m128 y = _mm_load_ss(a + 1);
+  __m128 z = _mm_load_ss(a + 2);
+  __m128 w = _mm_load_ss(a + 3);
+
+  return _mm_cvtss_f32(_mm_sqrt_ss(_mm_add_ss(_mm_add_ss(_mm_add_ss(_mm_mul_ss(x, x), _mm_mul_ss(y, y)), _mm_mul_ss(z, z)), _mm_mul_ss(w, w))));
+}
+
+void Unaligned_Vec4Normalize(float* a) {
+  __m128 x = _mm_load_ss(a);
+  __m128 y = _mm_load_ss(a + 1);
+  __m128 z = _mm_load_ss(a + 2);
+  __m128 w = _mm_load_ss(a + 3);
+
+  __m128 sqrt = _mm_sqrt_ss(_mm_add_ss(_mm_add_ss(_mm_add_ss(_mm_mul_ss(x, x), _mm_mul_ss(y, y)), _mm_mul_ss(z, z)), _mm_mul_ss(w, w)));
+  _mm_store_ss(a, _mm_div_ss(x, sqrt));
+  _mm_store_ss(a + 1, _mm_div_ss(y, sqrt));
+  _mm_store_ss(a + 2, _mm_div_ss(z, sqrt));
+  _mm_store_ss(a + 3, _mm_div_ss(w, sqrt));
+}
+
+void Unaligned_Vec4Homogenize(float* a) {
+  __m128 x = _mm_load_ss(a);
+  __m128 y = _mm_load_ss(a + 1);
+  __m128 z = _mm_load_ss(a + 2);
+  __m128 w = _mm_load_ss(a + 3);
+  _mm_store_ss(a, _mm_div_ss(x, w));
+  _mm_store_ss(a + 1, _mm_div_ss(y, w));
+  _mm_store_ss(a + 2, _mm_div_ss(z, w));
+  _mm_store_ss(a + 3, _mm_div_ss(w, w));
+}
+
+void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __restrict a, float* __restrict b) {
+  __m128 matrixX = _mm_loadu_ps(matrix[0]);
+  __m128 matrixY = _mm_loadu_ps(matrix[1]);
+  __m128 matrixZ = _mm_loadu_ps(matrix[2]);
+  __m128 matrixW = _mm_loadu_ps(matrix[3]);
+
+  __m128 loXY = _mm_unpacklo_ps(matrixX, matrixY);
+  __m128 loZW = _mm_unpacklo_ps(matrixZ, matrixW);
+  __m128 hiXY = _mm_unpackhi_ps(matrixX, matrixY);
+  __m128 hiZW = _mm_unpackhi_ps(matrixZ, matrixW);
+
+  matrixX = _mm_shuffle_ps(loXY, loZW, 0b01000100);
+  matrixY = _mm_shuffle_ps(loXY, loZW, 0b11101110);
+  matrixZ = _mm_shuffle_ps(hiXY, hiZW, 0b01000100);
+  matrixW = _mm_shuffle_ps(hiXY, hiZW, 0b11101110);
+
+  __m128 xyzw = _mm_loadu_ps(a);
+
+  __m128 vecX = _mm_shuffle_ps(xyzw, xyzw, 0b00000000);
+  __m128 vecY = _mm_shuffle_ps(xyzw, xyzw, 0b01010101);
+  __m128 vecZ = _mm_shuffle_ps(xyzw, xyzw, 0b10101010);
+  __m128 vecW = _mm_shuffle_ps(xyzw, xyzw, 0b11111111);
+
+  __m128 result = _mm_add_ps(_mm_mul_ps(matrixX, vecX), _mm_mul_ps(matrixY, vecY));
+  result = _mm_add_ps(result, _mm_mul_ps(matrixZ, vecZ));
+  result = _mm_add_ps(result, _mm_mul_ps(matrixW, vecW));
+
+  _mm_storeu_ps(b, result);
 }
 
 float Unaligned_ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]) {
@@ -328,6 +395,58 @@ void Unaligned_Mat4x4Mul(const float* a, const float* b, float* result) {
   _mm_store_ps(result + 4, _mm_add_ps(_mm_add_ps(_mm_add_ps(result4, result5), result6), result7));
   _mm_store_ps(result + 8, _mm_add_ps(_mm_add_ps(_mm_add_ps(result8, result9), result10), result11));
   _mm_store_ps(result + 12, _mm_add_ps(_mm_add_ps(_mm_add_ps(result12, result13), result14), result15));
+}
+
+void Unaligned_Mat4x4MulInPlace(float* a, const float* b) {
+  __m128 a0 = _mm_set_ps1(a[0]);
+  __m128 a1 = _mm_set_ps1(a[1]);
+  __m128 a2 = _mm_set_ps1(a[2]);
+  __m128 a3 = _mm_set_ps1(a[3]);
+
+  __m128 a4 = _mm_set_ps1(a[4]);
+  __m128 a5 = _mm_set_ps1(a[5]);
+  __m128 a6 = _mm_set_ps1(a[6]);
+  __m128 a7 = _mm_set_ps1(a[7]);
+
+  __m128 a8 = _mm_set_ps1(a[8]);
+  __m128 a9 = _mm_set_ps1(a[9]);
+  __m128 a10 = _mm_set_ps1(a[10]);
+  __m128 a11 = _mm_set_ps1(a[11]);
+
+  __m128 a12 = _mm_set_ps1(a[12]);
+  __m128 a13 = _mm_set_ps1(a[13]);
+  __m128 a14 = _mm_set_ps1(a[14]);
+  __m128 a15 = _mm_set_ps1(a[15]);
+
+  __m128 br0 = _mm_loadu_ps(b);
+  __m128 br1 = _mm_loadu_ps(b + 4);
+  __m128 br2 = _mm_loadu_ps(b + 8);
+  __m128 br3 = _mm_loadu_ps(b + 12);
+
+  __m128 result0 = _mm_mul_ps(a0, br0);
+  __m128 result1 = _mm_mul_ps(a1, br1);
+  __m128 result2 = _mm_mul_ps(a2, br2);
+  __m128 result3 = _mm_mul_ps(a3, br3);
+
+  __m128 result4 = _mm_mul_ps(a4, br0);
+  __m128 result5 = _mm_mul_ps(a5, br1);
+  __m128 result6 = _mm_mul_ps(a6, br2);
+  __m128 result7 = _mm_mul_ps(a7, br3);
+
+  __m128 result8 = _mm_mul_ps(a8, br0);
+  __m128 result9 = _mm_mul_ps(a9, br1);
+  __m128 result10 = _mm_mul_ps(a10, br2);
+  __m128 result11 = _mm_mul_ps(a11, br3);
+
+  __m128 result12 = _mm_mul_ps(a12, br0);
+  __m128 result13 = _mm_mul_ps(a13, br1);
+  __m128 result14 = _mm_mul_ps(a14, br2);
+  __m128 result15 = _mm_mul_ps(a15, br3);
+
+  _mm_store_ps(a, _mm_add_ps(_mm_add_ps(_mm_add_ps(result0, result1), result2), result3));
+  _mm_store_ps(a + 4, _mm_add_ps(_mm_add_ps(_mm_add_ps(result4, result5), result6), result7));
+  _mm_store_ps(a + 8, _mm_add_ps(_mm_add_ps(_mm_add_ps(result8, result9), result10), result11));
+  _mm_store_ps(a + 12, _mm_add_ps(_mm_add_ps(_mm_add_ps(result12, result13), result14), result15));
 }
 
 void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {

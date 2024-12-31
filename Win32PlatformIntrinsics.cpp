@@ -1428,22 +1428,52 @@ void Aligned_HomogenizeTransformScreenSpace(float* data, int32 stride, int32 len
 }
 
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]) {
-  /*
-  Note that we don't do any kind of CPUID check here.
-  minps/maxps are available since the first version of SSE.
-  */
+  bool packedVerts = stride == 4;
   
-  __m128 min = _mm_loadu_ps(outMin);
-  __m128 max = _mm_loadu_ps(outMax);
-  
-  for (size_t i = 0; i < numVertices; i += stride) {
-    __m128 vertex = _mm_loadu_ps(vertices + i);
-    min = _mm_min_ps(min, vertex);
-    max = _mm_max_ps(max, vertex);
-  }
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight) && packedVerts) {
+    __m128 min = _mm_loadu_ps(outMin);
+    __m128 max = _mm_loadu_ps(outMax);
 
-  _mm_storeu_ps(outMin, min);
-  _mm_storeu_ps(outMax, max);
+    __m256 wideMin = _mm256_set_m128(min, min);
+    __m256 wideMax = _mm256_set_m128(max, max);
+
+    size_t i = 0;
+    for (; i < numVertices; i += 8) {
+      __m256 vertex = _mm256_loadu_ps(vertices + i);
+      wideMin = _mm256_min_ps(wideMin, vertex);
+      wideMax = _mm256_max_ps(wideMax, vertex);
+    }
+
+    // If we reach the end, check for the final vertex.
+    if (i < numVertices) {
+      __m128 vertex = _mm_loadu_ps(vertices + i);
+      min = _mm_min_ps(min, vertex);
+      max = _mm_max_ps(max, vertex);
+    }
+
+    // Reduce the hi/lo vectors
+    min = _mm_min_ps(_mm256_castps256_ps128(wideMin), min);
+    min = _mm_min_ps(_mm256_extractf128_ps(wideMin, 0b1), min);
+
+    max = _mm_max_ps(_mm256_castps256_ps128(wideMax), max);
+    max = _mm_max_ps(_mm256_extractf128_ps(wideMax, 0b1), max);
+
+    _mm_storeu_ps(outMin, min);
+    _mm_storeu_ps(outMax, max);
+  }
+  else {
+    __m128 min = _mm_loadu_ps(outMin);
+    __m128 max = _mm_loadu_ps(outMax);
+
+    for (size_t i = 0; i < numVertices; i += stride) {
+      __m128 vertex = _mm_loadu_ps(vertices + i);
+      min = _mm_min_ps(min, vertex);
+      max = _mm_max_ps(max, vertex);
+    }
+
+    _mm_storeu_ps(outMin, min);
+    _mm_storeu_ps(outMax, max);
+  }
 }
 
 void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restrict indices, const int32 end, const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer) {

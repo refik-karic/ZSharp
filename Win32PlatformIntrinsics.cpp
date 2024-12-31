@@ -466,7 +466,8 @@ void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t j = 0;
     __m256i alpha = _mm256_set1_epi32(0xFF000000);
 
-    for (; (j + 8) < rgbBytes; i += 8, j += 8) {
+    const size_t simdLength = (rgbBytes / 8) * 8;
+    for (; j < simdLength; i += 8, j += 8) {
       __m256i inData = _mm256_lddqu_si256((__m256i*)(rgb + i));
       __m256i shuffledPixels = _mm256_shuffle_epi8(inData, shuffleOrder);
       shuffledPixels = _mm256_or_si256(shuffledPixels, alpha);
@@ -492,7 +493,8 @@ void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t j = 0;
     __m128i alpha = _mm_set1_epi32(0xFF000000);
 
-    for (; (i + 4) < rgbBytes; i += 4, j += 4) {
+    const size_t simdLength = (rgbBytes / 4) * 4;
+    for (; i < simdLength; i += 4, j += 4) {
       __m128i inData = _mm_lddqu_si128((__m128i*)(rgb + i));
       __m128i shuffledPixels = _mm_shuffle_epi8(inData, shuffleOrder);
       shuffledPixels = _mm_or_si128(shuffledPixels, alpha);
@@ -525,7 +527,8 @@ void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t j = 0;
     __m256i alpha = _mm256_set1_epi32(0xFF000000);
 
-    for (; (i + 8) < rgbBytes; i += 6, j += 8) {
+    const size_t simdLength = (rgbBytes / 8) * 8;
+    for (; i < simdLength; i += 6, j += 8) {
       __m256i inData = _mm256_lddqu_si256((__m256i*)(rgb + i));
       __m256i shuffledPixels = _mm256_shuffle_epi8(inData, shuffleOrder);
       shuffledPixels = _mm256_or_si256(shuffledPixels, alpha);
@@ -551,7 +554,8 @@ void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t j = 0;
     __m128i alpha = _mm_set1_epi32(0xFF000000);
 
-    for (; (i + 4) < rgbBytes; i += 3, j += 4) {
+    const size_t simdLength = (rgbBytes / 4) * 4;
+    for (; i < simdLength; i += 3, j += 4) {
       __m128i inData = _mm_lddqu_si128((__m128i*)(rgb + i));
       __m128i shuffledPixels = _mm_shuffle_epi8(inData, shuffleOrder);
       shuffledPixels = _mm_or_si128(shuffledPixels, alpha);
@@ -583,7 +587,8 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
       uint32* currentPixels = image + (h * width);
 
       size_t w = 0;
-      for (; (w + 8) < width; w += 8, currentPixels += 8) {
+      const size_t simdLength = (width / 8) * 8;
+      for (; w < simdLength; w += 8, currentPixels += 8) {
         __m256i pixels = _mm256_loadu_si256((__m256i*)(currentPixels));
         pixels = _mm256_shuffle_epi8(pixels, shuffleOrder);
         _mm256_storeu_si256((__m256i*)(currentPixels), pixels);
@@ -609,7 +614,8 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
       uint32* currentPixels = image + (h * width);
 
       size_t w = 0;
-      for (; (w + 4) < width; w += 4, currentPixels += 4) {
+      const size_t simdLength = (width / 4) * 4;
+      for (; w < simdLength; w += 4, currentPixels += 4) {
         __m128i pixels = _mm_loadu_si128((__m128i*)(currentPixels));
         pixels = _mm_shuffle_epi8(pixels, shuffleOrder);
         _mm_storeu_si128((__m128i*)(currentPixels), pixels);
@@ -1002,7 +1008,8 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
     for (size_t h = 0; h < height; ++h) {
       float* currentDepth = (depth + (h * width));
       size_t w = 0;
-      for (; w + 8 < width; w += 8, currentDepth += 8) {
+      const size_t simdLength = (width / 8) * 8;
+      for (; w < simdLength; w += 8, currentDepth += 8) {
         __m256 depthValues = _mm256_load_ps(currentDepth);
 
         __m256 lerpedR = Lerp256(rwVec, rbVec, depthValues);
@@ -1044,7 +1051,8 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
     for (size_t h = 0; h < height; ++h) {
       float* currentDepth = (depth + (h * width));
       size_t w = 0;
-      for (; w + 4 < width; w += 4, currentDepth += 4) {
+      const size_t simdLength = (width / 4) * 4;
+      for (; w < simdLength; w += 4, currentDepth += 4) {
         __m128 depthValues = _mm_loadu_ps(currentDepth);
 
         __m128 lerpedR = Lerp128(rwVec, rbVec, depthValues);
@@ -1095,7 +1103,8 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
 
     for (size_t y = 0; y < height; ++y) {
       size_t x = 0;
-      for (; x + 8 < width; x += 8) {
+      const size_t simdLength = (width / 8) * 8;
+      for (; x < simdLength; x += 8) {
         size_t index = (y * width) + x;
 
         // Load 8 pixels at a time
@@ -1179,7 +1188,8 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
 
     for (size_t y = 0; y < height; ++y) {
       size_t x = 0;
-      for (; x + 4 < width; x += 4) {
+      const size_t simdLength = (width / 4) * 4;
+      for (; x < simdLength; x += 4) {
         size_t index = (y * width) + x;
 
         // Load 4 pixels at a time

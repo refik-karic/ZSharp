@@ -1438,7 +1438,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
     __m256 wideMax = _mm256_set_m128(max, max);
 
     size_t i = 0;
-    for (; i < numVertices; i += 8) {
+    for (; i + 8 < numVertices; i += 8) {
       __m256 vertex = _mm256_loadu_ps(vertices + i);
       wideMin = _mm256_min_ps(wideMin, vertex);
       wideMax = _mm256_max_ps(wideMax, vertex);

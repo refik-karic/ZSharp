@@ -466,7 +466,7 @@ void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t j = 0;
     __m256i alpha = _mm256_set1_epi32(0xFF000000);
 
-    const size_t simdLength = (rgbBytes / 8) * 8;
+    const size_t simdLength = (rgbBytes >> 3) << 3;
     for (; j < simdLength; i += 8, j += 8) {
       __m256i inData = _mm256_lddqu_si256((__m256i*)(rgb + i));
       __m256i shuffledPixels = _mm256_shuffle_epi8(inData, shuffleOrder);
@@ -493,7 +493,7 @@ void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t j = 0;
     __m128i alpha = _mm_set1_epi32(0xFF000000);
 
-    const size_t simdLength = (rgbBytes / 4) * 4;
+    const size_t simdLength = (rgbBytes >> 2) << 2;
     for (; i < simdLength; i += 4, j += 4) {
       __m128i inData = _mm_lddqu_si128((__m128i*)(rgb + i));
       __m128i shuffledPixels = _mm_shuffle_epi8(inData, shuffleOrder);
@@ -527,7 +527,7 @@ void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t j = 0;
     __m256i alpha = _mm256_set1_epi32(0xFF000000);
 
-    const size_t simdLength = (rgbBytes / 8) * 8;
+    const size_t simdLength = (rgbBytes >> 3) << 3;
     for (; i < simdLength; i += 6, j += 8) {
       __m256i inData = _mm256_lddqu_si256((__m256i*)(rgb + i));
       __m256i shuffledPixels = _mm256_shuffle_epi8(inData, shuffleOrder);
@@ -554,7 +554,7 @@ void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
     size_t j = 0;
     __m128i alpha = _mm_set1_epi32(0xFF000000);
 
-    const size_t simdLength = (rgbBytes / 4) * 4;
+    const size_t simdLength = (rgbBytes >> 2) << 2;
     for (; i < simdLength; i += 3, j += 4) {
       __m128i inData = _mm_lddqu_si128((__m128i*)(rgb + i));
       __m128i shuffledPixels = _mm_shuffle_epi8(inData, shuffleOrder);
@@ -587,7 +587,7 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
       uint32* currentPixels = image + (h * width);
 
       size_t w = 0;
-      const size_t simdLength = (width / 8) * 8;
+      const size_t simdLength = (width >> 3) << 3;
       for (; w < simdLength; w += 8, currentPixels += 8) {
         __m256i pixels = _mm256_loadu_si256((__m256i*)(currentPixels));
         pixels = _mm256_shuffle_epi8(pixels, shuffleOrder);
@@ -614,7 +614,7 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
       uint32* currentPixels = image + (h * width);
 
       size_t w = 0;
-      const size_t simdLength = (width / 4) * 4;
+      const size_t simdLength = (width >> 2) << 2;
       for (; w < simdLength; w += 4, currentPixels += 4) {
         __m128i pixels = _mm_loadu_si128((__m128i*)(currentPixels));
         pixels = _mm_shuffle_epi8(pixels, shuffleOrder);
@@ -1008,7 +1008,7 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
     for (size_t h = 0; h < height; ++h) {
       float* currentDepth = (depth + (h * width));
       size_t w = 0;
-      const size_t simdLength = (width / 8) * 8;
+      const size_t simdLength = (width >> 3) << 3;
       for (; w < simdLength; w += 8, currentDepth += 8) {
         __m256 depthValues = _mm256_load_ps(currentDepth);
 
@@ -1051,7 +1051,7 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
     for (size_t h = 0; h < height; ++h) {
       float* currentDepth = (depth + (h * width));
       size_t w = 0;
-      const size_t simdLength = (width / 4) * 4;
+      const size_t simdLength = (width >> 2) << 2;
       for (; w < simdLength; w += 4, currentDepth += 4) {
         __m128 depthValues = _mm_loadu_ps(currentDepth);
 
@@ -1103,7 +1103,7 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
 
     for (size_t y = 0; y < height; ++y) {
       size_t x = 0;
-      const size_t simdLength = (width / 8) * 8;
+      const size_t simdLength = (width >> 3) << 3;
       for (; x < simdLength; x += 8) {
         size_t index = (y * width) + x;
 
@@ -1188,7 +1188,7 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
 
     for (size_t y = 0; y < height; ++y) {
       size_t x = 0;
-      const size_t simdLength = (width / 4) * 4;
+      const size_t simdLength = (width >> 2) << 2;
       for (; x < simdLength; x += 4) {
         size_t index = (y * width) + x;
 
@@ -1448,7 +1448,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
     __m256 wideMax = _mm256_set_m128(max, max);
 
     size_t i = 0;
-    size_t simdLength = (numVertices / 8) * 8;
+    size_t simdLength = (numVertices >> 3) << 3;
     for (; i < simdLength; i += 8) {
       __m256 vertex = _mm256_loadu_ps(vertices + i);
       wideMin = _mm256_min_ps(wideMin, vertex);
@@ -1616,6 +1616,7 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
       __m256 weights1 = weightInit1;
       __m256 weights2 = weightInit2;
 
+      const size_t simdEnd = minX + (((maxX - minX) >> 3) << 3);
       for (int32 h = minY, w = minX; h < maxY;) {
         // OR all weights
         __m256 signMask = _mm256_castsi256_ps(_mm256_cmpeq_epi16(_mm256_castps_si256(weights0), _mm256_castps_si256(weights0)));
@@ -1645,7 +1646,7 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
           _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
         }
 
-        if ((w + 8) > maxX) {
+        if (w == simdEnd) {
           w = minX;
           ++h;
           int32 stepDelta = (minX + (h * sMaxWidth));
@@ -1993,6 +1994,7 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
       __m256 weights1 = weightInit1;
       __m256 weights2 = weightInit2;
 
+      const size_t simdEnd = minX + (((maxX - minX) >> 3) << 3);
       for (int32 h = minY, w = minX; h < maxY;) {
         // OR all weights
         __m256 signMask = _mm256_castsi256_ps(_mm256_cmpeq_epi16(_mm256_castps_si256(weights0), _mm256_castps_si256(weights0)));
@@ -2034,7 +2036,7 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
           _mm256_maskstore_ps(pixelDepth, finalCombinedMask, zValues);
         }
 
-        if ((w + 8) > maxX) {
+        if (w == simdEnd) {
           w = minX;
           ++h;
           int32 stepDelta = (minX + (h * sMaxWidth));

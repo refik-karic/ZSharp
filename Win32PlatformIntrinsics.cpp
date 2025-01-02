@@ -583,11 +583,11 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
       7, 4, 5, 6,
       3, 0, 1, 2);
 
+    const size_t simdLength = (width >> 3) << 3;
     for (size_t h = 0; h < height; ++h) {
       uint32* currentPixels = image + (h * width);
 
       size_t w = 0;
-      const size_t simdLength = (width >> 3) << 3;
       for (; w < simdLength; w += 8, currentPixels += 8) {
         __m256i pixels = _mm256_loadu_si256((__m256i*)(currentPixels));
         pixels = _mm256_shuffle_epi8(pixels, shuffleOrder);
@@ -610,11 +610,11 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
       7, 4, 5, 6,
       3, 0, 1, 2);
 
+    const size_t simdLength = (width >> 2) << 2;
     for (size_t h = 0; h < height; ++h) {
       uint32* currentPixels = image + (h * width);
 
       size_t w = 0;
-      const size_t simdLength = (width >> 2) << 2;
       for (; w < simdLength; w += 4, currentPixels += 4) {
         __m128i pixels = _mm_loadu_si128((__m128i*)(currentPixels));
         pixels = _mm_shuffle_epi8(pixels, shuffleOrder);
@@ -673,12 +673,13 @@ void Unaligned_BilinearScaleImage(uint8* __restrict source, size_t sourceWidth, 
       0x80U, 0x80U, 0x80U, 3
     );
 
+    const size_t simdLength = (destWidth >> 2) << 2;
     for (size_t y = 0; y < destHeight; ++y) {
       uint8* destRow = dest + (y * destWidth * 4);
       __m128 yValues = _mm_set_ps1((float)y);
 
       size_t x = 0;
-      for (; x + 4 < destWidth; x += 4) {
+      for (; x < simdLength; x += 4) {
         __m128 xValues = _mm_add_ps(_mm_set_ps1((float)x), xScale);
 
         __m128 xRatios = _mm_mul_ps(ratioX, xValues);
@@ -697,10 +698,10 @@ void Unaligned_BilinearScaleImage(uint8* __restrict source, size_t sourceWidth, 
         __m128 xRightInt = _mm_mul_ps(xRight, indexScale);
         __m128 yRightInt = yRight;
 
-        __m128i topLeftIndices = _mm_cvtps_epi32(_mm_add_ps(_mm_mul_ps(yLeftInt, strideScale), xLeftInt));
-        __m128i topRightIndices = _mm_cvtps_epi32(_mm_add_ps(_mm_mul_ps(yLeftInt, strideScale), xRightInt));
-        __m128i bottomLeftIndices = _mm_cvtps_epi32(_mm_add_ps(_mm_mul_ps(yRightInt, strideScale), xLeftInt));
-        __m128i bottomRightIndices = _mm_cvtps_epi32(_mm_add_ps(_mm_mul_ps(yRightInt, strideScale), xRightInt));
+        __m128i topLeftIndices = _mm_cvtps_epi32(_mm_fmadd_ps(yLeftInt, strideScale, xLeftInt));
+        __m128i topRightIndices = _mm_cvtps_epi32(_mm_fmadd_ps(yLeftInt, strideScale, xRightInt));
+        __m128i bottomLeftIndices = _mm_cvtps_epi32(_mm_fmadd_ps(yRightInt, strideScale, xLeftInt));
+        __m128i bottomRightIndices = _mm_cvtps_epi32(_mm_fmadd_ps(yRightInt, strideScale, xRightInt));
 
         __m128i topLeft = _mm_i32gather_epi32((int32*)source, topLeftIndices, 1);
         __m128i topRight = _mm_i32gather_epi32((int32*)source, topRightIndices, 1);
@@ -712,29 +713,33 @@ void Unaligned_BilinearScaleImage(uint8* __restrict source, size_t sourceWidth, 
         __m128 bottomLeftScale = _mm_mul_ps(yWeight, _mm_sub_ps(lerpOne, xWeight));
         __m128 bottomRightScale = _mm_mul_ps(xWeight, yWeight);
 
-        __m128i topLeftColor = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(_mm_add_ps(
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, aShuffle)), topLeftScale),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, aShuffle)), topRightScale)),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, aShuffle)), bottomLeftScale)),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, aShuffle)), bottomRightScale)));
+        __m128i topLeftColor = _mm_cvtps_epi32(
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, aShuffle)), topLeftScale,
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, aShuffle)), topRightScale,
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, aShuffle)), bottomLeftScale,
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, aShuffle)), bottomRightScale))))
+        );
 
-        __m128i topRightColor = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(_mm_add_ps(
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, rShuffle)), topLeftScale),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, rShuffle)), topRightScale)),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, rShuffle)), bottomLeftScale)),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, rShuffle)), bottomRightScale)));
+        __m128i topRightColor = _mm_cvtps_epi32(
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, rShuffle)), topLeftScale,
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, rShuffle)), topRightScale,
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, rShuffle)), bottomLeftScale,
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, rShuffle)), bottomRightScale))))
+        );
 
-        __m128i bottomLeftColor = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(_mm_add_ps(
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, gShuffle)), topLeftScale),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, gShuffle)), topRightScale)),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, gShuffle)), bottomLeftScale)),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, gShuffle)), bottomRightScale)));
+        __m128i bottomLeftColor = _mm_cvtps_epi32(
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, gShuffle)), topLeftScale,
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, gShuffle)), topRightScale,
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, gShuffle)), bottomLeftScale,
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, gShuffle)), bottomRightScale))))
+        );
 
-        __m128i bottomRightColor = _mm_cvtps_epi32(_mm_add_ps(_mm_add_ps(_mm_add_ps(
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, bShuffle)), topLeftScale),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, bShuffle)), topRightScale)),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, bShuffle)), bottomLeftScale)),
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, bShuffle)), bottomRightScale)));
+        __m128i bottomRightColor = _mm_cvtps_epi32(
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, bShuffle)), topLeftScale,
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, bShuffle)), topRightScale,
+          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, bShuffle)), bottomLeftScale,
+          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, bShuffle)), bottomRightScale))))
+        );
 
         topLeftColor = _mm_slli_epi32(topLeftColor, 24);
         topRightColor = _mm_slli_epi32(topRightColor, 16);
@@ -842,48 +847,192 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
   (void)lastHeight;
   size_t nextMipStride = nextWidth * 4;
   size_t lastMipStride = lastWidth * 4;
-  
-  __m128i shuffleLeft = _mm_set_epi8(
-    0x80U, 0x80U, 0x80U, 3,
-    0x80U, 0x80U, 0x80U, 2,
-    0x80U, 0x80U, 0x80U, 1,
-    0x80U, 0x80U, 0x80U, 0
-  );
 
-  __m128i shuffleRight = _mm_set_epi8(
-    0x80U, 0x80U, 0x80U, 7,
-    0x80U, 0x80U, 0x80U, 6,
-    0x80U, 0x80U, 0x80U, 5,
-    0x80U, 0x80U, 0x80U, 4
-  );
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    __m256i shuffleLeftWide = _mm256_set_epi8(
+      0x80U, 11, 0x80U, 10,
+      0x80U, 9, 0x80U, 8,
+      0x80U, 3, 0x80U, 2,
+      0x80U, 1, 0x80U, 0,
+      0x80U, 11, 0x80U, 10,
+      0x80U, 9, 0x80U, 8,
+      0x80U, 3, 0x80U, 2,
+      0x80U, 1, 0x80U, 0
+    );
 
-  __m128i shuffleColor = _mm_set_epi8(
-    0x80U, 0x80U, 0x80U, 0x80U,
-    0x80U, 0x80U, 0x80U, 0x80U,
-    0x80U, 0x80U, 0x80U, 0x80U,
-    12, 8, 4, 0
-  );
+    __m256i shuffleRightWide = _mm256_set_epi8(
+      0x80U, 15, 0x80U, 14,
+      0x80U, 13, 0x80U, 12,
+      0x80U, 7, 0x80U, 6,
+      0x80U, 5, 0x80U, 4,
+      0x80U, 15, 0x80U, 14,
+      0x80U, 13, 0x80U, 12,
+      0x80U, 7, 0x80U, 6,
+      0x80U, 5, 0x80U, 4
+    );
 
-  for (size_t y = 0; y < nextHeight; ++y) {
-    for (size_t x = 0; x < nextWidth; ++x) {
-      const size_t xStride = x * 4;
+    __m256i shuffleLeft = _mm256_set_epi8(
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 3, 0x80U, 2,
+      0x80U, 1, 0x80U, 0,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 3, 0x80U, 2,
+      0x80U, 1, 0x80U, 0
+    );
 
-      uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
-      uint8* __restrict bottomLeft = topLeft + lastMipStride;
+    __m256i shuffleRight = _mm256_set_epi8(
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 7, 0x80U, 6,
+      0x80U, 5, 0x80U, 4,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 7, 0x80U, 6,
+      0x80U, 5, 0x80U, 4
+    );
 
-      __m128i topData = _mm_loadu_si64(topLeft);
-      __m128i bottomData = _mm_loadu_si64(bottomLeft);
-      
-      __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeft);
-      __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRight);
-      __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeft);
-      __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRight);
+    __m256i shuffleColor = _mm256_set_epi8(
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      14, 12, 10, 8,
+      6, 4, 2, 0,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      14, 12, 10, 8,
+      6, 4, 2, 0
+    );
 
-      __m128i rgba = _mm_add_epi32(_mm_add_epi32(_mm_add_epi32(topLeftData, topRightData), bottomLeftData), bottomRightData);
-      rgba = _mm_srli_epi32(rgba, 2);
-      rgba = _mm_shuffle_epi8(rgba, shuffleColor);
+    const size_t simdSize = (nextWidth >> 2) << 2;
+    for (size_t y = 0; y < nextHeight; ++y) {
+      size_t x = 0;
+      for (; x < simdSize; x += 4) {
+        const size_t xStride = x * 4;
 
-      _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
+        uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+        uint8* __restrict bottomLeft = topLeft + lastMipStride;
+
+        __m256i topData = _mm256_lddqu_si256((__m256i*)topLeft);
+        __m256i bottomData = _mm256_lddqu_si256((__m256i*)bottomLeft);
+
+        __m256i topLeftData = _mm256_shuffle_epi8(topData, shuffleLeftWide);
+        __m256i topRightData = _mm256_shuffle_epi8(topData, shuffleRightWide);
+        __m256i bottomLeftData = _mm256_shuffle_epi8(bottomData, shuffleLeftWide);
+        __m256i bottomRightData = _mm256_shuffle_epi8(bottomData, shuffleRightWide);
+
+        __m256i rgba = _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(topLeftData, topRightData), bottomLeftData), bottomRightData);
+        rgba = _mm256_srli_epi16(rgba, 2);
+        rgba = _mm256_shuffle_epi8(rgba, shuffleColor);
+
+        __m128i hiRgba = _mm_slli_si128(_mm256_extractf128_si256(rgba, 0b1), 8);
+        hiRgba = _mm_or_si128(_mm256_castsi256_si128(rgba), hiRgba);
+
+        _mm_storeu_si128((__m128i*)(nextMip + ((y * nextMipStride) + xStride)), hiRgba);
+      }
+
+      for (; x < nextWidth; ++x) {
+        const size_t xStride = x * 4;
+
+        uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+        uint8* __restrict bottomLeft = topLeft + lastMipStride;
+
+        __m128i topData = _mm_loadu_si64(topLeft);
+        __m128i bottomData = _mm_loadu_si64(bottomLeft);
+
+        __m128i topLeftData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleLeft));
+        __m128i topRightData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleRight));
+        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleLeft));
+        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleRight));
+
+        __m128i rgba = _mm_add_epi16(_mm_add_epi16(_mm_add_epi16(topLeftData, topRightData), bottomLeftData), bottomRightData);
+        rgba = _mm_srli_epi16(rgba, 2);
+        rgba = _mm_shuffle_epi8(rgba, _mm256_castsi256_si128(shuffleColor));
+
+        _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
+      }
+    }
+  }
+  else {
+    __m128i shuffleLeftWide = _mm_set_epi8(
+      0x80U, 11, 0x80U, 10,
+      0x80U, 9, 0x80U, 8,
+      0x80U, 3, 0x80U, 2,
+      0x80U, 1, 0x80U, 0
+    );
+
+    __m128i shuffleRightWide = _mm_set_epi8(
+      0x80U, 15, 0x80U, 14,
+      0x80U, 13, 0x80U, 12,
+      0x80U, 7, 0x80U, 6,
+      0x80U, 5, 0x80U, 4
+    );
+
+    __m128i shuffleLeft = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 3, 0x80U, 2,
+      0x80U, 1, 0x80U, 0
+    );
+
+    __m128i shuffleRight = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 7, 0x80U, 6,
+      0x80U, 5, 0x80U, 4
+    );
+
+    __m128i shuffleColor = _mm_set_epi8(
+      0x80U, 0x80U, 0x80U, 0x80U,
+      0x80U, 0x80U, 0x80U, 0x80U,
+      14, 12, 10, 8,
+      6, 4, 2, 0
+    );
+
+    const size_t simdSize = (nextWidth >> 1) << 1;
+    for (size_t y = 0; y < nextHeight; ++y) {
+      size_t x = 0;
+      for (; x < simdSize; x += 2) {
+        const size_t xStride = x * 4;
+
+        uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+        uint8* __restrict bottomLeft = topLeft + lastMipStride;
+
+        __m128i topData = _mm_lddqu_si128((__m128i*)topLeft);
+        __m128i bottomData = _mm_lddqu_si128((__m128i*)bottomLeft);
+
+        __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeftWide);
+        __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRightWide);
+        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeftWide);
+        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRightWide);
+
+        __m128i rgba = _mm_add_epi16(_mm_add_epi16(_mm_add_epi16(topLeftData, topRightData), bottomLeftData), bottomRightData);
+        rgba = _mm_srli_epi16(rgba, 2);
+        rgba = _mm_shuffle_epi8(rgba, shuffleColor);
+
+        _mm_storeu_si64(nextMip + ((y * nextMipStride) + xStride), rgba);
+      }
+
+      for (; x < nextWidth; ++x) {
+        const size_t xStride = x * 4;
+
+        uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+        uint8* __restrict bottomLeft = topLeft + lastMipStride;
+
+        __m128i topData = _mm_loadu_si64(topLeft);
+        __m128i bottomData = _mm_loadu_si64(bottomLeft);
+
+        __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeft);
+        __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRight);
+        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeft);
+        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRight);
+
+        __m128i rgba = _mm_add_epi16(_mm_add_epi16(_mm_add_epi16(topLeftData, topRightData), bottomLeftData), bottomRightData);
+        rgba = _mm_srli_epi16(rgba, 2);
+        rgba = _mm_shuffle_epi8(rgba, shuffleColor);
+
+        _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
+      }
     }
   }
 }
@@ -1005,10 +1154,10 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
 
     __m256i initialColor = _mm256_set1_epi32(0xFF000000);
 
+    const size_t simdLength = (width >> 3) << 3;
     for (size_t h = 0; h < height; ++h) {
       float* currentDepth = (depth + (h * width));
       size_t w = 0;
-      const size_t simdLength = (width >> 3) << 3;
       for (; w < simdLength; w += 8, currentDepth += 8) {
         __m256 depthValues = _mm256_load_ps(currentDepth);
 
@@ -1048,10 +1197,10 @@ void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
 
     __m128i initialColor = _mm_set1_epi32(0xFF000000);
 
+    const size_t simdLength = (width >> 2) << 2;
     for (size_t h = 0; h < height; ++h) {
       float* currentDepth = (depth + (h * width));
       size_t w = 0;
-      const size_t simdLength = (width >> 2) << 2;
       for (; w < simdLength; w += 4, currentDepth += 4) {
         __m128 depthValues = _mm_loadu_ps(currentDepth);
 
@@ -1101,9 +1250,9 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
     __m256i devOpacity = _mm256_set1_epi16(devOpacityValue);
     __m256i bufferOpacity = _mm256_set1_epi16(bufferOpacityValue);
 
+    const size_t simdLength = (width >> 3) << 3;
     for (size_t y = 0; y < height; ++y) {
       size_t x = 0;
-      const size_t simdLength = (width >> 3) << 3;
       for (; x < simdLength; x += 8) {
         size_t index = (y * width) + x;
 
@@ -1183,12 +1332,9 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
     __m128i devOpacity = _mm_set1_epi16(devOpacityValue);
     __m128i bufferOpacity = _mm_set1_epi16(bufferOpacityValue);
 
-    // Need this to clear high 8 bits of the 16 unpacked value
-    __m128i zero = _mm_setzero_si128();
-
+    const size_t simdLength = (width >> 2) << 2;
     for (size_t y = 0; y < height; ++y) {
       size_t x = 0;
-      const size_t simdLength = (width >> 2) << 2;
       for (; x < simdLength; x += 4) {
         size_t index = (y * width) + x;
 
@@ -1198,11 +1344,11 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
         __m128i devColor = _mm_loadu_si128((__m128i*)(devBuffer + index));
         __m128i bufferColor = _mm_loadu_si128((__m128i*)(frameBuffer + index));
 
-        __m128i devLo16 = _mm_unpacklo_epi8(devColor, zero); // 2x 32bit BGRA, [0,1]
-        __m128i devHi16 = _mm_unpackhi_epi8(devColor, zero); // 2x 32bit BGRA, [2,3]
+        __m128i devLo16 = _mm_unpacklo_epi8(devColor, _mm_setzero_si128()); // 2x 32bit BGRA, [0,1]
+        __m128i devHi16 = _mm_unpackhi_epi8(devColor, _mm_setzero_si128()); // 2x 32bit BGRA, [2,3]
 
-        __m128i bufLo16 = _mm_unpacklo_epi8(bufferColor, zero);
-        __m128i bufHi16 = _mm_unpackhi_epi8(bufferColor, zero);
+        __m128i bufLo16 = _mm_unpacklo_epi8(bufferColor, _mm_setzero_si128());
+        __m128i bufHi16 = _mm_unpackhi_epi8(bufferColor, _mm_setzero_si128());
 
         devLo16 = _mm_mullo_epi16(devLo16, devOpacity);
         devHi16 = _mm_mullo_epi16(devHi16, devOpacity);
@@ -1489,7 +1635,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
 
 void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restrict indices, const int32 end, const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
-  
+
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     __m256 rgbScale = _mm256_set1_ps(255.f);
     __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);

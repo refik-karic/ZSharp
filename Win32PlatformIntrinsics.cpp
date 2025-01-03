@@ -922,10 +922,7 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m256i bottomRightData = _mm256_shuffle_epi8(bottomData, shuffleRightWide);
 
         __m256i rgba = _mm256_avg_epu16(_mm256_avg_epu16(topLeftData, topRightData), _mm256_avg_epu16(bottomLeftData, bottomRightData));
-        rgba = _mm256_shuffle_epi8(rgba, shuffleColor);
-
-        __m128i hiRgba = _mm_slli_si128(_mm256_extractf128_si256(rgba, 0b1), 8);
-        hiRgba = _mm_or_si128(_mm256_castsi256_si128(rgba), hiRgba);
+        __m128i hiRgba = _mm_packus_epi16(_mm256_castsi256_si128(rgba), _mm256_extractf128_si256(rgba, 0b1));
 
         _mm_storeu_si128((__m128i*)(nextMip + ((y * nextMipStride) + xStride)), hiRgba);
       }

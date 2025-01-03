@@ -921,8 +921,7 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m256i bottomLeftData = _mm256_shuffle_epi8(bottomData, shuffleLeftWide);
         __m256i bottomRightData = _mm256_shuffle_epi8(bottomData, shuffleRightWide);
 
-        __m256i rgba = _mm256_add_epi16(_mm256_add_epi16(_mm256_add_epi16(topLeftData, topRightData), bottomLeftData), bottomRightData);
-        rgba = _mm256_srli_epi16(rgba, 2);
+        __m256i rgba = _mm256_avg_epu16(_mm256_avg_epu16(topLeftData, topRightData), _mm256_avg_epu16(bottomLeftData, bottomRightData));
         rgba = _mm256_shuffle_epi8(rgba, shuffleColor);
 
         __m128i hiRgba = _mm_slli_si128(_mm256_extractf128_si256(rgba, 0b1), 8);
@@ -945,8 +944,7 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleLeft));
         __m128i bottomRightData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleRight));
 
-        __m128i rgba = _mm_add_epi16(_mm_add_epi16(_mm_add_epi16(topLeftData, topRightData), bottomLeftData), bottomRightData);
-        rgba = _mm_srli_epi16(rgba, 2);
+        __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
         rgba = _mm_shuffle_epi8(rgba, _mm256_castsi256_si128(shuffleColor));
 
         _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
@@ -1006,8 +1004,7 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeftWide);
         __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRightWide);
 
-        __m128i rgba = _mm_add_epi16(_mm_add_epi16(_mm_add_epi16(topLeftData, topRightData), bottomLeftData), bottomRightData);
-        rgba = _mm_srli_epi16(rgba, 2);
+        __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
         rgba = _mm_shuffle_epi8(rgba, shuffleColor);
 
         _mm_storeu_si64(nextMip + ((y * nextMipStride) + xStride), rgba);
@@ -1027,8 +1024,8 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeft);
         __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRight);
 
-        __m128i rgba = _mm_add_epi16(_mm_add_epi16(_mm_add_epi16(topLeftData, topRightData), bottomLeftData), bottomRightData);
-        rgba = _mm_srli_epi16(rgba, 2);
+        __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
+
         rgba = _mm_shuffle_epi8(rgba, shuffleColor);
 
         _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);

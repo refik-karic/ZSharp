@@ -893,17 +893,6 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
       0x80U, 5, 0x80U, 4
     );
 
-    __m256i shuffleColor = _mm256_set_epi8(
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      14, 12, 10, 8,
-      6, 4, 2, 0,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      14, 12, 10, 8,
-      6, 4, 2, 0
-    );
-
     const size_t simdSize = (nextWidth >> 2) << 2;
     for (size_t y = 0; y < nextHeight; ++y) {
       size_t x = 0;
@@ -942,7 +931,7 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m128i bottomRightData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleRight));
 
         __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
-        rgba = _mm_shuffle_epi8(rgba, _mm256_castsi256_si128(shuffleColor));
+        rgba = _mm_packus_epi16(rgba, rgba);
 
         _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
       }
@@ -977,13 +966,6 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
       0x80U, 5, 0x80U, 4
     );
 
-    __m128i shuffleColor = _mm_set_epi8(
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      14, 12, 10, 8,
-      6, 4, 2, 0
-    );
-
     const size_t simdSize = (nextWidth >> 1) << 1;
     for (size_t y = 0; y < nextHeight; ++y) {
       size_t x = 0;
@@ -1002,7 +984,7 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRightWide);
 
         __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
-        rgba = _mm_shuffle_epi8(rgba, shuffleColor);
+        rgba = _mm_packus_epi16(rgba, rgba);
 
         _mm_storeu_si64(nextMip + ((y * nextMipStride) + xStride), rgba);
       }
@@ -1022,8 +1004,7 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRight);
 
         __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
-
-        rgba = _mm_shuffle_epi8(rgba, shuffleColor);
+        rgba = _mm_packus_epi16(rgba, rgba);
 
         _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
       }

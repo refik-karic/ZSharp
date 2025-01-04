@@ -1186,8 +1186,8 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
   short bufferOpacityValue = (short)(255.f * (1.f - opacity));
   
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    __m256i devOpacity = _mm256_set1_epi16(devOpacityValue);
-    __m256i bufferOpacity = _mm256_set1_epi16(bufferOpacityValue);
+    __m256i devOpacity = _mm256_set1_epi16(devOpacityValue << 8);
+    __m256i bufferOpacity = _mm256_set1_epi16(bufferOpacityValue << 8);
 
     const size_t simdLength = (width >> 3) << 3;
     for (size_t y = 0; y < height; ++y) {
@@ -1207,18 +1207,11 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
         __m256i bufLo16 = _mm256_unpacklo_epi8(bufferColor, _mm256_setzero_si256());
         __m256i bufHi16 = _mm256_unpackhi_epi8(bufferColor, _mm256_setzero_si256());
 
-        devLo16 = _mm256_mullo_epi16(devLo16, devOpacity);
-        devHi16 = _mm256_mullo_epi16(devHi16, devOpacity);
+        devLo16 = _mm256_mulhi_epu16(devLo16, devOpacity);
+        devHi16 = _mm256_mulhi_epu16(devHi16, devOpacity);
 
-        bufLo16 = _mm256_mullo_epi16(bufLo16, bufferOpacity);
-        bufHi16 = _mm256_mullo_epi16(bufHi16, bufferOpacity);
-
-        // Divide by 256
-        devLo16 = _mm256_srli_epi16(devLo16, 8);
-        devHi16 = _mm256_srli_epi16(devHi16, 8);
-
-        bufLo16 = _mm256_srli_epi16(bufLo16, 8);
-        bufHi16 = _mm256_srli_epi16(bufHi16, 8);
+        bufLo16 = _mm256_mulhi_epu16(bufLo16, bufferOpacity);
+        bufHi16 = _mm256_mulhi_epu16(bufHi16, bufferOpacity);
 
         __m256i loResult = _mm256_add_epi16(devLo16, bufLo16);
         __m256i hiResult = _mm256_add_epi16(devHi16, bufHi16);
@@ -1268,8 +1261,8 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
     }
   }
   else {
-    __m128i devOpacity = _mm_set1_epi16(devOpacityValue);
-    __m128i bufferOpacity = _mm_set1_epi16(bufferOpacityValue);
+    __m128i devOpacity = _mm_set1_epi16(devOpacityValue << 8);
+    __m128i bufferOpacity = _mm_set1_epi16(bufferOpacityValue << 8);
 
     const size_t simdLength = (width >> 2) << 2;
     for (size_t y = 0; y < height; ++y) {
@@ -1289,18 +1282,11 @@ void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict fra
         __m128i bufLo16 = _mm_unpacklo_epi8(bufferColor, _mm_setzero_si128());
         __m128i bufHi16 = _mm_unpackhi_epi8(bufferColor, _mm_setzero_si128());
 
-        devLo16 = _mm_mullo_epi16(devLo16, devOpacity);
-        devHi16 = _mm_mullo_epi16(devHi16, devOpacity);
+        devLo16 = _mm_mulhi_epu16(devLo16, devOpacity);
+        devHi16 = _mm_mulhi_epu16(devHi16, devOpacity);
 
-        bufLo16 = _mm_mullo_epi16(bufLo16, bufferOpacity);
-        bufHi16 = _mm_mullo_epi16(bufHi16, bufferOpacity);
-
-        // Divide by 256
-        devLo16 = _mm_srli_epi16(devLo16, 8);
-        devHi16 = _mm_srli_epi16(devHi16, 8);
-
-        bufLo16 = _mm_srli_epi16(bufLo16, 8);
-        bufHi16 = _mm_srli_epi16(bufHi16, 8);
+        bufLo16 = _mm_mulhi_epu16(bufLo16, bufferOpacity);
+        bufHi16 = _mm_mulhi_epu16(bufHi16, bufferOpacity);
 
         __m128i loResult = _mm_add_epi16(devLo16, bufLo16);
         __m128i hiResult = _mm_add_epi16(devHi16, bufHi16);

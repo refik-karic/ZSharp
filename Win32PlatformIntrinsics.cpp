@@ -871,28 +871,6 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
       0x80U, 5, 0x80U, 4
     );
 
-    __m256i shuffleLeft = _mm256_set_epi8(
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 3, 0x80U, 2,
-      0x80U, 1, 0x80U, 0,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 3, 0x80U, 2,
-      0x80U, 1, 0x80U, 0
-    );
-
-    __m256i shuffleRight = _mm256_set_epi8(
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 7, 0x80U, 6,
-      0x80U, 5, 0x80U, 4,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 7, 0x80U, 6,
-      0x80U, 5, 0x80U, 4
-    );
-
     const size_t simdSize = (nextWidth >> 2) << 2;
     for (size_t y = 0; y < nextHeight; ++y) {
       size_t x = 0;
@@ -925,10 +903,10 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m128i topData = _mm_loadu_si64(topLeft);
         __m128i bottomData = _mm_loadu_si64(bottomLeft);
 
-        __m128i topLeftData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleLeft));
-        __m128i topRightData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleRight));
-        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleLeft));
-        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleRight));
+        __m128i topLeftData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleLeftWide));
+        __m128i topRightData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleRightWide));
+        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleLeftWide));
+        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleRightWide));
 
         __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
         rgba = _mm_packus_epi16(rgba, rgba);
@@ -948,20 +926,6 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
     __m128i shuffleRightWide = _mm_set_epi8(
       0x80U, 15, 0x80U, 14,
       0x80U, 13, 0x80U, 12,
-      0x80U, 7, 0x80U, 6,
-      0x80U, 5, 0x80U, 4
-    );
-
-    __m128i shuffleLeft = _mm_set_epi8(
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 3, 0x80U, 2,
-      0x80U, 1, 0x80U, 0
-    );
-
-    __m128i shuffleRight = _mm_set_epi8(
-      0x80U, 0x80U, 0x80U, 0x80U,
-      0x80U, 0x80U, 0x80U, 0x80U,
       0x80U, 7, 0x80U, 6,
       0x80U, 5, 0x80U, 4
     );
@@ -998,10 +962,10 @@ void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, siz
         __m128i topData = _mm_loadu_si64(topLeft);
         __m128i bottomData = _mm_loadu_si64(bottomLeft);
 
-        __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeft);
-        __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRight);
-        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeft);
-        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRight);
+        __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeftWide);
+        __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRightWide);
+        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeftWide);
+        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRightWide);
 
         __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
         rgba = _mm_packus_epi16(rgba, rgba);

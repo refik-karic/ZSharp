@@ -24,6 +24,8 @@ class IndexBuffer final {
 
   int32 GetIndexSize() const;
 
+  void SetIndexSize(int32 size);
+
   void CopyInputData(const int32* data, int32 index, int32 length);
 
   int32* GetInputData();

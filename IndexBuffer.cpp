@@ -45,6 +45,10 @@ int32 IndexBuffer::GetIndexSize() const {
   return mWorkingSize;
 }
 
+void IndexBuffer::SetIndexSize(int32 size) {
+  mWorkingSize = size;
+}
+
 void IndexBuffer::CopyInputData(const int32* data, int32 index, int32 length) {
   Aligned_Memcpy(mData + index, data, length * sizeof(int32));
   mWorkingSize += length;

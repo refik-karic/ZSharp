@@ -1345,25 +1345,30 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
   int32* indexData = indexBuffer.GetInputData();
   const float* vertexData = vertexBuffer[0];
 
+  int32* endAddr = indexData + (indexBuffer.GetIndexSize() - 3);
+
   __m128i dotSign = _mm_set_epi32(0, 0x80000000, 0, 0);
 
-  for (int32 i = indexBuffer.GetIndexSize(); i >= 3; i -= 3) {
-    int32 i1 = indexData[i - 3];
-    int32 i2 = indexData[i - 2];
-    int32 i3 = indexData[i - 1];
-    __m128 v1 = _mm_loadu_ps(vertexData + i1);
-    __m128 v2 = _mm_loadu_ps(vertexData + i2);
-    __m128 v3 = _mm_loadu_ps(vertexData + i3);
+  for (int32 i = indexBuffer.GetIndexSize(); i > 0; i -= 3) {
+    int32* currentData = indexData + i - 3;
+    __m128 v1 = _mm_loadu_ps(vertexData + currentData[0]);
+    __m128 v2 = _mm_loadu_ps(vertexData + currentData[1]);
+    __m128 v3 = _mm_loadu_ps(vertexData + currentData[2]);
 
     __m128 p1p0 = _mm_sub_ps(v2, v1);
     __m128 p2p0 = _mm_sub_ps(v3, v1);
 
     __m128 normal = Cross128(p1p0, p2p0);
 
-    if (!_mm_testz_si128(_mm_castps_si128(normal), dotSign)) {
-      indexBuffer.RemoveTriangle(i - 3);
+    if (_mm_testc_si128(_mm_castps_si128(normal), dotSign)) {
+      ((int64*)currentData)[0] = ((int64*)endAddr)[0];
+      currentData[2] = endAddr[2];
+      endAddr -= 3;
     }
   }
+
+  int32 resultingSize = (int32)(endAddr - indexData);
+  indexBuffer.SetIndexSize(resultingSize);
 }
 
 void Aligned_WindowTransform(float* data, int32 stride, int32 length, const float windowTransform0[3], const float windowTransform1[3], const float width, const float height) {

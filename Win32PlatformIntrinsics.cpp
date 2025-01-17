@@ -1367,7 +1367,7 @@ void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBu
     }
   }
 
-  int32 resultingSize = (int32)(endAddr - indexData);
+  int32 resultingSize = (int32)(endAddr + 3 - indexData);
   indexBuffer.SetIndexSize(resultingSize);
 }
 
@@ -1693,6 +1693,7 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
       __m256 weights2 = weightInit2;
 
       const size_t simdEnd = minX + (((maxX - minX) >> 3) << 3);
+      const size_t stepDelta = sMaxWidth - simdEnd + minX;
       for (int32 h = minY, w = minX; h < maxY;) {
         // OR all weights
         __m256 signMask = _mm256_castsi256_ps(_mm256_cmpeq_epi16(_mm256_castps_si256(weights0), _mm256_castps_si256(weights0)));
@@ -1725,9 +1726,8 @@ void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restr
         if (w == simdEnd) {
           w = minX;
           ++h;
-          int32 stepDelta = (minX + (h * sMaxWidth));
-          pixels = ((uint32 * __restrict)(framebuffer)) + stepDelta;
-          pixelDepth = depthBuffer + stepDelta;
+          pixels += stepDelta;
+          pixelDepth += stepDelta;
           weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
           weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
           weightInit2 = _mm256_sub_ps(weightInit2, yStep2);
@@ -2071,6 +2071,7 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
       __m256 weights2 = weightInit2;
 
       const size_t simdEnd = minX + (((maxX - minX) >> 3) << 3);
+      const size_t stepDelta = sMaxWidth - simdEnd + minX;
       for (int32 h = minY, w = minX; h < maxY;) {
         // OR all weights
         __m256 signMask = _mm256_castsi256_ps(_mm256_cmpeq_epi16(_mm256_castps_si256(weights0), _mm256_castps_si256(weights0)));
@@ -2115,9 +2116,8 @@ void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restri
         if (w == simdEnd) {
           w = minX;
           ++h;
-          int32 stepDelta = (minX + (h * sMaxWidth));
-          pixels = ((uint32 * __restrict)(framebuffer)) + stepDelta;
-          pixelDepth = depthBuffer + stepDelta;
+          pixels += stepDelta;
+          pixelDepth += stepDelta;
           weightInit0 = _mm256_sub_ps(weightInit0, yStep0);
           weightInit1 = _mm256_sub_ps(weightInit1, yStep1);
           weightInit2 = _mm256_sub_ps(weightInit2, yStep2);

@@ -17,68 +17,44 @@
 
 #include "Common.h"
 
-int* CPUIDSection00() {
-  static int buffer[4] = {};
+FORCE_INLINE void CPUIDSection00(int buffer[4]) {
+  __cpuid(buffer, 0x00);
 
-  if (buffer[0] == 0) {
-    __cpuid(buffer, 0x00);
-
-    // Note: GenuineIntel is not written as expected so we need to swap the last couple DWORDS
-    ZSharp::Swap(buffer[3], buffer[2]);
-    // [0] = EAX
-    // [1] = EBX
-    // [2] = ECX
-    // [3] = EDX
-  }
-
-  return buffer;
+  // Note: GenuineIntel is not written as expected so we need to swap the last couple DWORDS
+  ZSharp::Swap(buffer[3], buffer[2]);
+  // [0] = EAX
+  // [1] = EBX
+  // [2] = ECX
+  // [3] = EDX
 }
 
-int* CPUIDSection01() {
-  static int buffer[4] = {};
+FORCE_INLINE void CPUIDSection01(int buffer[4]) {
+  __cpuid(buffer, 0x01);
 
-  if (buffer[2] == 0) {
-    __cpuid(buffer, 0x01);
-
-    // [0] = EAX
-    // [1] = EBX
-    // [2] = ECX
-    // [3] = EDX
-  }
-
-  return buffer;
+  // [0] = EAX
+  // [1] = EBX
+  // [2] = ECX
+  // [3] = EDX
 }
 
-int* CPUIDSection07() {
-  static int buffer[4] = {};
+FORCE_INLINE void CPUIDSection07(int buffer[4]) {
+  __cpuid(buffer, 0x07);
 
-  if (buffer[2] == 0) {
-    __cpuid(buffer, 0x07);
-
-    // [0] = EAX
-    // [1] = EBX
-    // [2] = ECX
-    // [3] = EDX
-  }
-
-  return buffer;
+  // [0] = EAX
+  // [1] = EBX
+  // [2] = ECX
+  // [3] = EDX
 }
 
-int* CPUIDSectionBrand() {
-  static int buffer[12] = {};
+FORCE_INLINE void CPUIDSectionBrand(int buffer[12]) {
+  __cpuid(buffer, 0x80000002);
+  __cpuid(buffer + 4, 0x80000003);
+  __cpuid(buffer + 8, 0x80000004);
 
-  if (buffer[0] == 0) {
-    __cpuid(buffer, 0x80000002);
-    __cpuid(buffer + 4, 0x80000003);
-    __cpuid(buffer + 8, 0x80000004);
-
-    // [0] = EAX
-    // [1] = EBX
-    // [2] = ECX
-    // [3] = EDX
-  }
-
-  return buffer;
+  // [0] = EAX
+  // [1] = EBX
+  // [2] = ECX
+  // [3] = EDX
 }
 
 FORCE_INLINE __m128i Not128(const __m128i v) {
@@ -117,6 +93,8 @@ FORCE_INLINE __m128 Cross128(__m128 a, __m128 b) {
 namespace ZSharp {
 
 bool PlatformSupportsSIMDLanes(SIMDLaneWidth width) {
+  int bits[4]{};
+
   switch (width) {
 #if 0
     case SIMDWidth::Four:
@@ -129,20 +107,20 @@ bool PlatformSupportsSIMDLanes(SIMDLaneWidth width) {
 #endif
     case SIMDLaneWidth::Four: // SSE4
     {
-      int* bits = CPUIDSection01();
-      return bits[2] & (1 << 19);
+      CPUIDSection01(bits);
+      return bits[2] & 0x524288; // (1 << 19)
     }
     break;
     case SIMDLaneWidth::Eight: // AVX2
     {
-      int* bits = CPUIDSection07();
-      return bits[1] & (1 << 5);
+      CPUIDSection07(bits);
+      return bits[1] & 0x32; // (1 << 5)
     }
     break;
     case SIMDLaneWidth::Sixteen: // AVX512
     {
-      int* bits = CPUIDSection07();
-      return bits[1] & (1 << 16);
+      CPUIDSection07(bits);
+      return bits[1] & 0x65536; // (1 << 16)
     }
     break;
   }
@@ -167,12 +145,16 @@ size_t PlatformAlignmentGranularity() {
 }
 
 String PlatformCPUVendor() {
-  String vendor((const char*)(CPUIDSection00() + 1));
+  int buffer[5]{};
+  CPUIDSection00(buffer);
+  String vendor((const char*)(buffer + 1));
   return vendor;
 }
 
 String PlatformCPUBrand() {
-  String brand((const char*)CPUIDSectionBrand());
+  int buffer[12]{};
+  CPUIDSectionBrand(buffer);
+  String brand((const char*)buffer);
   return brand;
 }
 

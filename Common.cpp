@@ -1,6 +1,23 @@
 #include "Common.h"
 
+#if PLATFORM_WINDOWS
+#include <stdlib.h>
+#endif
+
 namespace ZSharp {
+#if PLATFORM_WINDOWS
+
+// TODO: This still doesn't generate bswap in Debug. See if there's a way to force it.
+uint16 EndianSwap(uint16 value) {
+  return _byteswap_ushort(value);
+}
+
+uint32 EndianSwap(uint32 value) {
+  return _byteswap_ulong(value);
+}
+
+#else
+
 uint16 EndianSwap(uint16 value) {
   uint16 result = (value & 0x00FF) << 8;
   result |= (value & 0xFF00) >> 8;
@@ -14,5 +31,7 @@ uint32 EndianSwap(uint32 value) {
   result |= (value & 0xFF000000) >> 24;
   return result;
 }
+
+#endif
 
 }

@@ -239,6 +239,7 @@ if(WIN32)
     list(APPEND ZSharp_Compile_Options_Debug
         /Od
         /Ob0
+        /Oi
         /source-charset:utf-8
         /std:c++latest
         /D_UNICODE
@@ -332,6 +333,7 @@ if(WIN32)
     list(APPEND ZSharp_Compile_Options_Debug
         /Od
         /Ob0
+        /Oi
         /source-charset:utf-8
         /std:c++latest
         /D_UNICODE

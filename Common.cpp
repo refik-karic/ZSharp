@@ -7,7 +7,6 @@
 namespace ZSharp {
 #if PLATFORM_WINDOWS
 
-// TODO: This still doesn't generate bswap in Debug. See if there's a way to force it.
 uint16 EndianSwap(uint16 value) {
   return _byteswap_ushort(value);
 }

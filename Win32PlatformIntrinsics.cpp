@@ -108,19 +108,19 @@ bool PlatformSupportsSIMDLanes(SIMDLaneWidth width) {
     case SIMDLaneWidth::Four: // SSE4
     {
       CPUIDSection01(bits);
-      return bits[2] & 0x524288; // (1 << 19)
+      return bits[2] & 524288; // (1 << 19)
     }
     break;
     case SIMDLaneWidth::Eight: // AVX2
     {
       CPUIDSection07(bits);
-      return bits[1] & 0x32; // (1 << 5)
+      return bits[1] & 32; // (1 << 5)
     }
     break;
     case SIMDLaneWidth::Sixteen: // AVX512
     {
       CPUIDSection07(bits);
-      return bits[1] & 0x65536; // (1 << 16)
+      return bits[1] & 65536; // (1 << 16)
     }
     break;
   }

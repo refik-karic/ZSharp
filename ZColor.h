@@ -73,7 +73,6 @@ enum ZColors : uint32 {
 template<>
 struct ConsoleVariableConverter<ZColor> {
   void operator()(const String& str, ZColor& var) const {
-    // TODO: Add case insensitive compare function to avoid creating a lower case copy.
     String ignoredcase(str);
     ignoredcase.ToLower();
 

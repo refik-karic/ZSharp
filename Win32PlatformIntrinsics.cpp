@@ -5,7 +5,6 @@
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
 #include "PlatformDefines.h"
-#include "ZColor.h"
 #include "CommonMath.h"
 
 #include <cstring>
@@ -1059,94 +1058,73 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* __restrict data, i
 }
 
 void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
-  float* depth = buffer;
-
-  ZColor black(ZColors::BLACK);
-  ZColor white(ZColors::WHITE);
+  const float colorScaleValue = -255.f;
 
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    __m256 rbVec = _mm256_set1_ps((float)black.R());
-    __m256 gbVec = _mm256_set1_ps((float)black.G());
-    __m256 bbVec = _mm256_set1_ps((float)black.B());
-
-    __m256 rwVec = _mm256_set1_ps((float)white.R());
-    __m256 gwVec = _mm256_set1_ps((float)white.G());
-    __m256 bwVec = _mm256_set1_ps((float)white.B());
-
     __m256i initialColor = _mm256_set1_epi32(0xFF000000);
+    __m256 colorScale = _mm256_set1_ps(colorScaleValue);
+
+    __m256i shuffleControl = _mm256_set_epi8(
+      0x80U, 12, 12, 12,
+      0x80U, 8, 8, 8,
+      0x80U, 4, 4, 4,
+      0x80U, 0, 0, 0,
+      0x80U, 12, 12, 12,
+      0x80U, 8, 8, 8,
+      0x80U, 4, 4, 4,
+      0x80U, 0, 0, 0
+    );
 
     const size_t simdLength = (width >> 3) << 3;
     for (size_t h = 0; h < height; ++h) {
-      float* currentDepth = (depth + (h * width));
+      float* currentDepth = (buffer + (h * width));
       size_t w = 0;
       for (; w < simdLength; w += 8, currentDepth += 8) {
         __m256 depthValues = _mm256_load_ps(currentDepth);
 
-        __m256 lerpedR = Lerp256(rwVec, rbVec, depthValues);
-        __m256 lerpedG = Lerp256(gwVec, gbVec, depthValues);
-        __m256 lerpedB = Lerp256(bwVec, bbVec, depthValues);
-
-        __m256i convR = _mm256_cvtps_epi32(lerpedR);
-        __m256i convG = _mm256_cvtps_epi32(lerpedG);
-        __m256i convB = _mm256_cvtps_epi32(lerpedB);
-
-        convR = _mm256_slli_epi32(convR, 16);
-        convG = _mm256_slli_epi32(convG, 8);
-
-        __m256i finalColor = initialColor;
-        finalColor = _mm256_or_si256(finalColor, convR);
-        finalColor = _mm256_or_si256(finalColor, convG);
-        finalColor = _mm256_or_si256(finalColor, convB);
+        __m256i tempColors = _mm256_cvtps_epi32(_mm256_mul_ps(colorScale, depthValues));
+        tempColors = _mm256_shuffle_epi8(tempColors, shuffleControl);
+        __m256i finalColor = _mm256_or_si256(initialColor, tempColors);
 
         _mm256_storeu_si256((__m256i*)currentDepth, finalColor);
       }
 
       for (; w < width; ++w, ++currentDepth) {
-        float parametricT = *currentDepth;
-        (*((uint32*)currentDepth)) = ZColor::LerpColors(white, black, parametricT);
+        float depth = *currentDepth;
+        uint32 tempColor = (uint32)(colorScaleValue * depth);
+        (*((uint32*)currentDepth)) = (0xFF000000 | (tempColor << 16) | (tempColor << 8) | tempColor);
       }
     }
   }
   else {
-    __m128 rbVec = _mm_set_ps1((float)black.R());
-    __m128 gbVec = _mm_set_ps1((float)black.G());
-    __m128 bbVec = _mm_set_ps1((float)black.B());
-
-    __m128 rwVec = _mm_set_ps1((float)white.R());
-    __m128 gwVec = _mm_set_ps1((float)white.G());
-    __m128 bwVec = _mm_set_ps1((float)white.B());
-
     __m128i initialColor = _mm_set1_epi32(0xFF000000);
+    __m128 colorScale = _mm_set_ps1(colorScaleValue);
+
+    __m128i shuffleControl = _mm_set_epi8(
+      0x80U, 12, 12, 12,
+      0x80U, 8, 8, 8,
+      0x80U, 4, 4, 4,
+      0x80U, 0, 0, 0
+    );
 
     const size_t simdLength = (width >> 2) << 2;
     for (size_t h = 0; h < height; ++h) {
-      float* currentDepth = (depth + (h * width));
+      float* currentDepth = (buffer + (h * width));
       size_t w = 0;
       for (; w < simdLength; w += 4, currentDepth += 4) {
         __m128 depthValues = _mm_loadu_ps(currentDepth);
 
-        __m128 lerpedR = Lerp128(rwVec, rbVec, depthValues);
-        __m128 lerpedG = Lerp128(gwVec, gbVec, depthValues);
-        __m128 lerpedB = Lerp128(bwVec, bbVec, depthValues);
-
-        __m128i convR = _mm_cvtps_epi32(lerpedR);
-        __m128i convG = _mm_cvtps_epi32(lerpedG);
-        __m128i convB = _mm_cvtps_epi32(lerpedB);
-
-        convR = _mm_slli_epi32(convR, 16);
-        convG = _mm_slli_epi32(convG, 8);
-
-        __m128i finalColor = initialColor;
-        finalColor = _mm_or_si128(finalColor, convR);
-        finalColor = _mm_or_si128(finalColor, convG);
-        finalColor = _mm_or_si128(finalColor, convB);
+        __m128i tempColors = _mm_cvtps_epi32(_mm_mul_ps(colorScale, depthValues));
+        tempColors = _mm_shuffle_epi8(tempColors, shuffleControl);
+        __m128i finalColor = _mm_or_si128(initialColor, tempColors);
 
         _mm_storeu_si128((__m128i*)currentDepth, finalColor);
       }
 
       for (; w < width; ++w, ++currentDepth) {
-        float parametricT = *currentDepth;
-        (*((uint32*)currentDepth)) = ZColor::LerpColors(white, black, parametricT);
+        float depth = *currentDepth;
+        uint32 tempColor = (uint32)(colorScaleValue * depth);
+        (*((uint32*)currentDepth)) = (0xFF000000 | (tempColor << 16) | (tempColor << 8) | tempColor);
       }
     }
   }

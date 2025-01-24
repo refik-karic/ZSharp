@@ -3,7 +3,6 @@
 #include <cmath>
 #include <cstring>
 
-#include "ZColor.h"
 #include "Common.h"
 #include "CommonMath.h"
 #include "Constants.h"
@@ -12,6 +11,7 @@
 
 namespace ZSharp {
 
+// TODO: Need to fix the lerping code here to use proper barycentric lerping.
 void DrawRunSliceLerp(Framebuffer& framebuffer, 
                   const float* p0,
                   const float* p1) {

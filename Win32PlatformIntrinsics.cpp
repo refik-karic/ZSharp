@@ -617,118 +617,132 @@ void Unaligned_BilinearScaleImage(uint8* __restrict source, size_t sourceWidth, 
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     float ratioXValue = ((float)sourceWidth - 1) / ((float)destWidth - 1);
     float ratioYValue = ((float)sourceHeight - 1) / ((float)destHeight - 1);
-    __m128 ratioX = _mm_set_ps1(ratioXValue);
-    __m128 ratioY = _mm_set_ps1(ratioYValue);
+    __m256 ratioX = _mm256_set1_ps(ratioXValue);
+    __m256 ratioY = _mm256_set1_ps(ratioYValue);
 
-    __m128 xScale = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
+    __m256 xScale = _mm256_set1_ps(8.f);
     const size_t sourceStride = sourceWidth * 4;
-    __m128 strideScale = _mm_set_ps1((float)(sourceStride));
-    __m128 indexScale = _mm_set_ps1(4.f);
-    __m128 lerpOne = _mm_set_ps1(1.f);
+    __m256 strideScale = _mm256_set1_ps((float)(sourceStride));
+    __m256 indexScale = _mm256_set1_ps(4.f);
+    __m256 lerpOne = _mm256_set1_ps(1.f);
 
-    __m128i bShuffle = _mm_set_epi8(
+    __m256i bShuffle = _mm256_set_epi8(
+      0x80U, 0x80U, 0x80U, 12,
+      0x80U, 0x80U, 0x80U, 8,
+      0x80U, 0x80U, 0x80U, 4,
+      0x80U, 0x80U, 0x80U, 0,
       0x80U, 0x80U, 0x80U, 12,
       0x80U, 0x80U, 0x80U, 8,
       0x80U, 0x80U, 0x80U, 4,
       0x80U, 0x80U, 0x80U, 0
     );
 
-    __m128i gShuffle = _mm_set_epi8(
+    __m256i gShuffle = _mm256_set_epi8(
+      0x80U, 0x80U, 0x80U, 13,
+      0x80U, 0x80U, 0x80U, 9,
+      0x80U, 0x80U, 0x80U, 5,
+      0x80U, 0x80U, 0x80U, 1,
       0x80U, 0x80U, 0x80U, 13,
       0x80U, 0x80U, 0x80U, 9,
       0x80U, 0x80U, 0x80U, 5,
       0x80U, 0x80U, 0x80U, 1
     );
 
-    __m128i rShuffle = _mm_set_epi8(
+    __m256i rShuffle = _mm256_set_epi8(
+      0x80U, 0x80U, 0x80U, 14,
+      0x80U, 0x80U, 0x80U, 10,
+      0x80U, 0x80U, 0x80U, 6,
+      0x80U, 0x80U, 0x80U, 2,
       0x80U, 0x80U, 0x80U, 14,
       0x80U, 0x80U, 0x80U, 10,
       0x80U, 0x80U, 0x80U, 6,
       0x80U, 0x80U, 0x80U, 2
     );
 
-    __m128i aShuffle = _mm_set_epi8(
+    __m256i aShuffle = _mm256_set_epi8(
+      0x80U, 0x80U, 0x80U, 15,
+      0x80U, 0x80U, 0x80U, 11,
+      0x80U, 0x80U, 0x80U, 7,
+      0x80U, 0x80U, 0x80U, 3,
       0x80U, 0x80U, 0x80U, 15,
       0x80U, 0x80U, 0x80U, 11,
       0x80U, 0x80U, 0x80U, 7,
       0x80U, 0x80U, 0x80U, 3
     );
 
-    const size_t simdLength = (destWidth >> 2) << 2;
+    const size_t simdLength = (destWidth >> 3) << 3;
     for (size_t y = 0; y < destHeight; ++y) {
       uint8* destRow = dest + (y * destWidth * 4);
-      __m128 yValues = _mm_set_ps1((float)y);
+      __m256 yValues = _mm256_set1_ps((float)y);
 
       size_t x = 0;
-      for (; x < simdLength; x += 4) {
-        __m128 xValues = _mm_add_ps(_mm_set_ps1((float)x), xScale);
+      for (__m256 xValues = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f); x < simdLength; x += 8, xValues = _mm256_add_ps(xValues, xScale)) {
+        __m256 xRatios = _mm256_mul_ps(ratioX, xValues);
+        __m256 yRatios = _mm256_mul_ps(ratioY, yValues);
 
-        __m128 xRatios = _mm_mul_ps(ratioX, xValues);
-        __m128 yRatios = _mm_mul_ps(ratioY, yValues);
+        __m256 xLeft = _mm256_floor_ps(xRatios);
+        __m256 yLeft = _mm256_floor_ps(yRatios);
+        __m256 xRight = _mm256_ceil_ps(xRatios);
+        __m256 yRight = _mm256_ceil_ps(yRatios);
 
-        __m128 xLeft = _mm_floor_ps(xRatios);
-        __m128 yLeft = _mm_floor_ps(yRatios);
-        __m128 xRight = _mm_ceil_ps(xRatios);
-        __m128 yRight = _mm_ceil_ps(yRatios);
+        __m256 xWeight = _mm256_sub_ps(xRatios, xLeft);
+        __m256 yWeight = _mm256_sub_ps(yRatios, yLeft);
 
-        __m128 xWeight = _mm_sub_ps(xRatios, xLeft);
-        __m128 yWeight = _mm_sub_ps(yRatios, yLeft);
+        __m256 xLeftInt = _mm256_mul_ps(xLeft, indexScale);
+        __m256 yLeftInt = yLeft;
+        __m256 xRightInt = _mm256_mul_ps(xRight, indexScale);
+        __m256 yRightInt = yRight;
 
-        __m128 xLeftInt = _mm_mul_ps(xLeft, indexScale);
-        __m128 yLeftInt = yLeft;
-        __m128 xRightInt = _mm_mul_ps(xRight, indexScale);
-        __m128 yRightInt = yRight;
+        __m256i topLeftIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yLeftInt, strideScale, xLeftInt));
+        __m256i topRightIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yLeftInt, strideScale, xRightInt));
+        __m256i bottomLeftIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yRightInt, strideScale, xLeftInt));
+        __m256i bottomRightIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yRightInt, strideScale, xRightInt));
 
-        __m128i topLeftIndices = _mm_cvtps_epi32(_mm_fmadd_ps(yLeftInt, strideScale, xLeftInt));
-        __m128i topRightIndices = _mm_cvtps_epi32(_mm_fmadd_ps(yLeftInt, strideScale, xRightInt));
-        __m128i bottomLeftIndices = _mm_cvtps_epi32(_mm_fmadd_ps(yRightInt, strideScale, xLeftInt));
-        __m128i bottomRightIndices = _mm_cvtps_epi32(_mm_fmadd_ps(yRightInt, strideScale, xRightInt));
+        __m256i topLeft = _mm256_i32gather_epi32((int32*)source, topLeftIndices, 1);
+        __m256i topRight = _mm256_i32gather_epi32((int32*)source, topRightIndices, 1);
+        __m256i bottomLeft = _mm256_i32gather_epi32((int32*)source, bottomLeftIndices, 1);
+        __m256i bottomRight = _mm256_i32gather_epi32((int32*)source, bottomRightIndices, 1);
 
-        __m128i topLeft = _mm_i32gather_epi32((int32*)source, topLeftIndices, 1);
-        __m128i topRight = _mm_i32gather_epi32((int32*)source, topRightIndices, 1);
-        __m128i bottomLeft = _mm_i32gather_epi32((int32*)source, bottomLeftIndices, 1);
-        __m128i bottomRight = _mm_i32gather_epi32((int32*)source, bottomRightIndices, 1);
+        __m256 topLeftScale = _mm256_mul_ps(_mm256_sub_ps(lerpOne, xWeight), _mm256_sub_ps(lerpOne, yWeight));
+        __m256 topRightScale = _mm256_mul_ps(xWeight, _mm256_sub_ps(lerpOne, yWeight));
+        __m256 bottomLeftScale = _mm256_mul_ps(yWeight, _mm256_sub_ps(lerpOne, xWeight));
+        __m256 bottomRightScale = _mm256_mul_ps(xWeight, yWeight);
 
-        __m128 topLeftScale = _mm_mul_ps(_mm_sub_ps(lerpOne, xWeight), _mm_sub_ps(lerpOne, yWeight));
-        __m128 topRightScale = _mm_mul_ps(xWeight, _mm_sub_ps(lerpOne, yWeight));
-        __m128 bottomLeftScale = _mm_mul_ps(yWeight, _mm_sub_ps(lerpOne, xWeight));
-        __m128 bottomRightScale = _mm_mul_ps(xWeight, yWeight);
-
-        __m128i topLeftColor = _mm_cvtps_epi32(
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, aShuffle)), topLeftScale,
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, aShuffle)), topRightScale,
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, aShuffle)), bottomLeftScale,
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, aShuffle)), bottomRightScale))))
+        __m256i topLeftColor = _mm256_cvtps_epi32(
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, aShuffle)), topLeftScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, aShuffle)), topRightScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, aShuffle)), bottomLeftScale,
+          _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, aShuffle)), bottomRightScale))))
         );
 
-        __m128i topRightColor = _mm_cvtps_epi32(
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, rShuffle)), topLeftScale,
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, rShuffle)), topRightScale,
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, rShuffle)), bottomLeftScale,
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, rShuffle)), bottomRightScale))))
+        __m256i topRightColor = _mm256_cvtps_epi32(
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, rShuffle)), topLeftScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, rShuffle)), topRightScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, rShuffle)), bottomLeftScale,
+          _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, rShuffle)), bottomRightScale))))
         );
 
-        __m128i bottomLeftColor = _mm_cvtps_epi32(
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, gShuffle)), topLeftScale,
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, gShuffle)), topRightScale,
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, gShuffle)), bottomLeftScale,
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, gShuffle)), bottomRightScale))))
+        __m256i bottomLeftColor = _mm256_cvtps_epi32(
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, gShuffle)), topLeftScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, gShuffle)), topRightScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, gShuffle)), bottomLeftScale,
+          _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, gShuffle)), bottomRightScale))))
         );
 
-        __m128i bottomRightColor = _mm_cvtps_epi32(
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topLeft, bShuffle)), topLeftScale,
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(topRight, bShuffle)), topRightScale,
-          _mm_fmadd_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomLeft, bShuffle)), bottomLeftScale,
-          _mm_mul_ps(_mm_cvtepi32_ps(_mm_shuffle_epi8(bottomRight, bShuffle)), bottomRightScale))))
+        __m256i bottomRightColor = _mm256_cvtps_epi32(
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, bShuffle)), topLeftScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, bShuffle)), topRightScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, bShuffle)), bottomLeftScale,
+          _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, bShuffle)), bottomRightScale))))
         );
 
-        topLeftColor = _mm_slli_epi32(topLeftColor, 24);
-        topRightColor = _mm_slli_epi32(topRightColor, 16);
-        bottomLeftColor = _mm_slli_epi32(bottomLeftColor, 8);
+        topLeftColor = _mm256_slli_epi32(topLeftColor, 24);
+        topRightColor = _mm256_slli_epi32(topRightColor, 16);
+        bottomLeftColor = _mm256_slli_epi32(bottomLeftColor, 8);
 
-        __m128i finalColor = _mm_or_si128(_mm_or_si128(_mm_or_si128(topLeftColor, topRightColor), bottomLeftColor), bottomRightColor);
+        __m256i finalColor = _mm256_or_si256(_mm256_or_si256(_mm256_or_si256(topLeftColor, topRightColor), bottomLeftColor), bottomRightColor);
 
-        _mm_storeu_si128((__m128i*)(destRow + (x * 4)), finalColor);
+        _mm256_storeu_si256((__m256i*)(destRow + (x * 4)), finalColor);
       }
 
       for (; x < destWidth; ++x) {

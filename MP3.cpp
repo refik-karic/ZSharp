@@ -150,14 +150,9 @@ MP3::PCMAudio MP3::Decompress() {
   size_t guessedSize = 0;
   size_t numSamples = 0;
 
-  float* intermediateValues = (float*)PlatformMalloc(2 * 576 * sizeof(float));
-  memset(intermediateValues, 0, 2 * 576 * sizeof(float));
-
-  float* overlapValues = (float*)PlatformMalloc(2 * 288 * sizeof(float));
-  memset(overlapValues, 0, 2 * 288 * sizeof(float));
-
-  float* qmfState = (float*)PlatformMalloc(960 * sizeof(float));
-  memset(qmfState, 0, 960 * sizeof(float));
+  float* intermediateValues = (float*)PlatformCalloc(2 * 576 * sizeof(float));
+  float* overlapValues = (float*)PlatformCalloc(2 * 288 * sizeof(float));
+  float* qmfState = (float*)PlatformCalloc(960 * sizeof(float));
 
   PCMAudio pcmAudio;
   size_t sampleRateBits = 0;
@@ -269,14 +264,9 @@ MP3::PCMAudioFloat MP3::DecompressFloat() {
   size_t guessedSize = 0;
   size_t numSamples = 0;
 
-  float* intermediateValues = (float*)PlatformMalloc(2 * 576 * sizeof(float));
-  memset(intermediateValues, 0, 2 * 576 * sizeof(float));
-
-  float* overlapValues = (float*)PlatformMalloc(2 * 288 * sizeof(float));
-  memset(overlapValues, 0, 2 * 288 * sizeof(float));
-
-  float* qmfState = (float*)PlatformMalloc(960 * sizeof(float));
-  memset(qmfState, 0, 960 * sizeof(float));
+  float* intermediateValues = (float*)PlatformCalloc(2 * 576 * sizeof(float));
+  float* overlapValues = (float*)PlatformCalloc(2 * 288 * sizeof(float));
+  float* qmfState = (float*)PlatformCalloc(960 * sizeof(float));
 
   PCMAudioFloat pcmAudio;
   size_t sampleRateBits = 0;
@@ -312,8 +302,7 @@ MP3::PCMAudioFloat MP3::DecompressFloat() {
       // Make a guess as to how big the buffer is going to be for storing an entire audio track.
       const size_t numFrames = (mStreamSize / header.frameBytes) - 1;
       const size_t totalSize = numFrames * 1152 * (numChannels / 2) * sizeof(float);
-      decompressedSamples = (float*)PlatformMalloc(totalSize);
-      memset(decompressedSamples, 0, totalSize);
+      decompressedSamples = (float*)PlatformCalloc(totalSize);
       guessedSize = totalSize;
 
       DecodeMainDataFloat(MainDataResevoir,

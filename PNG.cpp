@@ -626,8 +626,7 @@ bool PNG::DeflateStream(uint8* output, const PngHuffman& lengthHuff, const PngHu
 uint8* PNG::FilterDeflatedImage(uint8* image) {
   const size_t filteredStride = mStride + 1;
 
-  uint8* outputImage = static_cast<uint8*>(PlatformMalloc(mStride * mHeight));
-  memset(outputImage, 0, mStride * mHeight);
+  uint8* outputImage = static_cast<uint8*>(PlatformCalloc(mStride * mHeight));
 
   for (size_t i = 0; i < mHeight; ++i) {
     const size_t rowIndex = filteredStride * i;

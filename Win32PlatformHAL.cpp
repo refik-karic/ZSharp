@@ -21,8 +21,7 @@ size_t PlatformGetNumPhysicalCores() {
 
   DWORD structSize = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
   DWORD size = structSize;
-  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)PlatformMalloc(size);
-  memset(ptr, 0, size);
+  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)PlatformCalloc(size);
 
   bool ret = GetLogicalProcessorInformation(ptr, &size);
 
@@ -60,15 +59,13 @@ size_t PlatformGetNumPhysicalCores() {
 }
 
 size_t PlatformGetNumLogicalCores() {
-  SYSTEM_INFO info;
-  memset(&info, 0, sizeof(info));
+  SYSTEM_INFO info{};
   GetSystemInfo(&info);
   return static_cast<size_t>(info.dwNumberOfProcessors);
 }
 
 size_t PlatformGetTotalMemory() {
-  MEMORYSTATUSEX info;
-  memset(&info, 0, sizeof(info));
+  MEMORYSTATUSEX info{};
   info.dwLength = sizeof(info);
 
   bool ret = GlobalMemoryStatusEx(&info);
@@ -82,8 +79,7 @@ size_t PlatformGetTotalMemory() {
 }
 
 size_t PlatformGetPageSize() {
-  SYSTEM_INFO info;
-  memset(&info, 0, sizeof(info));
+  SYSTEM_INFO info{};
   GetSystemInfo(&info);
   return static_cast<size_t>(info.dwPageSize);
 }

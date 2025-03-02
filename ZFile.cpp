@@ -31,10 +31,7 @@ size_t BaseFile::GetSize() {
 
 BufferedFileReader::BufferedFileReader(const FileString& fileName) 
   : BaseFile(fileName, static_cast<size_t>(FileFlags::READ)) {
-  mBuffer = static_cast<char*>(PlatformMalloc(mBufferSize));
-  if (mBuffer != nullptr) {
-    memset(mBuffer, 0, mBufferSize);
-  }
+  mBuffer = static_cast<char*>(PlatformCalloc(mBufferSize));
 }
 
 BufferedFileReader::~BufferedFileReader() {
@@ -111,10 +108,7 @@ bool BufferedFileReader::ResetBuffer(size_t size) {
 
 BufferedFileWriter::BufferedFileWriter(const FileString& fileName, size_t flags)
   : BaseFile(fileName, static_cast<size_t>(FileFlags::WRITE) | flags) {
-  mBuffer = static_cast<char*>(PlatformMalloc(mBufferSize));
-  if (mBuffer != nullptr) {
-    memset(mBuffer, 0, mBufferSize);
-  }
+  mBuffer = static_cast<char*>(PlatformCalloc(mBufferSize));
 }
 
 BufferedFileWriter::~BufferedFileWriter() {

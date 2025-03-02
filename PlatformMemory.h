@@ -9,6 +9,8 @@ namespace ZSharp {
 
 void* PlatformMalloc(size_t length);
 
+void* PlatformCalloc(size_t length);
+
 void* PlatformReAlloc(void* memory, size_t length);
 
 void PlatformFree(void* memory);

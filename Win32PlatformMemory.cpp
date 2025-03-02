@@ -35,6 +35,11 @@ void* PlatformMalloc(size_t length) {
   return HeapAlloc(processHeap, 0, length);
 }
 
+void* PlatformCalloc(size_t length) {
+  HANDLE processHeap = GetProcessHeap();
+  return HeapAlloc(processHeap, HEAP_ZERO_MEMORY, length);
+}
+
 void* PlatformReAlloc(void* memory, size_t length) {
   HANDLE processHeap = GetProcessHeap();
   return HeapReAlloc(processHeap, 0, memory, length);

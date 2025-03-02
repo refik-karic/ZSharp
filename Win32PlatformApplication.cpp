@@ -121,6 +121,12 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
   case WM_GETMINMAXINFO:
     app.OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
     break;
+  case WM_SIZE:
+    app.OnWindowVisibility(wParam);
+    break;
+  case WM_SIZING:
+    app.OnWindowResize((const RECT*)lParam);
+    break;
   case WM_CLOSE:
     app.OnClose();
     break;
@@ -189,8 +195,8 @@ void Win32PlatformApplication::Shutdown() {
   OnDestroy();
 }
 
-Win32PlatformApplication::Win32PlatformApplication() {
-  ZeroMemory(&mBitmapInfo, sizeof(BITMAPINFO));
+Win32PlatformApplication::Win32PlatformApplication()
+  : mBitmapInfo{}, mPointCursor(nullptr), mHandCursor(nullptr) {
   mBitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFO);
   mBitmapInfo.bmiHeader.biWidth = 0;
   mBitmapInfo.bmiHeader.biHeight = 0;
@@ -202,9 +208,6 @@ Win32PlatformApplication::Win32PlatformApplication() {
   mBitmapInfo.bmiHeader.biYPelsPerMeter = 0;
   mBitmapInfo.bmiHeader.biClrUsed = 0;
   mBitmapInfo.bmiHeader.biClrImportant = 0;
-
-  mPointCursor = nullptr;
-  mHandCursor = nullptr;
 }
 
 Win32PlatformApplication::~Win32PlatformApplication() {
@@ -277,7 +280,7 @@ HWND Win32PlatformApplication::SetupWindow() {
 }
 
 void Win32PlatformApplication::OnCreate(HWND initialHandle) {
-  TIMECAPS timecaps = {};
+  TIMECAPS timecaps{};
   if (timeGetDevCaps(&timecaps, sizeof(timecaps)) != MMSYSERR_NOERROR) {
     DestroyWindow(initialHandle);
     return;
@@ -302,6 +305,12 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
     return;
   }
 
+  // We need to broadcast the final window size to the game code before start ticking.
+  RECT activeWindowSize{};
+  if (GetClientRect(initialHandle, &activeWindowSize)) {
+    UpdateWindowSize(activeWindowSize);
+  }
+
   StartTimer((ZSharp::int64)1);
 }
 
@@ -310,7 +319,7 @@ void Win32PlatformApplication::OnTimerThunk(LPVOID optionalArg, DWORD timerLowVa
   (void)timerHighValue;
 
   Win32PlatformApplication* app = (Win32PlatformApplication*)optionalArg;
-  if (!app->mPaused) {
+  if (!app->mPaused && !app->mHidden) {
     app->OnTimer();
   }
 }
@@ -320,65 +329,13 @@ void Win32PlatformApplication::OnTimer() {
 
   PauseTimer();
 
-  RECT activeWindowSize;
-  if (GetClientRect(mWindowHandle, &activeWindowSize)) {
-    // If the window is hidden we don't do anything.
-    if (activeWindowSize.top == 0 &&
-      activeWindowSize.right == 0 &&
-      activeWindowSize.bottom == 0 &&
-      activeWindowSize.left == 0) {
-      // Sleep if we have some time left in the frame, otherwise start again immediately.
-      frameDeltaTime = ZSharp::PlatformHighResClockDelta(frameDeltaTime, ZSharp::ClockUnits::Milliseconds);
-      if (frameDeltaTime >= (1000 / (*LockedFPS))) {
-        frameDeltaTime = 1;
-      }
-      else {
-        if (*UncappedFPS) {
-          frameDeltaTime = 1;
-        }
-        else {
-          frameDeltaTime = (1000 / (*LockedFPS)) - frameDeltaTime;
-          frameDeltaTime = (frameDeltaTime * 10000);
-        }
-      }
-
-      StartTimer((ZSharp::int64)frameDeltaTime);
-
-      return;
-    }
-  }
-
   if (mCurrentCursor != ZSharp::AppCursor::Arrow) {
     ApplyCursor(ZSharp::AppCursor::Arrow);
   }
 
-  if (GetClientRect(mWindowHandle, &activeWindowSize)) {
-    ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
-
-    bool dirtySize = false;
-
-    if (activeWindowSize.right != config.GetViewportWidth().Value()) {
-      config.SetViewportWidth(activeWindowSize.right);
-      dirtySize = true;
-    }
-
-    if (activeWindowSize.bottom != config.GetViewportHeight().Value()) {
-      config.SetViewportHeight(activeWindowSize.bottom);
-      dirtySize = true;
-    }
-
-    mBitmapInfo.bmiHeader.biWidth = activeWindowSize.right;
-    mBitmapInfo.bmiHeader.biHeight = -activeWindowSize.bottom;
-
-    if (dirtySize) {
-      mGameInstance.WaitForBackgroundJobs();
-      ZSharp::OnWindowSizeChangedDelegate().Broadcast(activeWindowSize.right, activeWindowSize.bottom);
-    }
-  }
-
   mGameInstance.Tick();
 
-  InvalidateRect(mWindowHandle, &activeWindowSize, false);
+  InvalidateRect(mWindowHandle, NULL, false);
 
   // Sleep if we have some time left in the frame, otherwise start again immediately.
   frameDeltaTime = ZSharp::PlatformHighResClockDelta(frameDeltaTime, ZSharp::ClockUnits::Milliseconds);
@@ -564,6 +521,17 @@ void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
   }
 }
 
+void Win32PlatformApplication::OnWindowResize(const RECT* rect) {
+  (void)rect;
+
+  // The resize rect passed in is off by a little bit.
+  // Calling GetClientRect gets us the true dimensions we need.
+  RECT activeWindowSize{};
+  if (GetClientRect(mWindowHandle, &activeWindowSize)) {
+    UpdateWindowSize(activeWindowSize);
+  }
+}
+
 void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
   const ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
 
@@ -574,6 +542,29 @@ void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
   info->ptMaxTrackSize.x = ZSharp::Clamp(info->ptMaxTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
   info->ptMinTrackSize.y = ZSharp::Clamp(info->ptMinTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
   info->ptMaxTrackSize.y = ZSharp::Clamp(info->ptMaxTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
+}
+
+void Win32PlatformApplication::OnWindowVisibility(WPARAM param) {
+  // Stop rendering if the window becomes minimized since we can't see anything.
+  if (param == SIZE_MINIMIZED) {
+    mHidden = true;
+  }
+  else if (param == SIZE_RESTORED) {
+    mHidden = false;
+
+    RECT activeWindowSize{};
+    if (GetClientRect(mWindowHandle, &activeWindowSize)) {
+      UpdateWindowSize(activeWindowSize);
+    }
+  }
+  else if (param == SIZE_MAXIMIZED) {
+    RECT activeWindowSize{};
+    if (GetClientRect(mWindowHandle, &activeWindowSize)) {
+      UpdateWindowSize(activeWindowSize);
+    }
+  }
+
+  return;
 }
 
 void Win32PlatformApplication::OnClose() {
@@ -620,8 +611,7 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
     return;
   }
   
-  BITMAPINFO info;
-  ZeroMemory(&info, sizeof(BITMAPINFO));
+  BITMAPINFO info{};
   info.bmiHeader.biSize = sizeof(BITMAPINFO);
   info.bmiHeader.biWidth = (LONG)width;
   info.bmiHeader.biHeight = -((LONG)height);
@@ -673,6 +663,33 @@ void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds) {
     &Win32PlatformApplication::OnTimerThunk,
     this,
     true);
+}
+
+void Win32PlatformApplication::UpdateWindowSize(const RECT rect) {
+  ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
+
+  bool dirtySize = false;
+
+  ZSharp::int32 width = rect.right;
+  ZSharp::int32 height = rect.bottom;
+
+  if (width != config.GetViewportWidth().Value()) {
+    config.SetViewportWidth(width);
+    dirtySize = true;
+  }
+
+  if (height != config.GetViewportHeight().Value()) {
+    config.SetViewportHeight(height);
+    dirtySize = true;
+  }
+
+  mBitmapInfo.bmiHeader.biWidth = width;
+  mBitmapInfo.bmiHeader.biHeight = -height;
+
+  if (dirtySize) {
+    mGameInstance.WaitForBackgroundJobs();
+    ZSharp::OnWindowSizeChangedDelegate().Broadcast(width, height);
+  }
 }
 
 bool Win32PlatformApplication::IsSpecialKey(ZSharp::int32 key) {

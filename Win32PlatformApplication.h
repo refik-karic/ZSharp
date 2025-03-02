@@ -29,6 +29,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   HWND mWindowHandle = nullptr;
   HANDLE mHighPrecisionTimer = nullptr;
   bool mPaused = false;
+  bool mHidden = false;
   BITMAPINFO mBitmapInfo;
 
   HCURSOR mPointCursor = nullptr;
@@ -62,7 +63,11 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   void OnKeyUp(ZSharp::uint8 key);
 
+  void OnWindowResize(const RECT* rect);
+
   void OnPreWindowSizeChanged(LPMINMAXINFO info);
+
+  void OnWindowVisibility(WPARAM param);
 
   void OnClose();
 
@@ -79,6 +84,8 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   void PauseTimer();
 
   void StartTimer(ZSharp::int64 relativeNanoseconds);
+
+  void UpdateWindowSize(const RECT rect);
 
   static bool IsSpecialKey(ZSharp::int32 key);
 

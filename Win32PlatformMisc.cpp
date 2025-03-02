@@ -26,8 +26,7 @@ String PlatformGetToolchain() {
 }
 
 String PlatformGetUsername() {
-  char buffer[UNLEN + 1];
-  memset(buffer, 0, sizeof(buffer));
+  char buffer[UNLEN + 1] = {};
   DWORD size = sizeof(buffer);
   if (GetUserNameA(buffer, &size)) {
     String username(buffer, 0, size - 1);
@@ -39,8 +38,7 @@ String PlatformGetUsername() {
 }
 
 String PlatformGetMachineName() {
-  char buffer[MAX_COMPUTERNAME_LENGTH + 1];
-  memset(buffer, 0, sizeof(buffer));
+  char buffer[MAX_COMPUTERNAME_LENGTH + 1] = {};
   DWORD size = sizeof(buffer);
 
   if (GetComputerNameA(buffer, &size)) {

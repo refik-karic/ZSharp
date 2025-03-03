@@ -587,8 +587,7 @@ void Win32PlatformApplication::OnDestroy() {
 void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
   ZSharp::NamedScopedTimer(BlitFrame);
 
-  PAINTSTRUCT ps;
-  HDC hdc = BeginPaint(mWindowHandle, &ps);
+  HDC hdc = GetDC(mWindowHandle);
 
   SetDIBitsToDevice(hdc, 
     0, 
@@ -603,7 +602,9 @@ void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
     &mBitmapInfo, 
     DIB_RGB_COLORS);
 
-  EndPaint(mWindowHandle, &ps);
+  ReleaseDC(mWindowHandle, hdc);
+
+  ValidateRect(mWindowHandle, NULL);
 }
 
 void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel) {
@@ -624,8 +625,7 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
   info.bmiHeader.biClrUsed = 0;
   info.bmiHeader.biClrImportant = 0;
 
-  PAINTSTRUCT ps;
-  HDC hdc = BeginPaint(mWindowHandle, &ps);
+  HDC hdc = GetDC(mWindowHandle);
 
   SetDIBitsToDevice(hdc,
     0,
@@ -640,7 +640,9 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
     &info,
     DIB_RGB_COLORS);
 
-  EndPaint(mWindowHandle, &ps);
+  ReleaseDC(mWindowHandle, hdc);
+
+  ValidateRect(mWindowHandle, NULL);
 }
 
 void Win32PlatformApplication::UpdateAudio() {

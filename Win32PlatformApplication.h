@@ -28,6 +28,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   HINSTANCE mInstance = nullptr;
   HWND mWindowHandle = nullptr;
   HANDLE mHighPrecisionTimer = nullptr;
+  HDC mWindowContext = nullptr;
   bool mPaused = false;
   bool mHidden = false;
   BITMAPINFO mBitmapInfo;

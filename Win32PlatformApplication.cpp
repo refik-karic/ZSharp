@@ -311,6 +311,12 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
     UpdateWindowSize(activeWindowSize);
   }
 
+  mWindowContext = GetDC(initialHandle);
+  if (mWindowContext == nullptr) {
+    DestroyWindow(initialHandle);
+    return;
+  }
+
   StartTimer((ZSharp::int64)1);
 }
 
@@ -579,6 +585,10 @@ void Win32PlatformApplication::OnDestroy() {
 
   timeEndPeriod(MinTimerPeriod);
 
+  if (mWindowContext != nullptr) {
+    ReleaseDC(mWindowHandle, mWindowContext);
+  }
+
   mWindowHandle = nullptr;
 
   PostQuitMessage(0);
@@ -587,9 +597,7 @@ void Win32PlatformApplication::OnDestroy() {
 void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
   ZSharp::NamedScopedTimer(BlitFrame);
 
-  HDC hdc = GetDC(mWindowHandle);
-
-  SetDIBitsToDevice(hdc, 
+  SetDIBitsToDevice(mWindowContext, 
     0, 
     0, 
     mBitmapInfo.bmiHeader.biWidth, 
@@ -601,8 +609,6 @@ void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
     data, 
     &mBitmapInfo, 
     DIB_RGB_COLORS);
-
-  ReleaseDC(mWindowHandle, hdc);
 
   ValidateRect(mWindowHandle, NULL);
 }
@@ -625,9 +631,7 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
   info.bmiHeader.biClrUsed = 0;
   info.bmiHeader.biClrImportant = 0;
 
-  HDC hdc = GetDC(mWindowHandle);
-
-  SetDIBitsToDevice(hdc,
+  SetDIBitsToDevice(mWindowContext,
     0,
     0,
     info.bmiHeader.biWidth,
@@ -639,8 +643,6 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
     data,
     &info,
     DIB_RGB_COLORS);
-
-  ReleaseDC(mWindowHandle, hdc);
 
   ValidateRect(mWindowHandle, NULL);
 }

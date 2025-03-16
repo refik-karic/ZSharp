@@ -26,7 +26,8 @@ ConsoleVariable<ZColor> ClearColor("ClearColor", ZColor(ZColors::ORANGE));
 GameInstance::GameInstance()
   : mCameraReset(new ConsoleVariable<void>("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this))),
     mFrontEnd(new FrontEnd()), mCamera(new Camera()), mWorld(new World()), mRenderer(new Renderer()), 
-    mThreadPool(new ThreadPool()), mDevConsole(new DevConsole()) {
+    mThreadPool(new ThreadPool()), mDevConsole(new DevConsole()),
+    mExtraState(new ExtraState()) {
 
 }
 
@@ -57,6 +58,10 @@ GameInstance::~GameInstance() {
 
   if (mThreadPool) {
     delete mThreadPool;
+  }
+
+  if (mExtraState) {
+    delete mExtraState;
   }
 
   InputManager& inputManager = InputManager::Get();
@@ -103,10 +108,10 @@ void GameInstance::TickWorld() {
 
   Array<String> stats;
 
-  size_t frameDeltaMs = (mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Milliseconds);
-  mLastFrameTime = PlatformHighResClock();
+  size_t frameDeltaMs = (mExtraState->mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDelta(mExtraState->mLastFrameTime, ClockUnits::Milliseconds);
+  mExtraState->mLastFrameTime = PlatformHighResClock();
 
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame: {0}\n", mFrameCount)));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame: {0}\n", mExtraState->mFrameCount)));
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame Delta: {0}ms\n", frameDeltaMs)));
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera: {0}\n", mCamera->Position().ToString())));
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera View: {0}\n", mCamera->GetLook().ToString())));
@@ -126,17 +131,17 @@ void GameInstance::TickWorld() {
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Verts: {0}\n", numVerts)));
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Triangles: {0}\n", numTriangles)));
 
-  ++mFrameCount;
+  ++(mExtraState->mFrameCount);
 
   InputManager& inputManager = InputManager::Get();
   inputManager.Process();
 
   if (*DebugTransforms) {
     Vec3 rotation;
-    rotation[1] = DegreesToRadians(static_cast<float>(mRotationAmount % 360));
+    rotation[1] = DegreesToRadians(static_cast<float>(mExtraState->mRotationAmount % 360));
 
-    if (!mPauseTransforms) {
-      mRotationAmount += mRotationSpeed;
+    if (!(mExtraState->mPauseTransforms)) {
+      mExtraState->mRotationAmount += mExtraState->mRotationSpeed;
     }
 
     for (Model& model : mWorld->GetModels()) {
@@ -151,9 +156,9 @@ void GameInstance::TickWorld() {
 
   size_t physicsTickTime = Clamp(frameDeltaMs, (size_t)0, FRAMERATE_60HZ_MS);
 
-  size_t startPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
+  size_t startPhysics = PlatformHighResClockDelta(mExtraState->mLastFrameTime, ClockUnits::Microseconds);
   mWorld->TickPhysics(physicsTickTime);
-  size_t endPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
+  size_t endPhysics = PlatformHighResClockDelta(mExtraState->mLastFrameTime, ClockUnits::Microseconds);
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics)));
 
@@ -172,13 +177,13 @@ void GameInstance::TickWorld() {
   float cullRatio = (float)remainingTriangles / (float)numTriangles;
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Post Clip/Cull Triangles: {0}, {1:4}%\n", remainingTriangles, cullRatio)));
 
-  if (mDrawStats) {
+  if (mExtraState->mDrawStats) {
     stats.EmplaceBack(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDelta(renderFrameTime, ClockUnits::Microseconds)));
 
     size_t bufferWidth = mRenderer->GetFrameBuffer().GetWidth();
     uint8* buffer;
     ZColor color;
-    if (mVisualizeDepth) {
+    if (mExtraState->mVisualizeDepth) {
       buffer = mRenderer->GetDepth();
       color = ZColors::GREEN;
     }
@@ -195,7 +200,7 @@ void GameInstance::TickWorld() {
   }
 
   if (mDevConsole->IsOpen()) {
-    uint8* buffer = mVisualizeDepth ? mRenderer->GetDepth() : mRenderer->GetFrameBuffer().GetBuffer();
+    uint8* buffer = mExtraState->mVisualizeDepth ? mRenderer->GetDepth() : mRenderer->GetFrameBuffer().GetBuffer();
     mDevConsole->Draw((uint32*)buffer);
   }
 }
@@ -277,14 +282,14 @@ void GameInstance::RotateTrackball(const Quaternion& quat) {
 }
 
 void GameInstance::ChangeSpeed(int64 amount) {
-  if (mRotationSpeed + amount > 10) {
-    mRotationSpeed = 10;
+  if (mExtraState->mRotationSpeed + amount > 10) {
+    mExtraState->mRotationSpeed = 10;
   }
-  else if (mRotationSpeed + amount < 1) {
-    mRotationSpeed = 1;
+  else if (mExtraState->mRotationSpeed + amount < 1) {
+    mExtraState->mRotationSpeed = 1;
   }
   else {
-    mRotationSpeed += amount;
+    mExtraState->mRotationSpeed += amount;
   }
 }
 
@@ -296,7 +301,7 @@ void GameInstance::ResetCamera() {
 }
 
 void GameInstance::PauseTransforms() {
-  mPauseTransforms = !mPauseTransforms;
+  mExtraState->mPauseTransforms = !(mExtraState->mPauseTransforms);
 }
 
 void GameInstance::Initialize(bool skipTitleScreen) {
@@ -324,11 +329,11 @@ void GameInstance::Tick() {
 void GameInstance::TickAudio() {
   size_t audioDelta = 1;
 
-  if (mLastAudioTime > 0) {
-    audioDelta = PlatformHighResClockDelta(mLastAudioTime, ClockUnits::Milliseconds);
+  if (mExtraState->mLastAudioTime > 0) {
+    audioDelta = PlatformHighResClockDelta(mExtraState->mLastAudioTime, ClockUnits::Milliseconds);
   }
 
-  mLastAudioTime = PlatformHighResClock();
+  mExtraState->mLastAudioTime = PlatformHighResClock();
 
   mWorld->TickAudio(audioDelta);
 }
@@ -337,7 +342,7 @@ uint8* GameInstance::GetCurrentFrame() {
   if (mFrontEnd->IsVisible()) {
     return mRenderer->GetFrame();
   }
-  else if (!mVisualizeDepth) {
+  else if (!(mExtraState->mVisualizeDepth)) {
     return mRenderer->GetFrame();
   }
   else {
@@ -439,10 +444,10 @@ void GameInstance::OnKeyDown(uint8 key) {
     RotateCamera(Mat4x4::Axis::Y, -1.0F);
     break;
   case 'i':
-    mDrawStats = !mDrawStats;
+    mExtraState->mDrawStats = !(mExtraState->mDrawStats);
     break;
   case 'z':
-    mVisualizeDepth = !mVisualizeDepth;
+    mExtraState->mVisualizeDepth = !(mExtraState->mVisualizeDepth);
     break;
   default:
     break;

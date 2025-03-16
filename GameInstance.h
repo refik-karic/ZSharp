@@ -52,16 +52,20 @@ class GameInstance final {
   Renderer* mRenderer = nullptr;
   ThreadPool* mThreadPool = nullptr;
 
-  size_t mLastFrameTime = 0;
-  size_t mLastAudioTime = 0;
+  struct ExtraState {
+    size_t mLastFrameTime = 0;
+    size_t mLastAudioTime = 0;
 
-  int64 mFrameCount = 0;
-  int64 mRotationAmount = 0;
-  int64 mRotationSpeed = 4;
+    int64 mFrameCount = 0;
+    int64 mRotationAmount = 0;
+    int64 mRotationSpeed = 4;
 
-  bool mPauseTransforms = false;
-  bool mDrawStats = true;
-  bool mVisualizeDepth = false;
+    bool mPauseTransforms = false;
+    bool mDrawStats = true;
+    bool mVisualizeDepth = false;
+  };
+
+  ExtraState* mExtraState = nullptr;
 
   DevConsole* mDevConsole = nullptr;
 

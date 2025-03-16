@@ -8,12 +8,10 @@ namespace ZSharp {
 template<class... Signature>
 class Delegate final {
   public:
-  Delegate() : mObjPtr(nullptr), mClassSignature(nullptr), mFreeFunctionSignature(nullptr) {}
+  Delegate() : mObjPtr(nullptr), mClassSignature(nullptr) {}
 
   bool operator==(const Delegate& rhs) const {
-    return (mObjPtr == rhs.mObjPtr) && 
-      (mFreeFunctionSignature == rhs.mFreeFunctionSignature) && 
-      (mClassSignature == rhs.mClassSignature);
+    return (mObjPtr == rhs.mObjPtr) && (mClassSignature == rhs.mClassSignature);
   }
 
   static Delegate FromFreeFunction(void (*funcPtr)(Signature...)) {
@@ -28,11 +26,11 @@ class Delegate final {
   }
 
   void operator()(Signature... args) const {
-    if (mFreeFunctionSignature != nullptr) {
-      (*mFreeFunctionSignature)(args...);
-    }
-    else if(mClassSignature != nullptr) {
+    if (mObjPtr && mClassSignature != nullptr) {
       (*mClassSignature)(mObjPtr, args...);
+    }
+    else if (mFreeFunctionSignature != nullptr) {
+      (*mFreeFunctionSignature)(args...);
     }
     else {
       ZAssert(false); // Calling an unbound delegate.
@@ -40,11 +38,11 @@ class Delegate final {
   }
 
   bool IsBound() const {
-    return (mFreeFunctionSignature != nullptr) || (mClassSignature != nullptr);
+    return (mObjPtr != nullptr) ? (mClassSignature != nullptr) : (mFreeFunctionSignature != nullptr);
   }
 
   void Unbind() {
-    mFreeFunctionSignature = nullptr;
+    mObjPtr = nullptr;
     mClassSignature = nullptr;
   }
 
@@ -53,12 +51,14 @@ class Delegate final {
   typedef void (*ClassSignature)(void* objectPtr, Signature...);
   
   void* mObjPtr;
-  FreeFunctionSignature mFreeFunctionSignature;
-  ClassSignature mClassSignature;
+  union {
+    FreeFunctionSignature mFreeFunctionSignature;
+    ClassSignature mClassSignature;
+  };
 
-  Delegate(void* objPtr, ClassSignature classSignature) : mObjPtr(objPtr), mClassSignature(classSignature), mFreeFunctionSignature(nullptr) {};
+  Delegate(void* objPtr, ClassSignature classSignature) : mObjPtr(objPtr), mClassSignature(classSignature) {};
 
-  Delegate(FreeFunctionSignature freeFuncSignature) : mObjPtr(nullptr), mClassSignature(nullptr), mFreeFunctionSignature(freeFuncSignature) {};
+  Delegate(FreeFunctionSignature freeFuncSignature) : mObjPtr(nullptr), mFreeFunctionSignature(freeFuncSignature) {};
 
   template<class T, void (T::*MemberFunc)(Signature...)>
   static void InvokeMemberFunc(void* objectPtr, Signature... args) {
@@ -70,12 +70,10 @@ class Delegate final {
 template<>
 class Delegate<void> final {
   public:
-  Delegate() : mObjPtr(nullptr), mClassSignature(nullptr), mFreeFunctionSignature(nullptr) {}
+  Delegate() : mObjPtr(nullptr), mClassSignature(nullptr) {}
 
   bool operator==(const Delegate& rhs) const {
-    return (mObjPtr == rhs.mObjPtr) &&
-      (mFreeFunctionSignature == rhs.mFreeFunctionSignature) &&
-      (mClassSignature == rhs.mClassSignature);
+    return (mObjPtr == rhs.mObjPtr) && (mClassSignature == rhs.mClassSignature);
   }
 
   static Delegate FromFreeFunction(void (*funcPtr)()) {
@@ -90,11 +88,11 @@ class Delegate<void> final {
   }
 
   void operator()() const {
-    if (mFreeFunctionSignature != nullptr) {
-      (*mFreeFunctionSignature)();
-    }
-    else if (mClassSignature != nullptr) {
+    if (mObjPtr && mClassSignature != nullptr) {
       (*mClassSignature)(mObjPtr);
+    }
+    else if (mFreeFunctionSignature != nullptr) {
+      (*mFreeFunctionSignature)();
     }
     else {
       ZAssert(false); // Calling an unbound delegate.
@@ -102,11 +100,11 @@ class Delegate<void> final {
   }
 
   bool IsBound() const {
-    return (mFreeFunctionSignature != nullptr) || (mClassSignature != nullptr);
+    return (mObjPtr != nullptr) ? (mClassSignature != nullptr) : (mFreeFunctionSignature != nullptr);
   }
 
   void Unbind() {
-    mFreeFunctionSignature = nullptr;
+    mObjPtr = nullptr;
     mClassSignature = nullptr;
   }
 
@@ -115,12 +113,14 @@ class Delegate<void> final {
   typedef void (*ClassSignature)(void* objectPtr);
 
   void* mObjPtr;
-  FreeFunctionSignature mFreeFunctionSignature;
-  ClassSignature mClassSignature;
+  union {
+    FreeFunctionSignature mFreeFunctionSignature;
+    ClassSignature mClassSignature;
+  };
 
-  Delegate(void* objPtr, ClassSignature classSignature) : mObjPtr(objPtr), mClassSignature(classSignature), mFreeFunctionSignature(nullptr) {};
+  Delegate(void* objPtr, ClassSignature classSignature) : mObjPtr(objPtr), mClassSignature(classSignature) {};
 
-  Delegate(FreeFunctionSignature freeFuncSignature) : mObjPtr(nullptr), mClassSignature(nullptr), mFreeFunctionSignature(freeFuncSignature) {};
+  Delegate(FreeFunctionSignature freeFuncSignature) : mObjPtr(nullptr), mFreeFunctionSignature(freeFuncSignature) {};
 
   template<class T, void (T::* MemberFunc)()>
   static void InvokeMemberFunc(void* objectPtr) {
@@ -132,12 +132,10 @@ class Delegate<void> final {
 template<class ReturnValue, class... Signature>
 class ResultDelegate final {
   public:
-  ResultDelegate() : mObjPtr(nullptr), mClassSignature(nullptr), mFreeFunctionSignature(nullptr) {}
+  ResultDelegate() : mObjPtr(nullptr), mClassSignature(nullptr) {}
 
   bool operator==(const ResultDelegate& rhs) const {
-    return (mObjPtr == rhs.mObjPtr) &&
-      (mFreeFunctionSignature == rhs.mFreeFunctionSignature) &&
-      (mClassSignature == rhs.mClassSignature);
+    return (mObjPtr == rhs.mObjPtr) && (mClassSignature == rhs.mClassSignature);
   }
 
   static ResultDelegate FromFreeFunction(ReturnValue (*funcPtr)(Signature...)) {
@@ -152,11 +150,11 @@ class ResultDelegate final {
   }
 
   ReturnValue operator()(Signature... args) const {
-    if (mFreeFunctionSignature != nullptr) {
-      return (*mFreeFunctionSignature)(args...);
-    }
-    else if (mClassSignature != nullptr) {
+    if (mObjPtr && mClassSignature != nullptr) {
       return (*mClassSignature)(mObjPtr, args...);
+    }
+    else if (mFreeFunctionSignature != nullptr) {
+      return (*mFreeFunctionSignature)(args...);
     }
     else {
       ZAssert(false); // Calling an unbound delegate.
@@ -165,11 +163,11 @@ class ResultDelegate final {
   }
 
   bool IsBound() const {
-    return (mFreeFunctionSignature != nullptr) || (mClassSignature != nullptr);
+    return (mObjPtr != nullptr) ? (mClassSignature != nullptr) : (mFreeFunctionSignature != nullptr);
   }
 
   void Unbind() {
-    mFreeFunctionSignature = nullptr;
+    mObjPtr = nullptr;
     mClassSignature = nullptr;
   }
 
@@ -178,12 +176,14 @@ class ResultDelegate final {
   typedef ReturnValue (*ClassSignature)(void* objectPtr, Signature...);
 
   void* mObjPtr;
-  FreeFunctionSignature mFreeFunctionSignature;
-  ClassSignature mClassSignature;
+  union {
+    FreeFunctionSignature mFreeFunctionSignature;
+    ClassSignature mClassSignature;
+  };
 
-  ResultDelegate(void* objPtr, ClassSignature classSignature) : mObjPtr(objPtr), mClassSignature(classSignature), mFreeFunctionSignature(nullptr) {};
+  ResultDelegate(void* objPtr, ClassSignature classSignature) : mObjPtr(objPtr), mClassSignature(classSignature) {};
 
-  ResultDelegate(FreeFunctionSignature freeFuncSignature) : mObjPtr(nullptr), mClassSignature(nullptr), mFreeFunctionSignature(freeFuncSignature) {};
+  ResultDelegate(FreeFunctionSignature freeFuncSignature) : mObjPtr(nullptr), mFreeFunctionSignature(freeFuncSignature) {};
 
   template<class T, ReturnValue (T::* MemberFunc)(Signature...)>
   static ReturnValue InvokeMemberFunc(void* objectPtr, Signature... args) {

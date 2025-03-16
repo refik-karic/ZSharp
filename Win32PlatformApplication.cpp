@@ -155,7 +155,7 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
       return result;
     }
 
-    mGameInstance.Initialize(false);
+    mGameInstance->Initialize(false);
 
     ShowWindow(mWindowHandle, SW_SHOW);
     for (MSG msg; mWindowHandle != nullptr;) {
@@ -196,21 +196,30 @@ void Win32PlatformApplication::Shutdown() {
 }
 
 Win32PlatformApplication::Win32PlatformApplication()
-  : mBitmapInfo{}, mPointCursor(nullptr), mHandCursor(nullptr) {
-  mBitmapInfo.bmiHeader.biSize = sizeof(BITMAPINFO);
-  mBitmapInfo.bmiHeader.biWidth = 0;
-  mBitmapInfo.bmiHeader.biHeight = 0;
-  mBitmapInfo.bmiHeader.biPlanes = 1;
-  mBitmapInfo.bmiHeader.biBitCount = 32;
-  mBitmapInfo.bmiHeader.biCompression = BI_RGB;
-  mBitmapInfo.bmiHeader.biSizeImage = 0;
-  mBitmapInfo.bmiHeader.biXPelsPerMeter = 0;
-  mBitmapInfo.bmiHeader.biYPelsPerMeter = 0;
-  mBitmapInfo.bmiHeader.biClrUsed = 0;
-  mBitmapInfo.bmiHeader.biClrImportant = 0;
+  : mBitmapInfo{new BITMAPINFO()}, mPointCursor(nullptr), mHandCursor(nullptr) {
+  mBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFO);
+  mBitmapInfo->bmiHeader.biWidth = 0;
+  mBitmapInfo->bmiHeader.biHeight = 0;
+  mBitmapInfo->bmiHeader.biPlanes = 1;
+  mBitmapInfo->bmiHeader.biBitCount = 32;
+  mBitmapInfo->bmiHeader.biCompression = BI_RGB;
+  mBitmapInfo->bmiHeader.biSizeImage = 0;
+  mBitmapInfo->bmiHeader.biXPelsPerMeter = 0;
+  mBitmapInfo->bmiHeader.biYPelsPerMeter = 0;
+  mBitmapInfo->bmiHeader.biClrUsed = 0;
+  mBitmapInfo->bmiHeader.biClrImportant = 0;
+
+  mGameInstance = new ZSharp::GameInstance();
 }
 
 Win32PlatformApplication::~Win32PlatformApplication() {
+  if (mBitmapInfo != nullptr) {
+    delete mBitmapInfo;
+  }
+
+  if (mGameInstance != nullptr) {
+    delete mGameInstance;
+  }
 }
 
 void Win32PlatformApplication::ReadCommandLine() {
@@ -339,7 +348,7 @@ void Win32PlatformApplication::OnTimer() {
     ApplyCursor(ZSharp::AppCursor::Arrow);
   }
 
-  mGameInstance.Tick();
+  mGameInstance->Tick();
 
   InvalidateRect(mWindowHandle, NULL, false);
 
@@ -397,9 +406,9 @@ void Win32PlatformApplication::OnPaint() {
     ZSharp::PlatformFree(jpgData);
   }
 #else
-  UpdateFrame(mGameInstance.GetCurrentFrame());
+  UpdateFrame(mGameInstance->GetCurrentFrame());
 
-  mGameInstance.RunBackgroundJobs();
+  mGameInstance->RunBackgroundJobs();
 #endif
 }
 
@@ -423,7 +432,7 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
   switch (key) {
   case VK_SPACE:
   {
-    if (!mGameInstance.IsDevConsoleOpen()) {
+    if (!mGameInstance->IsDevConsoleOpen()) {
        mPaused = !mPaused;
     }
     else {
@@ -600,14 +609,14 @@ void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
   SetDIBitsToDevice(mWindowContext, 
     0, 
     0, 
-    mBitmapInfo.bmiHeader.biWidth, 
-    -mBitmapInfo.bmiHeader.biHeight, 
+    mBitmapInfo->bmiHeader.biWidth, 
+    -mBitmapInfo->bmiHeader.biHeight, 
     0, 
     0,
     0, 
-    -mBitmapInfo.bmiHeader.biHeight,
+    -mBitmapInfo->bmiHeader.biHeight,
     data, 
-    &mBitmapInfo, 
+    mBitmapInfo, 
     DIB_RGB_COLORS);
 
   ValidateRect(mWindowHandle, NULL);
@@ -648,7 +657,7 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
 }
 
 void Win32PlatformApplication::UpdateAudio() {
-  mGameInstance.TickAudio();
+  mGameInstance->TickAudio();
 }
 
 void Win32PlatformApplication::PauseTimer() {
@@ -687,11 +696,11 @@ void Win32PlatformApplication::UpdateWindowSize(const RECT rect) {
     dirtySize = true;
   }
 
-  mBitmapInfo.bmiHeader.biWidth = width;
-  mBitmapInfo.bmiHeader.biHeight = -height;
+  mBitmapInfo->bmiHeader.biWidth = width;
+  mBitmapInfo->bmiHeader.biHeight = -height;
 
   if (dirtySize) {
-    mGameInstance.WaitForBackgroundJobs();
+    mGameInstance->WaitForBackgroundJobs();
     ZSharp::OnWindowSizeChangedDelegate().Broadcast(width, height);
   }
 }

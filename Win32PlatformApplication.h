@@ -31,12 +31,12 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   HDC mWindowContext = nullptr;
   bool mPaused = false;
   bool mHidden = false;
-  BITMAPINFO mBitmapInfo;
+  BITMAPINFO* mBitmapInfo = nullptr;
 
   HCURSOR mPointCursor = nullptr;
   HCURSOR mHandCursor = nullptr;
 
-  ZSharp::GameInstance mGameInstance;
+  ZSharp::GameInstance* mGameInstance = nullptr;
 
   Win32PlatformApplication();
 

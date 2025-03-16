@@ -24,11 +24,41 @@ ConsoleVariable<float> CameraRotation("CameraRotation", 5.f);
 ConsoleVariable<ZColor> ClearColor("ClearColor", ZColor(ZColors::ORANGE));
 
 GameInstance::GameInstance()
-  : mCameraReset("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this)) {
+  : mCameraReset(new ConsoleVariable<void>("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this))),
+    mFrontEnd(new FrontEnd()), mCamera(new Camera()), mWorld(new World()), mRenderer(new Renderer()), 
+    mThreadPool(new ThreadPool()), mDevConsole(new DevConsole()) {
 
 }
 
 GameInstance::~GameInstance() {
+  if (mCameraReset) {
+    delete mCameraReset;
+  }
+
+  if (mFrontEnd) {
+    delete mFrontEnd;
+  }
+
+  if (mCamera) {
+    delete mCamera;
+  }
+
+  if (mWorld) {
+    delete mWorld;
+  }
+
+  if (mRenderer) {
+    delete mRenderer;
+  }
+
+  if (mDevConsole) {
+    delete mDevConsole;
+  }
+
+  if (mThreadPool) {
+    delete mThreadPool;
+  }
+
   InputManager& inputManager = InputManager::Get();
   inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
   inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
@@ -40,9 +70,9 @@ GameInstance::~GameInstance() {
 void GameInstance::LoadWorld() {
   NamedScopedTimer(WorldLoad);
 
-  mWorld.Load();
+  mWorld->Load();
 
-  mCamera.Position() = Vec3(0.f, 5.f, 50.f);
+  mCamera->Position() = Vec3(0.f, 5.f, 50.f);
   // Clip the model at the origin by moving the camera far away.
   // From there we can see how long the clipping pass takes for a given scene.
   //mCamera.Position() = Vec3(0.f, 0.f, 200.f);
@@ -58,7 +88,7 @@ void GameInstance::LoadWorld() {
 void GameInstance::LoadFrontEnd() {
   NamedScopedTimer(FrontEndLoad);
 
-  mFrontEnd.Load();
+  mFrontEnd->Load();
 }
 
 void GameInstance::TickWorld() {
@@ -68,7 +98,7 @@ void GameInstance::TickWorld() {
 
   {
     NamedScopedTimer(ThreadPoolWait);
-    mThreadPool.WaitForJobs();
+    mThreadPool->WaitForJobs();
   }
 
   Array<String> stats;
@@ -78,14 +108,14 @@ void GameInstance::TickWorld() {
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame: {0}\n", mFrameCount)));
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame Delta: {0}ms\n", frameDeltaMs)));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera: {0}\n", mCamera.Position().ToString())));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera View: {0}\n", mCamera.GetLook().ToString())));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera: {0}\n", mCamera->Position().ToString())));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera View: {0}\n", mCamera->GetLook().ToString())));
 
-  size_t numModels = mWorld.GetModels().Size();
+  size_t numModels = mWorld->GetModels().Size();
   size_t numVerts = 0;
   size_t numTriangles = 0;
 
-  for (Model& model : mWorld.GetModels()) {
+  for (Model& model : mWorld->GetModels()) {
     for (Mesh& mesh : model.GetMeshData()) {
       numVerts += (mesh.GetVertTable().Size() / mesh.Stride());
       numTriangles += mesh.GetTriangleFaceTable().Size();
@@ -109,7 +139,7 @@ void GameInstance::TickWorld() {
       mRotationAmount += mRotationSpeed;
     }
 
-    for (Model& model : mWorld.GetModels()) {
+    for (Model& model : mWorld->GetModels()) {
       // TODO: Hacking some stuff together real quick for physics.
       if (model.Tag() == PhysicsTag::Dynamic) {
         model.Rotation() = rotation;
@@ -117,20 +147,20 @@ void GameInstance::TickWorld() {
     }
   }
 
-  mCamera.Tick();
+  mCamera->Tick();
 
   size_t physicsTickTime = Clamp(frameDeltaMs, (size_t)0, FRAMERATE_60HZ_MS);
 
   size_t startPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
-  mWorld.TickPhysics(physicsTickTime);
+  mWorld->TickPhysics(physicsTickTime);
   size_t endPhysics = PlatformHighResClockDelta(mLastFrameTime, ClockUnits::Microseconds);
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics)));
 
-  mRenderer.RenderNextFrame(mWorld, mCamera);
+  mRenderer->RenderNextFrame(*mWorld, *mCamera);
 
   size_t remainingTriangles = 0;
-  for (IndexBuffer& indexBuffer : mWorld.GetIndexBuffers()) {
+  for (IndexBuffer& indexBuffer : mWorld->GetIndexBuffers()) {
     if (indexBuffer.WasClipped()) {
       remainingTriangles += indexBuffer.GetClipLength() / 3;
     }
@@ -145,15 +175,15 @@ void GameInstance::TickWorld() {
   if (mDrawStats) {
     stats.EmplaceBack(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDelta(renderFrameTime, ClockUnits::Microseconds)));
 
-    size_t bufferWidth = mRenderer.GetFrameBuffer().GetWidth();
+    size_t bufferWidth = mRenderer->GetFrameBuffer().GetWidth();
     uint8* buffer;
     ZColor color;
     if (mVisualizeDepth) {
-      buffer = mRenderer.GetDepth();
+      buffer = mRenderer->GetDepth();
       color = ZColors::GREEN;
     }
     else {
-      buffer = mRenderer.GetFrameBuffer().GetBuffer();
+      buffer = mRenderer->GetFrameBuffer().GetBuffer();
       color = ZColors::BLACK;
     }
 
@@ -164,59 +194,59 @@ void GameInstance::TickWorld() {
     }
   }
 
-  if (mDevConsole.IsOpen()) {
-    uint8* buffer = mVisualizeDepth ? mRenderer.GetDepth() : mRenderer.GetFrameBuffer().GetBuffer();
-    mDevConsole.Draw((uint32*)buffer);
+  if (mDevConsole->IsOpen()) {
+    uint8* buffer = mVisualizeDepth ? mRenderer->GetDepth() : mRenderer->GetFrameBuffer().GetBuffer();
+    mDevConsole->Draw((uint32*)buffer);
   }
 }
 
 void GameInstance::TickFrontEnd() {
   NamedScopedTimer(TickFrontEnd);
 
-  mFrontEnd.Tick();
+  mFrontEnd->Tick();
 
   InputManager& inputManager = InputManager::Get();
   inputManager.Process();
 
   ZColor clearColor(ZColors::BLACK);
-  mRenderer.ClearFramebuffer(clearColor);
+  mRenderer->ClearFramebuffer(clearColor);
 
-  Framebuffer& framebuffer = mRenderer.GetFrameBuffer();
-  uint8* buffer = mRenderer.GetFrame();
+  Framebuffer& framebuffer = mRenderer->GetFrameBuffer();
+  uint8* buffer = mRenderer->GetFrame();
   size_t width = framebuffer.GetWidth();
   size_t height = framebuffer.GetHeight();
 
-  if (!mFrontEnd.IsVisible()) {
+  if (!mFrontEnd->IsVisible()) {
     ZColor loadColor(ZColors::WHITE);
     DrawText("LOADING WORLD", width / 2, height / 2, buffer, width, loadColor);
     return;
   }
 
-  mFrontEnd.Draw(buffer, width, height);
+  mFrontEnd->Draw(buffer, width, height);
 }
 
 void GameInstance::MoveCamera(Direction direction) {
-  Vec3 cameraLook(mCamera.GetLook());
+  Vec3 cameraLook(mCamera->GetLook());
 
   cameraLook *= (*CameraSpeed);
 
   switch (direction) {
   case Direction::FORWARD:
-    mCamera.Position() = mCamera.Position() + cameraLook;
+    mCamera->Position() = mCamera->Position() + cameraLook;
     break;
   case Direction::BACK:
-    mCamera.Position() = mCamera.Position() - cameraLook;
+    mCamera->Position() = mCamera->Position() - cameraLook;
     break;
   case Direction::LEFT:
   {
-    Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
-    mCamera.Position() = mCamera.Position() + sideVec;
+    Vec3 sideVec(mCamera->GetUp().Cross(cameraLook));
+    mCamera->Position() = mCamera->Position() + sideVec;
   }
   break;
   case Direction::RIGHT:
   {
-    Vec3 sideVec(mCamera.GetUp().Cross(cameraLook));
-    mCamera.Position() = mCamera.Position() - sideVec;
+    Vec3 sideVec(mCamera->GetUp().Cross(cameraLook));
+    mCamera->Position() = mCamera->Position() - sideVec;
   }
   break;
   }
@@ -238,12 +268,12 @@ void GameInstance::RotateCamera(Mat4x4::Axis direction, const float angleDegrees
 
   Quaternion quat(DegreesToRadians(angleDegrees), rotationAxis);
   Mat4x4 rotation(quat.GetRotationMatrix());
-  mCamera.RotateCamera(rotation);
+  mCamera->RotateCamera(rotation);
 }
 
 void GameInstance::RotateTrackball(const Quaternion& quat) {
   Mat4x4 rotation(quat.GetRotationMatrix());
-  mCamera.RotateCamera(rotation);
+  mCamera->RotateCamera(rotation);
 }
 
 void GameInstance::ChangeSpeed(int64 amount) {
@@ -259,9 +289,9 @@ void GameInstance::ChangeSpeed(int64 amount) {
 }
 
 void GameInstance::ResetCamera() {
-  if (!mFrontEnd.IsVisible() && mWorld.IsLoaded()) {
-    mCamera.ResetOrientation();
-    mCamera.Position() = Vec3(0.f, 5.f, 50.f);
+  if (!mFrontEnd->IsVisible() && mWorld->IsLoaded()) {
+    mCamera->ResetOrientation();
+    mCamera->Position() = Vec3(0.f, 5.f, 50.f);
   }
 }
 
@@ -279,11 +309,11 @@ void GameInstance::Initialize(bool skipTitleScreen) {
 }
 
 void GameInstance::Tick() {
-  if (mFrontEnd.IsVisible()) {
+  if (mFrontEnd->IsVisible()) {
     TickFrontEnd();
   }
   else {
-    if (!mWorld.IsLoaded()) {
+    if (!mWorld->IsLoaded()) {
       LoadWorld();
     }
 
@@ -300,45 +330,45 @@ void GameInstance::TickAudio() {
 
   mLastAudioTime = PlatformHighResClock();
 
-  mWorld.TickAudio(audioDelta);
+  mWorld->TickAudio(audioDelta);
 }
 
 uint8* GameInstance::GetCurrentFrame() {
-  if (mFrontEnd.IsVisible()) {
-    return mRenderer.GetFrame();
+  if (mFrontEnd->IsVisible()) {
+    return mRenderer->GetFrame();
   }
   else if (!mVisualizeDepth) {
-    return mRenderer.GetFrame();
+    return mRenderer->GetFrame();
   }
   else {
-    return mRenderer.GetDepth();
+    return mRenderer->GetDepth();
   }
 }
 
 bool GameInstance::IsDevConsoleOpen() const {
-  return mDevConsole.IsOpen();
+  return mDevConsole->IsOpen();
 }
 
 void GameInstance::RunBackgroundJobs() {
-  if (!mWorld.IsLoaded()) {
+  if (!mWorld->IsLoaded()) {
     return;
   }
 
   ParallelRange frameBufferClear = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearFrameBuffer>(this);
   ParallelRange depthBufferClear = ParallelRange::FromMember<GameInstance, &GameInstance::FastClearDepthBuffer>(this);
-  size_t size = mRenderer.GetFrameBuffer().GetWidth() * mRenderer.GetFrameBuffer().GetHeight();
+  size_t size = mRenderer->GetFrameBuffer().GetWidth() * mRenderer->GetFrameBuffer().GetHeight();
 
-  mThreadPool.Execute(frameBufferClear, mRenderer.GetFrameBuffer().GetBuffer(), size);
-  mThreadPool.Execute(depthBufferClear, mRenderer.GetDepthBuffer().GetBuffer(), size);
+  mThreadPool->Execute(frameBufferClear, mRenderer->GetFrameBuffer().GetBuffer(), size);
+  mThreadPool->Execute(depthBufferClear, mRenderer->GetDepthBuffer().GetBuffer(), size);
 }
 
 void GameInstance::WaitForBackgroundJobs() {
   NamedScopedTimer(ThreadPoolWait);
-  mThreadPool.WaitForJobs();
+  mThreadPool->WaitForJobs();
 }
 
 void GameInstance::OnKeyDown(uint8 key) {
-  if (mDevConsole.IsOpen()) {
+  if (mDevConsole->IsOpen()) {
     return;
   }
 
@@ -349,10 +379,10 @@ void GameInstance::OnKeyDown(uint8 key) {
     PauseTransforms();
     break;
   case 'r':
-    mRenderer.ToggleRenderMode(RenderMode::WIREFRAME);
+    mRenderer->ToggleRenderMode(RenderMode::WIREFRAME);
     break;
   case 'f':
-    mRenderer.ToggleRenderMode(RenderMode::FLAT);
+    mRenderer->ToggleRenderMode(RenderMode::FLAT);
     break;
   case 'w':
   {
@@ -424,7 +454,7 @@ void GameInstance::OnKeyUp(uint8 key) {
 }
 
 void GameInstance::OnMiscKeyDown(MiscKey key) {
-  if (mDevConsole.IsOpen()) {
+  if (mDevConsole->IsOpen()) {
     return;
   }
 
@@ -455,7 +485,7 @@ void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
 }
 
 void GameInstance::FastClearFrameBuffer(Span<uint8> data) {
-  Framebuffer& frameBuffer = mRenderer.GetFrameBuffer();
+  Framebuffer& frameBuffer = mRenderer->GetFrameBuffer();
   const size_t chunkSize = 4;
   size_t start = data.GetData() - frameBuffer.GetBuffer();
   size_t length = data.Size();
@@ -463,7 +493,7 @@ void GameInstance::FastClearFrameBuffer(Span<uint8> data) {
 }
 
 void GameInstance::FastClearDepthBuffer(Span<uint8> data) {
-  DepthBuffer& depthBuffer = mRenderer.GetDepthBuffer();
+  DepthBuffer& depthBuffer = mRenderer->GetDepthBuffer();
   size_t start = data.GetData() - ((uint8*)depthBuffer.GetBuffer());
   size_t length = data.Size();
   const size_t chunkSize = 4;

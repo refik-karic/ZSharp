@@ -46,11 +46,11 @@ class GameInstance final {
   void WaitForBackgroundJobs();
 
   private:
-  FrontEnd mFrontEnd;
-  Camera mCamera;
-  World mWorld;
-  Renderer mRenderer;
-  ThreadPool mThreadPool;
+  FrontEnd* mFrontEnd = nullptr;
+  Camera* mCamera = nullptr;
+  World* mWorld = nullptr;
+  Renderer* mRenderer = nullptr;
+  ThreadPool* mThreadPool = nullptr;
 
   size_t mLastFrameTime = 0;
   size_t mLastAudioTime = 0;
@@ -63,9 +63,9 @@ class GameInstance final {
   bool mDrawStats = true;
   bool mVisualizeDepth = false;
 
-  DevConsole mDevConsole;
+  DevConsole* mDevConsole = nullptr;
 
-  ConsoleVariable<void> mCameraReset;
+  ConsoleVariable<void>* mCameraReset = nullptr;
 
   void PauseTransforms();
 

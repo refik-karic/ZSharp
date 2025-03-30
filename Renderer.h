@@ -10,7 +10,7 @@ namespace ZSharp {
 
 enum class RenderMode {
   WIREFRAME,
-  FLAT
+  FILL
 };
 
 class Renderer final {
@@ -38,7 +38,10 @@ class Renderer final {
   private:
   Framebuffer mFramebuffer;
   DepthBuffer mDepthBuffer;
-  RenderMode mRenderMode = RenderMode::FLAT;
+  RenderMode mRenderMode = RenderMode::FILL;
+
+  VertexBuffer mAABBVertexBuffer;
+  IndexBuffer mAABBIndexBuffer;
 
   bool mDepthBufferDirty = false;
 };

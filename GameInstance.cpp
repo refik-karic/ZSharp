@@ -387,7 +387,7 @@ void GameInstance::OnKeyDown(uint8 key) {
     mRenderer->ToggleRenderMode(RenderMode::WIREFRAME);
     break;
   case 'f':
-    mRenderer->ToggleRenderMode(RenderMode::FLAT);
+    mRenderer->ToggleRenderMode(RenderMode::FILL);
     break;
   case 'w':
   {

@@ -7,18 +7,17 @@
 #include "IndexBuffer.h"
 #include "Texture.h"
 #include "VertexBuffer.h"
-#include "PlatformDefines.h"
 #include "ZColor.h"
 
 namespace ZSharp {
 
-void DrawTrianglesFlatRGB(Framebuffer& framebuffer,
+void RGBShader(Framebuffer& framebuffer,
   DepthBuffer& depthBuffer,
   const VertexBuffer& vertexBuffer,
   const IndexBuffer& indexBuffer,
   bool wasClipped);
 
-void DrawTrianglesFlatUV(Framebuffer& framebuffer,
+void TextureMappedShader(Framebuffer& framebuffer,
   DepthBuffer& depthBuffer,
   const VertexBuffer& vertexBuffer,
   const IndexBuffer& indexBuffer,
@@ -26,20 +25,11 @@ void DrawTrianglesFlatUV(Framebuffer& framebuffer,
   const Texture* texture,
   size_t mipLevel);
 
-void DrawTrianglesWireframe(Framebuffer& framebuffer,
-  const VertexBuffer& vertexBuffer,
-  const IndexBuffer& indexBuffer,
-  bool wasClipped);
-
-void DrawTrianglesWireframe(Framebuffer& framebuffer,
+void WireframeShader(Framebuffer& framebuffer,
   const VertexBuffer& vertexBuffer,
   const IndexBuffer& indexBuffer,
   bool wasClipped,
   ZColor color);
-
-void DrawRunSliceLerp(Framebuffer& framebuffer,
-    const float* p0,
-    const float* p1);
 
 void DrawRunSlice(Framebuffer& framebuffer,
   const float* p0,

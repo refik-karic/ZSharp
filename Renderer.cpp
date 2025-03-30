@@ -25,14 +25,18 @@ ConsoleVariable<bool> VisualizeAABB("VizAABB", false);
 
 ConsoleVariable<int32> MipOverride("MipOverride", 4);
 
+ConsoleVariable<ZColor> WireframeColor("WireframeColor", ZColor(ZColors::GREEN));
+
 Renderer::Renderer() {
+  mAABBVertexBuffer.Resize(8 * 4, 4);
+  mAABBIndexBuffer.Resize(12 * 3);
 }
 
 void Renderer::RenderNextFrame(World& world, Camera& camera) {
   NamedScopedTimer(RenderFrame);
 
   if (*DevRenderMode) {
-    mRenderMode = RenderMode::FLAT;
+    mRenderMode = RenderMode::FILL;
   }
   else {
     mRenderMode = RenderMode::WIREFRAME;
@@ -46,24 +50,21 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
     const AABB aabb(AABB::TransformAndRealign(model.BoundingBox(), model.ObjectTransform()));
     ClipBounds clipBounds;
     {
-      VertexBuffer aabbVertexBuffer;
-      IndexBuffer aabbIndexBuffer;
-      TriangulateAABB(aabb, aabbVertexBuffer, aabbIndexBuffer);
+      mAABBVertexBuffer.Reset();
+      mAABBIndexBuffer.Reset();
+      TriangulateAABB(aabb, mAABBVertexBuffer, mAABBIndexBuffer, false);
 
       Mat4x4 identity;
       identity.Identity();
 
-      clipBounds = camera.ClipBoundsCheck(aabbVertexBuffer, aabbIndexBuffer, identity);
+      clipBounds = camera.ClipBoundsCheck(mAABBVertexBuffer, mAABBIndexBuffer, identity);
 
       if (*VisualizeAABB) {
-        const ZColor aabbColor(ZColors::GREEN);
-
-        aabbVertexBuffer.Clear();
-        aabbIndexBuffer.Clear();
-        TriangulateAABBWithColor(aabb, aabbVertexBuffer, aabbIndexBuffer, aabbColor);
-
-        camera.PerspectiveProjection(aabbVertexBuffer, aabbIndexBuffer, clipBounds, identity);
-        DrawTrianglesWireframe(mFramebuffer, aabbVertexBuffer, aabbIndexBuffer, aabbVertexBuffer.WasClipped());
+        mAABBVertexBuffer.Reset();
+        mAABBIndexBuffer.Reset();
+        TriangulateAABB(aabb, mAABBVertexBuffer, mAABBIndexBuffer, false);
+        camera.PerspectiveProjection(mAABBVertexBuffer, mAABBIndexBuffer, clipBounds, identity);
+        WireframeShader(mFramebuffer, mAABBVertexBuffer, mAABBIndexBuffer, mAABBVertexBuffer.WasClipped(), *WireframeColor);
       }
     }
 
@@ -84,18 +85,18 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
     const ShaderDefinition& shader = model.GetShader();
 
     switch (mRenderMode) {
-      case RenderMode::FLAT:
+      case RenderMode::FILL:
       {
         switch (shader.GetShadingMethod()) {
           case ShadingMethod::RGB:
           {
-            DrawTrianglesFlatRGB(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
+            RGBShader(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
           }
             break;
           case ShadingMethod::UV:
           {
             Texture* texture = TexturePool::Get().GetTexture(model.TextureId());
-            DrawTrianglesFlatUV(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), texture, *MipOverride);
+            TextureMappedShader(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), texture, *MipOverride);
           }
           break;
           default:
@@ -105,19 +106,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
         break;
       case RenderMode::WIREFRAME:
       {
-        switch (shader.GetShadingMethod()) {
-          case ShadingMethod::RGB:
-          {
-            DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped());
-          }
-          break;
-          default:
-          {
-            ZColor wireframeColor(ZColors::BLUE);
-            DrawTrianglesWireframe(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), wireframeColor);
-          }
-            break;
-        }
+        WireframeShader(mFramebuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), *WireframeColor);
       }
         break;
     }
@@ -152,7 +141,7 @@ void Renderer::ClearFramebuffer(const ZColor& color) {
 }
 
 void Renderer::ToggleRenderMode(RenderMode mode) {
-  if (mode == RenderMode::FLAT) {
+  if (mode == RenderMode::FILL) {
     *DevRenderMode = 1;
   }
   else {

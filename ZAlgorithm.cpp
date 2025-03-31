@@ -200,7 +200,8 @@ int32 SutherlandHodgmanClip(float* inputVerts, float* outputVerts, const int32 n
   const int32 vertByteSize = stride * sizeof(float);
 
   for (int32 i = 0; i < numInputVerts; ++i) {
-    const int32 nextIndex = (i + 1) % numInputVerts;
+    // Mod causes an idiv, this instead generates a cmov which is actually much faster.
+    const int32 nextIndex = ((i + 1) == numInputVerts) ? 0 : (i + 1);
 
     const float* currentOffset = inputVerts + (i * stride);
     const float* nextOffset = inputVerts + (nextIndex * stride);
@@ -223,48 +224,28 @@ int32 SutherlandHodgmanClip(float* inputVerts, float* outputVerts, const int32 n
       float clipPoint[4];
       GetParametricVector4D(parametricValue, currentOffset, nextOffset, clipPoint);
 
-      const float* currentAttributes = currentOffset + 4;
-      const float* nextAttributes = nextOffset + 4;
-
-      if (!p0Inside) {
-        /*
-          NOTE: We intentionaly do not add the second vertex when the first is outside the clip region.
-            This avoids duplicating vertices since only those inside the clip region are added.
-        */
-
-        // Clipped vertex.
-        outputVerts[(numOutputVerts * stride)] = clipPoint[0];
-        outputVerts[(numOutputVerts * stride) + 1] = clipPoint[1];
-        outputVerts[(numOutputVerts * stride) + 2] = clipPoint[2];
-        outputVerts[(numOutputVerts * stride) + 3] = clipPoint[3];
-
-        // Clipped attributes.
-        float* attributeOffset = (outputVerts + (numOutputVerts * stride)) + 4;
-        for (int32 j = 0; j < stride - 4; j+=4) {
-          Unaligned_LerpAttribute(currentAttributes + j, nextAttributes + j, attributeOffset + j, parametricValue);
-        }
-        ++numOutputVerts;
-      }
-      else {
+      if (p0Inside) {
         // Unchanged input vertex.
         memcpy(outputVerts + (numOutputVerts * stride),
           currentOffset,
           vertByteSize);
         ++numOutputVerts;
-
-        // Clipped vertex.
-        outputVerts[(numOutputVerts * stride)] = clipPoint[0];
-        outputVerts[(numOutputVerts * stride) + 1] = clipPoint[1];
-        outputVerts[(numOutputVerts * stride) + 2] = clipPoint[2];
-        outputVerts[(numOutputVerts * stride) + 3] = clipPoint[3];
-
-        // Clipped attributes.
-        float* attributeOffset = (outputVerts + (numOutputVerts * stride)) + 4;
-        for (int32 j = 0; j < stride - 4; j+=4) {
-          Unaligned_LerpAttribute(currentAttributes + j, nextAttributes + j, attributeOffset + j, parametricValue);
-        }
-        ++numOutputVerts;
       }
+
+      /*
+        NOTE: We intentionaly do not add the second vertex when the first is outside the clip region.
+          This avoids duplicating vertices since only those inside the clip region are added.
+      */
+
+      // Clipped vertex.
+      float* outputOffset = (outputVerts + (numOutputVerts * stride));
+      memcpy(outputOffset, clipPoint, sizeof(clipPoint));
+
+      // Clipped attributes.
+      for (int32 j = 4; j < stride; j+=4) {
+        Unaligned_LerpAttribute(currentOffset + j, nextOffset + j, outputOffset + j, parametricValue);
+      }
+      ++numOutputVerts;
     }
   }
 

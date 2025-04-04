@@ -23,6 +23,8 @@ class PlatformApplication {
   AppCursor mCurrentCursor = AppCursor::Arrow;
 };
 
+void InitializeEnvironment();
+
 PlatformApplication* GetApplication();
 
 bool IsKeyPressed(uint8 key);

@@ -13,6 +13,7 @@
 #include "ZString.h"
 #include "PlatformTime.h"
 #include "CommandLineParser.h"
+#include "PlatformIntrinsics.h"
 
 #include <synchapi.h>
 #include <timeapi.h>
@@ -37,6 +38,21 @@ namespace ZSharp {
 BroadcastDelegate<size_t, size_t>& OnWindowSizeChangedDelegate() {
   static BroadcastDelegate<size_t, size_t> instance;
   return instance;
+}
+
+void InitializeEnvironment() {
+  // Ignoring AVX512 for now.
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    RGBShaderImpl = &Unaligned_Shader_RGB_AVX;
+    UVShaderImpl = &Unaligned_Shader_UV_AVX;
+  }
+  else if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
+    RGBShaderImpl = &Unaligned_Shader_RGB_SSE;
+    UVShaderImpl = &Unaligned_Shader_UV_SSE;
+  }
+  else {
+    ZAssert(false);
+  }
 }
 
 PlatformApplication* GetApplication() {

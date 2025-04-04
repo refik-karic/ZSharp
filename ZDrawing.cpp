@@ -134,7 +134,7 @@ void RGBShader(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexB
     end = indexBuffer.GetIndexSize();
   }
   
-  Unaligned_Shader_RGB(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
+  RGBShaderImpl(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer());
 }
 
 void TextureMappedShader(Framebuffer& framebuffer, DepthBuffer& depthBuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped, const Texture* texture, size_t mipLevel) {
@@ -158,7 +158,7 @@ void TextureMappedShader(Framebuffer& framebuffer, DepthBuffer& depthBuffer, con
     end = indexBuffer.GetIndexSize();
   }
 
-  Unaligned_Shader_UV(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture, mipLevel);
+  UVShaderImpl(vertexClipData, indexClipData, end, maxWidth, framebuffer.GetBuffer(), depthBuffer.GetBuffer(), texture, mipLevel);
 }
 
 void WireframeShader(Framebuffer& framebuffer, const VertexBuffer& vertexBuffer, const IndexBuffer& indexBuffer, bool wasClipped, ZColor color) {

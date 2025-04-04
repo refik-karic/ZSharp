@@ -112,10 +112,26 @@ void Aligned_HomogenizeTransformScreenSpace(float* data, int32 stride, int32 len
 
 void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
 
-void Unaligned_Shader_RGB(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
+typedef void (*RGBShaderFunc)(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
   const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer);
 
-void Unaligned_Shader_UV(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
+extern RGBShaderFunc RGBShaderImpl;
+
+void Unaligned_Shader_RGB_SSE(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
+  const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer);
+
+void Unaligned_Shader_RGB_AVX(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
+  const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer);
+
+typedef void (*UVShaderFunc)(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
+  const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer, const Texture* __restrict texture, size_t mipLevel);
+
+extern UVShaderFunc UVShaderImpl;
+
+void Unaligned_Shader_UV_SSE(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
+  const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer, const Texture* __restrict texture, size_t mipLevel);
+
+void Unaligned_Shader_UV_AVX(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
   const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer, const Texture* __restrict texture, size_t mipLevel);
 
 }

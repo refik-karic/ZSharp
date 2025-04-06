@@ -382,7 +382,7 @@ void World::LoadOBJ(Model& model, Asset& asset) {
       const size_t index = i * stride;
       mesh.SetData(vertData, index, 4 * sizeof(float));
 
-      switch (triIndex % 3) {
+      switch (triIndex) {
         case 0:
         {
           mesh.SetData(R, index + 4, sizeof(R));
@@ -403,7 +403,7 @@ void World::LoadOBJ(Model& model, Asset& asset) {
       }
 
       vertData += 4;
-      triIndex++;
+      triIndex = (triIndex == 2) ? 0 : ++triIndex;
     }
   }
 

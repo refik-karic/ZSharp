@@ -139,7 +139,7 @@ AABB VertexBuffer::ComputeBoundingBox() const {
   const float* vertices = mData;
   const int32 numVertices = mWorkingSize;
 
-  Unaligned_AABB(vertices, numVertices, stride, min, max);
+  CalculateAABBImpl(vertices, numVertices, stride, min, max);
 
   AABB aabb(min, max);
 

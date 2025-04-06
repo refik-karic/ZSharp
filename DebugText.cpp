@@ -140,7 +140,7 @@ uint8 BasicFontLUT[128][8] = {
 };
 
 void DrawText(const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color) {
-  Unaligned_DrawDebugText(BasicFontLUT, message, x, y, buffer, width, color);
+  DrawDebugTextImpl(BasicFontLUT, message, x, y, buffer, width, color);
 }
 
 }

@@ -108,7 +108,7 @@ void GameInstance::TickWorld() {
 
   Array<String> stats;
 
-  size_t frameDeltaMs = (mExtraState->mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDelta(mExtraState->mLastFrameTime, ClockUnits::Milliseconds);
+  size_t frameDeltaMs = (mExtraState->mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDeltaMs(mExtraState->mLastFrameTime);
   mExtraState->mLastFrameTime = PlatformHighResClock();
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame: {0}\n", mExtraState->mFrameCount)));
@@ -156,9 +156,9 @@ void GameInstance::TickWorld() {
 
   size_t physicsTickTime = Clamp(frameDeltaMs, (size_t)0, FRAMERATE_60HZ_MS);
 
-  size_t startPhysics = PlatformHighResClockDelta(mExtraState->mLastFrameTime, ClockUnits::Microseconds);
+  size_t startPhysics = PlatformHighResClockDeltaUs(mExtraState->mLastFrameTime);
   mWorld->TickPhysics(physicsTickTime);
-  size_t endPhysics = PlatformHighResClockDelta(mExtraState->mLastFrameTime, ClockUnits::Microseconds);
+  size_t endPhysics = PlatformHighResClockDeltaUs(mExtraState->mLastFrameTime);
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics)));
 
@@ -178,7 +178,7 @@ void GameInstance::TickWorld() {
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Post Clip/Cull Triangles: {0}, {1:4}%\n", remainingTriangles, cullRatio)));
 
   if (mExtraState->mDrawStats) {
-    stats.EmplaceBack(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDelta(renderFrameTime, ClockUnits::Microseconds)));
+    stats.EmplaceBack(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDeltaUs(renderFrameTime)));
 
     size_t bufferWidth = mRenderer->GetFrameBuffer().GetWidth();
     uint8* buffer;
@@ -330,7 +330,7 @@ void GameInstance::TickAudio() {
   size_t audioDelta = 1;
 
   if (mExtraState->mLastAudioTime > 0) {
-    audioDelta = PlatformHighResClockDelta(mExtraState->mLastAudioTime, ClockUnits::Milliseconds);
+    audioDelta = PlatformHighResClockDeltaMs(mExtraState->mLastAudioTime);
   }
 
   mExtraState->mLastAudioTime = PlatformHighResClock();

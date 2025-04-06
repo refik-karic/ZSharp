@@ -132,7 +132,7 @@ uint8* Renderer::GetDepth() {
   size_t width = mDepthBuffer.GetWidth();
   size_t height = mDepthBuffer.GetHeight();
 
-  Aligned_DepthBufferVisualize(buffer, width, height);
+  DepthBufferVisualizeImpl(buffer, width, height);
   return reinterpret_cast<uint8*>(buffer);
 }
 

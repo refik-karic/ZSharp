@@ -95,7 +95,7 @@ void Texture::GenerateMips() {
     nextMip.height = mipHeight;
     nextMip.data = nextMipData;
 
-    Unaligned_GenerateMipLevel(nextMipData, mipWidth, mipHeight, lastMipData, width, height);
+    GenerateMipLevelImpl(nextMipData, mipWidth, mipHeight, lastMipData, width, height);
 
     mMipChain.EmplaceBack(nextMip);
   }

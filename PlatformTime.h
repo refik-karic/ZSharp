@@ -5,15 +5,13 @@
 
 namespace ZSharp {
 
-enum class ClockUnits {
-  Seconds,
-  Milliseconds,
-  Microseconds
-};
-
 size_t PlatformHighResClock();
 
-size_t PlatformHighResClockDelta(size_t startingTime, ClockUnits units);
+size_t PlatformHighResClockDeltaS(size_t startingTime);
+
+size_t PlatformHighResClockDeltaMs(size_t startingTime);
+
+size_t PlatformHighResClockDeltaUs(size_t startingTime);
 
 String PlatformSystemTimeFormat();
 

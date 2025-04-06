@@ -94,6 +94,12 @@ namespace ZSharp {
 // TODO: Add more as needed here.
 RGBShaderFunc RGBShaderImpl = nullptr;
 UVShaderFunc UVShaderImpl = nullptr;
+CalculateAABBFunc CalculateAABBImpl = nullptr;
+DrawDebugTextFunc DrawDebugTextImpl = nullptr;
+DepthBufferVisualizeFunc DepthBufferVisualizeImpl = nullptr;
+BlendBuffersFunc BlendBuffersImpl = nullptr;
+BilinearScaleImageFunc BilinearScaleImageImpl = nullptr;
+GenerateMipLevelFunc GenerateMipLevelImpl = nullptr;
 
 bool PlatformSupportsSIMDLanes(SIMDLaneWidth width) {
   int bits[4]{};
@@ -617,365 +623,367 @@ void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height) {
   }
 }
 
-void Unaligned_BilinearScaleImage(uint8* __restrict source, size_t sourceWidth, size_t sourceHeight, uint8* __restrict dest, size_t destWidth, size_t destHeight) {
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    float ratioXValue = ((float)sourceWidth - 1) / ((float)destWidth - 1);
-    float ratioYValue = ((float)sourceHeight - 1) / ((float)destHeight - 1);
-    __m256 ratioX = _mm256_set1_ps(ratioXValue);
-    __m256 ratioY = _mm256_set1_ps(ratioYValue);
+void Unaligned_BilinearScaleImage_SSE(uint8* __restrict source, size_t sourceWidth, size_t sourceHeight, uint8* __restrict dest, size_t destWidth, size_t destHeight) {
+  float ratioX = ((float)sourceWidth - 1) / ((float)destWidth - 1);
+  float ratioY = ((float)sourceHeight - 1) / ((float)destHeight - 1);
 
-    __m256 xScale = _mm256_set1_ps(8.f);
-    const size_t sourceStride = sourceWidth * 4;
-    __m256 strideScale = _mm256_set1_ps((float)(sourceStride));
-    __m256 indexScale = _mm256_set1_ps(4.f);
-    __m256 lerpOne = _mm256_set1_ps(1.f);
+  size_t sourceStride = sourceWidth * 4;
+  size_t destStride = destWidth * 4;
 
-    __m256i bShuffle = _mm256_set_epi8(
-      0x80U, 0x80U, 0x80U, 12,
-      0x80U, 0x80U, 0x80U, 8,
-      0x80U, 0x80U, 0x80U, 4,
-      0x80U, 0x80U, 0x80U, 0,
-      0x80U, 0x80U, 0x80U, 12,
-      0x80U, 0x80U, 0x80U, 8,
-      0x80U, 0x80U, 0x80U, 4,
-      0x80U, 0x80U, 0x80U, 0
-    );
+  for (size_t y = 0; y < destHeight; ++y) {
+    uint8* destRow = dest + (y * destStride);
+    for (size_t x = 0; x < destWidth; ++x) {
+      float xRatio = ratioX * x;
+      float yRatio = ratioY * y;
 
-    __m256i gShuffle = _mm256_set_epi8(
-      0x80U, 0x80U, 0x80U, 13,
-      0x80U, 0x80U, 0x80U, 9,
-      0x80U, 0x80U, 0x80U, 5,
-      0x80U, 0x80U, 0x80U, 1,
-      0x80U, 0x80U, 0x80U, 13,
-      0x80U, 0x80U, 0x80U, 9,
-      0x80U, 0x80U, 0x80U, 5,
-      0x80U, 0x80U, 0x80U, 1
-    );
+      size_t xLeft = (size_t)floorf(xRatio);
+      size_t yLeft = (size_t)floorf(yRatio);
+      size_t xRight = (size_t)ceilf(xRatio);
+      size_t yRight = (size_t)ceilf(yRatio);
 
-    __m256i rShuffle = _mm256_set_epi8(
-      0x80U, 0x80U, 0x80U, 14,
-      0x80U, 0x80U, 0x80U, 10,
-      0x80U, 0x80U, 0x80U, 6,
-      0x80U, 0x80U, 0x80U, 2,
-      0x80U, 0x80U, 0x80U, 14,
-      0x80U, 0x80U, 0x80U, 10,
-      0x80U, 0x80U, 0x80U, 6,
-      0x80U, 0x80U, 0x80U, 2
-    );
+      float xWeight = xRatio - xLeft;
+      float yWeight = yRatio - yLeft;
 
-    __m256i aShuffle = _mm256_set_epi8(
-      0x80U, 0x80U, 0x80U, 15,
-      0x80U, 0x80U, 0x80U, 11,
-      0x80U, 0x80U, 0x80U, 7,
-      0x80U, 0x80U, 0x80U, 3,
-      0x80U, 0x80U, 0x80U, 15,
-      0x80U, 0x80U, 0x80U, 11,
-      0x80U, 0x80U, 0x80U, 7,
-      0x80U, 0x80U, 0x80U, 3
-    );
+      uint8* topLeft = source + (yLeft * sourceStride) + (xLeft * 4);
+      uint8* topRight = source + (yLeft * sourceStride) + (xRight * 4);
+      uint8* bottomLeft = source + (yRight * sourceStride) + (xLeft * 4);
+      uint8* bottomRight = source + (yRight * sourceStride) + (xRight * 4);
 
-    const size_t simdLength = (destWidth >> 3) << 3;
-    for (size_t y = 0; y < destHeight; ++y) {
-      uint8* destRow = dest + (y * destWidth * 4);
-      __m256 yValues = _mm256_set1_ps((float)y);
+      float topLeftScale = (1.f - xWeight) * (1.f - yWeight);
+      float topRightScale = xWeight * (1.f - yWeight);
+      float bottomLeftScale = yWeight * (1.f - xWeight);
+      float bottomRightScale = xWeight * yWeight;
 
-      size_t x = 0;
-      for (__m256 xValues = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f); x < simdLength; x += 8, xValues = _mm256_add_ps(xValues, xScale)) {
-        __m256 xRatios = _mm256_mul_ps(ratioX, xValues);
-        __m256 yRatios = _mm256_mul_ps(ratioY, yValues);
-
-        __m256 xLeft = _mm256_floor_ps(xRatios);
-        __m256 yLeft = _mm256_floor_ps(yRatios);
-        __m256 xRight = _mm256_ceil_ps(xRatios);
-        __m256 yRight = _mm256_ceil_ps(yRatios);
-
-        __m256 xWeight = _mm256_sub_ps(xRatios, xLeft);
-        __m256 yWeight = _mm256_sub_ps(yRatios, yLeft);
-
-        __m256 xLeftInt = _mm256_mul_ps(xLeft, indexScale);
-        __m256 yLeftInt = yLeft;
-        __m256 xRightInt = _mm256_mul_ps(xRight, indexScale);
-        __m256 yRightInt = yRight;
-
-        __m256i topLeftIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yLeftInt, strideScale, xLeftInt));
-        __m256i topRightIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yLeftInt, strideScale, xRightInt));
-        __m256i bottomLeftIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yRightInt, strideScale, xLeftInt));
-        __m256i bottomRightIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yRightInt, strideScale, xRightInt));
-
-        __m256i topLeft = _mm256_i32gather_epi32((int32*)source, topLeftIndices, 1);
-        __m256i topRight = _mm256_i32gather_epi32((int32*)source, topRightIndices, 1);
-        __m256i bottomLeft = _mm256_i32gather_epi32((int32*)source, bottomLeftIndices, 1);
-        __m256i bottomRight = _mm256_i32gather_epi32((int32*)source, bottomRightIndices, 1);
-
-        __m256 topLeftScale = _mm256_mul_ps(_mm256_sub_ps(lerpOne, xWeight), _mm256_sub_ps(lerpOne, yWeight));
-        __m256 topRightScale = _mm256_mul_ps(xWeight, _mm256_sub_ps(lerpOne, yWeight));
-        __m256 bottomLeftScale = _mm256_mul_ps(yWeight, _mm256_sub_ps(lerpOne, xWeight));
-        __m256 bottomRightScale = _mm256_mul_ps(xWeight, yWeight);
-
-        __m256i topLeftColor = _mm256_cvtps_epi32(
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, aShuffle)), topLeftScale,
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, aShuffle)), topRightScale,
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, aShuffle)), bottomLeftScale,
-          _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, aShuffle)), bottomRightScale))))
-        );
-
-        __m256i topRightColor = _mm256_cvtps_epi32(
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, rShuffle)), topLeftScale,
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, rShuffle)), topRightScale,
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, rShuffle)), bottomLeftScale,
-          _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, rShuffle)), bottomRightScale))))
-        );
-
-        __m256i bottomLeftColor = _mm256_cvtps_epi32(
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, gShuffle)), topLeftScale,
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, gShuffle)), topRightScale,
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, gShuffle)), bottomLeftScale,
-          _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, gShuffle)), bottomRightScale))))
-        );
-
-        __m256i bottomRightColor = _mm256_cvtps_epi32(
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, bShuffle)), topLeftScale,
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, bShuffle)), topRightScale,
-          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, bShuffle)), bottomLeftScale,
-          _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, bShuffle)), bottomRightScale))))
-        );
-
-        topLeftColor = _mm256_slli_epi32(topLeftColor, 24);
-        topRightColor = _mm256_slli_epi32(topRightColor, 16);
-        bottomLeftColor = _mm256_slli_epi32(bottomLeftColor, 8);
-
-        __m256i finalColor = _mm256_or_si256(_mm256_or_si256(_mm256_or_si256(topLeftColor, topRightColor), bottomLeftColor), bottomRightColor);
-
-        _mm256_storeu_si256((__m256i*)(destRow + (x * 4)), finalColor);
-      }
-
-      for (; x < destWidth; ++x) {
-        float xRatio = ratioXValue * x;
-        float yRatio = ratioYValue * y;
-
-        size_t xLeft = (size_t)floorf(xRatio);
-        size_t yLeft = (size_t)floorf(yRatio);
-        size_t xRight = (size_t)ceilf(xRatio);
-        size_t yRight = (size_t)ceilf(yRatio);
-
-        float xWeight = xRatio - xLeft;
-        float yWeight = yRatio - yLeft;
-
-        uint8* topLeft = source + (yLeft * sourceStride) + (xLeft * 4);
-        uint8* topRight = source + (yLeft * sourceStride) + (xRight * 4);
-        uint8* bottomLeft = source + (yRight * sourceStride) + (xLeft * 4);
-        uint8* bottomRight = source + (yRight * sourceStride) + (xRight * 4);
-
-        float topLeftScale = (1.f - xWeight) * (1.f - yWeight);
-        float topRightScale = xWeight * (1.f - yWeight);
-        float bottomLeftScale = yWeight * (1.f - xWeight);
-        float bottomRightScale = xWeight * yWeight;
-
-        destRow[(x * 4)] = (uint8)(topLeft[0] * topLeftScale +
-          topRight[0] * topRightScale +
-          bottomLeft[0] * bottomLeftScale +
-          bottomRight[0] * bottomRightScale);
-        destRow[(x * 4) + 1] = (uint8)(topLeft[1] * topLeftScale +
-          topRight[1] * topRightScale +
-          bottomLeft[1] * bottomLeftScale +
-          bottomRight[1] * bottomRightScale);
-        destRow[(x * 4) + 2] = (uint8)(topLeft[2] * topLeftScale +
-          topRight[2] * topRightScale +
-          bottomLeft[2] * bottomLeftScale +
-          bottomRight[2] * bottomRightScale);
-        destRow[(x * 4) + 3] = (uint8)(topLeft[3] * topLeftScale +
-          topRight[3] * topRightScale +
-          bottomLeft[3] * bottomLeftScale +
-          bottomRight[3] * bottomRightScale);
-      }
-    }
-  }
-  else {
-    float ratioX = ((float)sourceWidth - 1) / ((float)destWidth - 1);
-    float ratioY = ((float)sourceHeight - 1) / ((float)destHeight - 1);
-
-    size_t sourceStride = sourceWidth * 4;
-    size_t destStride = destWidth * 4;
-
-    for (size_t y = 0; y < destHeight; ++y) {
-      uint8* destRow = dest + (y * destStride);
-      for (size_t x = 0; x < destWidth; ++x) {
-        float xRatio = ratioX * x;
-        float yRatio = ratioY * y;
-
-        size_t xLeft = (size_t)floorf(xRatio);
-        size_t yLeft = (size_t)floorf(yRatio);
-        size_t xRight = (size_t)ceilf(xRatio);
-        size_t yRight = (size_t)ceilf(yRatio);
-
-        float xWeight = xRatio - xLeft;
-        float yWeight = yRatio - yLeft;
-
-        uint8* topLeft = source + (yLeft * sourceStride) + (xLeft * 4);
-        uint8* topRight = source + (yLeft * sourceStride) + (xRight * 4);
-        uint8* bottomLeft = source + (yRight * sourceStride) + (xLeft * 4);
-        uint8* bottomRight = source + (yRight * sourceStride) + (xRight * 4);
-
-        float topLeftScale = (1.f - xWeight) * (1.f - yWeight);
-        float topRightScale = xWeight * (1.f - yWeight);
-        float bottomLeftScale = yWeight * (1.f - xWeight);
-        float bottomRightScale = xWeight * yWeight;
-
-        destRow[(x * 4)] = (uint8)(topLeft[0] * topLeftScale +
-          topRight[0] * topRightScale +
-          bottomLeft[0] * bottomLeftScale +
-          bottomRight[0] * bottomRightScale);
-        destRow[(x * 4) + 1] = (uint8)(topLeft[1] * topLeftScale +
-          topRight[1] * topRightScale +
-          bottomLeft[1] * bottomLeftScale +
-          bottomRight[1] * bottomRightScale);
-        destRow[(x * 4) + 2] = (uint8)(topLeft[2] * topLeftScale +
-          topRight[2] * topRightScale +
-          bottomLeft[2] * bottomLeftScale +
-          bottomRight[2] * bottomRightScale);
-        destRow[(x * 4) + 3] = (uint8)(topLeft[3] * topLeftScale +
-          topRight[3] * topRightScale +
-          bottomLeft[3] * bottomLeftScale +
-          bottomRight[3] * bottomRightScale);
-      }
+      destRow[(x * 4)] = (uint8)(topLeft[0] * topLeftScale +
+        topRight[0] * topRightScale +
+        bottomLeft[0] * bottomLeftScale +
+        bottomRight[0] * bottomRightScale);
+      destRow[(x * 4) + 1] = (uint8)(topLeft[1] * topLeftScale +
+        topRight[1] * topRightScale +
+        bottomLeft[1] * bottomLeftScale +
+        bottomRight[1] * bottomRightScale);
+      destRow[(x * 4) + 2] = (uint8)(topLeft[2] * topLeftScale +
+        topRight[2] * topRightScale +
+        bottomLeft[2] * bottomLeftScale +
+        bottomRight[2] * bottomRightScale);
+      destRow[(x * 4) + 3] = (uint8)(topLeft[3] * topLeftScale +
+        topRight[3] * topRightScale +
+        bottomLeft[3] * bottomLeftScale +
+        bottomRight[3] * bottomRightScale);
     }
   }
 }
 
-void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, size_t nextHeight, uint8* __restrict lastMip, size_t lastWidth, size_t lastHeight) {
+void Unaligned_BilinearScaleImage_AVX(uint8* __restrict source, size_t sourceWidth, size_t sourceHeight, uint8* __restrict dest, size_t destWidth, size_t destHeight) {
+  float ratioXValue = ((float)sourceWidth - 1) / ((float)destWidth - 1);
+  float ratioYValue = ((float)sourceHeight - 1) / ((float)destHeight - 1);
+  __m256 ratioX = _mm256_set1_ps(ratioXValue);
+  __m256 ratioY = _mm256_set1_ps(ratioYValue);
+
+  __m256 xScale = _mm256_set1_ps(8.f);
+  const size_t sourceStride = sourceWidth * 4;
+  __m256 strideScale = _mm256_set1_ps((float)(sourceStride));
+  __m256 indexScale = _mm256_set1_ps(4.f);
+  __m256 lerpOne = _mm256_set1_ps(1.f);
+
+  __m256i bShuffle = _mm256_set_epi8(
+    0x80U, 0x80U, 0x80U, 12,
+    0x80U, 0x80U, 0x80U, 8,
+    0x80U, 0x80U, 0x80U, 4,
+    0x80U, 0x80U, 0x80U, 0,
+    0x80U, 0x80U, 0x80U, 12,
+    0x80U, 0x80U, 0x80U, 8,
+    0x80U, 0x80U, 0x80U, 4,
+    0x80U, 0x80U, 0x80U, 0
+  );
+
+  __m256i gShuffle = _mm256_set_epi8(
+    0x80U, 0x80U, 0x80U, 13,
+    0x80U, 0x80U, 0x80U, 9,
+    0x80U, 0x80U, 0x80U, 5,
+    0x80U, 0x80U, 0x80U, 1,
+    0x80U, 0x80U, 0x80U, 13,
+    0x80U, 0x80U, 0x80U, 9,
+    0x80U, 0x80U, 0x80U, 5,
+    0x80U, 0x80U, 0x80U, 1
+  );
+
+  __m256i rShuffle = _mm256_set_epi8(
+    0x80U, 0x80U, 0x80U, 14,
+    0x80U, 0x80U, 0x80U, 10,
+    0x80U, 0x80U, 0x80U, 6,
+    0x80U, 0x80U, 0x80U, 2,
+    0x80U, 0x80U, 0x80U, 14,
+    0x80U, 0x80U, 0x80U, 10,
+    0x80U, 0x80U, 0x80U, 6,
+    0x80U, 0x80U, 0x80U, 2
+  );
+
+  __m256i aShuffle = _mm256_set_epi8(
+    0x80U, 0x80U, 0x80U, 15,
+    0x80U, 0x80U, 0x80U, 11,
+    0x80U, 0x80U, 0x80U, 7,
+    0x80U, 0x80U, 0x80U, 3,
+    0x80U, 0x80U, 0x80U, 15,
+    0x80U, 0x80U, 0x80U, 11,
+    0x80U, 0x80U, 0x80U, 7,
+    0x80U, 0x80U, 0x80U, 3
+  );
+
+  const size_t simdLength = (destWidth >> 3) << 3;
+  for (size_t y = 0; y < destHeight; ++y) {
+    uint8* destRow = dest + (y * destWidth * 4);
+    __m256 yValues = _mm256_set1_ps((float)y);
+
+    size_t x = 0;
+    for (__m256 xValues = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f); x < simdLength; x += 8, xValues = _mm256_add_ps(xValues, xScale)) {
+      __m256 xRatios = _mm256_mul_ps(ratioX, xValues);
+      __m256 yRatios = _mm256_mul_ps(ratioY, yValues);
+
+      __m256 xLeft = _mm256_floor_ps(xRatios);
+      __m256 yLeft = _mm256_floor_ps(yRatios);
+      __m256 xRight = _mm256_ceil_ps(xRatios);
+      __m256 yRight = _mm256_ceil_ps(yRatios);
+
+      __m256 xWeight = _mm256_sub_ps(xRatios, xLeft);
+      __m256 yWeight = _mm256_sub_ps(yRatios, yLeft);
+
+      __m256 xLeftInt = _mm256_mul_ps(xLeft, indexScale);
+      __m256 yLeftInt = yLeft;
+      __m256 xRightInt = _mm256_mul_ps(xRight, indexScale);
+      __m256 yRightInt = yRight;
+
+      __m256i topLeftIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yLeftInt, strideScale, xLeftInt));
+      __m256i topRightIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yLeftInt, strideScale, xRightInt));
+      __m256i bottomLeftIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yRightInt, strideScale, xLeftInt));
+      __m256i bottomRightIndices = _mm256_cvtps_epi32(_mm256_fmadd_ps(yRightInt, strideScale, xRightInt));
+
+      __m256i topLeft = _mm256_i32gather_epi32((int32*)source, topLeftIndices, 1);
+      __m256i topRight = _mm256_i32gather_epi32((int32*)source, topRightIndices, 1);
+      __m256i bottomLeft = _mm256_i32gather_epi32((int32*)source, bottomLeftIndices, 1);
+      __m256i bottomRight = _mm256_i32gather_epi32((int32*)source, bottomRightIndices, 1);
+
+      __m256 topLeftScale = _mm256_mul_ps(_mm256_sub_ps(lerpOne, xWeight), _mm256_sub_ps(lerpOne, yWeight));
+      __m256 topRightScale = _mm256_mul_ps(xWeight, _mm256_sub_ps(lerpOne, yWeight));
+      __m256 bottomLeftScale = _mm256_mul_ps(yWeight, _mm256_sub_ps(lerpOne, xWeight));
+      __m256 bottomRightScale = _mm256_mul_ps(xWeight, yWeight);
+
+      __m256i topLeftColor = _mm256_cvtps_epi32(
+        _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, aShuffle)), topLeftScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, aShuffle)), topRightScale,
+            _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, aShuffle)), bottomLeftScale,
+              _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, aShuffle)), bottomRightScale))))
+      );
+
+      __m256i topRightColor = _mm256_cvtps_epi32(
+        _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, rShuffle)), topLeftScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, rShuffle)), topRightScale,
+            _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, rShuffle)), bottomLeftScale,
+              _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, rShuffle)), bottomRightScale))))
+      );
+
+      __m256i bottomLeftColor = _mm256_cvtps_epi32(
+        _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, gShuffle)), topLeftScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, gShuffle)), topRightScale,
+            _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, gShuffle)), bottomLeftScale,
+              _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, gShuffle)), bottomRightScale))))
+      );
+
+      __m256i bottomRightColor = _mm256_cvtps_epi32(
+        _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topLeft, bShuffle)), topLeftScale,
+          _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(topRight, bShuffle)), topRightScale,
+            _mm256_fmadd_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomLeft, bShuffle)), bottomLeftScale,
+              _mm256_mul_ps(_mm256_cvtepi32_ps(_mm256_shuffle_epi8(bottomRight, bShuffle)), bottomRightScale))))
+      );
+
+      topLeftColor = _mm256_slli_epi32(topLeftColor, 24);
+      topRightColor = _mm256_slli_epi32(topRightColor, 16);
+      bottomLeftColor = _mm256_slli_epi32(bottomLeftColor, 8);
+
+      __m256i finalColor = _mm256_or_si256(_mm256_or_si256(_mm256_or_si256(topLeftColor, topRightColor), bottomLeftColor), bottomRightColor);
+
+      _mm256_storeu_si256((__m256i*)(destRow + (x * 4)), finalColor);
+    }
+
+    for (; x < destWidth; ++x) {
+      float xRatio = ratioXValue * x;
+      float yRatio = ratioYValue * y;
+
+      size_t xLeft = (size_t)floorf(xRatio);
+      size_t yLeft = (size_t)floorf(yRatio);
+      size_t xRight = (size_t)ceilf(xRatio);
+      size_t yRight = (size_t)ceilf(yRatio);
+
+      float xWeight = xRatio - xLeft;
+      float yWeight = yRatio - yLeft;
+
+      uint8* topLeft = source + (yLeft * sourceStride) + (xLeft * 4);
+      uint8* topRight = source + (yLeft * sourceStride) + (xRight * 4);
+      uint8* bottomLeft = source + (yRight * sourceStride) + (xLeft * 4);
+      uint8* bottomRight = source + (yRight * sourceStride) + (xRight * 4);
+
+      float topLeftScale = (1.f - xWeight) * (1.f - yWeight);
+      float topRightScale = xWeight * (1.f - yWeight);
+      float bottomLeftScale = yWeight * (1.f - xWeight);
+      float bottomRightScale = xWeight * yWeight;
+
+      destRow[(x * 4)] = (uint8)(topLeft[0] * topLeftScale +
+        topRight[0] * topRightScale +
+        bottomLeft[0] * bottomLeftScale +
+        bottomRight[0] * bottomRightScale);
+      destRow[(x * 4) + 1] = (uint8)(topLeft[1] * topLeftScale +
+        topRight[1] * topRightScale +
+        bottomLeft[1] * bottomLeftScale +
+        bottomRight[1] * bottomRightScale);
+      destRow[(x * 4) + 2] = (uint8)(topLeft[2] * topLeftScale +
+        topRight[2] * topRightScale +
+        bottomLeft[2] * bottomLeftScale +
+        bottomRight[2] * bottomRightScale);
+      destRow[(x * 4) + 3] = (uint8)(topLeft[3] * topLeftScale +
+        topRight[3] * topRightScale +
+        bottomLeft[3] * bottomLeftScale +
+        bottomRight[3] * bottomRightScale);
+    }
+  }
+}
+
+void Unaligned_GenerateMipLevel_SSE(uint8* __restrict nextMip, size_t nextWidth, size_t nextHeight, uint8* __restrict lastMip, size_t lastWidth, size_t lastHeight) {
   (void)lastHeight;
   size_t nextMipStride = nextWidth * 4;
   size_t lastMipStride = lastWidth * 4;
 
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    __m256i shuffleLeftWide = _mm256_set_epi8(
-      0x80U, 11, 0x80U, 10,
-      0x80U, 9, 0x80U, 8,
-      0x80U, 3, 0x80U, 2,
-      0x80U, 1, 0x80U, 0,
-      0x80U, 11, 0x80U, 10,
-      0x80U, 9, 0x80U, 8,
-      0x80U, 3, 0x80U, 2,
-      0x80U, 1, 0x80U, 0
-    );
+  __m128i shuffleLeftWide = _mm_set_epi8(
+    0x80U, 11, 0x80U, 10,
+    0x80U, 9, 0x80U, 8,
+    0x80U, 3, 0x80U, 2,
+    0x80U, 1, 0x80U, 0
+  );
 
-    __m256i shuffleRightWide = _mm256_set_epi8(
-      0x80U, 15, 0x80U, 14,
-      0x80U, 13, 0x80U, 12,
-      0x80U, 7, 0x80U, 6,
-      0x80U, 5, 0x80U, 4,
-      0x80U, 15, 0x80U, 14,
-      0x80U, 13, 0x80U, 12,
-      0x80U, 7, 0x80U, 6,
-      0x80U, 5, 0x80U, 4
-    );
+  __m128i shuffleRightWide = _mm_set_epi8(
+    0x80U, 15, 0x80U, 14,
+    0x80U, 13, 0x80U, 12,
+    0x80U, 7, 0x80U, 6,
+    0x80U, 5, 0x80U, 4
+  );
 
-    const size_t simdSize = (nextWidth >> 2) << 2;
-    for (size_t y = 0; y < nextHeight; ++y) {
-      size_t x = 0;
-      for (; x < simdSize; x += 4) {
-        const size_t xStride = x * 4;
+  const size_t simdSize = (nextWidth >> 1) << 1;
+  for (size_t y = 0; y < nextHeight; ++y) {
+    size_t x = 0;
+    for (; x < simdSize; x += 2) {
+      const size_t xStride = x * 4;
 
-        uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
-        uint8* __restrict bottomLeft = topLeft + lastMipStride;
+      uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+      uint8* __restrict bottomLeft = topLeft + lastMipStride;
 
-        __m256i topData = _mm256_lddqu_si256((__m256i*)topLeft);
-        __m256i bottomData = _mm256_lddqu_si256((__m256i*)bottomLeft);
+      __m128i topData = _mm_lddqu_si128((__m128i*)topLeft);
+      __m128i bottomData = _mm_lddqu_si128((__m128i*)bottomLeft);
 
-        __m256i topLeftData = _mm256_shuffle_epi8(topData, shuffleLeftWide);
-        __m256i topRightData = _mm256_shuffle_epi8(topData, shuffleRightWide);
-        __m256i bottomLeftData = _mm256_shuffle_epi8(bottomData, shuffleLeftWide);
-        __m256i bottomRightData = _mm256_shuffle_epi8(bottomData, shuffleRightWide);
+      __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeftWide);
+      __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRightWide);
+      __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeftWide);
+      __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRightWide);
 
-        __m256i rgba = _mm256_avg_epu16(_mm256_avg_epu16(topLeftData, topRightData), _mm256_avg_epu16(bottomLeftData, bottomRightData));
-        __m128i hiRgba = _mm_packus_epi16(_mm256_castsi256_si128(rgba), _mm256_extractf128_si256(rgba, 0b1));
+      __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
+      rgba = _mm_packus_epi16(rgba, rgba);
 
-        _mm_storeu_si128((__m128i*)(nextMip + ((y * nextMipStride) + xStride)), hiRgba);
-      }
-
-      for (; x < nextWidth; ++x) {
-        const size_t xStride = x * 4;
-
-        uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
-        uint8* __restrict bottomLeft = topLeft + lastMipStride;
-
-        __m128i topData = _mm_loadu_si64(topLeft);
-        __m128i bottomData = _mm_loadu_si64(bottomLeft);
-
-        __m128i topLeftData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleLeftWide));
-        __m128i topRightData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleRightWide));
-        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleLeftWide));
-        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleRightWide));
-
-        __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
-        rgba = _mm_packus_epi16(rgba, rgba);
-
-        _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
-      }
+      _mm_storeu_si64(nextMip + ((y * nextMipStride) + xStride), rgba);
     }
-  }
-  else {
-    __m128i shuffleLeftWide = _mm_set_epi8(
-      0x80U, 11, 0x80U, 10,
-      0x80U, 9, 0x80U, 8,
-      0x80U, 3, 0x80U, 2,
-      0x80U, 1, 0x80U, 0
-    );
 
-    __m128i shuffleRightWide = _mm_set_epi8(
-      0x80U, 15, 0x80U, 14,
-      0x80U, 13, 0x80U, 12,
-      0x80U, 7, 0x80U, 6,
-      0x80U, 5, 0x80U, 4
-    );
+    for (; x < nextWidth; ++x) {
+      const size_t xStride = x * 4;
 
-    const size_t simdSize = (nextWidth >> 1) << 1;
-    for (size_t y = 0; y < nextHeight; ++y) {
-      size_t x = 0;
-      for (; x < simdSize; x += 2) {
-        const size_t xStride = x * 4;
+      uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+      uint8* __restrict bottomLeft = topLeft + lastMipStride;
 
-        uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
-        uint8* __restrict bottomLeft = topLeft + lastMipStride;
+      __m128i topData = _mm_loadu_si64(topLeft);
+      __m128i bottomData = _mm_loadu_si64(bottomLeft);
 
-        __m128i topData = _mm_lddqu_si128((__m128i*)topLeft);
-        __m128i bottomData = _mm_lddqu_si128((__m128i*)bottomLeft);
+      __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeftWide);
+      __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRightWide);
+      __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeftWide);
+      __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRightWide);
 
-        __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeftWide);
-        __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRightWide);
-        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeftWide);
-        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRightWide);
+      __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
+      rgba = _mm_packus_epi16(rgba, rgba);
 
-        __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
-        rgba = _mm_packus_epi16(rgba, rgba);
-
-        _mm_storeu_si64(nextMip + ((y * nextMipStride) + xStride), rgba);
-      }
-
-      for (; x < nextWidth; ++x) {
-        const size_t xStride = x * 4;
-
-        uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
-        uint8* __restrict bottomLeft = topLeft + lastMipStride;
-
-        __m128i topData = _mm_loadu_si64(topLeft);
-        __m128i bottomData = _mm_loadu_si64(bottomLeft);
-
-        __m128i topLeftData = _mm_shuffle_epi8(topData, shuffleLeftWide);
-        __m128i topRightData = _mm_shuffle_epi8(topData, shuffleRightWide);
-        __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, shuffleLeftWide);
-        __m128i bottomRightData = _mm_shuffle_epi8(bottomData, shuffleRightWide);
-
-        __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
-        rgba = _mm_packus_epi16(rgba, rgba);
-
-        _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
-      }
+      _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
     }
   }
 }
 
-void Unaligned_DrawDebugText(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color) {
+void Unaligned_GenerateMipLevel_AVX(uint8* __restrict nextMip, size_t nextWidth, size_t nextHeight, uint8* __restrict lastMip, size_t lastWidth, size_t lastHeight) {
+  (void)lastHeight;
+  size_t nextMipStride = nextWidth * 4;
+  size_t lastMipStride = lastWidth * 4;
+
+  __m256i shuffleLeftWide = _mm256_set_epi8(
+    0x80U, 11, 0x80U, 10,
+    0x80U, 9, 0x80U, 8,
+    0x80U, 3, 0x80U, 2,
+    0x80U, 1, 0x80U, 0,
+    0x80U, 11, 0x80U, 10,
+    0x80U, 9, 0x80U, 8,
+    0x80U, 3, 0x80U, 2,
+    0x80U, 1, 0x80U, 0
+  );
+
+  __m256i shuffleRightWide = _mm256_set_epi8(
+    0x80U, 15, 0x80U, 14,
+    0x80U, 13, 0x80U, 12,
+    0x80U, 7, 0x80U, 6,
+    0x80U, 5, 0x80U, 4,
+    0x80U, 15, 0x80U, 14,
+    0x80U, 13, 0x80U, 12,
+    0x80U, 7, 0x80U, 6,
+    0x80U, 5, 0x80U, 4
+  );
+
+  const size_t simdSize = (nextWidth >> 2) << 2;
+  for (size_t y = 0; y < nextHeight; ++y) {
+    size_t x = 0;
+    for (; x < simdSize; x += 4) {
+      const size_t xStride = x * 4;
+
+      uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+      uint8* __restrict bottomLeft = topLeft + lastMipStride;
+
+      __m256i topData = _mm256_lddqu_si256((__m256i*)topLeft);
+      __m256i bottomData = _mm256_lddqu_si256((__m256i*)bottomLeft);
+
+      __m256i topLeftData = _mm256_shuffle_epi8(topData, shuffleLeftWide);
+      __m256i topRightData = _mm256_shuffle_epi8(topData, shuffleRightWide);
+      __m256i bottomLeftData = _mm256_shuffle_epi8(bottomData, shuffleLeftWide);
+      __m256i bottomRightData = _mm256_shuffle_epi8(bottomData, shuffleRightWide);
+
+      __m256i rgba = _mm256_avg_epu16(_mm256_avg_epu16(topLeftData, topRightData), _mm256_avg_epu16(bottomLeftData, bottomRightData));
+      __m128i hiRgba = _mm_packus_epi16(_mm256_castsi256_si128(rgba), _mm256_extractf128_si256(rgba, 0b1));
+
+      _mm_storeu_si128((__m128i*)(nextMip + ((y * nextMipStride) + xStride)), hiRgba);
+    }
+
+    for (; x < nextWidth; ++x) {
+      const size_t xStride = x * 4;
+
+      uint8* __restrict topLeft = lastMip + (y * 2 * lastMipStride) + (xStride * 2);
+      uint8* __restrict bottomLeft = topLeft + lastMipStride;
+
+      __m128i topData = _mm_loadu_si64(topLeft);
+      __m128i bottomData = _mm_loadu_si64(bottomLeft);
+
+      __m128i topLeftData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleLeftWide));
+      __m128i topRightData = _mm_shuffle_epi8(topData, _mm256_castsi256_si128(shuffleRightWide));
+      __m128i bottomLeftData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleLeftWide));
+      __m128i bottomRightData = _mm_shuffle_epi8(bottomData, _mm256_castsi256_si128(shuffleRightWide));
+
+      __m128i rgba = _mm_avg_epu16(_mm_avg_epu16(topLeftData, topRightData), _mm_avg_epu16(bottomLeftData, bottomRightData));
+      rgba = _mm_packus_epi16(rgba, rgba);
+
+      _mm_storeu_si32(nextMip + ((y * nextMipStride) + xStride), rgba);
+    }
+  }
+}
+
+void Unaligned_DrawDebugText_SSE(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color) {
   size_t xOffset = x;
   size_t yOffset = y;
 
@@ -983,54 +991,60 @@ void Unaligned_DrawDebugText(const uint8 lut[128][8], const String& message, siz
   const size_t stride = width * sizeof(uint32);
   const uint32 colorValue = color.Color();
 
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    __m256i bitMask = _mm256_set_epi32(1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1);
-    __m256i shiftMask = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
-    __m256i colors = _mm256_set1_epi32(colorValue);
+  __m128i bitMaskLo = _mm_set_epi32(1 << 3, 1 << 2, 1 << 1, 1);
+  __m128i bitMaskHi = _mm_set_epi32(1 << 7, 1 << 6, 1 << 5, 1 << 4);
+  __m128i shiftMaskLo = _mm_set_epi32(28, 29, 30, 31);
+  __m128i shiftMaskHi = _mm_set_epi32(24, 25, 26, 27);
+  __m128i colors = _mm_set1_epi32(colorValue);
 
-    for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
-      const char fontChar = *curChar;
-      __m128i fontRow = _mm_loadu_si64(lut[fontChar]);
-      for (size_t curX = 0; curX < 8; ++curX) {
-        uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
-        __m256i font = _mm256_broadcastb_epi8(fontRow);
-        __m256i mask = _mm256_and_si256(font, bitMask);
-        mask = _mm256_sllv_epi32(mask, shiftMask);
-        fontRow = _mm_srli_si128(fontRow, 1);
-        _mm256_maskstore_epi32((int*)bufferPosition, mask, colors);
-      }
-
-      xOffset += 8;
-      ++curChar;
+  for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
+    const char fontChar = *curChar;
+    __m128i fontRow = _mm_loadu_si64(lut[fontChar]);
+    for (size_t curX = 0; curX < 8; ++curX) {
+      uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
+      __m128i bufferLo = _mm_loadu_si128((__m128i*)bufferPosition);
+      __m128i bufferHi = _mm_loadu_si128(((__m128i*)bufferPosition) + 1);
+      __m128i font = _mm_shuffle_epi8(fontRow, _mm_setzero_si128());
+      fontRow = _mm_srli_si128(fontRow, 1);
+      __m128i maskLo = _mm_and_si128(font, bitMaskLo);
+      __m128i maskHi = _mm_and_si128(font, bitMaskHi);
+      maskLo = _mm_sllv_epi32(maskLo, shiftMaskLo);
+      maskHi = _mm_sllv_epi32(maskHi, shiftMaskHi);
+      _mm_store_si128((__m128i*)bufferPosition, _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(bufferLo), _mm_castsi128_ps(colors), _mm_castsi128_ps(maskLo))));
+      _mm_store_si128(((__m128i*)bufferPosition) + 1, _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(bufferHi), _mm_castsi128_ps(colors), _mm_castsi128_ps(maskHi))));
     }
+
+    xOffset += 8;
+    ++curChar;
   }
-  else {
-    __m128i bitMaskLo = _mm_set_epi32(1 << 3, 1 << 2, 1 << 1, 1);
-    __m128i bitMaskHi = _mm_set_epi32(1 << 7, 1 << 6, 1 << 5, 1 << 4);
-    __m128i shiftMaskLo = _mm_set_epi32(28, 29, 30, 31);
-    __m128i shiftMaskHi = _mm_set_epi32(24, 25, 26, 27);
-    __m128i colors = _mm_set1_epi32(colorValue);
+}
 
-    for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
-      const char fontChar = *curChar;
-      __m128i fontRow = _mm_loadu_si64(lut[fontChar]);
-      for (size_t curX = 0; curX < 8; ++curX) {
-        uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
-        __m128i bufferLo = _mm_loadu_si128((__m128i*)bufferPosition);
-        __m128i bufferHi = _mm_loadu_si128(((__m128i*)bufferPosition) + 1);
-        __m128i font = _mm_shuffle_epi8(fontRow, _mm_setzero_si128());
-        fontRow = _mm_srli_si128(fontRow, 1);
-        __m128i maskLo = _mm_and_si128(font, bitMaskLo);
-        __m128i maskHi = _mm_and_si128(font, bitMaskHi);
-        maskLo = _mm_sllv_epi32(maskLo, shiftMaskLo);
-        maskHi = _mm_sllv_epi32(maskHi, shiftMaskHi);
-        _mm_store_si128((__m128i*)bufferPosition, _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(bufferLo), _mm_castsi128_ps(colors), _mm_castsi128_ps(maskLo))));
-        _mm_store_si128(((__m128i*)bufferPosition) + 1, _mm_castps_si128(_mm_blendv_ps(_mm_castsi128_ps(bufferHi), _mm_castsi128_ps(colors), _mm_castsi128_ps(maskHi))));
-      }
+void Unaligned_DrawDebugText_AVX(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color) {
+  size_t xOffset = x;
+  size_t yOffset = y;
 
-      xOffset += 8;
-      ++curChar;
+  const char* curChar = message.Str();
+  const size_t stride = width * sizeof(uint32);
+  const uint32 colorValue = color.Color();
+
+  __m256i bitMask = _mm256_set_epi32(1 << 7, 1 << 6, 1 << 5, 1 << 4, 1 << 3, 1 << 2, 1 << 1, 1);
+  __m256i shiftMask = _mm256_set_epi32(24, 25, 26, 27, 28, 29, 30, 31);
+  __m256i colors = _mm256_set1_epi32(colorValue);
+
+  for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
+    const char fontChar = *curChar;
+    __m128i fontRow = _mm_loadu_si64(lut[fontChar]);
+    for (size_t curX = 0; curX < 8; ++curX) {
+      uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
+      __m256i font = _mm256_broadcastb_epi8(fontRow);
+      __m256i mask = _mm256_and_si256(font, bitMask);
+      mask = _mm256_sllv_epi32(mask, shiftMask);
+      fontRow = _mm_srli_si128(fontRow, 1);
+      _mm256_maskstore_epi32((int*)bufferPosition, mask, colors);
     }
+
+    xOffset += 8;
+    ++curChar;
   }
 }
 
@@ -1075,75 +1089,76 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* __restrict data, i
   }
 }
 
-void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height) {
+void Aligned_DepthBufferVisualize_SSE(float* buffer, size_t width, size_t height) {
   const float colorScaleValue = -255.f;
 
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    __m256i initialColor = _mm256_set1_epi32(0xFF000000);
-    __m256 colorScale = _mm256_set1_ps(colorScaleValue);
+  __m128i initialColor = _mm_set1_epi32(0xFF000000);
+  __m128 colorScale = _mm_set_ps1(colorScaleValue);
 
-    __m256i shuffleControl = _mm256_set_epi8(
-      0x80U, 12, 12, 12,
-      0x80U, 8, 8, 8,
-      0x80U, 4, 4, 4,
-      0x80U, 0, 0, 0,
-      0x80U, 12, 12, 12,
-      0x80U, 8, 8, 8,
-      0x80U, 4, 4, 4,
-      0x80U, 0, 0, 0
-    );
+  __m128i shuffleControl = _mm_set_epi8(
+    0x80U, 12, 12, 12,
+    0x80U, 8, 8, 8,
+    0x80U, 4, 4, 4,
+    0x80U, 0, 0, 0
+  );
 
-    const size_t simdLength = (width >> 3) << 3;
-    for (size_t h = 0; h < height; ++h) {
-      float* currentDepth = (buffer + (h * width));
-      size_t w = 0;
-      for (; w < simdLength; w += 8, currentDepth += 8) {
-        __m256 depthValues = _mm256_load_ps(currentDepth);
+  const size_t simdLength = (width >> 2) << 2;
+  for (size_t h = 0; h < height; ++h) {
+    float* currentDepth = (buffer + (h * width));
+    size_t w = 0;
+    for (; w < simdLength; w += 4, currentDepth += 4) {
+      __m128 depthValues = _mm_loadu_ps(currentDepth);
 
-        __m256i tempColors = _mm256_cvtps_epi32(_mm256_mul_ps(colorScale, depthValues));
-        tempColors = _mm256_shuffle_epi8(tempColors, shuffleControl);
-        __m256i finalColor = _mm256_or_si256(initialColor, tempColors);
+      __m128i tempColors = _mm_cvtps_epi32(_mm_mul_ps(colorScale, depthValues));
+      tempColors = _mm_shuffle_epi8(tempColors, shuffleControl);
+      __m128i finalColor = _mm_or_si128(initialColor, tempColors);
 
-        _mm256_storeu_si256((__m256i*)currentDepth, finalColor);
-      }
+      _mm_storeu_si128((__m128i*)currentDepth, finalColor);
+    }
 
-      for (; w < width; ++w, ++currentDepth) {
-        float depth = *currentDepth;
-        uint32 tempColor = (uint32)(colorScaleValue * depth);
-        (*((uint32*)currentDepth)) = (0xFF000000 | (tempColor << 16) | (tempColor << 8) | tempColor);
-      }
+    for (; w < width; ++w, ++currentDepth) {
+      float depth = *currentDepth;
+      uint32 tempColor = (uint32)(colorScaleValue * depth);
+      (*((uint32*)currentDepth)) = (0xFF000000 | (tempColor << 16) | (tempColor << 8) | tempColor);
     }
   }
-  else {
-    __m128i initialColor = _mm_set1_epi32(0xFF000000);
-    __m128 colorScale = _mm_set_ps1(colorScaleValue);
+}
 
-    __m128i shuffleControl = _mm_set_epi8(
-      0x80U, 12, 12, 12,
-      0x80U, 8, 8, 8,
-      0x80U, 4, 4, 4,
-      0x80U, 0, 0, 0
-    );
+void Aligned_DepthBufferVisualize_AVX(float* buffer, size_t width, size_t height) {
+  const float colorScaleValue = -255.f;
 
-    const size_t simdLength = (width >> 2) << 2;
-    for (size_t h = 0; h < height; ++h) {
-      float* currentDepth = (buffer + (h * width));
-      size_t w = 0;
-      for (; w < simdLength; w += 4, currentDepth += 4) {
-        __m128 depthValues = _mm_loadu_ps(currentDepth);
+  __m256i initialColor = _mm256_set1_epi32(0xFF000000);
+  __m256 colorScale = _mm256_set1_ps(colorScaleValue);
 
-        __m128i tempColors = _mm_cvtps_epi32(_mm_mul_ps(colorScale, depthValues));
-        tempColors = _mm_shuffle_epi8(tempColors, shuffleControl);
-        __m128i finalColor = _mm_or_si128(initialColor, tempColors);
+  __m256i shuffleControl = _mm256_set_epi8(
+    0x80U, 12, 12, 12,
+    0x80U, 8, 8, 8,
+    0x80U, 4, 4, 4,
+    0x80U, 0, 0, 0,
+    0x80U, 12, 12, 12,
+    0x80U, 8, 8, 8,
+    0x80U, 4, 4, 4,
+    0x80U, 0, 0, 0
+  );
 
-        _mm_storeu_si128((__m128i*)currentDepth, finalColor);
-      }
+  const size_t simdLength = (width >> 3) << 3;
+  for (size_t h = 0; h < height; ++h) {
+    float* currentDepth = (buffer + (h * width));
+    size_t w = 0;
+    for (; w < simdLength; w += 8, currentDepth += 8) {
+      __m256 depthValues = _mm256_load_ps(currentDepth);
 
-      for (; w < width; ++w, ++currentDepth) {
-        float depth = *currentDepth;
-        uint32 tempColor = (uint32)(colorScaleValue * depth);
-        (*((uint32*)currentDepth)) = (0xFF000000 | (tempColor << 16) | (tempColor << 8) | tempColor);
-      }
+      __m256i tempColors = _mm256_cvtps_epi32(_mm256_mul_ps(colorScale, depthValues));
+      tempColors = _mm256_shuffle_epi8(tempColors, shuffleControl);
+      __m256i finalColor = _mm256_or_si256(initialColor, tempColors);
+
+      _mm256_storeu_si256((__m256i*)currentDepth, finalColor);
+    }
+
+    for (; w < width; ++w, ++currentDepth) {
+      float depth = *currentDepth;
+      uint32 tempColor = (uint32)(colorScaleValue * depth);
+      (*((uint32*)currentDepth)) = (0xFF000000 | (tempColor << 16) | (tempColor << 8) | tempColor);
     }
   }
 }
@@ -1159,158 +1174,160 @@ void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length) {
   }
 }
 
-void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict frameBuffer, size_t width, size_t height, float opacity) {
+void Unaligned_BlendBuffers_SSE(uint32* __restrict devBuffer, uint32* __restrict frameBuffer, size_t width, size_t height, float opacity) {
   short devOpacityValue = (short)(255.f * opacity);
   short bufferOpacityValue = (short)(255.f * (1.f - opacity));
   
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    __m256i devOpacity = _mm256_set1_epi16(devOpacityValue << 8);
-    __m256i bufferOpacity = _mm256_set1_epi16(bufferOpacityValue << 8);
+  __m128i devOpacity = _mm_set1_epi16(devOpacityValue << 8);
+  __m128i bufferOpacity = _mm_set1_epi16(bufferOpacityValue << 8);
 
-    const size_t simdLength = (width >> 3) << 3;
-    for (size_t y = 0; y < height; ++y) {
-      size_t x = 0;
-      for (; x < simdLength; x += 8) {
-        size_t index = (y * width) + x;
+  const size_t simdLength = (width >> 2) << 2;
+  for (size_t y = 0; y < height; ++y) {
+    size_t x = 0;
+    for (; x < simdLength; x += 4) {
+      size_t index = (y * width) + x;
 
-        // Load 8 pixels at a time
-        // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
-        // The best we can do is 16bit arithmetic
-        __m256i devColor = _mm256_loadu_si256((__m256i*)(devBuffer + index));
-        __m256i bufferColor = _mm256_loadu_si256((__m256i*)(frameBuffer + index));
+      // Load 4 pixels at a time
+      // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
+      // The best we can do is 16bit arithmetic
+      __m128i devColor = _mm_loadu_si128((__m128i*)(devBuffer + index));
+      __m128i bufferColor = _mm_loadu_si128((__m128i*)(frameBuffer + index));
 
-        __m256i devLo16 = _mm256_unpacklo_epi8(devColor, _mm256_setzero_si256()); // 4x 32bit BGRA, [0,1]
-        __m256i devHi16 = _mm256_unpackhi_epi8(devColor, _mm256_setzero_si256()); // 4x 32bit BGRA, [2,3]
+      __m128i devLo16 = _mm_unpacklo_epi8(devColor, _mm_setzero_si128()); // 2x 32bit BGRA, [0,1]
+      __m128i devHi16 = _mm_unpackhi_epi8(devColor, _mm_setzero_si128()); // 2x 32bit BGRA, [2,3]
 
-        __m256i bufLo16 = _mm256_unpacklo_epi8(bufferColor, _mm256_setzero_si256());
-        __m256i bufHi16 = _mm256_unpackhi_epi8(bufferColor, _mm256_setzero_si256());
+      __m128i bufLo16 = _mm_unpacklo_epi8(bufferColor, _mm_setzero_si128());
+      __m128i bufHi16 = _mm_unpackhi_epi8(bufferColor, _mm_setzero_si128());
 
-        devLo16 = _mm256_mulhi_epu16(devLo16, devOpacity);
-        devHi16 = _mm256_mulhi_epu16(devHi16, devOpacity);
+      devLo16 = _mm_mulhi_epu16(devLo16, devOpacity);
+      devHi16 = _mm_mulhi_epu16(devHi16, devOpacity);
 
-        bufLo16 = _mm256_mulhi_epu16(bufLo16, bufferOpacity);
-        bufHi16 = _mm256_mulhi_epu16(bufHi16, bufferOpacity);
+      bufLo16 = _mm_mulhi_epu16(bufLo16, bufferOpacity);
+      bufHi16 = _mm_mulhi_epu16(bufHi16, bufferOpacity);
 
-        __m256i loResult = _mm256_add_epi16(devLo16, bufLo16);
-        __m256i hiResult = _mm256_add_epi16(devHi16, bufHi16);
+      __m128i loResult = _mm_add_epi16(devLo16, bufLo16);
+      __m128i hiResult = _mm_add_epi16(devHi16, bufHi16);
 
-        // Pack the 16bit results into 8bit values and store it back to memory
-        _mm256_storeu_si256((__m256i*)(frameBuffer + index), _mm256_packus_epi16(loResult, hiResult));
-      }
+      // Pack the 16bit results into 8bit values and store it back to memory
+      _mm_storeu_si128((__m128i*)(frameBuffer + index), _mm_packus_epi16(loResult, hiResult));
+    }
 
-      for (; x < width; ++x) {
-        size_t index = (y * width) + x;
-        uint8* __restrict devPixels = (uint8* __restrict)(devBuffer + index);
-        uint8* __restrict bufPixels = (uint8* __restrict)(frameBuffer + index);
-        
-        short devB = devPixels[0];
-        short devG = devPixels[1];
-        short devR = devPixels[2];
-        short devA = devPixels[3];
+    for (; x < width; ++x) {
+      size_t index = (y * width) + x;
+      uint8* __restrict devPixels = (uint8* __restrict)(devBuffer + index);
+      uint8* __restrict bufPixels = (uint8* __restrict)(frameBuffer + index);
 
-        short bufB = bufPixels[0];
-        short bufG = bufPixels[1];
-        short bufR = bufPixels[2];
-        short bufA = bufPixels[3];
+      short devB = devPixels[0];
+      short devG = devPixels[1];
+      short devR = devPixels[2];
+      short devA = devPixels[3];
 
-        devB *= devOpacityValue;
-        devG *= devOpacityValue;
-        devR *= devOpacityValue;
-        devA *= devOpacityValue;
-        devB >>= 8;
-        devG >>= 8;
-        devR >>= 8;
-        devA >>= 8;
+      short bufB = bufPixels[0];
+      short bufG = bufPixels[1];
+      short bufR = bufPixels[2];
+      short bufA = bufPixels[3];
 
-        bufB *= bufferOpacityValue;
-        bufG *= bufferOpacityValue;
-        bufR *= bufferOpacityValue;
-        bufA *= bufferOpacityValue;
-        bufB >>= 8;
-        bufG >>= 8;
-        bufR >>= 8;
-        bufA >>= 8;
+      devB *= devOpacityValue;
+      devG *= devOpacityValue;
+      devR *= devOpacityValue;
+      devA *= devOpacityValue;
+      devB >>= 8;
+      devG >>= 8;
+      devR >>= 8;
+      devA >>= 8;
 
-        bufPixels[0] = (uint8)(bufB + devB);
-        bufPixels[1] = (uint8)(bufG + devG);
-        bufPixels[2] = (uint8)(bufR + devR);
-        bufPixels[3] = (uint8)(bufA + devA);
-      }
+      bufB *= bufferOpacityValue;
+      bufG *= bufferOpacityValue;
+      bufR *= bufferOpacityValue;
+      bufA *= bufferOpacityValue;
+      bufB >>= 8;
+      bufG >>= 8;
+      bufR >>= 8;
+      bufA >>= 8;
+
+      bufPixels[0] = (uint8)(bufB + devB);
+      bufPixels[1] = (uint8)(bufG + devG);
+      bufPixels[2] = (uint8)(bufR + devR);
+      bufPixels[3] = (uint8)(bufA + devA);
     }
   }
-  else {
-    __m128i devOpacity = _mm_set1_epi16(devOpacityValue << 8);
-    __m128i bufferOpacity = _mm_set1_epi16(bufferOpacityValue << 8);
+}
 
-    const size_t simdLength = (width >> 2) << 2;
-    for (size_t y = 0; y < height; ++y) {
-      size_t x = 0;
-      for (; x < simdLength; x += 4) {
-        size_t index = (y * width) + x;
+void Unaligned_BlendBuffers_AVX(uint32* __restrict devBuffer, uint32* __restrict frameBuffer, size_t width, size_t height, float opacity) {
+  short devOpacityValue = (short)(255.f * opacity);
+  short bufferOpacityValue = (short)(255.f * (1.f - opacity));
 
-        // Load 4 pixels at a time
-        // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
-        // The best we can do is 16bit arithmetic
-        __m128i devColor = _mm_loadu_si128((__m128i*)(devBuffer + index));
-        __m128i bufferColor = _mm_loadu_si128((__m128i*)(frameBuffer + index));
+  __m256i devOpacity = _mm256_set1_epi16(devOpacityValue << 8);
+  __m256i bufferOpacity = _mm256_set1_epi16(bufferOpacityValue << 8);
 
-        __m128i devLo16 = _mm_unpacklo_epi8(devColor, _mm_setzero_si128()); // 2x 32bit BGRA, [0,1]
-        __m128i devHi16 = _mm_unpackhi_epi8(devColor, _mm_setzero_si128()); // 2x 32bit BGRA, [2,3]
+  const size_t simdLength = (width >> 3) << 3;
+  for (size_t y = 0; y < height; ++y) {
+    size_t x = 0;
+    for (; x < simdLength; x += 8) {
+      size_t index = (y * width) + x;
 
-        __m128i bufLo16 = _mm_unpacklo_epi8(bufferColor, _mm_setzero_si128());
-        __m128i bufHi16 = _mm_unpackhi_epi8(bufferColor, _mm_setzero_si128());
+      // Load 8 pixels at a time
+      // Split the blend function into two halves because SSE doesn't have artihmetic insns for 8bit values
+      // The best we can do is 16bit arithmetic
+      __m256i devColor = _mm256_loadu_si256((__m256i*)(devBuffer + index));
+      __m256i bufferColor = _mm256_loadu_si256((__m256i*)(frameBuffer + index));
 
-        devLo16 = _mm_mulhi_epu16(devLo16, devOpacity);
-        devHi16 = _mm_mulhi_epu16(devHi16, devOpacity);
+      __m256i devLo16 = _mm256_unpacklo_epi8(devColor, _mm256_setzero_si256()); // 4x 32bit BGRA, [0,1]
+      __m256i devHi16 = _mm256_unpackhi_epi8(devColor, _mm256_setzero_si256()); // 4x 32bit BGRA, [2,3]
 
-        bufLo16 = _mm_mulhi_epu16(bufLo16, bufferOpacity);
-        bufHi16 = _mm_mulhi_epu16(bufHi16, bufferOpacity);
+      __m256i bufLo16 = _mm256_unpacklo_epi8(bufferColor, _mm256_setzero_si256());
+      __m256i bufHi16 = _mm256_unpackhi_epi8(bufferColor, _mm256_setzero_si256());
 
-        __m128i loResult = _mm_add_epi16(devLo16, bufLo16);
-        __m128i hiResult = _mm_add_epi16(devHi16, bufHi16);
+      devLo16 = _mm256_mulhi_epu16(devLo16, devOpacity);
+      devHi16 = _mm256_mulhi_epu16(devHi16, devOpacity);
 
-        // Pack the 16bit results into 8bit values and store it back to memory
-        _mm_storeu_si128((__m128i*)(frameBuffer + index), _mm_packus_epi16(loResult, hiResult));
-      }
+      bufLo16 = _mm256_mulhi_epu16(bufLo16, bufferOpacity);
+      bufHi16 = _mm256_mulhi_epu16(bufHi16, bufferOpacity);
 
-      for (; x < width; ++x) {
-        size_t index = (y * width) + x;
-        uint8* __restrict devPixels = (uint8* __restrict)(devBuffer + index);
-        uint8* __restrict bufPixels = (uint8* __restrict)(frameBuffer + index);
+      __m256i loResult = _mm256_add_epi16(devLo16, bufLo16);
+      __m256i hiResult = _mm256_add_epi16(devHi16, bufHi16);
 
-        short devB = devPixels[0];
-        short devG = devPixels[1];
-        short devR = devPixels[2];
-        short devA = devPixels[3];
+      // Pack the 16bit results into 8bit values and store it back to memory
+      _mm256_storeu_si256((__m256i*)(frameBuffer + index), _mm256_packus_epi16(loResult, hiResult));
+    }
 
-        short bufB = bufPixels[0];
-        short bufG = bufPixels[1];
-        short bufR = bufPixels[2];
-        short bufA = bufPixels[3];
+    for (; x < width; ++x) {
+      size_t index = (y * width) + x;
+      uint8* __restrict devPixels = (uint8 * __restrict)(devBuffer + index);
+      uint8* __restrict bufPixels = (uint8 * __restrict)(frameBuffer + index);
 
-        devB *= devOpacityValue;
-        devG *= devOpacityValue;
-        devR *= devOpacityValue;
-        devA *= devOpacityValue;
-        devB >>= 8;
-        devG >>= 8;
-        devR >>= 8;
-        devA >>= 8;
+      short devB = devPixels[0];
+      short devG = devPixels[1];
+      short devR = devPixels[2];
+      short devA = devPixels[3];
 
-        bufB *= bufferOpacityValue;
-        bufG *= bufferOpacityValue;
-        bufR *= bufferOpacityValue;
-        bufA *= bufferOpacityValue;
-        bufB >>= 8;
-        bufG >>= 8;
-        bufR >>= 8;
-        bufA >>= 8;
+      short bufB = bufPixels[0];
+      short bufG = bufPixels[1];
+      short bufR = bufPixels[2];
+      short bufA = bufPixels[3];
 
-        bufPixels[0] = (uint8)(bufB + devB);
-        bufPixels[1] = (uint8)(bufG + devG);
-        bufPixels[2] = (uint8)(bufR + devR);
-        bufPixels[3] = (uint8)(bufA + devA);
-      }
+      devB *= devOpacityValue;
+      devG *= devOpacityValue;
+      devR *= devOpacityValue;
+      devA *= devOpacityValue;
+      devB >>= 8;
+      devG >>= 8;
+      devR >>= 8;
+      devA >>= 8;
+
+      bufB *= bufferOpacityValue;
+      bufG *= bufferOpacityValue;
+      bufR *= bufferOpacityValue;
+      bufA *= bufferOpacityValue;
+      bufB >>= 8;
+      bufG >>= 8;
+      bufR >>= 8;
+      bufA >>= 8;
+
+      bufPixels[0] = (uint8)(bufB + devB);
+      bufPixels[1] = (uint8)(bufG + devG);
+      bufPixels[2] = (uint8)(bufR + devR);
+      bufPixels[3] = (uint8)(bufA + devA);
     }
   }
 }
@@ -1491,10 +1508,24 @@ void Aligned_HomogenizeTransformScreenSpace(float* data, int32 stride, int32 len
   }
 }
 
-void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]) {
+void Unaligned_AABB_SSE(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]) {
+  __m128 min = _mm_loadu_ps(outMin);
+  __m128 max = _mm_loadu_ps(outMax);
+
+  for (size_t i = 0; i < numVertices; i += stride) {
+    __m128 vertex = _mm_loadu_ps(vertices + i);
+    min = _mm_min_ps(min, vertex);
+    max = _mm_max_ps(max, vertex);
+  }
+
+  _mm_storeu_ps(outMin, min);
+  _mm_storeu_ps(outMax, max);
+}
+
+void Unaligned_AABB_AVX(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]) {
   bool packedVerts = stride == 4;
-  
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight) && packedVerts) {
+
+  if (packedVerts) {
     __m128 min = _mm_loadu_ps(outMin);
     __m128 max = _mm_loadu_ps(outMax);
 
@@ -1527,17 +1558,7 @@ void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, fl
     _mm_storeu_ps(outMax, max);
   }
   else {
-    __m128 min = _mm_loadu_ps(outMin);
-    __m128 max = _mm_loadu_ps(outMax);
-
-    for (size_t i = 0; i < numVertices; i += stride) {
-      __m128 vertex = _mm_loadu_ps(vertices + i);
-      min = _mm_min_ps(min, vertex);
-      max = _mm_max_ps(max, vertex);
-    }
-
-    _mm_storeu_ps(outMin, min);
-    _mm_storeu_ps(outMax, max);
+    Unaligned_AABB_SSE(vertices, numVertices, stride, outMin, outMax);
   }
 }
 

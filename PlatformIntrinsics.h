@@ -84,19 +84,49 @@ void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes);
 
 void Unaligned_RGBAToBGRA(uint32* image, size_t width, size_t height);
 
-void Unaligned_BilinearScaleImage(uint8* __restrict source, size_t sourceWidth, size_t sourceHeight, uint8* __restrict dest, size_t destWidth, size_t destHeight);
+typedef void (*BilinearScaleImageFunc)(uint8* __restrict source, size_t sourceWidth, size_t sourceHeight, uint8* __restrict dest, size_t destWidth, size_t destHeight);
 
-void Unaligned_GenerateMipLevel(uint8* __restrict nextMip, size_t nextWidth, size_t nextHeight, uint8* __restrict lastMip, size_t lastWidth, size_t lastHeight);
+extern BilinearScaleImageFunc BilinearScaleImageImpl;
 
-void Unaligned_DrawDebugText(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color);
+void Unaligned_BilinearScaleImage_SSE(uint8* __restrict source, size_t sourceWidth, size_t sourceHeight, uint8* __restrict dest, size_t destWidth, size_t destHeight);
+
+void Unaligned_BilinearScaleImage_AVX(uint8* __restrict source, size_t sourceWidth, size_t sourceHeight, uint8* __restrict dest, size_t destWidth, size_t destHeight);
+
+typedef void (*GenerateMipLevelFunc)(uint8* __restrict nextMip, size_t nextWidth, size_t nextHeight, uint8* __restrict lastMip, size_t lastWidth, size_t lastHeight);
+
+extern GenerateMipLevelFunc GenerateMipLevelImpl;
+
+void Unaligned_GenerateMipLevel_SSE(uint8* __restrict nextMip, size_t nextWidth, size_t nextHeight, uint8* __restrict lastMip, size_t lastWidth, size_t lastHeight);
+
+void Unaligned_GenerateMipLevel_AVX(uint8* __restrict nextMip, size_t nextWidth, size_t nextHeight, uint8* __restrict lastMip, size_t lastWidth, size_t lastHeight);
+
+typedef void (*DrawDebugTextFunc)(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color);
+
+extern DrawDebugTextFunc DrawDebugTextImpl;
+
+void Unaligned_DrawDebugText_SSE(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color);
+
+void Unaligned_DrawDebugText_AVX(const uint8 lut[128][8], const String& message, size_t x, size_t y, uint8* buffer, size_t width, const ZColor& color);
 
 void Aligned_Mat4x4Transform(const float matrix[4][4], float* __restrict data, int32 stride, int32 length);
 
-void Aligned_DepthBufferVisualize(float* buffer, size_t width, size_t height);
+typedef void (*DepthBufferVisualizeFunc)(float* buffer, size_t width, size_t height);
+
+extern DepthBufferVisualizeFunc DepthBufferVisualizeImpl;
+
+void Aligned_DepthBufferVisualize_SSE(float* buffer, size_t width, size_t height);
+
+void Aligned_DepthBufferVisualize_AVX(float* buffer, size_t width, size_t height);
 
 void Aligned_Vec4Homogenize(float* data, int32 stride, int32 length);
 
-void Unaligned_BlendBuffers(uint32* __restrict devBuffer, uint32* __restrict frameBuffer, size_t width, size_t height, float opacity);
+typedef void (*BlendBuffersFunc)(uint32* __restrict devBuffer, uint32* __restrict frameBuffer, size_t width, size_t height, float opacity);
+
+extern BlendBuffersFunc BlendBuffersImpl;
+
+void Unaligned_BlendBuffers_SSE(uint32* __restrict devBuffer, uint32* __restrict frameBuffer, size_t width, size_t height, float opacity);
+
+void Unaligned_BlendBuffers_AVX(uint32* __restrict devBuffer, uint32* __restrict frameBuffer, size_t width, size_t height, float opacity);
 
 void Aligned_BackfaceCull(IndexBuffer& indexBuffer, const VertexBuffer& vertexBuffer);
 
@@ -110,7 +140,13 @@ void Aligned_HomogenizeTransformScreenSpace(float* data, int32 stride, int32 len
   const float windowTransform0[3], const float windowTransform1[3],
   const float width, const float height);
 
-void Unaligned_AABB(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
+typedef void (*CalculateAABBFunc)(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
+
+extern CalculateAABBFunc CalculateAABBImpl;
+
+void Unaligned_AABB_SSE(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
+
+void Unaligned_AABB_AVX(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
 
 typedef void (*RGBShaderFunc)(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
   const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer);

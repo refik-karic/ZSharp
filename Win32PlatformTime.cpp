@@ -55,7 +55,7 @@ size_t PlatformHighResClock() {
 #endif
 }
 
-size_t PlatformHighResClockDelta(size_t startingTime, ClockUnits units) {
+size_t PlatformHighResClockDeltaS(size_t startingTime) {
 #if RDTSC_FALLBACK
   LARGE_INTEGER ticks, frequency;
 
@@ -89,25 +89,88 @@ size_t PlatformHighResClockDelta(size_t startingTime, ClockUnits units) {
   __cpuid(frequencyCheck, 0x16);
 
   size_t frequency = frequencyCheck[0];
-  frequency *= 1000000;
 
   size_t ticks = ((size_t)__rdtsc()) - startingTime;
+  return ticks / (frequency * 1000000);
+#endif
+}
 
-  size_t scale = 1;
+size_t PlatformHighResClockDeltaMs(size_t startingTime) {
+#if RDTSC_FALLBACK
+  LARGE_INTEGER ticks, frequency;
 
-  switch (units) {
-    case ClockUnits::Seconds:
-      scale = 1;
-      break;
-    case ClockUnits::Milliseconds:
-      scale = 1000;
-      break;
-    case ClockUnits::Microseconds:
-      scale = 1000000;
-      break;
+  if (!QueryPerformanceFrequency(&frequency) || !QueryPerformanceCounter(&ticks)) {
+    PlatformDebugPrintLastError();
+    return 0;
   }
+  else {
+    ticks.QuadPart -= startingTime;
 
-  ticks *= scale;
+    size_t scale = 1;
+
+    switch (units) {
+      case ClockUnits::Seconds:
+        scale = 1;
+        break;
+      case ClockUnits::Milliseconds:
+        scale = 1000;
+        break;
+      case ClockUnits::Microseconds:
+        scale = 1000000;
+        break;
+    }
+
+    ticks.QuadPart *= scale;
+    ticks.QuadPart /= frequency.QuadPart;
+    return ticks.QuadPart;
+  }
+#else
+  int frequencyCheck[4];
+  __cpuid(frequencyCheck, 0x16);
+
+  size_t frequency = frequencyCheck[0];
+
+  size_t ticks = ((size_t)__rdtsc()) - startingTime;
+  return ticks / (frequency * 1000);
+#endif
+}
+
+size_t PlatformHighResClockDeltaUs(size_t startingTime) {
+#if RDTSC_FALLBACK
+  LARGE_INTEGER ticks, frequency;
+
+  if (!QueryPerformanceFrequency(&frequency) || !QueryPerformanceCounter(&ticks)) {
+    PlatformDebugPrintLastError();
+    return 0;
+  }
+  else {
+    ticks.QuadPart -= startingTime;
+
+    size_t scale = 1;
+
+    switch (units) {
+      case ClockUnits::Seconds:
+        scale = 1;
+        break;
+      case ClockUnits::Milliseconds:
+        scale = 1000;
+        break;
+      case ClockUnits::Microseconds:
+        scale = 1000000;
+        break;
+    }
+
+    ticks.QuadPart *= scale;
+    ticks.QuadPart /= frequency.QuadPart;
+    return ticks.QuadPart;
+  }
+#else
+  int frequencyCheck[4];
+  __cpuid(frequencyCheck, 0x16);
+
+  size_t frequency = frequencyCheck[0];
+
+  size_t ticks = ((size_t)__rdtsc()) - startingTime;
   return ticks / frequency;
 #endif
 }

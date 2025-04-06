@@ -45,10 +45,22 @@ void InitializeEnvironment() {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     RGBShaderImpl = &Unaligned_Shader_RGB_AVX;
     UVShaderImpl = &Unaligned_Shader_UV_AVX;
+    CalculateAABBImpl = &Unaligned_AABB_AVX;
+    DrawDebugTextImpl = &Unaligned_DrawDebugText_AVX;
+    DepthBufferVisualizeImpl = &Aligned_DepthBufferVisualize_AVX;
+    BlendBuffersImpl = &Unaligned_BlendBuffers_AVX;
+    BilinearScaleImageImpl = &Unaligned_BilinearScaleImage_AVX;
+    GenerateMipLevelImpl = &Unaligned_GenerateMipLevel_AVX;
   }
   else if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
     RGBShaderImpl = &Unaligned_Shader_RGB_SSE;
     UVShaderImpl = &Unaligned_Shader_UV_SSE;
+    CalculateAABBImpl = &Unaligned_AABB_SSE;
+    DrawDebugTextImpl = &Unaligned_DrawDebugText_SSE;
+    DepthBufferVisualizeImpl = &Aligned_DepthBufferVisualize_SSE;
+    BlendBuffersImpl = &Unaligned_BlendBuffers_SSE;
+    BilinearScaleImageImpl = &Unaligned_BilinearScaleImage_SSE;
+    GenerateMipLevelImpl = &Unaligned_GenerateMipLevel_SSE;
   }
   else {
     ZAssert(false);
@@ -369,7 +381,7 @@ void Win32PlatformApplication::OnTimer() {
   InvalidateRect(mWindowHandle, NULL, false);
 
   // Sleep if we have some time left in the frame, otherwise start again immediately.
-  frameDeltaTime = ZSharp::PlatformHighResClockDelta(frameDeltaTime, ZSharp::ClockUnits::Milliseconds);
+  frameDeltaTime = ZSharp::PlatformHighResClockDeltaMs(frameDeltaTime);
   if (frameDeltaTime >= (1000 / (*LockedFPS))) {
     frameDeltaTime = 1;
   }

@@ -65,7 +65,7 @@ void UIContainer::DrawBackgroundImage(uint8* screen, size_t width, size_t height
     }
 
 
-    Unaligned_BilinearScaleImage(textureData, textureWidth, textureHeight, mImageData, width, height);
+    BilinearScaleImageImpl(textureData, textureWidth, textureHeight, mImageData, width, height);
     mImageWidth = width;
     mImageHeight = height;
   }

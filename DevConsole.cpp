@@ -92,7 +92,7 @@ void DevConsole::Draw(uint32* buffer) {
   DrawText(formattedSuggestion, 10, mHeight - 15, (uint8*)mScreen, mWidth, historyColor);
   DrawText(formattedMessage, 10, mHeight - 15, (uint8*)mScreen, mWidth, textColor);
 
-  Unaligned_BlendBuffers(mScreen, buffer, mWidth, mHeight, mOpacity);
+  BlendBuffersImpl(mScreen, buffer, mWidth, mHeight, mOpacity);
 }
 
 void DevConsole::OnKeyDown(uint8 key) {

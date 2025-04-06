@@ -92,7 +92,7 @@ AABB Model::ComputeBoundingBox() const {
     const float* vertices = mesh.GetVertTable().GetData();
     const size_t numVertices = mesh.GetVertTable().Size();
 
-    Unaligned_AABB(vertices, numVertices, stride, min, max);
+    CalculateAABBImpl(vertices, numVertices, stride, min, max);
   }
 
   AABB aabb(min, max);

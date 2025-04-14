@@ -32,8 +32,12 @@ int32 PlatformSemaphore::Decrement() {
 }
 
 void PlatformMutex::Aquire() {
+  // Try and atomically fetch the lock. If that fails, spin on the local copy of the value until it changes.
+  // This makes it much cheaper to test the shared value rather than issuing an atomic instruction every attempt.
   while (_InterlockedCompareExchange8((volatile char*)&mCount, 1, 0) == 1) {
-    _mm_pause();
+    while (mCount) {
+      _mm_pause();
+    }
   }
 }
 

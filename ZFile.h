@@ -18,11 +18,11 @@ class BaseFile {
   size_t GetSize();
 
   protected:
-  FileString mFile;
+  FileString* mFile;
   PlatformFileHandle* mFileHandle;
   bool mOpen = false;
 
-  ~BaseFile();
+  virtual ~BaseFile();
 };
 
 class BufferedFileReader final : public BaseFile {
@@ -33,7 +33,7 @@ class BufferedFileReader final : public BaseFile {
 
   void operator=(const BufferedFileReader& rhs) = delete;
 
-  ~BufferedFileReader();
+  virtual ~BufferedFileReader();
 
   size_t Read(void* buffer, size_t length);
 
@@ -42,7 +42,7 @@ class BufferedFileReader final : public BaseFile {
   const char* GetBuffer() const;
 
   private:
-  const size_t mDefaultBufferSize = 4096;
+  static const size_t mDefaultBufferSize;
   size_t mBufferSize = mDefaultBufferSize;
   char* mBuffer = nullptr;
 
@@ -60,7 +60,7 @@ class SystemBufferedFileWriter final : public BaseFile {
 
   void operator=(const BufferedFileReader& rhs) = delete;
 
-  ~SystemBufferedFileWriter();
+  virtual ~SystemBufferedFileWriter();
 
   bool Write(const void* data, size_t length);
 
@@ -80,14 +80,14 @@ class BufferedFileWriter final : public BaseFile {
 
   void operator=(const BufferedFileReader& rhs) = delete;
 
-  ~BufferedFileWriter();
+  virtual ~BufferedFileWriter();
 
   bool Write(const void* data, size_t length);
 
   bool Flush();
 
   private:
-  const size_t mBufferSize = 4096;
+  static const size_t mBufferSize;
   size_t mBufferedDataSize = 0;
   char* mBuffer = nullptr;
 };
@@ -100,7 +100,7 @@ public:
 
   void operator=(const MemoryMappedFileReader& rhs) = delete;
 
-  ~MemoryMappedFileReader();
+  virtual ~MemoryMappedFileReader();
 
   const char* GetBuffer() const;
 
@@ -118,7 +118,7 @@ public:
 
   void operator=(const MemoryMappedFileWriter& rhs) = delete;
 
-  ~MemoryMappedFileWriter();
+  virtual ~MemoryMappedFileWriter();
 
   char* GetBuffer();
 

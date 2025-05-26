@@ -8,9 +8,10 @@
 namespace ZSharp {
 
 BaseFile::BaseFile(const FileString& fileName, size_t flags)
-: mFile(fileName), mFileHandle(nullptr), mOpen(false) {
+: mFile(nullptr), mFileHandle(nullptr), mOpen(false) {
   if (!fileName.IsEmpty()) {
-    mFileHandle = PlatformOpenFile(mFile, flags);
+    mFile = new FileString(fileName);
+    mFileHandle = PlatformOpenFile(*mFile, flags);
     mOpen = (mFileHandle != nullptr);
   }
 }
@@ -18,6 +19,10 @@ BaseFile::BaseFile(const FileString& fileName, size_t flags)
 BaseFile::~BaseFile() {
   if (IsOpen()) {
     PlatformCloseFile(mFileHandle);
+  }
+
+  if (mFile) {
+    delete mFile;
   }
 }
 
@@ -28,6 +33,8 @@ bool BaseFile::IsOpen() const {
 size_t BaseFile::GetSize() {
   return PlatformGetFileSize(mFileHandle);
 }
+
+const size_t BufferedFileReader::mDefaultBufferSize = 4096;
 
 BufferedFileReader::BufferedFileReader(const FileString& fileName) 
   : BaseFile(fileName, static_cast<size_t>(FileFlags::READ)) {
@@ -143,6 +150,8 @@ bool SystemBufferedFileWriter::Flush() {
 
   return PlatformFileFlush(mFileHandle);
 }
+
+const size_t BufferedFileWriter::mBufferSize = 4096;
 
 bool BufferedFileWriter::Write(const void* data, size_t length) {
   if (!IsOpen() || mBuffer == nullptr) {

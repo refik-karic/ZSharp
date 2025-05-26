@@ -49,6 +49,29 @@ class BufferedFileReader final : public BaseFile {
   bool ResetBuffer(size_t size);
 };
 
+/*
+Write buffering is handled by the OS.
+*/
+class SystemBufferedFileWriter final : public BaseFile {
+  public:
+  SystemBufferedFileWriter(const FileString& fileName, size_t flags);
+
+  SystemBufferedFileWriter(const BufferedFileReader& rhs) = delete;
+
+  void operator=(const BufferedFileReader& rhs) = delete;
+
+  ~SystemBufferedFileWriter();
+
+  bool Write(const void* data, size_t length);
+
+  bool Flush();
+
+  private:
+};
+
+/*
+Write buffering is handled by the app. Prefer SystemBufferedFileWriter where possible.
+*/
 class BufferedFileWriter final : public BaseFile {
   public:
   BufferedFileWriter(const FileString& fileName, size_t flags);

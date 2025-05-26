@@ -35,7 +35,7 @@ class Logger {
 
   void LogPrologue();
 
-  BufferedFileWriter mLog;
+  SystemBufferedFileWriter mLog;
   size_t mLogSize = 0;
 };
 

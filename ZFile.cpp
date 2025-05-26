@@ -119,13 +119,37 @@ BufferedFileWriter::~BufferedFileWriter() {
   }
 }
 
+SystemBufferedFileWriter::SystemBufferedFileWriter(const FileString& fileName, size_t flags) 
+  : BaseFile(fileName, static_cast<size_t>(FileFlags::WRITE) | flags) {
+
+}
+
+SystemBufferedFileWriter::~SystemBufferedFileWriter() {
+  Flush();
+}
+
+bool SystemBufferedFileWriter::Write(const void* data, size_t length) {
+  if (!IsOpen()) {
+    return false;
+  }
+
+  return PlatformWriteFile(mFileHandle, data, length) == length;
+}
+
+bool SystemBufferedFileWriter::Flush() {
+  if (!IsOpen()) {
+    return false;
+  }
+
+  return PlatformFileFlush(mFileHandle);
+}
+
 bool BufferedFileWriter::Write(const void* data, size_t length) {
   if (!IsOpen() || mBuffer == nullptr) {
     return false;
   }
 
   // Unlike buffered reader, writer should not reallocate data.
-
   if ((length > mBufferSize) || (mBufferedDataSize + length > mBufferSize)) {
     // Write any buffered data.
     if (mBufferedDataSize > 0) {

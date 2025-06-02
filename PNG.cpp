@@ -22,11 +22,11 @@ static const size_t MaxBits = 15;
 
 namespace ZSharp {
 PNG::PNG() 
-  : mFilename(""), mReader(FileString("")) {
+  : mReader(FileString("")) {
 }
 
 PNG::PNG(const FileString& filename)
-  : mFilename(filename), mReader(filename) {
+  : mReader(filename) {
   if (mReader.IsOpen()) {
     mDataPtr = (uint8*)mReader.GetBuffer();
     mFileSize = mReader.GetSize();

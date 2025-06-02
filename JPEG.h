@@ -46,7 +46,6 @@ class JPEG final {
   size_t GetNumChannels() const;
 
   private:
-  const FileString mFilename;
   MemoryMappedFileReader mReader;
   uint8* mDataPtr = nullptr;
   size_t mFileSize = 0;

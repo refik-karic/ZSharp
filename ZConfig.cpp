@@ -63,8 +63,7 @@ ZConfig::ZConfig()
   mBytesPerPixel(4, 4, 4),
   mViewportStride(0),
   mWindowTitle("Software_Renderer_V3") {
-  FileString iniFilePath(PlatformGetUserDesktopPath());
-  iniFilePath.AddDirectory("models");
+  FileString iniFilePath(PlatformGetUserDataDirectory());
   iniFilePath.SetFilename("ZSharpSettings.txt");
 
   IniFile userConfig(iniFilePath);

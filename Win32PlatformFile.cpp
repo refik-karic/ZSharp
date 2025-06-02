@@ -267,6 +267,19 @@ FileString PlatformGetUserDesktopPath() {
   }
 }
 
+FileString PlatformGetUserDataDirectory() {
+  wchar_t* pathResult = nullptr;
+  HRESULT result = SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, NULL, &pathResult);
+  if (result == S_OK) {
+    const WideString fetchedPath(pathResult);
+    return FileString(fetchedPath.ToNarrow());
+  }
+  else {
+    PlatformDebugPrintLastError();
+    return FileString("");
+  }
+}
+
 FileString PlatformGetExecutableDirectory() {
   char path[_MAX_PATH];
   DWORD length = GetModuleFileNameA(NULL, path, _MAX_PATH);

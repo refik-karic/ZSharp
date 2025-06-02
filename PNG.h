@@ -41,7 +41,6 @@ class PNG final {
   size_t GetBitsPerPixel() const;
 
   private:
-  const FileString mFilename;
   MemoryMappedFileReader mReader;
   uint8* mDataPtr = nullptr;
   size_t mFileSize = 0;

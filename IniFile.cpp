@@ -1,6 +1,7 @@
 #include "IniFile.h"
 
 #include "ZFile.h"
+#include "Span.h"
 
 namespace ZSharp {
 
@@ -74,32 +75,29 @@ void IniFile::ParseFile() {
         continue;
       }
 
-      String currentLine(fileBuffer + lastLineIndex, 0, lineLength);
+      Span<const char> currentLine(fileBuffer + lastLineIndex, lineLength);
       lastLineIndex = offset + 1;
 
       switch (currentLine[0]) {
         case '[': // Section
         {
-          const char* endSection = currentLine.FindLast(']');
+          const char* endSection = strrchr(currentLine.GetData(), ']');
           if (endSection != nullptr) {
-            size_t sectionLength = endSection - currentLine.Str();
-            String sectionString(currentLine.Str(), 1, sectionLength - 1);
-            activeSection = &mSections.EmplaceBack(sectionString);
+            size_t sectionLength = endSection - currentLine.GetData();
+            String sectionName(currentLine.GetData(), 1, sectionLength - 1);
+            activeSection = &mSections.EmplaceBack(sectionName);
           }
         }
         break;
         case ';': // Comment
           break;
         default: // Key value pair
-          const char* delimLocation = currentLine.FindFirst('=');
-          if (delimLocation != nullptr) {
-            size_t keyLength = delimLocation - currentLine.Str();
-            String key(currentLine.Str(), 0, keyLength);
-            String value(currentLine.Str(), keyLength + 1, currentLine.Length() - keyLength - 1);
-
-            if (activeSection != nullptr) {
-              activeSection->mPairs.EmplaceBack(key, value);
-            }
+          const char* delimLocation = strchr(currentLine.GetData(), '=');
+          if (delimLocation != nullptr && activeSection != nullptr) {
+            size_t keyLength = delimLocation - currentLine.GetData();
+            String key(currentLine.GetData(), 0, keyLength);
+            String value(currentLine.GetData(), keyLength + 1, currentLine.Size() - keyLength - 1);
+            activeSection->mPairs.EmplaceBack(key, value);
           }
           break;
       }

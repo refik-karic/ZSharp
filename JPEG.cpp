@@ -3709,11 +3709,11 @@ unsigned char* decompress_jpeg_image_from_stream(jpeg_decoder_stream* pStream, i
 }
 
 JPEG::JPEG() 
-  : mFilename(""), mReader(FileString("")) {
+  : mReader(FileString("")) {
 }
 
 JPEG::JPEG(const FileString& filename) 
-  : mFilename(filename), mReader(filename) {
+  : mReader(filename) {
   if (mReader.IsOpen()) {
     mDataPtr = (uint8*)mReader.GetBuffer();
     mFileSize = mReader.GetSize();

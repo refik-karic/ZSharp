@@ -45,6 +45,8 @@ String PlatformGetExecutableName();
 
 FileString PlatformGetUserDesktopPath();
 
+FileString PlatformGetUserDataDirectory();
+
 FileString PlatformGetExecutableDirectory();
 
 FileString PlatformGetWorkingDirectory();

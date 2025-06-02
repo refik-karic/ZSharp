@@ -27,9 +27,11 @@ class GameSetting final {
   }
 
   void operator=(const T& value) {
-    mValue = value;
     if (mShouldClamp) {
-      mValue = Clamp(mValue, mMin, mMax);
+      mValue = Clamp(value, mMin, mMax);
+    }
+    else {
+      mValue = value;
     }
   }
 

@@ -71,6 +71,7 @@ class Texture final {
 
   private:
   size_t mNumChannels = 0;
+  uint8* mMipData = nullptr;
   struct MipMap {
     size_t width = 0;
     size_t height = 0;
@@ -78,7 +79,6 @@ class Texture final {
     uint8* data = nullptr;
   };
   Array<MipMap> mMipChain;
-  uint8* mMipData = nullptr;
 };
 
 }

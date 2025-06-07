@@ -999,7 +999,7 @@ void Unaligned_DrawDebugText_SSE(const uint8 lut[128][8], const String& message,
 
   for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
     const char fontChar = *curChar;
-    __m128i fontRow = _mm_loadu_si64(lut[fontChar]);
+    __m128i fontRow = _mm_loadu_si64(lut[(uint8)fontChar]);
     for (size_t curX = 0; curX < 8; ++curX) {
       uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
       __m128i bufferLo = _mm_loadu_si128((__m128i*)bufferPosition);
@@ -1033,7 +1033,7 @@ void Unaligned_DrawDebugText_AVX(const uint8 lut[128][8], const String& message,
 
   for (size_t strLen = 0; strLen < message.Length(); ++strLen) {
     const char fontChar = *curChar;
-    __m128i fontRow = _mm_loadu_si64(lut[fontChar]);
+    __m128i fontRow = _mm_loadu_si64(lut[(uint8)fontChar]);
     for (size_t curX = 0; curX < 8; ++curX) {
       uint32* bufferPosition = (uint32*)(buffer + (xOffset * sizeof(uint32)) + ((yOffset + curX) * stride));
       __m256i font = _mm256_broadcastb_epi8(fontRow);
@@ -1071,7 +1071,7 @@ void Aligned_Mat4x4Transform(const float matrix[4][4], float* __restrict data, i
   matrixZ = _mm_shuffle_ps(hiXY, hiZW, 0b01000100);
   matrixW = _mm_shuffle_ps(hiXY, hiZW, 0b11101110);
 
-  for (size_t i = 0; i < length; i += stride) {
+  for (int32 i = 0; i < length; i += stride) {
     float* __restrict vecData = data + i;
 
     __m128 xyzw = _mm_loadu_ps(vecData);
@@ -1424,7 +1424,7 @@ void Aligned_TransformDirectScreenSpace(float* data, int32 stride, int32 length,
 
   __m128 maxXY = _mm_set_ps(0.f, 0.f, height, width);
 
-  for (size_t i = 0; i < length; i += stride) {
+  for (int32 i = 0; i < length; i += stride) {
     float* vecData = data + i;
 
     // Perspective projection
@@ -1892,8 +1892,8 @@ void Unaligned_Shader_RGB_AVX(const float* __restrict vertices, const int32* __r
     __m256 weights1 = weightInit1;
     __m256 weights2 = weightInit2;
 
-    const size_t simdEnd = minX + (((maxX - minX) >> 3) << 3);
-    const size_t stepDelta = sMaxWidth - simdEnd + minX;
+    const int32 simdEnd = minX + (((maxX - minX) >> 3) << 3);
+    const int32 stepDelta = sMaxWidth - simdEnd + minX;
     for (int32 h = minY, w = minX; h < maxY;) {
       // OR all weights
       __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);
@@ -2272,8 +2272,8 @@ void Unaligned_Shader_UV_AVX(const float* __restrict vertices, const int32* __re
     __m256 weights1 = weightInit1;
     __m256 weights2 = weightInit2;
 
-    const size_t simdEnd = minX + (((maxX - minX) >> 3) << 3);
-    const size_t stepDelta = sMaxWidth - simdEnd + minX;
+    const int32 simdEnd = minX + (((maxX - minX) >> 3) << 3);
+    const int32 stepDelta = sMaxWidth - simdEnd + minX;
     for (int32 h = minY, w = minX; h < maxY;) {
       // OR all weights
       __m256 combinedWeights = _mm256_or_ps(_mm256_or_ps(weights0, weights1), weights2);

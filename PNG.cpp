@@ -18,7 +18,7 @@
 // RFC1951 (DEFLATE): https://www.ietf.org/rfc/rfc1951.txt
 //  Has a very thorough explanation of DEFLATE and Huffman Trees with code examples.
 
-static const size_t MaxBits = 15;
+static const ZSharp::int32 MaxBits = 15;
 
 namespace ZSharp {
 PNG::PNG() 

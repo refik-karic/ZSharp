@@ -109,12 +109,12 @@ class HashTable final {
   };
 
   HashTable()
-    : mSize(0), mStorage(4096), mMinCapacity(4096) {
+    : mSize(0), mMinCapacity(4096), mStorage(4096)  {
 
   }
 
   HashTable(size_t initialCapacity)
-    : mSize(0), mStorage(initialCapacity), mMinCapacity(initialCapacity) {
+    : mSize(0), mMinCapacity(initialCapacity), mStorage(initialCapacity)  {
 
   }
 
@@ -123,7 +123,7 @@ class HashTable final {
   }
 
   HashTable(const HashTable& rhs)
-    : mSize(rhs.mSize), mStorage(rhs.mStorage), mMinCapacity(rhs.mMinCapacity) {
+    : mSize(rhs.mSize), mMinCapacity(rhs.mMinCapacity), mStorage(rhs.mStorage)  {
   }
   
   void operator=(const HashTable& rhs) {

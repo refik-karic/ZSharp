@@ -249,15 +249,8 @@ if(WIN32)
         /WX
         /Zi
         /diagnostics:caret
-        -Wno-ignored-qualifiers
-        -Wno-char-subscripts
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
-        -Wno-reorder-ctor
-        -Wno-unused-but-set-variable
-        -Wno-unused-const-variable
-        -Wno-delete-non-abstract-non-virtual-dtor
-        -Wno-unused-private-field
         -mavx2
         -mfma
     )
@@ -274,6 +267,10 @@ if(WIN32)
         /WX
         /Zi
         /diagnostics:caret
+        -Wno-sign-compare
+        -Wno-deprecated-copy-with-user-provided-copy
+        -mavx2
+        -mfma
     )
 
     list(APPEND ZSharp_Compile_Options_RelWithDebInfo
@@ -288,15 +285,8 @@ if(WIN32)
         /WX
         /Zi
         /diagnostics:caret
-        -Wno-ignored-qualifiers
-        -Wno-char-subscripts
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
-        -Wno-reorder-ctor
-        -Wno-unused-but-set-variable
-        -Wno-unused-const-variable
-        -Wno-delete-non-abstract-non-virtual-dtor
-        -Wno-unused-private-field
         -mavx2
         -mfma
     )
@@ -317,15 +307,8 @@ if(WIN32)
         /diagnostics:caret
         -flto
         -fvirtual-function-elimination
-        -Wno-ignored-qualifiers
-        -Wno-char-subscripts
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
-        -Wno-reorder-ctor
-        -Wno-unused-but-set-variable
-        -Wno-unused-const-variable
-        -Wno-delete-non-abstract-non-virtual-dtor
-        -Wno-unused-private-field
         -mavx2
         -mfma
     )

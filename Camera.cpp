@@ -198,7 +198,7 @@ ClipBounds Camera::ClipBoundsCheck(VertexBuffer& vertexBuffer, IndexBuffer& inde
   NamedScopedTimer(ClipBoundsCheck);
 
   const int32 stride = vertexBuffer.GetStride();
-  const size_t inIndexSize = indexBuffer.GetIndexSize();
+  const int32 inIndexSize = indexBuffer.GetIndexSize();
 
   // Apply the perspective projection transform to all input vertices.
   Aligned_Mat4x4Transform((const float(*)[4])*(mPerspectiveTransform * objectTransform), vertexBuffer[0], stride, vertexBuffer.GetVertSize() * stride);

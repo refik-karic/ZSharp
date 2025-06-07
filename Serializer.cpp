@@ -9,7 +9,7 @@ namespace ZSharp {
 
 // File serializers
 FileSerializer::FileSerializer(const FileString& path)
-  : mWriter(path, 0), mOffset(0) {
+  : mOffset(0), mWriter(path, 0)  {
 }
 
 bool FileSerializer::Serialize(const void* memory, size_t sizeBytes) {
@@ -34,7 +34,7 @@ bool FileSerializer::Serialize(const void* memory, size_t sizeBytes) {
 }
 
 FileDeserializer::FileDeserializer(const FileString& path)
-  : mReader(path), mOffset(0) {
+  : mOffset(0), mReader(path) {
 }
 
 bool FileDeserializer::Deserialize(void* memory, size_t sizeBytes) {
@@ -105,11 +105,11 @@ MemoryDeserializer::MemoryDeserializer() : mOffset(0), mBaseAddress(0) {
 }
 
 MemoryDeserializer::MemoryDeserializer(const void* baseAddress)
-  : mBaseAddress((uint8*)baseAddress), mOffset(0) {
+  : mOffset(0), mBaseAddress((uint8*)baseAddress) {
 }
 
 MemoryDeserializer::MemoryDeserializer(const MemoryDeserializer& rhs)
-  : mBaseAddress(rhs.mBaseAddress), mOffset(0) {
+  : mOffset(0), mBaseAddress(rhs.mBaseAddress) {
 }
 
 bool MemoryDeserializer::Deserialize(void* memory, size_t sizeBytes) {

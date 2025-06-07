@@ -9,8 +9,6 @@
 
 #include <cstring>
 
-static const size_t MaxOutVerts = 3;
-static const size_t NumInVerts = 3;
 static const size_t ScatchSize = 128;
 
 namespace ZSharp {

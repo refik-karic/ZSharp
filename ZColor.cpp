@@ -10,11 +10,11 @@ ZColor::ZColor() : mColor(0) {
 ZColor::ZColor(uint32 color) : mColor(color) { 
 }
 
-ZColor::ZColor(uint8 R, uint8 G, uint8 B) : mA(0xFF), mR(R), mG(G), mB(B) {
+ZColor::ZColor(uint8 R, uint8 G, uint8 B) : mB(B), mG(G), mR(R), mA(0xFF) {
 }
 
 ZColor::ZColor(const float R, const float G, const float B)
-  : mA(0xFF), mR((uint8)(R * 255.f)), mG((uint8)(G * 255.f)), mB((uint8)(B * 255.f)) {
+  : mB((uint8)(B * 255.f)), mG((uint8)(G * 255.f)), mR((uint8)(R * 255.f)), mA(0xFF) {
 }
 
 ZColor::ZColor(const ZColor& rhs) : mColor(rhs.mColor) {

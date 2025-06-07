@@ -14,8 +14,8 @@ Texture::Texture(uint8* data,
   size_t numChannels,
   size_t width,
   size_t height)
-: mMipChain(1),
-  mNumChannels(numChannels) {
+: mNumChannels(numChannels),
+  mMipChain(1) {
   MipMap& map = mMipChain[0];
   map.height = height;
   map.width = width;

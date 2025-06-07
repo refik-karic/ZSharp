@@ -52,7 +52,7 @@ class ConsoleVariable {
   }
 
   ConsoleVariable(const String& name, const T& value)
-    : mName(name), mValue(value) {
+    : mValue(value), mName(name)  {
     if (!GlobalConsoleCommands().HasKey(name)) {
       GlobalConsoleCommands().Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
     }

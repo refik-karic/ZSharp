@@ -1346,13 +1346,10 @@ void jpeg_decoder::read_sos_marker() {
 
 // Finds the next marker.
 int jpeg_decoder::next_marker() {
-  uint32 c, bytes;
-
-  bytes = 0;
+  uint32 c = 0;
 
   do {
     do {
-      bytes++;
       c = get_bits(8);
     } while (c != 0xFF);
 
@@ -1698,7 +1695,7 @@ void jpeg_decoder::load_next_row() {
   int i;
   jpgd_block_coeff_t* p;
   jpgd_quant_t* q;
-  int mcu_row, mcu_block, row_block = 0;
+  int mcu_row, mcu_block = 0;
   int component_num, component_id;
   int block_x_mcu[JPGD_MAX_COMPONENTS];
 
@@ -1731,7 +1728,6 @@ void jpeg_decoder::load_next_row() {
         if (p[g_ZAG[i]])
           p[g_ZAG[i]] = static_cast<jpgd_block_coeff_t>(p[g_ZAG[i]] * q[i]);
 
-      row_block++;
 
       if (m_comps_in_scan == 1)
         block_x_mcu[component_id]++;
@@ -1811,8 +1807,6 @@ static inline int dequantize_ac(int c, int q) { c *= q; return c; }
 
 // Decodes and dequantizes the next row of coefficients.
 void jpeg_decoder::decode_next_row() {
-  int row_block = 0;
-
   for (int mcu_row = 0; mcu_row < m_mcus_per_row; mcu_row++) {
     if ((m_restart_interval) && (m_restarts_left == 0))
       process_restart();
@@ -1902,8 +1896,6 @@ void jpeg_decoder::decode_next_row() {
       }
 
       m_mcu_block_max_zag[mcu_block] = k;
-
-      row_block++;
     }
 
     transform_mcu(mcu_row);

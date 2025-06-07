@@ -46,25 +46,25 @@ class UIBase {
 
   void SetWidth(size_t width);
 
-  const size_t GetWidth() const;
+  size_t GetWidth() const;
 
   size_t GetHeight();
   
   void SetHeight(size_t height);
 
-  const size_t GetHeight() const;
+  size_t GetHeight() const;
 
   size_t GetGridRow();
 
   void SetGridRow(size_t row);
 
-  const size_t GetGridRow() const;
+  size_t GetGridRow() const;
 
   size_t GetGridColumn();
 
   void SetGridColumn(size_t column);
 
-  const size_t GetGridColumn() const;
+  size_t GetGridColumn() const;
 
   virtual void SetBorderThickness(size_t size);
 

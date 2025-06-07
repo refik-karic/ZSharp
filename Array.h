@@ -176,8 +176,9 @@ class alignas(32) Array final : public ISerializable {
     T* result;
 
     if (mCapacity <= mSize) {
+      size_t currentSize = mSize;
       ResizeNoInit(mSize + 1);
-      result = new(mData + mSize - 1) T(data);
+      result = new(mData + currentSize) T(data);
     }
     else {
       result = new(mData + mSize) T(data);
@@ -192,8 +193,9 @@ class alignas(32) Array final : public ISerializable {
     T* result;
 
     if (mCapacity <= mSize) {
+      size_t currentSize = mSize;
       ResizeNoInit(mSize + 1);
-      result = new(mData + mSize - 1) T(args...);
+      result = new(mData + currentSize) T(args...);
     }
     else {
       result = new(mData + mSize) T(args...);

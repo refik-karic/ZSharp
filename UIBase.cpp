@@ -3,11 +3,11 @@
 namespace ZSharp {
 
 UIBase::UIBase() 
-  : mWidth(0), mHeight(0), mName(""), mX(0), mY(0), mGridRow(0), mGridColumn(0), mBorderThickness(0), mBorderColor(0), mMouseOver(false) {
+  : mWidth(0), mHeight(0), mX(0), mY(0), mGridRow(0), mGridColumn(0), mBorderThickness(0), mBorderColor(0), mName(""), mMouseOver(false) {
 }
 
 UIBase::UIBase(size_t width, size_t height, const String& name)
-  : mWidth(width), mHeight(height), mName(name), mX(0), mY(0), mGridRow(0), mGridColumn(0), mBorderThickness(0), mBorderColor(0), mMouseOver(false)  {
+  : mWidth(width), mHeight(height), mX(0), mY(0), mGridRow(0), mGridColumn(0), mBorderThickness(0), mBorderColor(0), mName(name), mMouseOver(false)  {
 }
 
 UIBase::~UIBase() {
@@ -44,7 +44,7 @@ void UIBase::SetWidth(size_t width) {
   mWidth = width;
 }
 
-const size_t UIBase::GetWidth() const {
+size_t UIBase::GetWidth() const {
   return mWidth;
 }
 
@@ -56,7 +56,7 @@ void UIBase::SetHeight(size_t height) {
   mHeight = height;
 }
 
-const size_t UIBase::GetHeight() const {
+size_t UIBase::GetHeight() const {
   return mHeight;
 }
 
@@ -68,7 +68,7 @@ void UIBase::SetGridRow(size_t row) {
   mGridRow = row;
 }
 
-const size_t UIBase::GetGridRow() const {
+size_t UIBase::GetGridRow() const {
   return mGridRow;
 }
 
@@ -80,7 +80,7 @@ void UIBase::SetGridColumn(size_t column) {
   mGridColumn = column;
 }
 
-const size_t UIBase::GetGridColumn() const {
+size_t UIBase::GetGridColumn() const {
   return mGridColumn;
 }
 

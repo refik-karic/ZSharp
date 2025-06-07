@@ -408,7 +408,7 @@ void World::LoadOBJ(Model& model, Asset& asset) {
   }
 
   const Array<OBJFace>& faceList = objFile.Faces();
-  for (size_t triIndex = 0; triIndex < indexSize; ++triIndex) {
+  for (int32 triIndex = 0; triIndex < indexSize; ++triIndex) {
     Triangle triangle(static_cast<int32>(faceList[triIndex].triangleFace[0].vertexIndex) * stride,
       static_cast<int32>(faceList[triIndex].triangleFace[1].vertexIndex) * stride,
       static_cast<int32>(faceList[triIndex].triangleFace[2].vertexIndex) * stride

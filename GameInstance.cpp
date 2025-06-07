@@ -24,10 +24,10 @@ ConsoleVariable<float> CameraRotation("CameraRotation", 5.f);
 ConsoleVariable<ZColor> ClearColor("ClearColor", ZColor(ZColors::ORANGE));
 
 GameInstance::GameInstance()
-  : mCameraReset(new ConsoleVariable<void>("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this))),
+  : 
     mFrontEnd(new FrontEnd()), mCamera(new Camera()), mWorld(new World()), mRenderer(new Renderer()), 
-    mThreadPool(new ThreadPool()), mDevConsole(new DevConsole()),
-    mExtraState(new ExtraState()) {
+    mThreadPool(new ThreadPool()), mExtraState(new ExtraState()), mDevConsole(new DevConsole()),
+    mCameraReset(new ConsoleVariable<void>("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this))) {
 
 }
 

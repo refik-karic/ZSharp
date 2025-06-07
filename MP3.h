@@ -33,7 +33,6 @@ class MP3 final {
   MemoryMappedFileReader mReader;
 
   uint8* mDataStream = nullptr;
-  size_t mOffset = 0;
   size_t mBitOffset = 0;
   size_t mStreamSize = 0;
 

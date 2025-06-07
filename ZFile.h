@@ -105,7 +105,6 @@ public:
   const char* GetBuffer() const;
 
 private:
-  size_t mFileSize = 0;
   PlatformMemoryMappedFileHandle* mMappedFileHandle = nullptr;
   void* mFileData = nullptr;
 };
@@ -125,7 +124,6 @@ public:
   bool Flush();
 
 private:
-  size_t mFileSize = 0;
   PlatformMemoryMappedFileHandle* mMappedFileHandle = nullptr;
   void* mFileData = nullptr;
 };

@@ -9,7 +9,7 @@
 namespace ZSharp {
 
 ScopedTimer::ScopedTimer(const char* name)
-  : mName(name), mTime(PlatformHighResClock()) {
+  : mTime(PlatformHighResClock()), mName(name) {
 
 }
 

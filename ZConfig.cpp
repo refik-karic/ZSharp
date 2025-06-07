@@ -57,11 +57,12 @@ bool ZConfig::SizeChanged(size_t width, size_t height) {
 }
 
 ZConfig::ZConfig()
-  : mAssetPath(""), 
+  :  
   mViewportWidth(640, 3840, 1920),
   mViewportHeight(480, 2160, 1080),
   mBytesPerPixel(4, 4, 4),
   mViewportStride(0),
+  mAssetPath(""),
   mWindowTitle("Software_Renderer_V3") {
   FileString iniFilePath(PlatformGetUserDataDirectory());
   iniFilePath.SetFilename("ZSharpSettings.txt");

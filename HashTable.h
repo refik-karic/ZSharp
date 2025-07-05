@@ -2,7 +2,6 @@
 
 #include "Array.h"
 #include "HashFunctions.h"
-#include "List.h"
 #include "Pair.h"
 #include "PlatformMemory.h"
 #include "ZAssert.h"
@@ -12,70 +11,41 @@ namespace ZSharp {
 
 template<typename Key, typename Value, typename HashFunction = Hash<Key>>
 class HashTable final {
+  private:
+  class TableEntry final {
+    public:
+    bool occupied = false;
+    Pair<Key, Value> kvp;
+  };
+  
   public:
 
   class Iterator {
     public:
-    Iterator(typename Array<List<Pair<Key, Value>>>::Iterator begin, 
-      typename Array<List<Pair<Key, Value>>>::Iterator end,
+    Iterator(typename Array<TableEntry>::Iterator iter,
+      typename Array<TableEntry>::Iterator end,
       bool reverse)
-      : mStorageIter(begin), mStorageEnd(end), mBucketIter((*begin).begin()) {
+      : mIter(iter), mEnd(end) {
       if (reverse) {
-        mBucketIter = (*begin).rbegin();
-
-        for (; mStorageIter != mStorageEnd; --mStorageIter) {
-          List<Pair<Key, Value>>& list = (*mStorageIter);
-
-          if (list.Size() > 0) {
-            mBucketIter = list.rbegin();
-            break;
-          }
-        }
+        for (; mIter != mEnd && (!mIter->occupied); --mIter) {}
       }
       else {
-        for (; mStorageIter != mStorageEnd; ++mStorageIter) {
-          List<Pair<Key, Value>>& list = (*mStorageIter);
-
-          if (list.Size() > 0) {
-            mBucketIter = list.begin();
-            break;
-          }
-        }
+        for (; mIter != mEnd && (!mIter->occupied); ++mIter) {}
       }
     }
 
     Iterator& operator++() {
-      mBucketIter++;
+      mIter++;
 
-      if (mBucketIter == (*mStorageIter).end()) {
-        mStorageIter++;
-        for (; mStorageIter != mStorageEnd; ++mStorageIter) {
-          List<Pair<Key, Value>>& list = (*mStorageIter);
-
-          if (list.Size() > 0) {
-            mBucketIter = list.begin();
-            break;
-          }
-        }
-      }
+      for (; mIter != mEnd && (!mIter->occupied); ++mIter) {}
 
       return *this;
     }
 
     Iterator& operator--() {
-      mBucketIter--;
+      mIter--;
 
-      if (mBucketIter == (*mStorageIter).rend()) {
-        mStorageIter--;
-        for (; mStorageIter != mStorageEnd; --mStorageIter) {
-          List<Pair<Key, Value>>& list = (*mStorageIter);
-
-          if (list.Size() > 0) {
-            mBucketIter = list.rbegin();
-            break;
-          }
-        }
-      }
+      for (; mIter != mEnd && (!mIter->occupied); --mIter) {}
 
       return *this;
     }
@@ -87,39 +57,35 @@ class HashTable final {
     }
 
     bool operator==(const Iterator& rhs) {
-      return mStorageIter == rhs.mStorageIter;
+      return mIter == rhs.mIter;
     }
 
     bool operator!=(const Iterator& rhs) {
-      return mStorageIter != rhs.mStorageIter;
+      return mIter != rhs.mIter;
     }
 
     Pair<Key, Value>& operator*() const {
-      return *mBucketIter;
+      return (*mIter).kvp;
     }
 
     Pair<Key, Value>* operator->() {
-      return mBucketIter.operator->();
+      return &((*mIter).kvp);
     }
 
     private:
-    typename Array<List<Pair<Key, Value>>>::Iterator mStorageIter;
-    typename Array<List<Pair<Key, Value>>>::Iterator mStorageEnd;
-    typename List<Pair<Key, Value>>::Iterator mBucketIter;
+    typename Array<TableEntry>::Iterator mIter;
+    typename Array<TableEntry>::Iterator mEnd;
   };
 
   HashTable()
     : mSize(0), mMinCapacity(4096), mStorage(4096)  {
-
   }
 
   HashTable(size_t initialCapacity)
     : mSize(0), mMinCapacity(initialCapacity), mStorage(initialCapacity)  {
-
   }
 
   ~HashTable() {
-
   }
 
   HashTable(const HashTable& rhs)
@@ -132,44 +98,51 @@ class HashTable final {
     }
 
     mSize = rhs.mSize;
-    mStorage = rhs.mStorage;
     mMinCapacity = rhs.mMinCapacity;
+    mStorage = rhs.mStorage;
   }
 
   Value& operator[](const Key& key) {
-    {
-      List<Pair<Key, Value>>& bucket = mStorage[HashedIndex(key)];
-
-      bool found = false;
-      for (Pair<Key, Value>& pair : bucket) {
-        if (pair.mKey == key) {
-          found = true;
-          break;
-        }
+    // Return existing value for key if it exists, whether the value is assigned or not.
+    uint32 hashedIndex = HashedIndex(key);
+    for (size_t i = 0; i < mSize; ++i) {
+      TableEntry& entry = mStorage[hashedIndex + (i * i)];
+      if (entry.occupied && entry.kvp.mKey == key) {
+        return entry.kvp.mValue;
       }
-      
-      if (!found) {
-        Pair<Key, Value> pair(key);
-        bucket.Add(pair);
+      else if (!entry.occupied) {
+        entry.occupied = true;
+        entry.kvp.mKey = key;
+        return entry.kvp.mValue;
       }
     }
 
-    // Must recompute hash in case of resizing.
-    List<Pair<Key, Value>>& bucket = mStorage[HashedIndex(key)];
-    Value& matchedValue = (*(bucket.begin())).mValue;
-    for (Pair<Key, Value>& pair : bucket) {
-      if (pair.mKey == key) {
-        matchedValue = pair.mValue;
+    // In the event we don't have any space and must add the key we need to insert and retrieve the value.
+    Value value;
+    Add(key, value);
+
+    hashedIndex = HashedIndex(key);
+    for (size_t i = 0; i < mSize; ++i) {
+      TableEntry& entry = mStorage[hashedIndex + (i * i)];
+      if (entry.occupied && entry.kvp.mKey == key) {
+        return entry.kvp.mValue;
+      }
+      else if (!entry.occupied) {
+        entry.occupied = true;
+        entry.kvp.mKey = key;
+        return entry.kvp.mValue;
       }
     }
 
-    return matchedValue;
+    // Should never reach this point but we must return something.
+    ZAssert(false);
+    return mStorage[0].kvp.mValue;
   }
 
   bool Add(const Key& key, const Value& value) {
-    InsertKeyValue(HashedIndex(key), key, value);
+    InsertKeyValue(key, value);
 
-    if (mSize > Capacity()) {
+    if (mSize >= Capacity()) {
       const size_t doubledCapacity = Capacity() * 2;
       size_t capacity = (doubledCapacity < mMinCapacity) ? mMinCapacity : doubledCapacity;
       Resize(capacity);
@@ -179,7 +152,7 @@ class HashTable final {
   }
 
   bool Remove(const Key& key) {
-    bool wasRemoved = DeleteKey(HashedIndex(key), key);
+    bool wasRemoved = DeleteKey(key);
     
     if (wasRemoved) {
       const size_t threshold = Capacity() / 4;
@@ -194,10 +167,14 @@ class HashTable final {
   }
 
   bool HasKey(const Key& key) const {
-    const List<Pair<Key, Value>>& bucket = mStorage[HashedIndex(key)];
-    for (Pair<Key, Value>& pair : bucket) {
-      if (pair.mKey == key) {
+    uint32 hashedIndex = HashedIndex(key);
+    for (size_t i = 0; i < mSize; ++i) {
+      const TableEntry& entry = mStorage[hashedIndex + (i * i)];
+      if (entry.occupied && entry.kvp.mKey == key) {
         return true;
+      }
+      else if (!entry.occupied) {
+        return false;
       }
     }
 
@@ -205,10 +182,14 @@ class HashTable final {
   }
 
   Value GetValue(const Key& key) const {
-    const List<Pair<Key, Value>>& bucket = mStorage[HashedIndex(key)];
-    for (Pair<Key, Value>& pair : bucket) {
-      if (pair.mKey == key) {
-        return pair.mValue;
+    uint32 hashedIndex = HashedIndex(key);
+    for (size_t i = 0; i < mSize; ++i) {
+      const TableEntry& entry = mStorage[hashedIndex + (i * i)];
+      if (entry.occupied && entry.kvp.mKey == key) {
+        return entry.kvp.mValue;
+      }
+      else if (!entry.occupied) {
+        break;
       }
     }
 
@@ -217,9 +198,9 @@ class HashTable final {
 
   void Resize(size_t size) {
     HashTable tempTable(size);
-    for (List<Pair<Key, Value>>& bucket : mStorage) {
-      for (Pair<Key, Value>& hashPair : bucket) {
-        tempTable.Add(hashPair.mKey, hashPair.mValue);
+    for (TableEntry& entry : mStorage) {
+      if (entry.occupied) {
+        tempTable.Add(entry.kvp.mKey, entry.kvp.mValue);
       }
     }
 
@@ -254,7 +235,7 @@ class HashTable final {
   private:
   size_t mSize;
   size_t mMinCapacity;
-  Array<List<Pair<Key, Value>>> mStorage;
+  Array<HashTable::TableEntry> mStorage;
 
   uint32 HashedIndex(const Key& key) const {
     HashFunction hashFunctor;
@@ -262,52 +243,43 @@ class HashTable final {
     return hash % Capacity();
   }
 
-  void InsertKeyValue(size_t index, const Key& key, const Value& value) {
-    List<Pair<Key, Value>>& bucket = mStorage[index];
-    if (bucket.Size() == 0) {
-      Pair<Key, Value> pair(key, value);
-      bucket.Add(pair);
-      ++mSize;
-    }
-    else {
-      bool foundMatch = false;
-      for (Pair<Key, Value>& pair : bucket) {
-        if (pair.mKey == key) {
-          pair.mValue = value;
-          foundMatch = true;
-          break;
-        }
-      }
-
-      if (!foundMatch) {
-        Pair<Key, Value> pair(key, value);
-        bucket.Add(pair);
+  void InsertKeyValue(const Key& key, const Value& value) {
+    uint32 hashedIndex = HashedIndex(key);
+    for (size_t i = 0; i < Capacity(); ++i) {
+      TableEntry& entry = mStorage[hashedIndex + (i * i)];
+      
+      // Either insert into an empty slot or update an existing entry.
+      if (!entry.occupied) {
+        entry.occupied = true;
+        entry.kvp.mKey = key;
+        entry.kvp.mValue = value;
         ++mSize;
+        break;
+      }
+      else if (entry.kvp.mKey == key) {
+        entry.kvp.mValue = value;
+        break;
       }
     }
   }
 
-  bool DeleteKey(size_t index, const Key& key) {
-    List<Pair<Key, Value>>& bucket = mStorage[index];
-
-    Pair<Key, Value> pairToRemove;
-
-    bool found = false;
-    for (Pair<Key, Value>& pair : bucket) {
-      if (pair.mKey == key) {
-        found = true;
-        pairToRemove = pair;
-        break;
+  bool DeleteKey(const Key& key) {
+    uint32 hashedIndex = HashedIndex(key);
+    for (size_t i = 0; i < mSize; ++i) {
+      TableEntry& entry = mStorage[hashedIndex + (i * i)];
+      if (entry.occupied && entry.kvp.mKey == key) {
+        entry.occupied = false;
+        // TODO: Is there a cleaner way to reset this object?
+        entry.kvp = Pair<Key, Value>();
+        --mSize;
+        return true;
+      }
+      else if(!entry.occupied) {
+        return false;
       }
     }
 
-    if (found && bucket.Remove(pairToRemove)) {
-      --mSize;
-      return true;
-    }
-    else {
-      return false;
-    }
+    return false;
   }
 };
 

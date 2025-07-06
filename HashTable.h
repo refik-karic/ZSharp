@@ -15,7 +15,7 @@ class HashTable final {
   class TableEntry final {
     public:
     bool occupied = false;
-    Pair<Key, Value> kvp;
+    uint8 kvpBuff[sizeof(Pair<Key, Value>)];
   };
   
   public:
@@ -65,11 +65,11 @@ class HashTable final {
     }
 
     Pair<Key, Value>& operator*() const {
-      return (*mIter).kvp;
+      return *((Pair<Key, Value>*)((*mIter).kvpBuff));
     }
 
     Pair<Key, Value>* operator->() {
-      return &((*mIter).kvp);
+      return (Pair<Key, Value>*)((*mIter).kvpBuff);
     }
 
     private:
@@ -106,14 +106,14 @@ class HashTable final {
     // Return existing value for key if it exists, whether the value is assigned or not.
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      TableEntry& entry = mStorage[hashedIndex + (i * i)];
-      if (entry.occupied && entry.kvp.mKey == key) {
-        return entry.kvp.mValue;
+      TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
+        return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
       }
       else if (!entry.occupied) {
         entry.occupied = true;
-        entry.kvp.mKey = key;
-        return entry.kvp.mValue;
+        ((Pair<Key, Value>*)entry.kvpBuff)->mKey = key;
+        return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
       }
     }
 
@@ -123,20 +123,20 @@ class HashTable final {
 
     hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      TableEntry& entry = mStorage[hashedIndex + (i * i)];
-      if (entry.occupied && entry.kvp.mKey == key) {
-        return entry.kvp.mValue;
+      TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
+        return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
       }
       else if (!entry.occupied) {
         entry.occupied = true;
-        entry.kvp.mKey = key;
-        return entry.kvp.mValue;
+        ((Pair<Key, Value>*)entry.kvpBuff)->mKey = key;
+        return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
       }
     }
 
     // Should never reach this point but we must return something.
     ZAssert(false);
-    return mStorage[0].kvp.mValue;
+    return ((Pair<Key, Value>*)mStorage[0].kvpBuff)->mValue;
   }
 
   bool Add(const Key& key, const Value& value) {
@@ -169,8 +169,8 @@ class HashTable final {
   bool HasKey(const Key& key) const {
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      const TableEntry& entry = mStorage[hashedIndex + (i * i)];
-      if (entry.occupied && entry.kvp.mKey == key) {
+      const TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
         return true;
       }
       else if (!entry.occupied) {
@@ -184,9 +184,9 @@ class HashTable final {
   Value GetValue(const Key& key) const {
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      const TableEntry& entry = mStorage[hashedIndex + (i * i)];
-      if (entry.occupied && entry.kvp.mKey == key) {
-        return entry.kvp.mValue;
+      const TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
+        return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
       }
       else if (!entry.occupied) {
         break;
@@ -200,7 +200,7 @@ class HashTable final {
     HashTable tempTable(size);
     for (TableEntry& entry : mStorage) {
       if (entry.occupied) {
-        tempTable.Add(entry.kvp.mKey, entry.kvp.mValue);
+        tempTable.Add(((Pair<Key, Value>*)entry.kvpBuff)->mKey, ((Pair<Key, Value>*)entry.kvpBuff)->mValue);
       }
     }
 
@@ -246,18 +246,17 @@ class HashTable final {
   void InsertKeyValue(const Key& key, const Value& value) {
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < Capacity(); ++i) {
-      TableEntry& entry = mStorage[hashedIndex + (i * i)];
+      TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
       
       // Either insert into an empty slot or update an existing entry.
       if (!entry.occupied) {
         entry.occupied = true;
-        entry.kvp.mKey = key;
-        entry.kvp.mValue = value;
+        new ((Pair<Key, Value>*)(entry.kvpBuff)) Pair<Key, Value>(key, value);
         ++mSize;
         break;
       }
-      else if (entry.kvp.mKey == key) {
-        entry.kvp.mValue = value;
+      else if (((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
+        ((Pair<Key, Value>*)entry.kvpBuff)->mValue = value;
         break;
       }
     }
@@ -266,11 +265,10 @@ class HashTable final {
   bool DeleteKey(const Key& key) {
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      TableEntry& entry = mStorage[hashedIndex + (i * i)];
-      if (entry.occupied && entry.kvp.mKey == key) {
+      TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
         entry.occupied = false;
-        // TODO: Is there a cleaner way to reset this object?
-        entry.kvp = Pair<Key, Value>();
+        ((Pair<Key, Value>*)entry.kvpBuff)->~Pair<Key, Value>();
         --mSize;
         return true;
       }

@@ -23,7 +23,7 @@ class Trie {
     }
   };
 
-  typedef HashTable<char, TrieNode, TrieHash> TrieStorage;
+  typedef HashTable<char, TrieNode*, TrieHash> TrieStorage;
 
   struct TrieNode {
     TrieStorage children;
@@ -38,8 +38,31 @@ class Trie {
 
     }
 
+    ~TrieNode() {
+      FreeNodes();
+    }
+
+    void operator=(const TrieNode& rhs) {
+      if (this != &rhs) {
+        FreeNodes();
+        children = rhs.children;
+        isWord = rhs.isWord;
+        parent = rhs.parent;
+      }
+    }
+
     bool operator==(const TrieNode& rhs) const {
       return parent == rhs.parent;
+    }
+
+    private:
+    void FreeNodes() {
+      for (Pair<char, TrieNode*>& child : children) {
+        if (child.mValue != nullptr) {
+          delete child.mValue;
+          child.mValue = nullptr;
+        }
+      }
     }
   };
 
@@ -74,8 +97,8 @@ class Trie {
       for (TrieNode* node = mNode; node != nullptr; node = node->parent) {
         TrieNode* parent = node->parent;
         if (parent != nullptr) {
-          for (Pair<char, TrieNode>& child : parent->children) {
-            if (&(child.mValue) == node) {
+          for (Pair<char, TrieNode*>& child : parent->children) {
+            if (child.mValue == node) {
               char buff[] = {child.mKey};
               result.Append(buff, 0, 1);
               break;
@@ -96,7 +119,7 @@ class Trie {
       }
 
       if (node->children.Size() > 0) {
-        TrieNode* child = &(node->children.begin()->mValue);
+        TrieNode* child = node->children.begin()->mValue;
         if (child->isWord) {
           return child;
         }
@@ -121,14 +144,14 @@ class Trie {
 
       for (TrieStorage::Iterator iter = parent->children.begin(), end = parent->children.end();
         iter != end; iter++) {
-        if (&(iter->mValue) == node) {
+        if (iter->mValue == node) {
           iter++;
           if (iter != end) {
-            if (iter->mValue.isWord) {
-              return &(iter->mValue);
+            if (iter->mValue->isWord) {
+              return iter->mValue;
             }
             else {
-              return GetNext(&(iter->mValue));
+              return GetNext(iter->mValue);
             }
           }
           else {
@@ -162,13 +185,13 @@ class Trie {
       char letter = inStr[currentIndex];
 
       if (node.HasKey(letter)) {
-        current = &(node[letter]);
+        current = node[letter];
       }
       else {
-        TrieNode nextNode;
-        nextNode.parent = current;
+        TrieNode* nextNode = new TrieNode;
+        nextNode->parent = current;
         node.Add(letter, nextNode);
-        current = &(node[letter]);
+        current = node[letter];
       }
 
       if (currentIndex + 1 >= inLength) {
@@ -192,7 +215,7 @@ class Trie {
       char letter = inStr[currentIndex];
 
       if (node.HasKey(letter)) {
-        current = &(node[letter]);
+        current = node[letter];
 
         bool reachedEnd = currentIndex + 1 >= inLength;
         if (reachedEnd) {
@@ -224,7 +247,7 @@ class Trie {
       char letter = inStr[currentIndex];
 
       if (node.HasKey(letter)) {
-        current = &(node[letter]);
+        current = node[letter];
 
         bool reachedEnd = currentIndex + 1 >= inLength;
         if (reachedEnd) {
@@ -272,7 +295,7 @@ class Trie {
     char* keyToDelete = nullptr;
     for (TrieStorage::Iterator iter = parent->children.begin(), end = parent->children.end();
       iter != end; iter++) {
-      if (&(iter->mValue) == node) {
+      if (iter->mValue == node) {
         keyToDelete = &(iter->mKey);
         break;
       }

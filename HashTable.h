@@ -235,7 +235,7 @@ class HashTable final {
   uint32 HashedIndex(const Key& key) const {
     HashFunction hashFunctor;
     uint32 hash = hashFunctor(key);
-    return hash % Capacity();
+    return hash & (Capacity() - 1);
   }
 
   void InsertKeyValue(const Key& key, const Value& value) {

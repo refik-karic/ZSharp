@@ -19,6 +19,29 @@ size_t RoundDownNearestMultiple(size_t val, size_t multiple) {
   return (val / multiple) * multiple;
 }
 
+uint32 RoundToNearestPowTwo(uint32 val) {
+  --val;
+  val |= val >> 1;
+  val |= val >> 2;
+  val |= val >> 4;
+  val |= val >> 8;
+  val |= val >> 16;
+  ++val;
+  return val;
+}
+
+size_t RoundToNearestPowTwo(size_t val) {
+  --val;
+  val |= val >> 1;
+  val |= val >> 2;
+  val |= val >> 4;
+  val |= val >> 8;
+  val |= val >> 16;
+  val |= val >> 32;
+  ++val;
+  return val;
+}
+
 float DegreesToRadians(float degrees) {
   return degrees * PI_OVER_180;
 }

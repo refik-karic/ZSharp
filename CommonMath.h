@@ -62,6 +62,10 @@ size_t RoundUpNearestMultiple(size_t val, size_t multiple);
 
 size_t RoundDownNearestMultiple(size_t val, size_t multiple);
 
+uint32 RoundToNearestPowTwo(uint32 val);
+
+size_t RoundToNearestPowTwo(size_t val);
+
 float DegreesToRadians(float degrees);
 
 FORCE_INLINE float Lerp(float x1, float x2, float point) {

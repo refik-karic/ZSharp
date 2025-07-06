@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Array.h"
+#include "CommonMath.h"
 #include "HashFunctions.h"
 #include "Pair.h"
 #include "PlatformMemory.h"
@@ -82,7 +83,11 @@ class HashTable final {
   }
 
   HashTable(size_t initialCapacity)
-    : mSize(0), mMinCapacity(initialCapacity), mStorage(initialCapacity)  {
+    : mSize(0), mMinCapacity(RoundToNearestPowTwo(initialCapacity)), mStorage(RoundToNearestPowTwo(initialCapacity)) {
+    if (Capacity() == 0) {
+      mMinCapacity = 2;
+      Resize(2);
+    }
   }
 
   ~HashTable() {
@@ -106,32 +111,22 @@ class HashTable final {
     // Return existing value for key if it exists, whether the value is assigned or not.
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      TableEntry& entry = mStorage[(hashedIndex + (i * i)) & (Capacity() - 1)];
       if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
         return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
       }
       else if (!entry.occupied) {
         entry.occupied = true;
         ((Pair<Key, Value>*)entry.kvpBuff)->mKey = key;
+        ++mSize;
         return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
       }
     }
 
-    // In the event we don't have any space and must add the key we need to insert and retrieve the value.
-    Value value;
-    Add(key, value);
-
-    hashedIndex = HashedIndex(key);
-    for (size_t i = 0; i < mSize; ++i) {
-      TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
-      if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
-        return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
-      }
-      else if (!entry.occupied) {
-        entry.occupied = true;
-        ((Pair<Key, Value>*)entry.kvpBuff)->mKey = key;
-        return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
-      }
+    if (mSize >= (Capacity() << 1)) {
+      const size_t doubledCapacity = (Capacity() >> 1);
+      size_t capacity = (doubledCapacity < mMinCapacity) ? mMinCapacity : doubledCapacity;
+      Resize(capacity);
     }
 
     // Should never reach this point but we must return something.
@@ -142,8 +137,8 @@ class HashTable final {
   bool Add(const Key& key, const Value& value) {
     InsertKeyValue(key, value);
 
-    if (mSize >= Capacity()) {
-      const size_t doubledCapacity = Capacity() * 2;
+    if (mSize >= (Capacity() << 1)) {
+      const size_t doubledCapacity = (Capacity() >> 1);
       size_t capacity = (doubledCapacity < mMinCapacity) ? mMinCapacity : doubledCapacity;
       Resize(capacity);
     }
@@ -155,9 +150,9 @@ class HashTable final {
     bool wasRemoved = DeleteKey(key);
     
     if (wasRemoved) {
-      const size_t threshold = Capacity() / 4;
+      const size_t threshold = (Capacity() << 2);
       if (mSize < threshold && mSize > mMinCapacity) {
-        const size_t halvedCapacity = (Capacity() / 2);
+        const size_t halvedCapacity = (Capacity() << 1);
         size_t capacity = (halvedCapacity < mMinCapacity) ? mMinCapacity : halvedCapacity;
         Resize(capacity);
       }
@@ -169,7 +164,7 @@ class HashTable final {
   bool HasKey(const Key& key) const {
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      const TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      const TableEntry& entry = mStorage[(hashedIndex + (i * i)) & (Capacity() - 1)];
       if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
         return true;
       }
@@ -184,7 +179,7 @@ class HashTable final {
   Value GetValue(const Key& key) const {
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      const TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      const TableEntry& entry = mStorage[(hashedIndex + (i * i)) & (Capacity() - 1)];
       if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
         return ((Pair<Key, Value>*)entry.kvpBuff)->mValue;
       }
@@ -246,7 +241,7 @@ class HashTable final {
   void InsertKeyValue(const Key& key, const Value& value) {
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < Capacity(); ++i) {
-      TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      TableEntry& entry = mStorage[(hashedIndex + (i * i)) & (Capacity() - 1)];
       
       // Either insert into an empty slot or update an existing entry.
       if (!entry.occupied) {
@@ -265,7 +260,7 @@ class HashTable final {
   bool DeleteKey(const Key& key) {
     uint32 hashedIndex = HashedIndex(key);
     for (size_t i = 0; i < mSize; ++i) {
-      TableEntry& entry = mStorage[(hashedIndex + (i * i)) % Capacity()];
+      TableEntry& entry = mStorage[(hashedIndex + (i * i)) & (Capacity() - 1)];
       if (entry.occupied && ((Pair<Key, Value>*)entry.kvpBuff)->mKey == key) {
         entry.occupied = false;
         ((Pair<Key, Value>*)entry.kvpBuff)->~Pair<Key, Value>();

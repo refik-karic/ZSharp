@@ -6,6 +6,8 @@
 
 namespace ZSharp {
 
+class Vec4;
+
 class Vec3 final {
 public:
   Vec3();
@@ -19,6 +21,8 @@ public:
   Vec3(const Vec3& copy);
 
   void operator=(const Vec3& vector);
+
+  void operator=(const Vec4& vector);
 
   bool operator==(const Vec3& vector) const;
 

@@ -4,6 +4,7 @@
 #include "IndexBuffer.h"
 #include "Mat2x3.h"
 #include "Mat4x4.h"
+#include "Quaternion.h"
 #include "Vec3.h"
 #include "VertexBuffer.h"
 #include "WorldObject.h"
@@ -29,7 +30,7 @@ class Camera final : public WorldObject {
 
   Vec3 GetUp() const;
 
-  void RotateCamera(const Mat4x4& rotationMatrix);
+  void RotateCamera(const Quaternion& quat);
 
   void Tick();
 

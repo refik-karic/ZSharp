@@ -1,11 +1,12 @@
 #pragma once
 
-#include "Mat4x4.h"
 #include "Vec3.h"
 #include "Vec4.h"
 #include "ZBaseTypes.h"
 
 namespace ZSharp {
+
+class Mat4x4;
 
 // Note that angles are interpreted and stored internally as radians.
 class Quaternion final {

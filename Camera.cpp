@@ -16,18 +16,11 @@
 namespace ZSharp {
 ConsoleVariable<bool> BackfaceCull("BackfaceCull", true);
 
-Camera::Camera() {
-  mLook[2] = -1.f;
-  mUp[1] = 1.f;
-
-  mFovHoriz = 70.f;
-  mFovVert = 45.f;
-
+Camera::Camera() 
+  : mLook(0.f, 0.f, -1.f), mUp(0.f, 1.f, 0.f), mFovHoriz(70.f), mFovVert(45.f), 
+  mNearPlane(10.f), mFarPlane(1000.f) {
   //mNearPlane = 0.02f;
   //mFarPlane = 1000.f;
-
-  mNearPlane = 10.f;
-  mFarPlane = 1000.f;
 
   const ZConfig& config = ZConfig::Get();
   OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
@@ -40,10 +33,8 @@ Camera::~Camera() {
 }
 
 void Camera::ResetOrientation() {
-  mLook.Clear();
-  mUp.Clear();
-  mLook[2] = -1.f;
-  mUp[1] = 1.f;
+  mLook = Vec3(0.f, 0.f, -1.f);
+  mUp = Vec3(0.f, 1.f, 0.f);
 }
 
 Vec3 Camera::GetLook() const {
@@ -54,25 +45,13 @@ Vec3 Camera::GetUp() const {
   return mUp;
 }
 
-void Camera::RotateCamera(const Mat4x4& rotationMatrix) {
-#if 1
-  Vec4 lookVec(mLook);
-  lookVec = rotationMatrix.ApplyTransform(lookVec);
+void Camera::RotateCamera(const Quaternion& quat) {
+  const Mat4x4 rotationMatrix(quat.GetRotationMatrix());
 
-  lookVec.Homogenize();
-  mLook[0] = lookVec[0];
-  mLook[1] = lookVec[1];
-  mLook[2] = lookVec[2];
-#endif
+  mLook = rotationMatrix * Vec4(mLook);
 
 #if ROTATE_CAMERA_WORLD_CENTER
-  Vec4 positionVec(mPosition);
-  positionVec = rotationMatrix.ApplyTransform(positionVec);
-
-  positionVec.Homogenize();
-  mPosition[0] = positionVec[0];
-  mPosition[1] = positionVec[1];
-  mPosition[2] = positionVec[2];
+  mPosition = rotationMatrix * Vec4(mPosition);
 #endif
 
 #if 0

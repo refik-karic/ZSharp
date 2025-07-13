@@ -59,6 +59,17 @@ Mat4x4 Mat4x4::operator*(const Mat4x4& matrix) const {
   return result;
 }
 
+Vec4 Mat4x4::operator*(const Vec4& domain) const {
+  Vec4 result;
+  Unaligned_Mat4x4Vec4Transform((const float(*)[4])mData, *domain, *result);
+  return result;
+}
+
+Vec4& Mat4x4::operator*=(Vec4& domain) const {
+  Unaligned_Mat4x4Vec4TransformInPlace((const float(*)[4])mData, *domain);
+  return domain;
+}
+
 Mat4x4& Mat4x4::operator*=(const Mat4x4& matrix) {
   Unaligned_Mat4x4MulInPlace((float*)mData, (const float*)matrix.mData);
   return *this;
@@ -122,39 +133,9 @@ void Mat4x4::SetScale(const Vec4& scale) {
   mData[3][3] = scale[3];
 }
 
-void Mat4x4::SetRotation(float angle, Axis axis) {
-  switch (axis) {
-  case Axis::Z:
-    mData[0][0] = cosf(angle);
-    mData[0][1] = -sinf(angle);
-    mData[1][0] = sinf(angle);
-    mData[1][1] = cosf(angle);
-    mData[2][2] = 1.f;
-    mData[3][3] = 1.f;
-    break;
-  case Axis::X:
-    mData[0][0] = 1.f;
-    mData[1][1] = cosf(angle);
-    mData[1][2] = -sinf(angle);
-    mData[2][1] = sinf(angle);
-    mData[2][2] = cosf(angle);
-    mData[3][3] = 1.f;
-    break;
-  case Axis::Y:
-    mData[0][0] = cosf(angle);
-    mData[0][2] = sinf(angle);
-    mData[1][1] = 1.f;
-    mData[2][0] = -sinf(angle);
-    mData[2][2] = cosf(angle);
-    mData[3][3] = 1.f;
-    break;
-  }
-}
-
-Vec4 Mat4x4::ApplyTransform(const Vec4& domain) const {
-  Vec4 result;
-  Unaligned_Mat4x4Vec4Transform((const float(*)[4])mData, *domain, *result);
-  return result;
+void Mat4x4::SetRotation(const Quaternion& quat) {
+  Mat4x4 quatMat(quat.GetRotationMatrix());
+  (*this) *= quatMat;
 }
 
 }

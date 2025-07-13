@@ -23,11 +23,11 @@ const Vec3& WorldObject::Scale() const {
   return mScale;
 }
 
-Vec3& WorldObject::Rotation() {
+Quaternion& WorldObject::Rotation() {
   return mRotation;
 }
 
-const Vec3& WorldObject::Rotation() const {
+const Quaternion& WorldObject::Rotation() const {
   return mRotation;
 }
 
@@ -40,30 +40,17 @@ const Vec3& WorldObject::Translation() const {
 }
 
 Mat4x4 WorldObject::ObjectTransform() const {
-  Mat4x4 position, scale, rotationX, rotationY, rotationZ, translation, resultTransform;
+  Mat4x4 position, scale, translation;
   position.Identity();
   scale.Identity();
-  rotationX.Identity();
-  rotationY.Identity();
-  rotationZ.Identity();
-  resultTransform.Identity();
+  Mat4x4 rotation(mRotation.GetRotationMatrix());
   translation.Identity();
 
   position.SetTranslation(mPosition);
   scale.SetScale(mScale);
-  rotationX.SetRotation(mRotation[0], Mat4x4::Axis::X);
-  rotationY.SetRotation(mRotation[1], Mat4x4::Axis::Y);
-  rotationZ.SetRotation(mRotation[2], Mat4x4::Axis::Z);
-
   translation.SetTranslation(mTranslation);
 
-  resultTransform *= position;
-  resultTransform *= scale;
-  resultTransform *= rotationX;
-  resultTransform *= rotationY;
-  resultTransform *= rotationZ;
-  resultTransform *= translation;
-  return resultTransform;
+  return position * scale * rotation * translation;
 }
 
 }

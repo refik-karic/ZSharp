@@ -5,15 +5,12 @@
 #include "Vec3.h"
 #include "Vec4.h"
 
+#include "Quaternion.h"
+
 namespace ZSharp {
 
 class Mat4x4 final {
   public:
-  enum class Axis {
-    X,
-    Y,
-    Z
-  };
 
   Mat4x4();
 
@@ -35,6 +32,10 @@ class Mat4x4 final {
 
   Mat4x4 operator*(const Mat4x4& matrix) const;
 
+  Vec4 operator*(const Vec4& domain) const;
+
+  Vec4& operator*=(Vec4& domain) const;
+
   Mat4x4& operator*=(const Mat4x4& matrix);
 
   void Identity();
@@ -49,9 +50,7 @@ class Mat4x4 final {
 
   void SetScale(const Vec4& scale);
 
-  void SetRotation(float angle, Axis axis);
-
-  Vec4 ApplyTransform(const Vec4& domain) const;
+  void SetRotation(const Quaternion& quat);
 
   private:
   Vec4 mData[4];

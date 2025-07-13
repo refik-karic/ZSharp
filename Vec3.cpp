@@ -2,6 +2,7 @@
 
 #include "CommonMath.h"
 #include "PlatformIntrinsics.h"
+#include "Vec4.h"
 
 #include <cmath>
 #include <cstring>
@@ -34,6 +35,10 @@ void Vec3::operator=(const Vec3& vector) {
   }
 
   memcpy(mData, *vector, sizeof(mData));
+}
+
+void Vec3::operator=(const Vec4& vector) {
+  vector.Homogenize(*this);
 }
 
 bool Vec3::operator==(const Vec3& vector) const {

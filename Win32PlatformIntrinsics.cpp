@@ -269,6 +269,16 @@ void Unaligned_Vec4Homogenize(float* a) {
   _mm_store_ss(a + 3, _mm_div_ss(w, w));
 }
 
+void Unaligned_Vec4HomogenizeToVec3(const float* __restrict a, float* __restrict b) {
+  __m128 x = _mm_load_ss(a);
+  __m128 y = _mm_load_ss(a + 1);
+  __m128 z = _mm_load_ss(a + 2);
+  __m128 w = _mm_load_ss(a + 3);
+  _mm_store_ss(b, _mm_div_ss(x, w));
+  _mm_store_ss(b + 1, _mm_div_ss(y, w));
+  _mm_store_ss(b + 2, _mm_div_ss(z, w));
+}
+
 void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __restrict a, float* __restrict b) {
   __m128 matrixX = _mm_loadu_ps(matrix[0]);
   __m128 matrixY = _mm_loadu_ps(matrix[1]);
@@ -297,6 +307,36 @@ void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __rest
   result = _mm_add_ps(result, _mm_mul_ps(matrixW, vecW));
 
   _mm_storeu_ps(b, result);
+}
+
+void Unaligned_Mat4x4Vec4TransformInPlace(const float matrix[4][4], float* a) {
+  __m128 matrixX = _mm_loadu_ps(matrix[0]);
+  __m128 matrixY = _mm_loadu_ps(matrix[1]);
+  __m128 matrixZ = _mm_loadu_ps(matrix[2]);
+  __m128 matrixW = _mm_loadu_ps(matrix[3]);
+
+  __m128 loXY = _mm_unpacklo_ps(matrixX, matrixY);
+  __m128 loZW = _mm_unpacklo_ps(matrixZ, matrixW);
+  __m128 hiXY = _mm_unpackhi_ps(matrixX, matrixY);
+  __m128 hiZW = _mm_unpackhi_ps(matrixZ, matrixW);
+
+  matrixX = _mm_shuffle_ps(loXY, loZW, 0b01000100);
+  matrixY = _mm_shuffle_ps(loXY, loZW, 0b11101110);
+  matrixZ = _mm_shuffle_ps(hiXY, hiZW, 0b01000100);
+  matrixW = _mm_shuffle_ps(hiXY, hiZW, 0b11101110);
+
+  __m128 xyzw = _mm_loadu_ps(a);
+
+  __m128 vecX = _mm_shuffle_ps(xyzw, xyzw, 0b00000000);
+  __m128 vecY = _mm_shuffle_ps(xyzw, xyzw, 0b01010101);
+  __m128 vecZ = _mm_shuffle_ps(xyzw, xyzw, 0b10101010);
+  __m128 vecW = _mm_shuffle_ps(xyzw, xyzw, 0b11111111);
+
+  __m128 result = _mm_add_ps(_mm_mul_ps(matrixX, vecX), _mm_mul_ps(matrixY, vecY));
+  result = _mm_add_ps(result, _mm_mul_ps(matrixZ, vecZ));
+  result = _mm_add_ps(result, _mm_mul_ps(matrixW, vecW));
+
+  _mm_storeu_ps(a, result);
 }
 
 float Unaligned_ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]) {

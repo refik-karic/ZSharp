@@ -1,5 +1,7 @@
 #include "Vec4.h"
 
+#include "Vec3.h"
+
 #include <cmath>
 #include <cstring>
 
@@ -118,6 +120,10 @@ void Vec4::Normalize() {
 
 void Vec4::Homogenize() {
   Unaligned_Vec4Homogenize(mData);
+}
+
+void Vec4::Homogenize(Vec3& vec) const {
+  Unaligned_Vec4HomogenizeToVec3(mData, *vec);
 }
 
 void Vec4::Clear() {

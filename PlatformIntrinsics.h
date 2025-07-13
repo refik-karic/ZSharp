@@ -64,7 +64,11 @@ void Unaligned_Vec4Normalize(float* a);
 
 void Unaligned_Vec4Homogenize(float* a);
 
+void Unaligned_Vec4HomogenizeToVec3(const float* __restrict a, float* __restrict b);
+
 void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __restrict a, float* __restrict b);
+
+void Unaligned_Mat4x4Vec4TransformInPlace(const float matrix[4][4], float* a);
 
 float Unaligned_ParametricLinePlaneIntersection(const float start[4], const float end[4], const float edgeNormal[4], const float edgePoint[4]);
 

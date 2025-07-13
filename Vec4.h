@@ -1,10 +1,11 @@
 ﻿#pragma once
 
 #include "ZBaseTypes.h"
-#include "Vec3.h"
 #include "ZString.h"
 
 namespace ZSharp {
+
+class Vec3;
 
 class alignas(16) Vec4 final {
   public:
@@ -53,6 +54,8 @@ class alignas(16) Vec4 final {
   void Normalize();
 
   void Homogenize();
+
+  void Homogenize(Vec3& vec) const;
 
   void Clear();
 

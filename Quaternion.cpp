@@ -1,5 +1,7 @@
 #include "Quaternion.h"
 
+#include "Mat4x4.h"
+
 #include <cmath>
 
 namespace ZSharp {

@@ -137,9 +137,6 @@ void GameInstance::TickWorld() {
   inputManager.Process();
 
   if (*DebugTransforms) {
-    Vec3 rotation;
-    rotation[1] = DegreesToRadians(static_cast<float>(mExtraState->mRotationAmount % 360));
-
     if (!(mExtraState->mPauseTransforms)) {
       mExtraState->mRotationAmount += mExtraState->mRotationSpeed;
     }
@@ -147,7 +144,7 @@ void GameInstance::TickWorld() {
     for (Model& model : mWorld->GetModels()) {
       // TODO: Hacking some stuff together real quick for physics.
       if (model.Tag() == PhysicsTag::Dynamic) {
-        model.Rotation() = rotation;
+        model.Rotation() = Quaternion(DegreesToRadians(static_cast<float>(mExtraState->mRotationAmount % 360)), Vec3(0.f, 1.f, 0.f));
       }
     }
   }
@@ -257,28 +254,8 @@ void GameInstance::MoveCamera(Direction direction) {
   }
 }
 
-void GameInstance::RotateCamera(Mat4x4::Axis direction, const float angleDegrees) {
-  Vec3 rotationAxis;
-  switch (direction) {
-  case Mat4x4::Axis::X:
-    rotationAxis[0] = 1.f;
-    break;
-  case Mat4x4::Axis::Y:
-    rotationAxis[1] = 1.f;
-    break;
-  case Mat4x4::Axis::Z:
-    rotationAxis[2] = 1.f;
-    break;
-  }
-
-  Quaternion quat(DegreesToRadians(angleDegrees), rotationAxis);
-  Mat4x4 rotation(quat.GetRotationMatrix());
-  mCamera->RotateCamera(rotation);
-}
-
-void GameInstance::RotateTrackball(const Quaternion& quat) {
-  Mat4x4 rotation(quat.GetRotationMatrix());
-  mCamera->RotateCamera(rotation);
+void GameInstance::RotateCamera(const Quaternion& quat) {
+  mCamera->RotateCamera(quat);
 }
 
 void GameInstance::ChangeSpeed(int64 amount) {
@@ -438,10 +415,10 @@ void GameInstance::OnKeyDown(uint8 key) {
   }
     break;
   case 'q':
-    RotateCamera(Mat4x4::Axis::Y, 1.0F);
+    RotateCamera(Quaternion(DegreesToRadians(1.f), Vec3(0.f, 1.f, 0.f)));
     break;
   case 'e':
-    RotateCamera(Mat4x4::Axis::Y, -1.0F);
+    RotateCamera(Quaternion(DegreesToRadians(-1.f), Vec3(0.f, 1.f, 0.f)));
     break;
   case 'i':
     mExtraState->mDrawStats = !(mExtraState->mDrawStats);
@@ -480,13 +457,13 @@ void GameInstance::OnMiscKeyUp(MiscKey key) {
 }
 
 void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
-  Vec3 V1(ProjectClick((float)oldX, (float)oldY));
-  Vec3 V2(ProjectClick((float)x, (float)y));
+  const Vec3 V1(ProjectClick((float)oldX, (float)oldY));
+  const Vec3 V2(ProjectClick((float)x, (float)y));
 
-  Vec3 normal = V1.Cross(V2);
+  const Vec3 normal(V1.Cross(V2));
   float theta = V1 * V2;
-  Quaternion quat(theta, normal);
-  RotateTrackball(quat);
+  const Quaternion quat(theta, normal);
+  RotateCamera(quat);
 }
 
 void GameInstance::FastClearFrameBuffer(Span<uint8> data) {
@@ -506,7 +483,7 @@ void GameInstance::FastClearDepthBuffer(Span<uint8> data) {
 }
 
 Vec3 GameInstance::ProjectClick(float x, float y) {
-  ZConfig& config = ZConfig::Get();
+  const ZConfig& config = ZConfig::Get();
   float width = (float)config.GetViewportWidth().Value();
   float height = (float)config.GetViewportHeight().Value();
 

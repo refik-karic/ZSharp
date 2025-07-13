@@ -2,6 +2,7 @@
 
 #include "ZBaseTypes.h"
 #include "Mat4x4.h"
+#include "Quaternion.h"
 #include "Vec3.h"
 
 namespace ZSharp {
@@ -19,9 +20,9 @@ class WorldObject {
 
   const Vec3& Scale() const;
 
-  Vec3& Rotation();
+  Quaternion& Rotation();
 
-  const Vec3& Rotation() const;
+  const Quaternion& Rotation() const;
 
   Vec3& Translation();
 
@@ -32,7 +33,7 @@ class WorldObject {
   protected:
   Vec3 mPosition;
   Vec3 mScale;
-  Vec3 mRotation;
+  Quaternion mRotation;
   Vec3 mTranslation;
 };
 

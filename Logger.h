@@ -20,12 +20,11 @@ class Logger {
 
   static void Log(LogCategory category, const String& message);
 
+  Logger();
+
   ~Logger();
 
   private:
-  Logger();
-
-  static Logger& GetInstance();
 
   static FileString LogFilePath();
 
@@ -38,5 +37,7 @@ class Logger {
   SystemBufferedFileWriter mLog;
   size_t mLogSize = 0;
 };
+
+extern Logger* GlobalLog;
 
 }

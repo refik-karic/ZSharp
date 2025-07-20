@@ -11,6 +11,8 @@
 
 namespace ZSharp {
 
+Logger* GlobalLog = nullptr;
+
 Logger::Logger() : mLog(LogFilePath(), 0) {
   LogPrologue();
 }
@@ -19,8 +21,7 @@ Logger::~Logger() {
 }
 
 void Logger::Log(LogCategory category, const String& message) {
-  Logger& logger = GetInstance();
-  logger.InternalLog(category, message);
+  GlobalLog->InternalLog(category, message);
 }
 
 void Logger::InternalLog(LogCategory category, const String& message) {
@@ -89,11 +90,6 @@ void Logger::InternalLog(LogCategory category, const String& message) {
     mLog.Write(logMessage.Str(), logLength);
     mLogSize += logLength;
   }
-}
-
-Logger& Logger::GetInstance() {
-  static Logger logger;
-  return logger;
 }
 
 FileString Logger::LogFilePath() {

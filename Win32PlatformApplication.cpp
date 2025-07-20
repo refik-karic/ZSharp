@@ -32,6 +32,8 @@ DWORD WindowStyle = WS_BORDER | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | W
 ZSharp::ConsoleVariable<bool> UncappedFPS("UncappedFPS", false);
 ZSharp::ConsoleVariable<ZSharp::int32> LockedFPS("LockedFPS", 60);
 
+Win32PlatformApplication* GlobalApplication = nullptr;
+
 namespace ZSharp {
 
 BroadcastDelegate<size_t, size_t>& OnWindowSizeChangedDelegate() {
@@ -40,8 +42,7 @@ BroadcastDelegate<size_t, size_t>& OnWindowSizeChangedDelegate() {
 }
 
 PlatformApplication* GetApplication() {
-  Win32PlatformApplication& app = Win32PlatformApplication::Get();
-  return &app;
+  return GlobalApplication;
 }
 
 bool IsKeyPressed(uint8 key) {
@@ -52,36 +53,31 @@ bool IsKeyPressed(uint8 key) {
 
 }
 
-Win32PlatformApplication& Win32PlatformApplication::Get() {
-  static Win32PlatformApplication ZSharpApp;
-  return ZSharpApp;
-}
-
 LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-  Win32PlatformApplication& app = Win32PlatformApplication::Get();
+  Win32PlatformApplication* app = GlobalApplication;
 
   switch (uMsg) {
   case WM_CREATE:
-    app.OnCreate(hwnd);
+    app->OnCreate(hwnd);
     return 0;
   case WM_PAINT:
-    app.OnPaint();
+    app->OnPaint();
     return 0;
   case WM_ERASEBKGND:
     return true;
   case WM_LBUTTONDOWN:
-    app.OnLButtonDown(LOWORD(lParam), HIWORD(lParam));
+    app->OnLButtonDown(LOWORD(lParam), HIWORD(lParam));
     return 0;
   case WM_LBUTTONUP:
-    app.OnLButtonUp();
+    app->OnLButtonUp();
     return 0;
   case WM_MOUSEMOVE:
-    app.OnMouseMove(LOWORD(lParam), HIWORD(lParam));
+    app->OnMouseMove(LOWORD(lParam), HIWORD(lParam));
     return 0;
   case WM_KEYDOWN:
   {
     if (IsSpecialKey((ZSharp::int32)wParam)) {
-      app.OnKeyDown(static_cast<ZSharp::uint8>(wParam));
+      app->OnKeyDown(static_cast<ZSharp::uint8>(wParam));
     }
     else {
       UINT scanCode = MapVirtualKeyExW((UINT)wParam, MAPVK_VK_TO_VSC, 0);
@@ -93,7 +89,7 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
           firstKey = (WORD)toupper(firstKey);
         }
 
-        app.OnKeyDown(static_cast<ZSharp::uint8>(firstKey));
+        app->OnKeyDown(static_cast<ZSharp::uint8>(firstKey));
       }
     }
   }
@@ -101,7 +97,7 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
   case WM_KEYUP:
   {
     if (IsSpecialKey((ZSharp::int32)wParam)) {
-      app.OnKeyUp(static_cast<ZSharp::uint8>(wParam));
+      app->OnKeyUp(static_cast<ZSharp::uint8>(wParam));
     }
     else {
       UINT scanCode = MapVirtualKeyExW((UINT)wParam, MAPVK_VK_TO_VSC, 0);
@@ -113,25 +109,25 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
           firstKey = (WORD)toupper(firstKey);
         }
 
-        app.OnKeyUp(static_cast<ZSharp::uint8>(firstKey));
+        app->OnKeyUp(static_cast<ZSharp::uint8>(firstKey));
       }
     }
   }
     return 0;
   case WM_GETMINMAXINFO:
-    app.OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
+    app->OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
     break;
   case WM_SIZE:
-    app.OnWindowVisibility(wParam);
+    app->OnWindowVisibility(wParam);
     break;
   case WM_SIZING:
-    app.OnWindowResize((const RECT*)lParam);
+    app->OnWindowResize((const RECT*)lParam);
     break;
   case WM_CLOSE:
-    app.OnClose();
+    app->OnClose();
     break;
   case WM_DESTROY:
-    app.OnDestroy();
+    app->OnDestroy();
     break;
   case WM_QUIT:
     return wParam;

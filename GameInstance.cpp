@@ -506,6 +506,8 @@ Vec3 GameInstance::ProjectClick(float x, float y) {
 }
 
 void InitializeGlobals() {
+  GlobalLog = new Logger();
+
   GlobalConfig = new ZConfig();
 
   GlobalBundle = new Bundle(GlobalConfig->GetAssetPath());
@@ -513,7 +515,7 @@ void InitializeGlobals() {
   GlobalInputManager = new InputManager();
 
   GlobalTexturePool = new TexturePool();
-  
+
   // Ignoring AVX512 for now.
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     RGBShaderImpl = &Unaligned_Shader_RGB_AVX;
@@ -555,6 +557,10 @@ void FreeGlobals() {
 
   if (GlobalConfig) {
     delete GlobalConfig;
+  }
+
+  if (GlobalLog) {
+    delete GlobalLog;
   }
 }
 

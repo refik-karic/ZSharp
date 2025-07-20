@@ -12,7 +12,7 @@
 class Win32PlatformApplication : public ZSharp::PlatformApplication {
   public:
   
-  static Win32PlatformApplication& Get();
+  Win32PlatformApplication();
 
   ~Win32PlatformApplication();
 
@@ -37,8 +37,6 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   HCURSOR mHandCursor = nullptr;
 
   ZSharp::GameInstance* mGameInstance = nullptr;
-
-  Win32PlatformApplication();
 
   void ReadCommandLine();
 
@@ -92,5 +90,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   static bool IsShiftPressed();
 };
+
+extern Win32PlatformApplication* GlobalApplication;
 
 #endif

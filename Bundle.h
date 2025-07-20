@@ -21,10 +21,10 @@ Order matters. Assets are stored sequentially in the serialized section as they 
 class Bundle final {
   public:
 
+  Bundle(const FileString& filename);
+
   Bundle(const Bundle&) = delete;
   void operator=(const Bundle&) = delete;
-
-  static Bundle& Get();
 
   Asset* GetAsset(const String& name);
 
@@ -34,9 +34,9 @@ class Bundle final {
   Array<Asset> mAssets;
   MemoryMappedFileReader mHandle;
 
-  Bundle(const FileString& filename);
-
   bool Deserialize(MemoryDeserializer& deserializer);
 };
+
+extern Bundle* GlobalBundle;
 
 }

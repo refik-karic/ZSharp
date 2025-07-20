@@ -12,7 +12,7 @@ namespace ZSharp {
 class TexturePool final {
   public:
 
-  static TexturePool& Get();
+  TexturePool();
 
   ~TexturePool();
 
@@ -21,10 +21,10 @@ class TexturePool final {
   Texture* GetTexture(int32 id);
 
   private:
-  TexturePool();
-
   HashTable<String, int32> mLoadedTextures;
   Array<Texture> mTextures;
 };
+
+extern TexturePool* GlobalTexturePool;
 
 }

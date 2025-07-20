@@ -13,8 +13,8 @@
 namespace ZSharp {
 
 Framebuffer::Framebuffer() {
-  const ZConfig& config = ZConfig::Get();
-  OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
+  const ZConfig* config = GlobalConfig;
+  OnResize(config->GetViewportWidth().Value(), config->GetViewportHeight().Value());
 
   OnWindowSizeChangedDelegate().Add(Delegate<size_t, size_t>::FromMember<Framebuffer, &Framebuffer::OnResize>(this));
 }

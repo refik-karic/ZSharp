@@ -80,8 +80,8 @@ void World::Load() {
     DebugLoadTriangle(v3, v2, v1, shader, 8);
   }
   else {
-    ZConfig& config = ZConfig::Get();
-    if (!config.GetAssetPath().GetAbsolutePath().IsEmpty()) {
+    ZConfig* config = GlobalConfig;
+    if (!config->GetAssetPath().GetAbsolutePath().IsEmpty()) {
       LoadModels();
     }
     else {
@@ -187,12 +187,12 @@ void World::TickAudio(size_t deltaMs) {
 }
 
 void World::LoadModels() {
-  Bundle& bundle = Bundle::Get();
-  if (bundle.Assets().Size() == 0) {
+  Bundle* bundle = GlobalBundle;
+  if (bundle->Assets().Size() == 0) {
     return;
   }
 
-  for (Asset& asset : bundle.Assets()) {
+  for (Asset& asset : bundle->Assets()) {
     if (asset.Type() == AssetType::Model) {
       Model& model = mActiveModels.EmplaceBack();
       VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
@@ -251,19 +251,19 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
   const bool isTextureMapped = shader.GetShadingMethod() == ShadingMethod::UV;
 
   if (isTextureMapped) {
-    Bundle& bundle = Bundle::Get();
-    if (bundle.Assets().Size() == 0) {
+    Bundle* bundle = GlobalBundle;
+    if (bundle->Assets().Size() == 0) {
       return;
     }
 
-    Asset* textureAsset = bundle.GetAsset("wall_256");
+    Asset* textureAsset = bundle->GetAsset("wall_256");
 
     if (textureAsset == nullptr) {
       ZAssert(false);
       return;
     }
 
-    model.TextureId() = TexturePool::Get().LoadTexture(*textureAsset);
+    model.TextureId() = GlobalTexturePool->LoadTexture(*textureAsset);
   }
 
   {
@@ -329,15 +329,15 @@ void World::LoadOBJ(Model& model, Asset& asset) {
   int32 stride = objFile.Stride();
 
   if (isTextureMapped) {
-    Bundle& bundle = Bundle::Get();
-    Asset* textureAsset = bundle.GetAsset(objFile.AlbedoTexture());
+    Bundle* bundle = GlobalBundle;
+    Asset* textureAsset = bundle->GetAsset(objFile.AlbedoTexture());
 
     if (textureAsset == nullptr) {
       ZAssert(false);
       return;
     }
 
-    model.TextureId() = TexturePool::Get().LoadTexture(*textureAsset);
+    model.TextureId() = GlobalTexturePool->LoadTexture(*textureAsset);
   }
   else {
     ShaderDefinition rbgShader(4, 4, ShadingMethod::RGB);

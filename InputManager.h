@@ -39,7 +39,7 @@ class InputManager final {
     Up
   };
 
-  static InputManager& Get();
+  InputManager();
 
   InputManager(const InputManager&) = delete;
 
@@ -60,7 +60,6 @@ class InputManager final {
   KeyState GetMiscKeyState(MiscKey key);
 
   private:
-  InputManager();
 
   FixedArray<KeyState, max_uint8> mKeyboard;
   FixedArray<KeyState, static_cast<size_t>(MiscKey::NUM_KEYS)> mMiscKeys;
@@ -71,4 +70,7 @@ class InputManager final {
   int32 mCurrentMouseX = 0;
   int32 mCurrentMouseY = 0;
 };
+
+extern InputManager* GlobalInputManager;
+
 }

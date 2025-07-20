@@ -5,9 +5,64 @@
 
 namespace ZSharp {
 
-ZConfig& ZConfig::Get() {
-  static ZConfig singleton;
-  return singleton;
+ZConfig* GlobalConfig = nullptr;
+
+ZConfig::ZConfig()
+  :
+  mViewportWidth(640, 3840, 1920),
+  mViewportHeight(480, 2160, 1080),
+  mBytesPerPixel(4, 4, 4),
+  mViewportStride(0),
+  mAssetPath(""),
+  mWindowTitle("Software_Renderer_V3") {
+  FileString iniFilePath(PlatformGetUserDataDirectory());
+  iniFilePath.SetFilename("ZSharpSettings.txt");
+
+  IniFile userConfig(iniFilePath);
+  if (!userConfig.Loaded()) {
+    // Force viewport stride to update.
+    SetViewportWidth(mViewportWidth.Value());
+    return;
+  }
+
+  {
+    String viewportWidth(userConfig.FindValue("GlobalSettings", "ViewportWidth"));
+    if (!viewportWidth.IsEmpty()) {
+      SetViewportWidth(viewportWidth.ToUint32());
+    }
+  }
+
+  {
+    String viewportHeight(userConfig.FindValue("GlobalSettings", "ViewportHeight"));
+    if (!viewportHeight.IsEmpty()) {
+      SetViewportHeight(viewportHeight.ToUint32());
+    }
+  }
+
+  {
+    String bytesPerPixel(userConfig.FindValue("GlobalSettings", "BytesPerPixel"));
+    if (!bytesPerPixel.IsEmpty()) {
+      SetBytesPerPixel(bytesPerPixel.ToUint32());
+    }
+  }
+
+  {
+    String assetPath(userConfig.FindValue("GlobalSettings", "AssetPath"));
+    if (!assetPath.IsEmpty()) {
+      SetAssetPath(assetPath);
+    }
+  }
+
+  {
+    String windowTitle(userConfig.FindValue("GlobalSettings", "WindowTitle"));
+    if (!windowTitle.IsEmpty()) {
+      SetWindowTitle(windowTitle);
+    }
+  }
+
+  {
+    userConfig.GetAllValuesForSection("SerializedAssets", mAssets);
+  }
 }
 
 GameSetting<size_t> ZConfig::GetViewportWidth() const {
@@ -54,64 +109,6 @@ void ZConfig::SetBytesPerPixel(size_t bytesPerPixel) {
 
 bool ZConfig::SizeChanged(size_t width, size_t height) {
   return ((width != mViewportWidth.Value()) || (height != mViewportHeight.Value()));
-}
-
-ZConfig::ZConfig()
-  :  
-  mViewportWidth(640, 3840, 1920),
-  mViewportHeight(480, 2160, 1080),
-  mBytesPerPixel(4, 4, 4),
-  mViewportStride(0),
-  mAssetPath(""),
-  mWindowTitle("Software_Renderer_V3") {
-  FileString iniFilePath(PlatformGetUserDataDirectory());
-  iniFilePath.SetFilename("ZSharpSettings.txt");
-
-  IniFile userConfig(iniFilePath);
-  if (!userConfig.Loaded()) {
-    // Force viewport stride to update.
-    SetViewportWidth(mViewportWidth.Value());
-    return;
-  }
-  
-  {
-    String viewportWidth(userConfig.FindValue("GlobalSettings", "ViewportWidth"));
-    if (!viewportWidth.IsEmpty()) {
-      SetViewportWidth(viewportWidth.ToUint32());
-    }
-  }
-  
-  {
-    String viewportHeight(userConfig.FindValue("GlobalSettings", "ViewportHeight"));
-    if (!viewportHeight.IsEmpty()) {
-      SetViewportHeight(viewportHeight.ToUint32());
-    }
-  }
-
-  {
-    String bytesPerPixel(userConfig.FindValue("GlobalSettings", "BytesPerPixel"));
-    if (!bytesPerPixel.IsEmpty()) {
-      SetBytesPerPixel(bytesPerPixel.ToUint32());
-    }
-  }
-
-  {
-    String assetPath(userConfig.FindValue("GlobalSettings", "AssetPath"));
-    if (!assetPath.IsEmpty()) {
-      SetAssetPath(assetPath);
-    }
-  }
-
-  {
-    String windowTitle(userConfig.FindValue("GlobalSettings", "WindowTitle"));
-    if (!windowTitle.IsEmpty()) {
-      SetWindowTitle(windowTitle);
-    }
-  }
-
-  {
-    userConfig.GetAllValuesForSection("SerializedAssets", mAssets);
-  }
 }
 
 void ZConfig::SetAssetPath(const String& path) {

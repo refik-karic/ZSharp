@@ -10,6 +10,7 @@
 #include "PlatformMemory.h"
 #include "PlatformAudio.h"
 #include "ScopedTimer.h"
+#include "TexturePool.h"
 #include "ZConfig.h"
 #include "ZString.h"
 
@@ -64,12 +65,12 @@ GameInstance::~GameInstance() {
     delete mExtraState;
   }
 
-  InputManager& inputManager = InputManager::Get();
-  inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
-  inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
-  inputManager.OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
-  inputManager.OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
-  inputManager.OnMouseDragDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
+  InputManager* inputManager = GlobalInputManager;
+  inputManager->OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
+  inputManager->OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
+  inputManager->OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
+  inputManager->OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
+  inputManager->OnMouseDragDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
 void GameInstance::LoadWorld() {
@@ -82,12 +83,12 @@ void GameInstance::LoadWorld() {
   // From there we can see how long the clipping pass takes for a given scene.
   //mCamera.Position() = Vec3(0.f, 0.f, 200.f);
 
-  InputManager& inputManager = InputManager::Get();
-  inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
-  inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
-  inputManager.OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
-  inputManager.OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
-  inputManager.OnMouseDragDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
+  InputManager* inputManager = GlobalInputManager;
+  inputManager->OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
+  inputManager->OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
+  inputManager->OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
+  inputManager->OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
+  inputManager->OnMouseDragDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
 void GameInstance::LoadFrontEnd() {
@@ -133,8 +134,8 @@ void GameInstance::TickWorld() {
 
   ++(mExtraState->mFrameCount);
 
-  InputManager& inputManager = InputManager::Get();
-  inputManager.Process();
+  InputManager* inputManager = GlobalInputManager;
+  inputManager->Process();
 
   if (*DebugTransforms) {
     if (!(mExtraState->mPauseTransforms)) {
@@ -207,8 +208,8 @@ void GameInstance::TickFrontEnd() {
 
   mFrontEnd->Tick();
 
-  InputManager& inputManager = InputManager::Get();
-  inputManager.Process();
+  InputManager* inputManager = GlobalInputManager;
+  inputManager->Process();
 
   ZColor clearColor(ZColors::BLACK);
   mRenderer->ClearFramebuffer(clearColor);
@@ -354,7 +355,7 @@ void GameInstance::OnKeyDown(uint8 key) {
     return;
   }
 
-  InputManager& input = InputManager::Get();
+  InputManager* input = GlobalInputManager;
 
   switch (key) {
   case 'p':
@@ -368,10 +369,10 @@ void GameInstance::OnKeyDown(uint8 key) {
     break;
   case 'w':
   {
-    if (input.GetKeyState('a') == InputManager::KeyState::Down) {
+    if (input->GetKeyState('a') == InputManager::KeyState::Down) {
       MoveCamera(GameInstance::Direction::LEFT);
     }
-    else if (input.GetKeyState('d') == InputManager::KeyState::Down) {
+    else if (input->GetKeyState('d') == InputManager::KeyState::Down) {
       MoveCamera(GameInstance::Direction::RIGHT);
     }
 
@@ -380,10 +381,10 @@ void GameInstance::OnKeyDown(uint8 key) {
     break;
   case 's':
   {
-    if (input.GetKeyState('a') == InputManager::KeyState::Down) {
+    if (input->GetKeyState('a') == InputManager::KeyState::Down) {
       MoveCamera(GameInstance::Direction::LEFT);
     }
-    else if (input.GetKeyState('d') == InputManager::KeyState::Down) {
+    else if (input->GetKeyState('d') == InputManager::KeyState::Down) {
       MoveCamera(GameInstance::Direction::RIGHT);
     }
 
@@ -392,10 +393,10 @@ void GameInstance::OnKeyDown(uint8 key) {
     break;
   case 'a':
   {
-    if (input.GetKeyState('w') == InputManager::KeyState::Down) {
+    if (input->GetKeyState('w') == InputManager::KeyState::Down) {
       MoveCamera(GameInstance::Direction::FORWARD);
     }
-    else if (input.GetKeyState('s') == InputManager::KeyState::Down) {
+    else if (input->GetKeyState('s') == InputManager::KeyState::Down) {
       MoveCamera(GameInstance::Direction::BACK);
     }
 
@@ -404,10 +405,10 @@ void GameInstance::OnKeyDown(uint8 key) {
     break;
   case 'd':
   {
-    if (input.GetKeyState('w') == InputManager::KeyState::Down) {
+    if (input->GetKeyState('w') == InputManager::KeyState::Down) {
       MoveCamera(GameInstance::Direction::FORWARD);
     }
-    else if (input.GetKeyState('s') == InputManager::KeyState::Down) {
+    else if (input->GetKeyState('s') == InputManager::KeyState::Down) {
       MoveCamera(GameInstance::Direction::BACK);
     }
 
@@ -483,9 +484,9 @@ void GameInstance::FastClearDepthBuffer(Span<uint8> data) {
 }
 
 Vec3 GameInstance::ProjectClick(float x, float y) {
-  const ZConfig& config = ZConfig::Get();
-  float width = (float)config.GetViewportWidth().Value();
-  float height = (float)config.GetViewportHeight().Value();
+  const ZConfig* config = GlobalConfig;
+  float width = (float)config->GetViewportWidth().Value();
+  float height = (float)config->GetViewportHeight().Value();
 
   float radius = width * (*CameraRotation);
 
@@ -501,6 +502,59 @@ Vec3 GameInstance::ProjectClick(float x, float y) {
   }
   else {
     return Vec3(-newX, newY, sqrtf(1.f - r));
+  }
+}
+
+void InitializeGlobals() {
+  GlobalConfig = new ZConfig();
+
+  GlobalBundle = new Bundle(GlobalConfig->GetAssetPath());
+
+  GlobalInputManager = new InputManager();
+
+  GlobalTexturePool = new TexturePool();
+  
+  // Ignoring AVX512 for now.
+  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
+    RGBShaderImpl = &Unaligned_Shader_RGB_AVX;
+    UVShaderImpl = &Unaligned_Shader_UV_AVX;
+    CalculateAABBImpl = &Unaligned_AABB_AVX;
+    DrawDebugTextImpl = &Unaligned_DrawDebugText_AVX;
+    DepthBufferVisualizeImpl = &Aligned_DepthBufferVisualize_AVX;
+    BlendBuffersImpl = &Unaligned_BlendBuffers_AVX;
+    BilinearScaleImageImpl = &Unaligned_BilinearScaleImage_AVX;
+    GenerateMipLevelImpl = &Unaligned_GenerateMipLevel_AVX;
+  }
+  else if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
+    RGBShaderImpl = &Unaligned_Shader_RGB_SSE;
+    UVShaderImpl = &Unaligned_Shader_UV_SSE;
+    CalculateAABBImpl = &Unaligned_AABB_SSE;
+    DrawDebugTextImpl = &Unaligned_DrawDebugText_SSE;
+    DepthBufferVisualizeImpl = &Aligned_DepthBufferVisualize_SSE;
+    BlendBuffersImpl = &Unaligned_BlendBuffers_SSE;
+    BilinearScaleImageImpl = &Unaligned_BilinearScaleImage_SSE;
+    GenerateMipLevelImpl = &Unaligned_GenerateMipLevel_SSE;
+  }
+  else {
+    ZAssert(false);
+  }
+}
+
+void FreeGlobals() {
+  if (GlobalTexturePool) {
+    delete GlobalTexturePool;
+  }
+
+  if (GlobalInputManager) {
+    delete GlobalInputManager;
+  }
+
+  if (GlobalBundle) {
+    delete GlobalBundle;
+  }
+
+  if (GlobalConfig) {
+    delete GlobalConfig;
   }
 }
 

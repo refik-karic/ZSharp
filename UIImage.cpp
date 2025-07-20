@@ -17,7 +17,7 @@ void UIImage::SetTextureId(int32 id) {
 
 Texture* UIImage::GetTexture() {
   if (mTextureId != -1) {
-    return TexturePool::Get().GetTexture(mTextureId);
+    return GlobalTexturePool->GetTexture(mTextureId);
   }
   else {
     return nullptr;

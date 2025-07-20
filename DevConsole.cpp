@@ -23,14 +23,14 @@ DevConsole::DevConsole() {
 
   mActiveBuffer = (int8*)PlatformMalloc(512);
 
-  InputManager& inputManager = InputManager::Get();
-  inputManager.OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
-  inputManager.OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));
-  inputManager.OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyDown>(this));
-  inputManager.OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyUp>(this));
+  InputManager* inputManager = GlobalInputManager;
+  inputManager->OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
+  inputManager->OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));
+  inputManager->OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyDown>(this));
+  inputManager->OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyUp>(this));
 
-  ZConfig& config = ZConfig::Get();
-  OnResize(config.GetViewportWidth().Value(), config.GetViewportHeight().Value());
+  ZConfig* config = GlobalConfig;
+  OnResize(config->GetViewportWidth().Value(), config->GetViewportHeight().Value());
 
   OnWindowSizeChangedDelegate().Add(Delegate<size_t, size_t>::FromMember<DevConsole, &DevConsole::OnResize>(this));
 }
@@ -44,11 +44,11 @@ DevConsole::~DevConsole() {
     PlatformFree(mActiveBuffer);
   }
 
-  InputManager& inputManager = InputManager::Get();
-  inputManager.OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
-  inputManager.OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));
-  inputManager.OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyDown>(this));
-  inputManager.OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyUp>(this));
+  InputManager* inputManager = GlobalInputManager;
+  inputManager->OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyDown>(this));
+  inputManager->OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<DevConsole, &DevConsole::OnKeyUp>(this));
+  inputManager->OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyDown>(this));
+  inputManager->OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<DevConsole, &DevConsole::OnMiscKeyUp>(this));
 
   OnWindowSizeChangedDelegate().Remove(Delegate<size_t, size_t>::FromMember<DevConsole, &DevConsole::OnResize>(this));
 

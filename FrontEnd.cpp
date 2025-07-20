@@ -20,8 +20,8 @@ namespace ZSharp {
 FrontEnd::FrontEnd() {
   OnWindowSizeChangedDelegate().Add(Delegate<size_t, size_t>::FromMember<FrontEnd, &FrontEnd::OnResize>(this));
 
-  InputManager& inputManager = InputManager::Get();
-  inputManager.OnMouseMoveDelegate.Add(Delegate<int32, int32, bool>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
+  InputManager* inputManager = GlobalInputManager;
+  inputManager->OnMouseMoveDelegate.Add(Delegate<int32, int32, bool>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
 }
 
 FrontEnd::~FrontEnd() {
@@ -31,8 +31,8 @@ FrontEnd::~FrontEnd() {
 
   OnWindowSizeChangedDelegate().Remove(Delegate<size_t, size_t>::FromMember<FrontEnd, &FrontEnd::OnResize>(this));
 
-  InputManager& inputManager = InputManager::Get();
-  inputManager.OnMouseMoveDelegate.Remove(Delegate<int32, int32, bool>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
+  InputManager* inputManager = GlobalInputManager;
+  inputManager->OnMouseMoveDelegate.Remove(Delegate<int32, int32, bool>::FromMember<FrontEnd, &FrontEnd::OnMouseMove>(this));
 }
 
 bool FrontEnd::IsLoaded() {
@@ -43,10 +43,10 @@ void FrontEnd::Load() {
   mVisible = true;
   mLoaded = true;
 
-  ZConfig& config = ZConfig::Get();
+  ZConfig* config = GlobalConfig;
 
-  size_t width = config.GetViewportWidth().Value();
-  size_t height = config.GetViewportHeight().Value();
+  size_t width = config->GetViewportWidth().Value();
+  size_t height = config->GetViewportHeight().Value();
 
   UIGridColumn lowerColumn0(.8f, "LowerColumn0");
   UIGridColumn lowerColumn1(.2f, "LowerColumn1");
@@ -217,15 +217,15 @@ void FrontEnd::OnQuitButtonClicked() {
 }
 
 int32 FrontEnd::LoadBackgroundImage(const String& imageName) {
-  Bundle& bundle = Bundle::Get();
-  Asset* textureAsset = bundle.GetAsset(imageName);
+  Bundle* bundle = GlobalBundle;
+  Asset* textureAsset = bundle->GetAsset(imageName);
 
   if (textureAsset == nullptr) {
     ZAssert(false);
     return - 1;
   }
 
-  return TexturePool::Get().LoadTexture(*textureAsset);
+  return GlobalTexturePool->LoadTexture(*textureAsset);
 }
 
 }

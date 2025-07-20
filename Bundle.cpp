@@ -6,17 +6,13 @@ namespace ZSharp {
 
 const size_t BundleVersion = 0;
 
+Bundle* GlobalBundle = nullptr;
+
 Bundle::Bundle(const FileString& filename) : mHandle(filename) {
   if (mHandle.IsOpen()) {
     MemoryDeserializer deserializer(mHandle.GetBuffer());
     Deserialize(deserializer);
   }
-}
-
-Bundle& Bundle::Get() {
-  ZConfig& config = ZConfig::Get();
-  static Bundle bundle(config.GetAssetPath());
-  return bundle;
 }
 
 Asset* Bundle::GetAsset(const String& name) {

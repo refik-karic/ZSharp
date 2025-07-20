@@ -15,6 +15,10 @@
 
 namespace ZSharp {
 
+void InitializeGlobals();
+
+void FreeGlobals();
+
 class GameInstance final {
   public:
 

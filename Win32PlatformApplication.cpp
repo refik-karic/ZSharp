@@ -13,7 +13,6 @@
 #include "ZString.h"
 #include "PlatformTime.h"
 #include "CommandLineParser.h"
-#include "PlatformIntrinsics.h"
 
 #include <synchapi.h>
 #include <timeapi.h>
@@ -38,33 +37,6 @@ namespace ZSharp {
 BroadcastDelegate<size_t, size_t>& OnWindowSizeChangedDelegate() {
   static BroadcastDelegate<size_t, size_t> instance;
   return instance;
-}
-
-void InitializeEnvironment() {
-  // Ignoring AVX512 for now.
-  if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
-    RGBShaderImpl = &Unaligned_Shader_RGB_AVX;
-    UVShaderImpl = &Unaligned_Shader_UV_AVX;
-    CalculateAABBImpl = &Unaligned_AABB_AVX;
-    DrawDebugTextImpl = &Unaligned_DrawDebugText_AVX;
-    DepthBufferVisualizeImpl = &Aligned_DepthBufferVisualize_AVX;
-    BlendBuffersImpl = &Unaligned_BlendBuffers_AVX;
-    BilinearScaleImageImpl = &Unaligned_BilinearScaleImage_AVX;
-    GenerateMipLevelImpl = &Unaligned_GenerateMipLevel_AVX;
-  }
-  else if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Four)) {
-    RGBShaderImpl = &Unaligned_Shader_RGB_SSE;
-    UVShaderImpl = &Unaligned_Shader_UV_SSE;
-    CalculateAABBImpl = &Unaligned_AABB_SSE;
-    DrawDebugTextImpl = &Unaligned_DrawDebugText_SSE;
-    DepthBufferVisualizeImpl = &Aligned_DepthBufferVisualize_SSE;
-    BlendBuffersImpl = &Unaligned_BlendBuffers_SSE;
-    BilinearScaleImageImpl = &Unaligned_BilinearScaleImage_SSE;
-    GenerateMipLevelImpl = &Unaligned_GenerateMipLevel_SSE;
-  }
-  else {
-    ZAssert(false);
-  }
 }
 
 PlatformApplication* GetApplication() {
@@ -237,6 +209,7 @@ Win32PlatformApplication::Win32PlatformApplication()
   mBitmapInfo->bmiHeader.biClrUsed = 0;
   mBitmapInfo->bmiHeader.biClrImportant = 0;
 
+  ZSharp::InitializeGlobals();
   mGameInstance = new ZSharp::GameInstance();
 }
 
@@ -244,6 +217,8 @@ Win32PlatformApplication::~Win32PlatformApplication() {
   if (mBitmapInfo != nullptr) {
     delete mBitmapInfo;
   }
+
+  ZSharp::FreeGlobals();
 
   if (mGameInstance != nullptr) {
     delete mGameInstance;
@@ -295,15 +270,15 @@ HWND Win32PlatformApplication::SetupWindow() {
     return nullptr;
   }
 
-  const ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
+  const ZSharp::ZConfig* config = ZSharp::GlobalConfig;
 
-  RECT clientRect{ 0L, 0L, static_cast<long>(config.GetViewportWidth().Value()), static_cast<long>(config.GetViewportHeight().Value()) };
+  RECT clientRect{ 0L, 0L, static_cast<long>(config->GetViewportWidth().Value()), static_cast<long>(config->GetViewportHeight().Value()) };
   AdjustWindowRectEx(&clientRect, WindowStyle, false, WS_EX_OVERLAPPEDWINDOW);
 
   return CreateWindowExW(
     WS_EX_OVERLAPPEDWINDOW,
     WindowClassName.Str(),
-    config.GetWindowTitle().ToWide().Str(),
+    config->GetWindowTitle().ToWide().Str(),
     WindowStyle,
     CW_USEDEFAULT,
     CW_USEDEFAULT,
@@ -441,19 +416,19 @@ void Win32PlatformApplication::OnPaint() {
 }
 
 void Win32PlatformApplication::OnLButtonDown(ZSharp::int32 x, ZSharp::int32 y) {
-  ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-  inputManager.UpdateMousePosition(x, y);
-  inputManager.UpdateMouseState(true);
+  ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+  inputManager->UpdateMousePosition(x, y);
+  inputManager->UpdateMouseState(true);
 }
 
 void Win32PlatformApplication::OnLButtonUp() {
-  ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-  inputManager.UpdateMouseState(false);
+  ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+  inputManager->UpdateMouseState(false);
 }
 
 void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
-  ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-  inputManager.UpdateMousePosition(x, y);
+  ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+  inputManager->UpdateMousePosition(x, y);
 }
 
 void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
@@ -464,8 +439,8 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
        mPaused = !mPaused;
     }
     else {
-      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-      inputManager.Update(key, ZSharp::InputManager::KeyState::Down);
+      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+      inputManager->Update(key, ZSharp::InputManager::KeyState::Down);
     }
   }
     break;
@@ -474,44 +449,44 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
     break;
   case VK_UP:
   {
-    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-    inputManager.UpdateMiscKey(ZSharp::MiscKey::UP_ARROW, ZSharp::InputManager::KeyState::Down);
+    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+    inputManager->UpdateMiscKey(ZSharp::MiscKey::UP_ARROW, ZSharp::InputManager::KeyState::Down);
   }
     break;
   case VK_LEFT:
   {
-    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-    inputManager.UpdateMiscKey(ZSharp::MiscKey::LEFT_ARROW, ZSharp::InputManager::KeyState::Down);
+    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+    inputManager->UpdateMiscKey(ZSharp::MiscKey::LEFT_ARROW, ZSharp::InputManager::KeyState::Down);
   }
   break;
   case VK_RIGHT:
   {
-    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-    inputManager.UpdateMiscKey(ZSharp::MiscKey::RIGHT_ARROW, ZSharp::InputManager::KeyState::Down);
+    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+    inputManager->UpdateMiscKey(ZSharp::MiscKey::RIGHT_ARROW, ZSharp::InputManager::KeyState::Down);
   }
   break;
   case VK_DOWN:
   {
-    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-    inputManager.UpdateMiscKey(ZSharp::MiscKey::DOWN_ARROW, ZSharp::InputManager::KeyState::Down);
+    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+    inputManager->UpdateMiscKey(ZSharp::MiscKey::DOWN_ARROW, ZSharp::InputManager::KeyState::Down);
   }
   break;
   case VK_RETURN:
   {
-    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-    inputManager.UpdateMiscKey(ZSharp::MiscKey::ENTER, ZSharp::InputManager::KeyState::Down);
+    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+    inputManager->UpdateMiscKey(ZSharp::MiscKey::ENTER, ZSharp::InputManager::KeyState::Down);
   }
   break;
   case VK_BACK:
   {
-    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-    inputManager.UpdateMiscKey(ZSharp::MiscKey::BACKSPACE, ZSharp::InputManager::KeyState::Down);
+    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+    inputManager->UpdateMiscKey(ZSharp::MiscKey::BACKSPACE, ZSharp::InputManager::KeyState::Down);
   }
   break;
   default:
   {
-    ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-    inputManager.Update(key, ZSharp::InputManager::KeyState::Down);
+    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+    inputManager->Update(key, ZSharp::InputManager::KeyState::Down);
   }
   break;
   }
@@ -521,44 +496,44 @@ void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
   switch (key) {
     case VK_UP:
     {
-      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-      inputManager.UpdateMiscKey(ZSharp::MiscKey::UP_ARROW, ZSharp::InputManager::KeyState::Up);
+      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+      inputManager->UpdateMiscKey(ZSharp::MiscKey::UP_ARROW, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_LEFT:
     {
-      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-      inputManager.UpdateMiscKey(ZSharp::MiscKey::LEFT_ARROW, ZSharp::InputManager::KeyState::Up);
+      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+      inputManager->UpdateMiscKey(ZSharp::MiscKey::LEFT_ARROW, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_RIGHT:
     {
-      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-      inputManager.UpdateMiscKey(ZSharp::MiscKey::RIGHT_ARROW, ZSharp::InputManager::KeyState::Up);
+      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+      inputManager->UpdateMiscKey(ZSharp::MiscKey::RIGHT_ARROW, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_DOWN:
     {
-      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-      inputManager.UpdateMiscKey(ZSharp::MiscKey::DOWN_ARROW, ZSharp::InputManager::KeyState::Up);
+      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+      inputManager->UpdateMiscKey(ZSharp::MiscKey::DOWN_ARROW, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_RETURN:
     {
-      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-      inputManager.UpdateMiscKey(ZSharp::MiscKey::ENTER, ZSharp::InputManager::KeyState::Up);
+      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+      inputManager->UpdateMiscKey(ZSharp::MiscKey::ENTER, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_BACK:
     {
-      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-      inputManager.UpdateMiscKey(ZSharp::MiscKey::BACKSPACE, ZSharp::InputManager::KeyState::Up);
+      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+      inputManager->UpdateMiscKey(ZSharp::MiscKey::BACKSPACE, ZSharp::InputManager::KeyState::Up);
     }
     break;
     default:
     {
-      ZSharp::InputManager& inputManager = ZSharp::InputManager::Get();
-      inputManager.Update(key, ZSharp::InputManager::KeyState::Up);
+      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+      inputManager->Update(key, ZSharp::InputManager::KeyState::Up);
     }
       break;
   }
@@ -576,10 +551,10 @@ void Win32PlatformApplication::OnWindowResize(const RECT* rect) {
 }
 
 void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
-  const ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
+  const ZSharp::ZConfig* config = ZSharp::GlobalConfig;
 
-  const ZSharp::GameSetting<size_t> width = config.GetViewportWidth();
-  const ZSharp::GameSetting<size_t> height = config.GetViewportHeight();
+  const ZSharp::GameSetting<size_t> width = config->GetViewportWidth();
+  const ZSharp::GameSetting<size_t> height = config->GetViewportHeight();
 
   info->ptMinTrackSize.x = ZSharp::Clamp(info->ptMinTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
   info->ptMaxTrackSize.x = ZSharp::Clamp(info->ptMaxTrackSize.x, (LONG)width.Min(), (LONG)width.Max());
@@ -707,20 +682,20 @@ void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds) {
 }
 
 void Win32PlatformApplication::UpdateWindowSize(const RECT rect) {
-  ZSharp::ZConfig& config = ZSharp::ZConfig::Get();
+  ZSharp::ZConfig* config = ZSharp::GlobalConfig;
 
   bool dirtySize = false;
 
   ZSharp::int32 width = rect.right;
   ZSharp::int32 height = rect.bottom;
 
-  if (width != config.GetViewportWidth().Value()) {
-    config.SetViewportWidth(width);
+  if (width != config->GetViewportWidth().Value()) {
+    config->SetViewportWidth(width);
     dirtySize = true;
   }
 
-  if (height != config.GetViewportHeight().Value()) {
-    config.SetViewportHeight(height);
+  if (height != config->GetViewportHeight().Value()) {
+    config->SetViewportHeight(height);
     dirtySize = true;
   }
 

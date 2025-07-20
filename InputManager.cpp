@@ -2,13 +2,11 @@
 #include "PlatformApplication.h"
 
 namespace ZSharp {
+
+InputManager* GlobalInputManager = nullptr;
+
 InputManager::InputManager()
   : mKeyboard(KeyState::Clear), mMiscKeys(KeyState::Clear) {
-}
-
-InputManager& InputManager::Get() {
-  static InputManager inputManager;
-  return inputManager;
 }
 
 void InputManager::Update(uint8 key, InputManager::KeyState state) {

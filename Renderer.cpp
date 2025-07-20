@@ -95,7 +95,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
             break;
           case ShadingMethod::UV:
           {
-            Texture* texture = TexturePool::Get().GetTexture(model.TextureId());
+            Texture* texture = GlobalTexturePool->GetTexture(model.TextureId());
             TextureMappedShader(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), texture, *MipOverride);
           }
           break;

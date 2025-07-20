@@ -7,10 +7,7 @@
 
 namespace ZSharp {
 
-TexturePool& TexturePool::Get() {
-  static TexturePool pool;
-  return pool;
-}
+TexturePool* GlobalTexturePool = nullptr;
 
 TexturePool::TexturePool() {
 }

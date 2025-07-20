@@ -55,10 +55,10 @@ class GameSetting final {
 class ZConfig final {
   public:
 
+  ZConfig();
+
   ZConfig(const ZConfig&) = delete;
   void operator=(const ZConfig&) = delete;
-
-  static ZConfig& Get();
 
   GameSetting<size_t> GetViewportWidth() const;
 
@@ -84,8 +84,6 @@ class ZConfig final {
 
   private:
 
-  ZConfig();
-
   void SetAssetPath(const String& path);
 
   void SetWindowTitle(const String& title);
@@ -101,4 +99,7 @@ class ZConfig final {
 
   GameSetting<String> mWindowTitle;
 };
+
+extern ZConfig* GlobalConfig;
+
 }

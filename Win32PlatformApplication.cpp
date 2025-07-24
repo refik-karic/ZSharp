@@ -214,11 +214,11 @@ Win32PlatformApplication::~Win32PlatformApplication() {
     delete mBitmapInfo;
   }
 
-  ZSharp::FreeGlobals();
-
   if (mGameInstance != nullptr) {
     delete mGameInstance;
   }
+
+  ZSharp::FreeGlobals();
 }
 
 void Win32PlatformApplication::ReadCommandLine() {

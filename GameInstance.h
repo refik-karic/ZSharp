@@ -97,7 +97,7 @@ class GameInstance final {
 
   void OnKeyDown(uint8 key);
 
-  void OnKeyUp(uint8 key);
+  void OnAsyncKeyDown(uint8 key);
 
   void OnMiscKeyDown(MiscKey key);
 

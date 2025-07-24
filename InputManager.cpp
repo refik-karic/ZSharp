@@ -6,15 +6,17 @@ namespace ZSharp {
 InputManager* GlobalInputManager = nullptr;
 
 InputManager::InputManager()
-  : mKeyboard(KeyState::Clear), mMiscKeys(KeyState::Clear) {
+  : mKeyboard(KeyState::Clear), mMiscKeys(KeyState::Clear), mAsyncKeyboard(KeyState::Clear), mAsyncMiscKeys(KeyState::Clear) {
 }
 
 void InputManager::Update(uint8 key, InputManager::KeyState state) {
   mKeyboard[key] = state;
+  mAsyncKeyboard[key] = state;
 }
 
 void InputManager::UpdateMiscKey(MiscKey key, InputManager::KeyState state) {
   mMiscKeys[static_cast<size_t>(key)] = state;
+  mAsyncMiscKeys[static_cast<size_t>(key)] = state;
 }
 
 void InputManager::UpdateMousePosition(int32 x, int32 y) {
@@ -46,6 +48,18 @@ void InputManager::Process() {
         OnKeyUpDelegate.Broadcast(i);
         break;
     }
+
+    switch (mAsyncKeyboard[i]) {
+      case KeyState::Clear:
+        break;
+      case KeyState::Down:
+        OnAsyncKeyDownDelegate.Broadcast(i);
+        break;
+      case KeyState::Up:
+        OnAsyncKeyUpDelegate.Broadcast(i);
+        mAsyncKeyboard[i] = KeyState::Clear;
+        break;
+    }
   }
 
   for (uint8 i = 0; i < mMiscKeys.Size(); ++i) {
@@ -59,6 +73,18 @@ void InputManager::Process() {
         OnMiscKeyUpDelegate.Broadcast(static_cast<MiscKey>(i));
         break;
     }
+
+    switch (mAsyncMiscKeys[i]) {
+      case KeyState::Clear:
+        break;
+      case KeyState::Down:
+        OnAsyncMiscKeyDownDelegate.Broadcast(static_cast<MiscKey>(i));
+        break;
+      case KeyState::Up:
+        OnAsyncMiscKeyUpDelegate.Broadcast(static_cast<MiscKey>(i));
+        mAsyncMiscKeys[i] = KeyState::Clear;
+        break;
+    }
   }
 
   if (mMousePressed) {
@@ -68,6 +94,7 @@ void InputManager::Process() {
 
   OnMouseMoveDelegate.Broadcast(mCurrentMouseX, mCurrentMouseY, mMousePressed);
 
+  // NOTE: We do not clear async state on each call.
   mKeyboard.Fill(KeyState::Clear);
   mMiscKeys.Fill(KeyState::Clear);
 }
@@ -77,11 +104,11 @@ bool InputManager::IsMousePressed() const {
 }
 
 InputManager::KeyState InputManager::GetKeyState(uint8 key) {
-  return IsKeyPressed(key) ? KeyState::Down : KeyState::Up;
+  return mAsyncKeyboard[key];
 }
 
 InputManager::KeyState InputManager::GetMiscKeyState(MiscKey key) {
-  return IsKeyPressed(static_cast<uint8>(key)) ? KeyState::Down : KeyState::Up;
+  return mAsyncMiscKeys[static_cast<uint8>(key)];
 }
 
 }

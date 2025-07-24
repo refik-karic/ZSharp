@@ -67,7 +67,7 @@ GameInstance::~GameInstance() {
 
   InputManager* inputManager = GlobalInputManager;
   inputManager->OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
-  inputManager->OnKeyUpDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
+  inputManager->OnAsyncKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnAsyncKeyDown>(this));
   inputManager->OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
   inputManager->OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
   inputManager->OnMouseDragDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
@@ -85,7 +85,7 @@ void GameInstance::LoadWorld() {
 
   InputManager* inputManager = GlobalInputManager;
   inputManager->OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
-  inputManager->OnKeyUpDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyUp>(this));
+  inputManager->OnAsyncKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnAsyncKeyDown>(this));
   inputManager->OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
   inputManager->OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
   inputManager->OnMouseDragDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
@@ -355,8 +355,6 @@ void GameInstance::OnKeyDown(uint8 key) {
     return;
   }
 
-  InputManager* input = GlobalInputManager;
-
   switch (key) {
   case 'p':
     PauseTransforms();
@@ -366,60 +364,6 @@ void GameInstance::OnKeyDown(uint8 key) {
     break;
   case 'f':
     mRenderer->ToggleRenderMode(RenderMode::FILL);
-    break;
-  case 'w':
-  {
-    if (input->GetKeyState('a') == InputManager::KeyState::Down) {
-      MoveCamera(GameInstance::Direction::LEFT);
-    }
-    else if (input->GetKeyState('d') == InputManager::KeyState::Down) {
-      MoveCamera(GameInstance::Direction::RIGHT);
-    }
-
-    MoveCamera(GameInstance::Direction::FORWARD);
-  }
-    break;
-  case 's':
-  {
-    if (input->GetKeyState('a') == InputManager::KeyState::Down) {
-      MoveCamera(GameInstance::Direction::LEFT);
-    }
-    else if (input->GetKeyState('d') == InputManager::KeyState::Down) {
-      MoveCamera(GameInstance::Direction::RIGHT);
-    }
-
-    MoveCamera(GameInstance::Direction::BACK);
-  }
-    break;
-  case 'a':
-  {
-    if (input->GetKeyState('w') == InputManager::KeyState::Down) {
-      MoveCamera(GameInstance::Direction::FORWARD);
-    }
-    else if (input->GetKeyState('s') == InputManager::KeyState::Down) {
-      MoveCamera(GameInstance::Direction::BACK);
-    }
-
-    MoveCamera(GameInstance::Direction::LEFT);
-  }
-    break;
-  case 'd':
-  {
-    if (input->GetKeyState('w') == InputManager::KeyState::Down) {
-      MoveCamera(GameInstance::Direction::FORWARD);
-    }
-    else if (input->GetKeyState('s') == InputManager::KeyState::Down) {
-      MoveCamera(GameInstance::Direction::BACK);
-    }
-
-    MoveCamera(GameInstance::Direction::RIGHT);
-  }
-    break;
-  case 'q':
-    RotateCamera(Quaternion(DegreesToRadians(1.f), Vec3(0.f, 1.f, 0.f)));
-    break;
-  case 'e':
-    RotateCamera(Quaternion(DegreesToRadians(-1.f), Vec3(0.f, 1.f, 0.f)));
     break;
   case 'i':
     mExtraState->mDrawStats = !(mExtraState->mDrawStats);
@@ -432,8 +376,71 @@ void GameInstance::OnKeyDown(uint8 key) {
   }
 }
 
-void GameInstance::OnKeyUp(uint8 key) {
-  (void)key;
+void GameInstance::OnAsyncKeyDown(uint8 key) {
+  if (mDevConsole->IsOpen()) {
+    return;
+  }
+
+  InputManager* input = GlobalInputManager;
+
+  switch (key) {
+    case 'w':
+    {
+      if (input->GetKeyState('a') == InputManager::KeyState::Down) {
+        MoveCamera(GameInstance::Direction::LEFT);
+      }
+      else if (input->GetKeyState('d') == InputManager::KeyState::Down) {
+        MoveCamera(GameInstance::Direction::RIGHT);
+      }
+
+      MoveCamera(GameInstance::Direction::FORWARD);
+    }
+    break;
+    case 's':
+    {
+      if (input->GetKeyState('a') == InputManager::KeyState::Down) {
+        MoveCamera(GameInstance::Direction::LEFT);
+      }
+      else if (input->GetKeyState('d') == InputManager::KeyState::Down) {
+        MoveCamera(GameInstance::Direction::RIGHT);
+      }
+
+      MoveCamera(GameInstance::Direction::BACK);
+    }
+    break;
+    case 'a':
+    {
+      if (input->GetKeyState('w') == InputManager::KeyState::Down) {
+        MoveCamera(GameInstance::Direction::FORWARD);
+      }
+      else if (input->GetKeyState('s') == InputManager::KeyState::Down) {
+        MoveCamera(GameInstance::Direction::BACK);
+      }
+
+      MoveCamera(GameInstance::Direction::LEFT);
+    }
+    break;
+    case 'd':
+    {
+      if (input->GetKeyState('w') == InputManager::KeyState::Down) {
+        MoveCamera(GameInstance::Direction::FORWARD);
+      }
+      else if (input->GetKeyState('s') == InputManager::KeyState::Down) {
+        MoveCamera(GameInstance::Direction::BACK);
+      }
+
+      MoveCamera(GameInstance::Direction::RIGHT);
+    }
+    break;
+    case 'q':
+      RotateCamera(Quaternion(DegreesToRadians(1.f), Vec3(0.f, 1.f, 0.f)));
+      break;
+    case 'e':
+      RotateCamera(Quaternion(DegreesToRadians(-1.f), Vec3(0.f, 1.f, 0.f)));
+      break;
+    default:
+      break;
+  }
 }
 
 void GameInstance::OnMiscKeyDown(MiscKey key) {

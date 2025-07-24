@@ -32,6 +32,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   bool mPaused = false;
   bool mHidden = false;
   BITMAPINFO* mBitmapInfo = nullptr;
+  BYTE* mKeyboard = nullptr;
 
   HCURSOR mPointCursor = nullptr;
   HCURSOR mHandCursor = nullptr;
@@ -85,6 +86,9 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   void StartTimer(ZSharp::int64 relativeNanoseconds);
 
   void UpdateWindowSize(const RECT rect);
+
+  // We want to handle "special" keys different than input keys, so we don't call TranslateMsg in our MessageLoop.
+  void TranslateKey(WPARAM key, bool isDown);
 
   static bool IsSpecialKey(ZSharp::int32 key);
 

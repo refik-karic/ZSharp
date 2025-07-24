@@ -75,44 +75,10 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     app->OnMouseMove(LOWORD(lParam), HIWORD(lParam));
     return 0;
   case WM_KEYDOWN:
-  {
-    if (IsSpecialKey((ZSharp::int32)wParam)) {
-      app->OnKeyDown(static_cast<ZSharp::uint8>(wParam));
-    }
-    else {
-      UINT scanCode = MapVirtualKeyExW((UINT)wParam, MAPVK_VK_TO_VSC, 0);
-      BYTE buff[256] = {};
-      WORD keys[2] = {};
-      if (ToAscii((UINT)wParam, scanCode, buff, keys, 0)) {
-        int firstKey = keys[0];
-        if (isalpha(firstKey) && !isdigit(firstKey) && IsShiftPressed()) {
-          firstKey = (WORD)toupper(firstKey);
-        }
-
-        app->OnKeyDown(static_cast<ZSharp::uint8>(firstKey));
-      }
-    }
-  }
+    app->TranslateKey(wParam, true);
     return 0;
   case WM_KEYUP:
-  {
-    if (IsSpecialKey((ZSharp::int32)wParam)) {
-      app->OnKeyUp(static_cast<ZSharp::uint8>(wParam));
-    }
-    else {
-      UINT scanCode = MapVirtualKeyExW((UINT)wParam, MAPVK_VK_TO_VSC, 0);
-      BYTE buff[256] = {};
-      WORD keys[2] = {};
-      if (ToAscii((UINT)wParam, scanCode, buff, keys, 0)) {
-        int firstKey = keys[0];
-        if (isalpha(firstKey) && !isdigit(firstKey) && IsShiftPressed()) {
-          firstKey = (WORD)toupper(firstKey);
-        }
-
-        app->OnKeyUp(static_cast<ZSharp::uint8>(firstKey));
-      }
-    }
-  }
+    app->TranslateKey(wParam, false);
     return 0;
   case WM_GETMINMAXINFO:
     app->OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
@@ -192,7 +158,7 @@ void Win32PlatformApplication::Shutdown() {
 }
 
 Win32PlatformApplication::Win32PlatformApplication()
-  : mBitmapInfo{new BITMAPINFO()}, mPointCursor(nullptr), mHandCursor(nullptr) {
+  : mBitmapInfo{new BITMAPINFO()}, mKeyboard(new BYTE[256]), mPointCursor(nullptr), mHandCursor(nullptr) {
   mBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFO);
   mBitmapInfo->bmiHeader.biWidth = 0;
   mBitmapInfo->bmiHeader.biHeight = 0;
@@ -205,16 +171,22 @@ Win32PlatformApplication::Win32PlatformApplication()
   mBitmapInfo->bmiHeader.biClrUsed = 0;
   mBitmapInfo->bmiHeader.biClrImportant = 0;
 
+  memset(mKeyboard, 0, 256);
+
   ZSharp::InitializeGlobals();
   mGameInstance = new ZSharp::GameInstance();
 }
 
 Win32PlatformApplication::~Win32PlatformApplication() {
-  if (mBitmapInfo != nullptr) {
+  if (mKeyboard) {
+    delete[] mKeyboard;
+  }
+
+  if (mBitmapInfo) {
     delete mBitmapInfo;
   }
 
-  if (mGameInstance != nullptr) {
+  if (mGameInstance) {
     delete mGameInstance;
   }
 
@@ -701,6 +673,37 @@ void Win32PlatformApplication::UpdateWindowSize(const RECT rect) {
   if (dirtySize) {
     mGameInstance->WaitForBackgroundJobs();
     ZSharp::OnWindowSizeChangedDelegate().Broadcast(width, height);
+  }
+}
+
+void Win32PlatformApplication::TranslateKey(WPARAM key, bool isDown) {
+  if (IsSpecialKey((ZSharp::int32)key)) {
+    ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(key);
+    if (isDown) {
+      OnKeyDown(inputKey);
+    }
+    else {
+      OnKeyUp(inputKey);
+    }
+  }
+  else {
+    UINT uKeyCode = (UINT)key;
+    UINT scanCode = MapVirtualKeyExW(uKeyCode, MAPVK_VK_TO_VSC, 0);
+    WORD keys[2] = {};
+    if (ToAscii(uKeyCode, scanCode, mKeyboard, keys, 0)) {
+      int firstKey = keys[0];
+      if (isalpha(firstKey) && !isdigit(firstKey) && IsShiftPressed()) {
+        firstKey = (WORD)toupper(firstKey);
+      }
+
+      ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(firstKey);
+      if (isDown) {
+        OnKeyDown(inputKey);
+      }
+      else {
+        OnKeyUp(inputKey);
+      }
+    }
   }
 }
 

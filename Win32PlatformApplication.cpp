@@ -43,12 +43,6 @@ PlatformApplication* GetApplication() {
   return GlobalApplication;
 }
 
-bool IsKeyPressed(uint8 key) {
-  HKL keyboard = GetKeyboardLayout(0);
-  short virtualKey = VkKeyScanExA(key, keyboard);
-  return GetAsyncKeyState(virtualKey);
-}
-
 }
 
 LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -73,10 +67,10 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     app->OnMouseMove(LOWORD(lParam), HIWORD(lParam));
     return 0;
   case WM_KEYDOWN:
-    app->TranslateKey(wParam, true);
+    app->TranslateKey(wParam, HIWORD(LOBYTE(lParam)), true);
     return 0;
   case WM_KEYUP:
-    app->TranslateKey(wParam, false);
+    app->TranslateKey(wParam, HIWORD(LOBYTE(lParam)), false);
     return 0;
   case WM_GETMINMAXINFO:
     app->OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
@@ -674,7 +668,12 @@ void Win32PlatformApplication::UpdateWindowSize(const RECT rect) {
   }
 }
 
-void Win32PlatformApplication::TranslateKey(WPARAM key, bool isDown) {
+void Win32PlatformApplication::TranslateKey(WPARAM key, WORD scanCode, bool isDown) {
+  // NOTE: We must update the keyboard state prior to translation.
+  //  This ensures that the state of keys such as CAPS or SHIFT are taken into account.
+  //  Each time a virtual key changes we translate and update its state on the keyboard.
+  mKeyboard[(BYTE)key] = (BYTE)GetKeyState((int)key);
+  
   if (IsSpecialKey((ZSharp::int32)key)) {
     ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(key);
     if (isDown) {
@@ -685,12 +684,11 @@ void Win32PlatformApplication::TranslateKey(WPARAM key, bool isDown) {
     }
   }
   else {
+    // TODO: This assumes a simple US ASCII keyboard.
+    //  For internationalization we would need to take into account the locale and use ToUnicode() rather than ToAscii().
     UINT uKeyCode = (UINT)key;
-    UINT scanCode = MapVirtualKeyExW(uKeyCode, MAPVK_VK_TO_VSC, 0);
     WORD translatedKey = 0;
-    // NOTE: We must update the keyboard state prior to translation.
-    //  This ensures that the state of keys such as CAPS or SHIFT are taken into account.
-    if(GetKeyboardState(mKeyboard) && ToAscii(uKeyCode, scanCode, mKeyboard, &translatedKey, 0)) {
+    if(ToAscii(uKeyCode, scanCode, mKeyboard, &translatedKey, 0)) {
       ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(translatedKey);
       if (isDown) {
         OnKeyDown(inputKey);
@@ -711,10 +709,6 @@ bool Win32PlatformApplication::IsSpecialKey(ZSharp::int32 key) {
     key == VK_DOWN ||
     key == VK_RETURN ||
     key == VK_BACK;
-}
-
-bool Win32PlatformApplication::IsShiftPressed() {
-  return GetAsyncKeyState(VK_LSHIFT) || GetAsyncKeyState(VK_RSHIFT);
 }
 
 #endif

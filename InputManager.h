@@ -27,15 +27,11 @@ class InputManager final {
 
   BroadcastDelegate<uint8> OnKeyUpDelegate;
 
-  BroadcastDelegate<uint8> OnAsyncKeyUpDelegate;
-
   BroadcastDelegate<MiscKey> OnMiscKeyDownDelegate;
 
   BroadcastDelegate<MiscKey> OnAsyncMiscKeyDownDelegate;
 
   BroadcastDelegate<MiscKey> OnMiscKeyUpDelegate;
-
-  BroadcastDelegate<MiscKey> OnAsyncMiscKeyUpDelegate;
 
   BroadcastDelegate<int32, int32, int32, int32> OnMouseDragDelegate;
 
@@ -44,7 +40,8 @@ class InputManager final {
   enum class KeyState {
     Clear,
     Down,
-    Up
+    Up,
+    Stale // Indicates that a key is still down after an OnDown callback.
   };
 
   InputManager();
@@ -70,9 +67,7 @@ class InputManager final {
   private:
 
   FixedArray<KeyState, max_uint8> mKeyboard;
-  FixedArray<KeyState, max_uint8> mAsyncKeyboard;
   FixedArray<KeyState, static_cast<size_t>(MiscKey::NUM_KEYS)> mMiscKeys;
-  FixedArray<KeyState, static_cast<size_t>(MiscKey::NUM_KEYS)> mAsyncMiscKeys;
 
   bool mMousePressed = false;
   int32 mOldMouseX = 0;

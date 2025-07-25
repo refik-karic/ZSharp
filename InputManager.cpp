@@ -6,17 +6,15 @@ namespace ZSharp {
 InputManager* GlobalInputManager = nullptr;
 
 InputManager::InputManager()
-  : mKeyboard(KeyState::Clear), mMiscKeys(KeyState::Clear), mAsyncKeyboard(KeyState::Clear), mAsyncMiscKeys(KeyState::Clear) {
+  : mKeyboard(KeyState::Clear), mMiscKeys(KeyState::Clear) {
 }
 
 void InputManager::Update(uint8 key, InputManager::KeyState state) {
   mKeyboard[key] = state;
-  mAsyncKeyboard[key] = state;
 }
 
 void InputManager::UpdateMiscKey(MiscKey key, InputManager::KeyState state) {
   mMiscKeys[static_cast<size_t>(key)] = state;
-  mAsyncMiscKeys[static_cast<size_t>(key)] = state;
 }
 
 void InputManager::UpdateMousePosition(int32 x, int32 y) {
@@ -43,21 +41,15 @@ void InputManager::Process() {
         break;
       case KeyState::Down:
         OnKeyDownDelegate.Broadcast(i);
+        OnAsyncKeyDownDelegate.Broadcast(i);
+        mKeyboard[i] = KeyState::Stale;
         break;
       case KeyState::Up:
         OnKeyUpDelegate.Broadcast(i);
+        mKeyboard[i] = KeyState::Clear;
         break;
-    }
-
-    switch (mAsyncKeyboard[i]) {
-      case KeyState::Clear:
-        break;
-      case KeyState::Down:
+      case KeyState::Stale:
         OnAsyncKeyDownDelegate.Broadcast(i);
-        break;
-      case KeyState::Up:
-        OnAsyncKeyUpDelegate.Broadcast(i);
-        mAsyncKeyboard[i] = KeyState::Clear;
         break;
     }
   }
@@ -68,21 +60,15 @@ void InputManager::Process() {
         break;
       case KeyState::Down:
         OnMiscKeyDownDelegate.Broadcast(static_cast<MiscKey>(i));
+        OnAsyncMiscKeyDownDelegate.Broadcast(static_cast<MiscKey>(i));
+        mMiscKeys[i] = KeyState::Stale;
         break;
       case KeyState::Up:
         OnMiscKeyUpDelegate.Broadcast(static_cast<MiscKey>(i));
+        mMiscKeys[i] = KeyState::Clear;
         break;
-    }
-
-    switch (mAsyncMiscKeys[i]) {
-      case KeyState::Clear:
-        break;
-      case KeyState::Down:
+      case KeyState::Stale:
         OnAsyncMiscKeyDownDelegate.Broadcast(static_cast<MiscKey>(i));
-        break;
-      case KeyState::Up:
-        OnAsyncMiscKeyUpDelegate.Broadcast(static_cast<MiscKey>(i));
-        mAsyncMiscKeys[i] = KeyState::Clear;
         break;
     }
   }
@@ -93,10 +79,6 @@ void InputManager::Process() {
   }
 
   OnMouseMoveDelegate.Broadcast(mCurrentMouseX, mCurrentMouseY, mMousePressed);
-
-  // NOTE: We do not clear async state on each call.
-  mKeyboard.Fill(KeyState::Clear);
-  mMiscKeys.Fill(KeyState::Clear);
 }
 
 bool InputManager::IsMousePressed() const {
@@ -104,11 +86,11 @@ bool InputManager::IsMousePressed() const {
 }
 
 InputManager::KeyState InputManager::GetKeyState(uint8 key) {
-  return mAsyncKeyboard[key];
+  return mKeyboard[key] == InputManager::KeyState::Stale ? InputManager::KeyState::Down : mKeyboard[key];
 }
 
 InputManager::KeyState InputManager::GetMiscKeyState(MiscKey key) {
-  return mAsyncMiscKeys[static_cast<uint8>(key)];
+  return mMiscKeys[static_cast<uint8>(key)] == InputManager::KeyState::Stale ? InputManager::KeyState::Down : mMiscKeys[static_cast<uint8>(key)];
 }
 
 }

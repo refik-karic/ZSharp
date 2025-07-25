@@ -88,11 +88,9 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   void UpdateWindowSize(const RECT rect);
 
   // We want to handle "special" keys different than input keys, so we don't call TranslateMsg in our MessageLoop.
-  void TranslateKey(WPARAM key, bool isDown);
+  void TranslateKey(WPARAM key, WORD scanCode, bool isDown);
 
   static bool IsSpecialKey(ZSharp::int32 key);
-
-  static bool IsShiftPressed();
 };
 
 extern Win32PlatformApplication* GlobalApplication;

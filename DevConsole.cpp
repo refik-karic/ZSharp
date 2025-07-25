@@ -11,7 +11,6 @@
 #include "PlatformApplication.h"
 #include "ScopedTimer.h"
 
-#include <ctype.h>
 #include <cstring>
 
 namespace ZSharp {

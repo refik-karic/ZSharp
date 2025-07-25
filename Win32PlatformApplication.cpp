@@ -19,8 +19,6 @@
 #include <processenv.h>
 #include <shellapi.h>
 
-#include <ctype.h>
-
 #define DEBUG_TEXTURE_PNG 0
 #define DEBUG_TEXTURE_JPG 0
 

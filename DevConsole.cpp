@@ -110,13 +110,11 @@ void DevConsole::OnKeyDown(uint8 key) {
     return;
   }
 
-  if (isalpha(key) || isdigit(key) || isspace(key) || key == ',' || key == '.') {
-    mActiveBuffer[mCaret++] = key;
+  mActiveBuffer[mCaret++] = key;
 
-    String substring((const char*)mActiveBuffer, 0, mCaret);
-    Pair<Trie::Iterator, Trie::Iterator> lastSuggestion = mSuggestions.NextWords(substring);
-    mLastSuggestion = *(lastSuggestion.mKey);
-  }
+  String substring((const char*)mActiveBuffer, 0, mCaret);
+  Pair<Trie::Iterator, Trie::Iterator> lastSuggestion = mSuggestions.NextWords(substring);
+  mLastSuggestion = *(lastSuggestion.mKey);
 }
 
 void DevConsole::OnKeyUp(uint8 key) {

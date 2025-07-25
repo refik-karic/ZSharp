@@ -689,14 +689,11 @@ void Win32PlatformApplication::TranslateKey(WPARAM key, bool isDown) {
   else {
     UINT uKeyCode = (UINT)key;
     UINT scanCode = MapVirtualKeyExW(uKeyCode, MAPVK_VK_TO_VSC, 0);
-    WORD keys[2] = {};
-    if (ToAscii(uKeyCode, scanCode, mKeyboard, keys, 0)) {
-      int firstKey = keys[0];
-      if (isalpha(firstKey) && !isdigit(firstKey) && IsShiftPressed()) {
-        firstKey = (WORD)toupper(firstKey);
-      }
-
-      ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(firstKey);
+    WORD translatedKey = 0;
+    // NOTE: We must update the keyboard state prior to translation.
+    //  This ensures that the state of keys such as CAPS or SHIFT are taken into account.
+    if(GetKeyboardState(mKeyboard) && ToAscii(uKeyCode, scanCode, mKeyboard, &translatedKey, 0)) {
+      ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(translatedKey);
       if (isDown) {
         OnKeyDown(inputKey);
       }

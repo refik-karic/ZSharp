@@ -67,10 +67,10 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     app->OnMouseMove(LOWORD(lParam), HIWORD(lParam));
     return 0;
   case WM_KEYDOWN:
-    app->TranslateKey(wParam, HIWORD(LOBYTE(lParam)), true);
+    app->TranslateKey(wParam, LOBYTE(HIWORD(lParam)), true);
     return 0;
   case WM_KEYUP:
-    app->TranslateKey(wParam, HIWORD(LOBYTE(lParam)), false);
+    app->TranslateKey(wParam, LOBYTE(HIWORD(lParam)), false);
     return 0;
   case WM_GETMINMAXINFO:
     app->OnPreWindowSizeChanged((LPMINMAXINFO)lParam);

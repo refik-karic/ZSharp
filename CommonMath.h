@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "AABB.h"
 #include "ZAssert.h"
 #include "ZBaseTypes.h"
 #include "Constants.h"
@@ -113,5 +114,7 @@ FORCE_INLINE void BarycentricArea3D(const float v1[3], const float v2[3], const 
 float ParametricSolveForT(const float step, const float p0, const float p1);
 
 float NewtonRaphsonSqrt(float val);
+
+AABB ComputeBoundingBox(size_t stride, const float* verts, const size_t numVerts);
 
 }

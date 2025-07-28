@@ -1,23 +1,19 @@
 #include "Mesh.h"
 
 #include "PlatformIntrinsics.h"
+#include "ScopedTimer.h"
 
 #include <cstring>
 
 namespace ZSharp {
-Mesh::Mesh(size_t stride)
-  : mStride(stride) {
 
-}
-
-Mesh::Mesh(size_t numVerts, size_t stride, size_t numTriangleFaces) :
-  mStride(stride) {
+Mesh::Mesh(size_t numVerts, size_t numTriangleFaces) {
   mVertTable.Resize(numVerts);
   mTriangleFaceTable.Resize(numTriangleFaces);
 }
 
 Mesh::Mesh(const Mesh& copy) 
-  : mStride(copy.mStride), mVertTable(copy.mVertTable), mTriangleFaceTable(copy.mTriangleFaceTable) {
+  : mTextureId(copy.mTextureId), mAlbedoTexture(copy.mAlbedoTexture), mShader(copy.mShader), mVertTable(copy.mVertTable), mTriangleFaceTable(copy.mTriangleFaceTable) {
 }
 
 void Mesh::operator=(const Mesh& rhs) {
@@ -25,7 +21,9 @@ void Mesh::operator=(const Mesh& rhs) {
     return;
   }
 
-  mStride = rhs.mStride;
+  mTextureId = rhs.mTextureId;
+  mAlbedoTexture = rhs.mAlbedoTexture;
+  mShader = rhs.mShader;
   mVertTable = rhs.mVertTable;
   mTriangleFaceTable = rhs.mTriangleFaceTable;
 }
@@ -51,14 +49,6 @@ const Array<float>& Mesh::GetVertTable() const {
   return mVertTable;
 }
 
-size_t Mesh::Stride() const {
-  return mStride;
-}
-
-void Mesh::SetStride(size_t stride) {
-  mStride = stride;
-}
-
 Array<Triangle>& Mesh::GetTriangleFaceTable() {
   return mTriangleFaceTable;
 }
@@ -66,4 +56,40 @@ Array<Triangle>& Mesh::GetTriangleFaceTable() {
 const Array<Triangle>& Mesh::GetTriangleFaceTable() const {
   return mTriangleFaceTable;
 }
+
+const ShaderDefinition& Mesh::GetShader() const {
+  return mShader;
+}
+
+void Mesh::SetShader(const ShaderDefinition& shader) {
+  mShader = shader;
+}
+
+int32& Mesh::TextureId() {
+  return mTextureId;
+}
+
+String& Mesh::AlbedoTexture() {
+  return mAlbedoTexture;
+}
+
+size_t Mesh::Stride() const {
+  // XYZW + attributes
+  return 4 + mShader.GetAttributeStride();
+}
+
+void Mesh::Serialize(ISerializer& serializer) {
+  mAlbedoTexture.Serialize(serializer);
+  mShader.Serialize(serializer);
+  mVertTable.Serialize(serializer);
+  mTriangleFaceTable.Serialize(serializer);
+}
+
+void Mesh::Deserialize(IDeserializer& deserializer) {
+  mAlbedoTexture.Deserialize(deserializer);
+  mShader.Deserialize(deserializer);
+  mVertTable.Deserialize(deserializer);
+  mTriangleFaceTable.Deserialize(deserializer);
+}
+
 }

@@ -38,7 +38,7 @@ class PhysicsObject : public WorldObject {
   Delegate<PhysicsObject*> OnCollisionStartDelegate;
   Delegate<PhysicsObject*> OnCollisionEndDelegate;
 
-  private:
+  protected:
   PhysicsTag mTag = PhysicsTag::Unbound;
   Vec3 mVelocity;
   AABB mBoundingBox;

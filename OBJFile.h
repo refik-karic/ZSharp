@@ -2,18 +2,12 @@
 
 #include "ZBaseTypes.h"
 
-#include "Asset.h"
-#include "AABB.h"
 #include "Array.h"
 #include "Vec3.h"
 #include "Vec4.h"
 #include "ZString.h"
-#include "Serializer.h"
 #include "FileString.h"
-#include "ZString.h"
 #include "Span.h"
-
-#include "ShaderDefinition.h"
 
 namespace ZSharp {
 struct alignas(8) OBJFaceElement {
@@ -32,12 +26,6 @@ class OBJFile final {
 
   void LoadFromFile(const FileString& path);
 
-  void Serialize(MemorySerializer& serializer);
-
-  void Deserialize(MemoryDeserializer& deserializer);
-
-  AABB& BoundingBox();
-
   Array<Vec4>& Verts();
 
   Array<Vec3>& Normals();
@@ -45,10 +33,6 @@ class OBJFile final {
   Array<Vec3>& UVs();
 
   Array<OBJFace>& Faces();
-
-  int32 Stride() const;
-
-  ShaderDefinition& Shader();
 
   String& AlbedoTexture();
 
@@ -63,10 +47,6 @@ class OBJFile final {
 
   String mAlbedoTexture;
 
-  ShaderDefinition mShader;
-
-  AABB mBoundingBox;
-
   void ParseRaw(const FileString& objFilePath);
 
   void ParseOBJLine(Span<const char>& line, const FileString& objFilePath);
@@ -80,7 +60,5 @@ class OBJFile final {
   void ParseFace(OBJFace& fillFace, Span<const char>& line);
 
   void ParseMaterial(Span<const char>& line, const FileString& objFilePath);
-
-  void CalculateBoundingBox();
 };
 }

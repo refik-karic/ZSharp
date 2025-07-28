@@ -82,7 +82,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
 
     camera.PerspectiveProjection(vertexBuffer, indexBuffer, clipBounds, model.ObjectTransform());
 
-    const ShaderDefinition& shader = model.GetShader();
+    const ShaderDefinition& shader = model.GetMesh().GetShader();
 
     switch (mRenderMode) {
       case RenderMode::FILL:
@@ -95,7 +95,7 @@ void Renderer::RenderNextFrame(World& world, Camera& camera) {
             break;
           case ShadingMethod::UV:
           {
-            Texture* texture = GlobalTexturePool->GetTexture(model.TextureId());
+            Texture* texture = GlobalTexturePool->GetTexture(model.GetMesh().TextureId());
             TextureMappedShader(mFramebuffer, mDepthBuffer, vertexBuffer, indexBuffer, vertexBuffer.WasClipped(), texture, *MipOverride);
           }
           break;

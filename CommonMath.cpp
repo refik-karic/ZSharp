@@ -1,5 +1,8 @@
 #include "CommonMath.h"
 
+#include "ScopedTimer.h"
+#include "PlatformIntrinsics.h"
+
 namespace ZSharp {
 size_t RoundUpNearestMultiple(size_t val, size_t multiple) {
   if (val == 0 || multiple == 0) {
@@ -88,6 +91,18 @@ bool FloatGreaterThan(float a, float b, float epsilon) {
 
 bool FloatGreaterThanEqual(float a, float b, float epsilon) {
   return (FloatEqual(a, b, epsilon)) ? true : a > b;
+}
+
+AABB ComputeBoundingBox(size_t stride, const float* verts, const size_t numVerts) {
+  NamedScopedTimer(ComputeAABB);
+
+  float min[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
+  float max[4] = { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
+
+  CalculateAABBImpl(verts, numVerts, stride, min, max);
+
+  AABB aabb(min, max);
+  return aabb;
 }
 
 }

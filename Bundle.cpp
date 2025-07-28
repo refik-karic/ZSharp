@@ -4,7 +4,7 @@
 
 namespace ZSharp {
 
-const size_t BundleVersion = 0;
+const size_t BundleVersion = 1;
 
 Bundle* GlobalBundle = nullptr;
 

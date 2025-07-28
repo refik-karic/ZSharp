@@ -57,7 +57,7 @@ class World final {
 
   void LoadModels();
 
-  void LoadOBJ(Model& model, Asset& asset);
+  void LoadModel(Model& model, Asset& asset);
 };
 
 }

@@ -122,10 +122,9 @@ void GameInstance::TickWorld() {
   size_t numTriangles = 0;
 
   for (Model& model : mWorld->GetModels()) {
-    for (Mesh& mesh : model.GetMeshData()) {
-      numVerts += (mesh.GetVertTable().Size() / mesh.Stride());
-      numTriangles += mesh.GetTriangleFaceTable().Size();
-    }
+    Mesh& mesh = model.GetMesh();
+    numVerts += (mesh.GetVertTable().Size() / mesh.Stride());
+    numTriangles += mesh.GetTriangleFaceTable().Size();
   }
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Models: {0}\n", numModels)));

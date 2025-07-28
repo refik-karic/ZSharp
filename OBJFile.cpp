@@ -3,8 +3,6 @@
 #include "ZAssert.h"
 #include "Logger.h"
 #include "ZFile.h"
-#include "PlatformIntrinsics.h"
-#include "ScopedTimer.h"
 
 #include <cstring>
 
@@ -14,32 +12,6 @@ OBJFile::OBJFile() {
 
 void OBJFile::LoadFromFile(const FileString& path) {
   ParseRaw(path);
-
-  CalculateBoundingBox();
-}
-
-void OBJFile::Serialize(MemorySerializer& serializer) {
-  mVerts.Serialize(serializer);
-  mNormals.Serialize(serializer);
-  mUVCoords.Serialize(serializer);
-  mFaces.Serialize(serializer);
-  mShader.Serialize(serializer);
-  mAlbedoTexture.Serialize(serializer);
-  mBoundingBox.Serialize(serializer);
-}
-
-void OBJFile::Deserialize(MemoryDeserializer& deserializer) {
-  mVerts.Deserialize(deserializer);
-  mNormals.Deserialize(deserializer);
-  mUVCoords.Deserialize(deserializer);
-  mFaces.Deserialize(deserializer);
-  mShader.Deserialize(deserializer);
-  mAlbedoTexture.Deserialize(deserializer);
-  mBoundingBox.Deserialize(deserializer);
-}
-
-AABB& OBJFile::BoundingBox() {
-  return mBoundingBox;
 }
 
 Array<Vec4>& OBJFile::Verts() {
@@ -56,16 +28,6 @@ Array<Vec3>& OBJFile::UVs() {
 
 Array<OBJFace>& OBJFile::Faces() {
   return mFaces;
-}
-
-int32 OBJFile::Stride() const {
-  int32 stride = 4;
-  stride += (int32)mShader.GetAttributeStride();
-  return stride;
-}
-
-ShaderDefinition& OBJFile::Shader() {
-  return mShader;
 }
 
 String& OBJFile::AlbedoTexture() {
@@ -393,22 +355,6 @@ void OBJFile::ParseMaterial(Span<const char>& line, const FileString& objFilePat
       lastLineIndex = offset + 1;
     }
   }
-}
-
-void OBJFile::CalculateBoundingBox() {
-  NamedScopedTimer(OBJComputeAABB);
-
-  float min[4] = { INFINITY, INFINITY, INFINITY, INFINITY };
-  float max[4] = { -INFINITY, -INFINITY, -INFINITY, -INFINITY };
-
-  const size_t stride = 4;
-  const float* vertices = (const float*)mVerts.GetData();
-  const size_t numVertices = mVerts.Size() * 4;
-
-  CalculateAABBImpl(vertices, numVertices, stride, min, max);
-
-  AABB aabb(min, max);
-  mBoundingBox = aabb;
 }
 
 }

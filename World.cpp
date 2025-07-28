@@ -198,7 +198,7 @@ void World::LoadModels() {
       VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
       IndexBuffer& indexBuffer = mIndexBuffers.EmplaceBack();
 
-      LoadOBJ(model, asset);
+      LoadModel(model, asset);
 
       // TODO: Remove me.
       if (asset.Name() == "plane") {
@@ -214,14 +214,10 @@ void World::LoadModels() {
         }
       }
 
-      int32 indexBufSize = 0;
-      int32 vertBufSize = 0;
-      int32 vertStride = 0;
-      for (Mesh& mesh : model.GetMeshData()) {
-        indexBufSize += (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
-        vertBufSize += (int32)mesh.GetVertTable().Size();
-        vertStride = (int32)mesh.Stride();
-      }
+      Mesh& mesh = model.GetMesh();
+      int32 indexBufSize = (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
+      int32 vertBufSize = (int32)mesh.GetVertTable().Size();
+      int32 vertStride = (int32)mesh.Stride();
 
       indexBuffer.Resize(indexBufSize);
       vertBuffer.Resize(vertBufSize, vertStride);
@@ -242,11 +238,12 @@ void World::LoadModels() {
 }
 
 void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3, const ShaderDefinition& shader, int32 stride) {
-  Model& model = mActiveModels.EmplaceBack(shader, stride);
+  Model& model = mActiveModels.EmplaceBack();
   VertexBuffer& vertBuffer = mVertexBuffers.EmplaceBack();
   IndexBuffer& indexBuffer = mIndexBuffers.EmplaceBack();
 
-  model.CreateNewMesh();
+  Mesh& mesh = model.GetMesh();
+  mesh.SetShader(shader);
 
   const bool isTextureMapped = shader.GetShadingMethod() == ShadingMethod::UV;
 
@@ -263,33 +260,28 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
       return;
     }
 
-    model.TextureId() = GlobalTexturePool->LoadTexture(*textureAsset);
+    mesh.TextureId() = GlobalTexturePool->LoadTexture(*textureAsset);
   }
 
   {
     const int32 strideBytes = stride * sizeof(float);
-    Mesh& firstMesh = model[0];
     int32 vertSize = 3 * stride;
     int32 faceSize = 1;
-    firstMesh.Resize(vertSize, faceSize);
-    firstMesh.SetData(v1, 0, strideBytes);
-    firstMesh.SetData(v2, stride, strideBytes);
-    firstMesh.SetData(v3, stride * 2, strideBytes);
+    mesh.Resize(vertSize, faceSize);
+    mesh.SetData(v1, 0, strideBytes);
+    mesh.SetData(v2, stride, strideBytes);
+    mesh.SetData(v3, stride * 2, strideBytes);
     Triangle triangle(0 * stride, 1 * stride, 2 * stride);
-    firstMesh.SetTriangle(triangle, 0);
+    mesh.SetTriangle(triangle, 0);
   }
 
-  model.BoundingBox() = model.ComputeBoundingBox();
+  model.BoundingBox() = ComputeBoundingBox(mesh.Stride(), mesh.GetVertTable().GetData(), mesh.GetVertTable().Size() / mesh.Stride());
 
-  int32 indexBufSize = 0;
-  int32 vertBufSize = 0;
-  for (Mesh& mesh : model.GetMeshData()) {
-    indexBufSize += (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
-    vertBufSize += (int32)mesh.GetVertTable().Size();
-  }
+  int32 indexBufSize = (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
+  int32 vertBufSize = (int32)mesh.GetVertTable().Size();
 
   indexBuffer.Resize(indexBufSize);
-  vertBuffer.Resize(vertBufSize, stride);
+  vertBuffer.Resize(vertBufSize * stride, stride);
 }
 
 size_t World::GetTotalModels() const {
@@ -308,112 +300,24 @@ Array<IndexBuffer>& World::GetIndexBuffers() {
   return mIndexBuffers;
 }
 
-void World::LoadOBJ(Model& model, Asset& asset) {
-  MemoryDeserializer objDeserializer(asset.Loader());
+void World::LoadModel(Model& model, Asset& asset) {
+  MemoryDeserializer meshDeserializer(asset.Loader());
 
-  OBJFile objFile;
-  objFile.Deserialize(objDeserializer);
-  
-  model.CreateNewMesh();
-  model.SetShader(objFile.Shader());
-  model.SetStride(objFile.Stride());
-  model.BoundingBox() = objFile.BoundingBox();
-  Mesh& mesh = model[0];
+  model.Deserialize(meshDeserializer);
+  Mesh& mesh = model.GetMesh();
 
-  bool isTextureMapped = objFile.Shader().GetShadingMethod() == ShadingMethod::UV;
-
-  if (*DebugModelsRGB) {
-    isTextureMapped = false;
-  }
-
-  int32 stride = objFile.Stride();
+  const bool isTextureMapped = mesh.GetShader().GetShadingMethod() == ShadingMethod::UV;
 
   if (isTextureMapped) {
     Bundle* bundle = GlobalBundle;
-    Asset* textureAsset = bundle->GetAsset(objFile.AlbedoTexture());
+    Asset* textureAsset = bundle->GetAsset(mesh.AlbedoTexture());
 
     if (textureAsset == nullptr) {
       ZAssert(false);
       return;
     }
 
-    model.TextureId() = GlobalTexturePool->LoadTexture(*textureAsset);
-  }
-  else {
-    ShaderDefinition rbgShader(4, 4, ShadingMethod::RGB);
-    model.SetShader(rbgShader);
-    model.SetStride(8);
-    stride = 8;
-  }
-
-  int32 vertSize = (int32)objFile.Verts().Size() * stride;
-  int32 indexSize = (int32)objFile.Faces().Size();
-
-  mesh.Resize(vertSize, indexSize);
-
-  if (isTextureMapped) {
-    const int32 numVerts = (int32)objFile.Verts().Size();
-    const float* vertData = (const float*)objFile.Verts().GetData();
-    const float* uvData = (const float*)objFile.UVs().GetData();
-
-    for (int32 i = 0; i < numVerts; ++i) {
-      ZAssert(vertData[3] == 1.f);
-
-      const size_t index = i * stride;
-
-      mesh.SetData(vertData, index, 4 * sizeof(float));
-      mesh.SetData(uvData, index + 4, 2 * sizeof(float));
-
-      vertData += 4;
-      uvData += 3;
-    }
-  }
-  else {
-    const float R[] = { 1.f, 0.f, 0.f };
-    const float G[] = { 0.f, 1.f, 0.f };
-    const float B[] = { 0.f, 0.f, 1.f };
-
-    const int32 numVerts = (int32)objFile.Verts().Size();
-    const float* vertData = (const float*)objFile.Verts().GetData();
-
-    for (int32 i = 0, triIndex = 0; i < numVerts; ++i) {
-      ZAssert(vertData[3] == 1.f);
-
-      const size_t index = i * stride;
-      mesh.SetData(vertData, index, 4 * sizeof(float));
-
-      switch (triIndex) {
-        case 0:
-        {
-          mesh.SetData(R, index + 4, sizeof(R));
-        }
-          break;
-        case 1:
-        {
-          mesh.SetData(G, index + 4, sizeof(G));
-        }
-          break;
-        case 2:
-        {
-          mesh.SetData(B, index + 4, sizeof(B));
-        }
-          break;
-        default:
-          break;
-      }
-
-      vertData += 4;
-      triIndex = (triIndex == 2) ? 0 : ++triIndex;
-    }
-  }
-
-  const Array<OBJFace>& faceList = objFile.Faces();
-  for (int32 triIndex = 0; triIndex < indexSize; ++triIndex) {
-    Triangle triangle(static_cast<int32>(faceList[triIndex].triangleFace[0].vertexIndex) * stride,
-      static_cast<int32>(faceList[triIndex].triangleFace[1].vertexIndex) * stride,
-      static_cast<int32>(faceList[triIndex].triangleFace[2].vertexIndex) * stride
-    );
-    mesh.SetTriangle(triangle, triIndex);
+    mesh.TextureId() = GlobalTexturePool->LoadTexture(*textureAsset);
   }
 }
 }

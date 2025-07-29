@@ -44,6 +44,13 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
   Model model;
   Mesh& mesh = model.GetMesh();
 
+  const int32 numVerts = (int32)objfile.Verts().Size();
+  const float* vertData = (const float*)objfile.Verts().GetData();
+
+  // NOTE: We calculate the AABB on the packed vert data from the OBJ file.
+  //  This lets us use a wider optimized version of the algorithm.
+  model.BoundingBox() = ComputeBoundingBox(4, vertData, numVerts * 4);
+
   if (!objfile.AlbedoTexture().IsEmpty()) {
     ShaderDefinition shader(4, 4, ShadingMethod::UV);
     mesh.SetShader(shader);
@@ -52,9 +59,6 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
     const size_t stride = mesh.Stride();
 
     mesh.Resize(objfile.Verts().Size() * stride, objfile.Faces().Size());
-
-    const int32 numVerts = (int32)objfile.Verts().Size();
-    const float* vertData = (const float*)objfile.Verts().GetData();
     const float* uvData = (const float*)objfile.UVs().GetData();
 
     for (int32 i = 0; i < numVerts; ++i) {
@@ -81,9 +85,6 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
     const float R[] = { 1.f, 0.f, 0.f };
     const float G[] = { 0.f, 1.f, 0.f };
     const float B[] = { 0.f, 0.f, 1.f };
-
-    const int32 numVerts = (int32)objfile.Verts().Size();
-    const float* vertData = (const float*)objfile.Verts().GetData();
 
     for (int32 i = 0, triIndex = 0; i < numVerts; ++i) {
       ZAssert(vertData[3] == 1.f);
@@ -127,8 +128,6 @@ void SerializeOBJFile(const FileString& filename, Array<Asset>& bundleAssets, Me
     );
     mesh.SetTriangle(triangle, triIndex);
   }
-
-  model.BoundingBox() = ComputeBoundingBox(stride, mesh.GetVertTable().GetData(), mesh.GetVertTable().Size());
 
   // TODO: Avoid duplicating this state at some point.
   //  The OBJ to TexturePool mapping isn't set up until the texture is loaded at runtime.

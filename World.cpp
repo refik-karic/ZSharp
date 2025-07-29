@@ -275,7 +275,7 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
     mesh.SetTriangle(triangle, 0);
   }
 
-  model.BoundingBox() = ComputeBoundingBox(mesh.Stride(), mesh.GetVertTable().GetData(), mesh.GetVertTable().Size() / mesh.Stride());
+  model.BoundingBox() = ComputeBoundingBox(mesh.Stride(), mesh.GetVertTable().GetData(), mesh.GetVertTable().Size());
 
   int32 indexBufSize = (int32)(mesh.GetTriangleFaceTable().Size() * TRI_VERTS);
   int32 vertBufSize = (int32)mesh.GetVertTable().Size();

@@ -79,7 +79,7 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     app->OnWindowVisibility(wParam);
     break;
   case WM_SIZING:
-    app->OnWindowResize((const RECT*)lParam);
+    app->OnWindowResize();
     break;
   case WM_CLOSE:
     app->OnClose();
@@ -252,7 +252,7 @@ HWND Win32PlatformApplication::SetupWindow() {
 }
 
 void Win32PlatformApplication::OnCreate(HWND initialHandle) {
-  TIMECAPS timecaps{};
+  TIMECAPS timecaps;
   if (timeGetDevCaps(&timecaps, sizeof(timecaps)) != MMSYSERR_NOERROR) {
     DestroyWindow(initialHandle);
     return;
@@ -278,7 +278,7 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
   }
 
   // We need to broadcast the final window size to the game code before start ticking.
-  RECT activeWindowSize{};
+  RECT activeWindowSize;
   if (GetClientRect(initialHandle, &activeWindowSize)) {
     UpdateWindowSize(activeWindowSize);
   }
@@ -289,48 +289,39 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
     return;
   }
 
-  StartTimer((ZSharp::int64)1);
+  StartTimer((ZSharp::int64)1, (1000 / (*LockedFPS)));
 }
 
-void Win32PlatformApplication::OnTimerThunk(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue) {
+void Win32PlatformApplication::OnTimer(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue) {
   (void)timerLowVal;
   (void)timerHighValue;
 
   Win32PlatformApplication* app = (Win32PlatformApplication*)optionalArg;
   if (!app->mPaused && !app->mHidden) {
-    app->OnTimer();
-  }
-}
+    size_t frameDeltaTime = ZSharp::PlatformHighResClock();
 
-void Win32PlatformApplication::OnTimer() {
-  size_t frameDeltaTime = ZSharp::PlatformHighResClock();
+    app->PauseTimer();
 
-  PauseTimer();
+    if (app->mCurrentCursor != ZSharp::AppCursor::Arrow) {
+      app->ApplyCursor(ZSharp::AppCursor::Arrow);
+    }
 
-  if (mCurrentCursor != ZSharp::AppCursor::Arrow) {
-    ApplyCursor(ZSharp::AppCursor::Arrow);
-  }
+    app->mGameInstance->Tick();
 
-  mGameInstance->Tick();
+    InvalidateRect(app->mWindowHandle, NULL, false);
 
-  InvalidateRect(mWindowHandle, NULL, false);
-
-  // Sleep if we have some time left in the frame, otherwise start again immediately.
-  frameDeltaTime = ZSharp::PlatformHighResClockDeltaMs(frameDeltaTime);
-  if (frameDeltaTime >= (1000 / (*LockedFPS))) {
-    frameDeltaTime = 1;
-  }
-  else {
-    if (*UncappedFPS) {
+    // Sleep if we have some time left in the frame, otherwise start again immediately.
+    frameDeltaTime = ZSharp::PlatformHighResClockDeltaMs(frameDeltaTime);
+    const size_t lockedMs = (1000 / (*LockedFPS));
+    if (frameDeltaTime >= lockedMs || (*UncappedFPS)) {
       frameDeltaTime = 1;
     }
     else {
-      frameDeltaTime = (1000 / (*LockedFPS)) - frameDeltaTime;
-      frameDeltaTime = (frameDeltaTime * 10000);
+      frameDeltaTime = (lockedMs - frameDeltaTime) * 10000;
     }
-  }
 
-  StartTimer((ZSharp::int64)frameDeltaTime);
+    app->StartTimer((ZSharp::int64)frameDeltaTime, lockedMs);
+  }
 }
 
 void Win32PlatformApplication::OnPaint() {
@@ -392,6 +383,8 @@ void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
 }
 
 void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
+  ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+
   switch (key) {
   case VK_SPACE:
   {
@@ -399,7 +392,6 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
        mPaused = !mPaused;
     }
     else {
-      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
       inputManager->Update(key, ZSharp::InputManager::KeyState::Down);
     }
   }
@@ -409,43 +401,36 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
     break;
   case VK_UP:
   {
-    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
     inputManager->UpdateMiscKey(ZSharp::MiscKey::UP_ARROW, ZSharp::InputManager::KeyState::Down);
   }
     break;
   case VK_LEFT:
   {
-    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
     inputManager->UpdateMiscKey(ZSharp::MiscKey::LEFT_ARROW, ZSharp::InputManager::KeyState::Down);
   }
   break;
   case VK_RIGHT:
   {
-    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
     inputManager->UpdateMiscKey(ZSharp::MiscKey::RIGHT_ARROW, ZSharp::InputManager::KeyState::Down);
   }
   break;
   case VK_DOWN:
   {
-    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
     inputManager->UpdateMiscKey(ZSharp::MiscKey::DOWN_ARROW, ZSharp::InputManager::KeyState::Down);
   }
   break;
   case VK_RETURN:
   {
-    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
     inputManager->UpdateMiscKey(ZSharp::MiscKey::ENTER, ZSharp::InputManager::KeyState::Down);
   }
   break;
   case VK_BACK:
   {
-    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
     inputManager->UpdateMiscKey(ZSharp::MiscKey::BACKSPACE, ZSharp::InputManager::KeyState::Down);
   }
   break;
   default:
   {
-    ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
     inputManager->Update(key, ZSharp::InputManager::KeyState::Down);
   }
   break;
@@ -453,58 +438,49 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
 }
 
 void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
+  ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
+
   switch (key) {
     case VK_UP:
     {
-      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
       inputManager->UpdateMiscKey(ZSharp::MiscKey::UP_ARROW, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_LEFT:
     {
-      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
       inputManager->UpdateMiscKey(ZSharp::MiscKey::LEFT_ARROW, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_RIGHT:
     {
-      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
       inputManager->UpdateMiscKey(ZSharp::MiscKey::RIGHT_ARROW, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_DOWN:
     {
-      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
       inputManager->UpdateMiscKey(ZSharp::MiscKey::DOWN_ARROW, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_RETURN:
     {
-      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
       inputManager->UpdateMiscKey(ZSharp::MiscKey::ENTER, ZSharp::InputManager::KeyState::Up);
     }
     break;
     case VK_BACK:
     {
-      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
       inputManager->UpdateMiscKey(ZSharp::MiscKey::BACKSPACE, ZSharp::InputManager::KeyState::Up);
     }
     break;
     default:
     {
-      ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
       inputManager->Update(key, ZSharp::InputManager::KeyState::Up);
     }
       break;
   }
 }
 
-void Win32PlatformApplication::OnWindowResize(const RECT* rect) {
-  (void)rect;
-
-  // The resize rect passed in is off by a little bit.
-  // Calling GetClientRect gets us the true dimensions we need.
-  RECT activeWindowSize{};
+void Win32PlatformApplication::OnWindowResize() {
+  RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
     UpdateWindowSize(activeWindowSize);
   }
@@ -530,13 +506,13 @@ void Win32PlatformApplication::OnWindowVisibility(WPARAM param) {
   else if (param == SIZE_RESTORED) {
     mHidden = false;
 
-    RECT activeWindowSize{};
+    RECT activeWindowSize;
     if (GetClientRect(mWindowHandle, &activeWindowSize)) {
       UpdateWindowSize(activeWindowSize);
     }
   }
   else if (param == SIZE_MAXIMIZED) {
-    RECT activeWindowSize{};
+    RECT activeWindowSize;
     if (GetClientRect(mWindowHandle, &activeWindowSize)) {
       UpdateWindowSize(activeWindowSize);
     }
@@ -597,11 +573,6 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
   info.bmiHeader.biPlanes = 1;
   info.bmiHeader.biBitCount = (WORD)bitsPerPixel;
   info.bmiHeader.biCompression = BI_RGB;
-  info.bmiHeader.biSizeImage = 0;
-  info.bmiHeader.biXPelsPerMeter = 0;
-  info.bmiHeader.biYPelsPerMeter = 0;
-  info.bmiHeader.biClrUsed = 0;
-  info.bmiHeader.biClrImportant = 0;
 
   SetDIBitsToDevice(mWindowContext,
     0,
@@ -627,16 +598,14 @@ void Win32PlatformApplication::PauseTimer() {
   CancelWaitableTimer(mHighPrecisionTimer);
 }
 
-void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds) {
-  LARGE_INTEGER dueTime = {};
-  ZSharp::int64 dueTimeLarge = -1 * relativeNanoseconds;
-  dueTime.LowPart = (DWORD)(dueTimeLarge & 0xFFFFFFFF);
-  dueTime.HighPart = (LONG)(dueTimeLarge >> 32);
+void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds, size_t lockedMs) {
+  LARGE_INTEGER dueTime;
+  dueTime.QuadPart = -1 * relativeNanoseconds;
 
   SetWaitableTimer(mHighPrecisionTimer,
     &dueTime,
-    (1000 / (*LockedFPS)) - 2,
-    &Win32PlatformApplication::OnTimerThunk,
+    (LONG)(lockedMs - 2),
+    &Win32PlatformApplication::OnTimer,
     this,
     true);
 }
@@ -687,7 +656,7 @@ void Win32PlatformApplication::TranslateKey(WPARAM key, WORD scanCode, bool isDo
     // TODO: This assumes a simple US ASCII keyboard.
     //  For internationalization we would need to take into account the locale and use ToUnicode() rather than ToAscii().
     UINT uKeyCode = (UINT)key;
-    WORD translatedKey = 0;
+    WORD translatedKey;
     if(ToAscii(uKeyCode, scanCode, mKeyboard, &translatedKey, 0)) {
       ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(translatedKey);
       if (isDown) {

@@ -47,9 +47,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   void OnCreate(HWND initialHandle);
 
-  static void OnTimerThunk(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue);
-
-  void OnTimer();
+  static void OnTimer(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue);
 
   void OnPaint();
 
@@ -63,7 +61,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   void OnKeyUp(ZSharp::uint8 key);
 
-  void OnWindowResize(const RECT* rect);
+  void OnWindowResize();
 
   void OnPreWindowSizeChanged(LPMINMAXINFO info);
 
@@ -83,7 +81,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   void PauseTimer();
 
-  void StartTimer(ZSharp::int64 relativeNanoseconds);
+  void StartTimer(ZSharp::int64 relativeNanoseconds, size_t lockedMs);
 
   void UpdateWindowSize(const RECT rect);
 

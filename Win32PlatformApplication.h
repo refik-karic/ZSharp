@@ -83,7 +83,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   void StartTimer(ZSharp::int64 relativeNanoseconds, size_t lockedMs);
 
-  void UpdateWindowSize(const RECT rect);
+  void UpdateWindowSize(const RECT* rect);
 
   // We want to handle "special" keys different than input keys, so we don't call TranslateMsg in our MessageLoop.
   void TranslateKey(WPARAM key, WORD scanCode, bool isDown);

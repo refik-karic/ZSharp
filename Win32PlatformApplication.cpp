@@ -97,39 +97,36 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
 }
 
 int Win32PlatformApplication::Run(HINSTANCE instance) {
-  if (mWindowHandle == nullptr) {
-    mInstance = instance;
-
-    ReadCommandLine();
-
-    mWindowHandle = SetupWindow();
-    if (mWindowHandle == nullptr) {
-      DWORD error = GetLastError();
-      HRESULT result = HRESULT_FROM_WIN32(error);
-      return result;
-    }
-
-    mGameInstance->Initialize(false);
-
-    ShowWindow(mWindowHandle, SW_SHOW);
-    for (MSG msg; mWindowHandle != nullptr;) {
-      while (PeekMessageW(&msg, mWindowHandle, 0, 0, 0)) {
-        if (GetMessageW(&msg, mWindowHandle, 0, 0)) {
-          DispatchMessageW(&msg);
-        }
-      }
-      
-      UpdateAudio();
-
-      SleepEx(MinTimerPeriod, true);
-    }
-
-    UnregisterClassW(WindowClassName.Str(), mInstance);
-    return 0;
-  }
-  else {
+  if (mWindowHandle != nullptr) {
     return -1;
   }
+
+  mInstance = instance;
+
+  ReadCommandLine();
+
+  mWindowHandle = SetupWindow();
+  if (mWindowHandle == nullptr) {
+    DWORD error = GetLastError();
+    HRESULT result = HRESULT_FROM_WIN32(error);
+    return result;
+  }
+
+  mGameInstance->Initialize(false);
+
+  ShowWindow(mWindowHandle, SW_SHOW);
+  for (MSG msg; mWindowHandle != nullptr;) {
+    while (PeekMessageW(&msg, mWindowHandle, 0, 0, PM_REMOVE)) {
+      DispatchMessageW(&msg);
+    }
+      
+    UpdateAudio();
+
+    SleepEx(MinTimerPeriod, true);
+  }
+
+  UnregisterClassW(WindowClassName.Str(), mInstance);
+  return 0;
 }
 
 void Win32PlatformApplication::ApplyCursor(ZSharp::AppCursor cursor) {
@@ -280,7 +277,7 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
   // We need to broadcast the final window size to the game code before start ticking.
   RECT activeWindowSize;
   if (GetClientRect(initialHandle, &activeWindowSize)) {
-    UpdateWindowSize(activeWindowSize);
+    UpdateWindowSize(&activeWindowSize);
   }
 
   mWindowContext = GetDC(initialHandle);
@@ -293,10 +290,11 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
 }
 
 void Win32PlatformApplication::OnTimer(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue) {
+  (void)optionalArg;
   (void)timerLowVal;
   (void)timerHighValue;
 
-  Win32PlatformApplication* app = (Win32PlatformApplication*)optionalArg;
+  Win32PlatformApplication* app = GlobalApplication;
   if (!app->mPaused && !app->mHidden) {
     size_t frameDeltaTime = ZSharp::PlatformHighResClock();
 
@@ -482,7 +480,7 @@ void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
 void Win32PlatformApplication::OnWindowResize() {
   RECT activeWindowSize;
   if (GetClientRect(mWindowHandle, &activeWindowSize)) {
-    UpdateWindowSize(activeWindowSize);
+    UpdateWindowSize(&activeWindowSize);
   }
 }
 
@@ -508,17 +506,15 @@ void Win32PlatformApplication::OnWindowVisibility(WPARAM param) {
 
     RECT activeWindowSize;
     if (GetClientRect(mWindowHandle, &activeWindowSize)) {
-      UpdateWindowSize(activeWindowSize);
+      UpdateWindowSize(&activeWindowSize);
     }
   }
   else if (param == SIZE_MAXIMIZED) {
     RECT activeWindowSize;
     if (GetClientRect(mWindowHandle, &activeWindowSize)) {
-      UpdateWindowSize(activeWindowSize);
+      UpdateWindowSize(&activeWindowSize);
     }
   }
-
-  return;
 }
 
 void Win32PlatformApplication::OnClose() {
@@ -606,17 +602,17 @@ void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds, siz
     &dueTime,
     (LONG)(lockedMs - 2),
     &Win32PlatformApplication::OnTimer,
-    this,
+    nullptr,
     true);
 }
 
-void Win32PlatformApplication::UpdateWindowSize(const RECT rect) {
+void Win32PlatformApplication::UpdateWindowSize(const RECT* rect) {
   ZSharp::ZConfig* config = ZSharp::GlobalConfig;
 
   bool dirtySize = false;
 
-  ZSharp::int32 width = rect.right;
-  ZSharp::int32 height = rect.bottom;
+  ZSharp::int32 width = rect->right;
+  ZSharp::int32 height = rect->bottom;
 
   if (width != config->GetViewportWidth().Value()) {
     config->SetViewportWidth(width);

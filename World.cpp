@@ -271,7 +271,7 @@ void World::DebugLoadTriangle(const float* v1, const float* v2, const float* v3,
     mesh.SetData(v1, 0, strideBytes);
     mesh.SetData(v2, stride, strideBytes);
     mesh.SetData(v3, stride * 2, strideBytes);
-    Triangle triangle(0 * stride, 1 * stride, 2 * stride);
+    Triangle triangle(0, stride, stride * 2);
     mesh.SetTriangle(triangle, 0);
   }
 

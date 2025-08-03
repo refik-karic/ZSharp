@@ -30,6 +30,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
     ZSharp::uint8 mHidden : 1;
     ZSharp::uint8 mRunning : 1;
   } mFlags;
+  HWND mWindowHandle;
   HDC mWindowContext = nullptr;
   BITMAPINFO* mBitmapInfo = nullptr;
   BYTE* mKeyboard = nullptr;
@@ -45,11 +46,11 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   // Win32 message loop handlers.
 
-  void OnCreate(HWND initialHandle);
+  void OnCreate(HWND window);
 
-  DWORD Tick(HWND window);
+  DWORD Tick();
 
-  void OnPaint(HWND window);
+  void OnPaint();
 
   void OnLButtonDown(ZSharp::int32 x, ZSharp::int32 y);
 
@@ -57,32 +58,32 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   void OnMouseMove(ZSharp::int32 x, ZSharp::int32 y);
 
-  void OnKeyDown(HWND window, ZSharp::uint8 key);
+  void OnKeyDown(ZSharp::uint8 key);
 
   void OnKeyUp(ZSharp::uint8 key);
 
-  void OnWindowResize(HWND window);
+  void OnWindowResize();
 
   void OnPreWindowSizeChanged(LPMINMAXINFO info);
 
-  void OnWindowVisibility(HWND window, WPARAM param);
+  void OnWindowVisibility(WPARAM param);
 
-  void OnClose(HWND window);
+  void OnClose();
 
-  void OnDestroy(HWND window);
+  void OnDestroy();
 
   // Everything else not related to message loop.
 
-  void UpdateFrame(HWND window, const ZSharp::uint8* data);
+  void UpdateFrame(const ZSharp::uint8* data);
 
-  void SplatTexture(HWND window, const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel);
+  void SplatTexture(const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel);
 
   void UpdateAudio();
 
   void UpdateWindowSize(const RECT* rect);
 
   // We want to handle "special" keys different than input keys, so we don't call TranslateMsg in our MessageLoop.
-  void TranslateKey(HWND window, WPARAM key, WORD scanCode, bool isDown);
+  void TranslateKey(WPARAM key, WORD scanCode, bool isDown);
 
   static bool IsSpecialKey(ZSharp::int32 key);
 };

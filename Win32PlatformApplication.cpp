@@ -52,7 +52,7 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     app->OnCreate(hwnd);
     return 0;
   case WM_PAINT:
-    app->OnPaint(hwnd);
+    app->OnPaint();
     return 0;
   case WM_ERASEBKGND:
     return true;
@@ -66,25 +66,25 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     app->OnMouseMove(LOWORD(lParam), HIWORD(lParam));
     return 0;
   case WM_KEYDOWN:
-    app->TranslateKey(hwnd, wParam, LOBYTE(HIWORD(lParam)), true);
+    app->TranslateKey(wParam, LOBYTE(HIWORD(lParam)), true);
     return 0;
   case WM_KEYUP:
-    app->TranslateKey(hwnd, wParam, LOBYTE(HIWORD(lParam)), false);
+    app->TranslateKey(wParam, LOBYTE(HIWORD(lParam)), false);
     return 0;
   case WM_GETMINMAXINFO:
     app->OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
     break;
   case WM_SIZE:
-    app->OnWindowVisibility(hwnd, wParam);
+    app->OnWindowVisibility(wParam);
     break;
   case WM_SIZING:
-    app->OnWindowResize(hwnd);
+    app->OnWindowResize();
     break;
   case WM_CLOSE:
-    app->OnClose(hwnd);
+    app->OnClose();
     break;
   case WM_DESTROY:
-    app->OnDestroy(hwnd);
+    app->OnDestroy();
     break;
   default:
     return DefWindowProcW(hwnd, uMsg, wParam, lParam);
@@ -96,8 +96,8 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
 int Win32PlatformApplication::Run(HINSTANCE instance) {
   ReadCommandLine();
 
-  HWND windowHandle = SetupWindow(instance);
-  if (windowHandle == nullptr) {
+  mWindowHandle = SetupWindow(instance);
+  if (mWindowHandle == nullptr) {
     DWORD error = GetLastError();
     HRESULT result = HRESULT_FROM_WIN32(error);
     return result;
@@ -107,15 +107,15 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
 
   mFlags.mRunning = 1;
 
-  ShowWindow(windowHandle, SW_SHOW);
+  ShowWindow(mWindowHandle, SW_SHOW);
   for (MSG msg; mFlags.mRunning;) {
-    while (PeekMessageW(&msg, windowHandle, 0, 0, PM_REMOVE)) {
+    while (PeekMessageW(&msg, mWindowHandle, 0, 0, PM_REMOVE)) {
       DispatchMessageW(&msg);
     }
     
     UpdateAudio();
     
-    Sleep(Tick(windowHandle));
+    Sleep(Tick());
   }
 
   UnregisterClassW(WindowClassName.Str(), instance);
@@ -136,7 +136,7 @@ void Win32PlatformApplication::ApplyCursor(ZSharp::AppCursor cursor) {
 }
 
 void Win32PlatformApplication::Shutdown() {
-  PostMessageW(NULL, WM_CLOSE, 0, 0);
+  PostMessageW(mWindowHandle, WM_CLOSE, 0, 0);
 }
 
 Win32PlatformApplication::Win32PlatformApplication()
@@ -243,17 +243,17 @@ HWND Win32PlatformApplication::SetupWindow(HINSTANCE instance) {
   );
 }
 
-void Win32PlatformApplication::OnCreate(HWND initialHandle) {
+void Win32PlatformApplication::OnCreate(HWND window) {
   TIMECAPS timecaps;
   if (timeGetDevCaps(&timecaps, sizeof(timecaps)) != MMSYSERR_NOERROR) {
-    DestroyWindow(initialHandle);
+    DestroyWindow(window);
     return;
   }
 
   MinTimerPeriod = timecaps.wPeriodMin;
 
   if (timeBeginPeriod(MinTimerPeriod) != MMSYSERR_NOERROR) {
-    DestroyWindow(initialHandle);
+    DestroyWindow(window);
     return;
   }
 
@@ -264,18 +264,18 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
 
   // We need to broadcast the final window size to the game code before start ticking.
   RECT activeWindowSize;
-  if (GetClientRect(initialHandle, &activeWindowSize)) {
+  if (GetClientRect(window, &activeWindowSize)) {
     UpdateWindowSize(&activeWindowSize);
   }
 
-  mWindowContext = GetDC(initialHandle);
+  mWindowContext = GetDC(window);
   if (mWindowContext == nullptr) {
-    DestroyWindow(initialHandle);
+    DestroyWindow(window);
     return;
   }
 }
 
-DWORD Win32PlatformApplication::Tick(HWND window) {
+DWORD Win32PlatformApplication::Tick() {
   size_t frameDeltaTime = ZSharp::PlatformHighResClock();
 
   if (!mFlags.mPaused && !mFlags.mHidden) {
@@ -285,7 +285,7 @@ DWORD Win32PlatformApplication::Tick(HWND window) {
 
     mGameInstance->Tick();
 
-    InvalidateRect(window, NULL, false);
+    InvalidateRect(mWindowHandle, NULL, false);
   }
 
   // Sleep if we have some time left in the frame, otherwise start again immediately.
@@ -301,7 +301,7 @@ DWORD Win32PlatformApplication::Tick(HWND window) {
   return (DWORD)frameDeltaTime;
 }
 
-void Win32PlatformApplication::OnPaint(HWND window) {
+void Win32PlatformApplication::OnPaint() {
 #if DEBUG_TEXTURE_PNG
   ZSharp::NamedScopedTimer(SplatTexture);
 
@@ -337,7 +337,7 @@ void Win32PlatformApplication::OnPaint(HWND window) {
     ZSharp::PlatformFree(jpgData);
   }
 #else
-  UpdateFrame(window, mGameInstance->GetCurrentFrame());
+  UpdateFrame(mGameInstance->GetCurrentFrame());
 
   mGameInstance->RunBackgroundJobs();
 #endif
@@ -359,7 +359,7 @@ void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
   inputManager->UpdateMousePosition(x, y);
 }
 
-void Win32PlatformApplication::OnKeyDown(HWND window, ZSharp::uint8 key) {
+void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
   ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
 
   switch (key) {
@@ -374,7 +374,7 @@ void Win32PlatformApplication::OnKeyDown(HWND window, ZSharp::uint8 key) {
   }
     break;
   case VK_ESCAPE:
-    DestroyWindow(window);
+    DestroyWindow(mWindowHandle);
     break;
   case VK_UP:
   {
@@ -456,9 +456,9 @@ void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
   }
 }
 
-void Win32PlatformApplication::OnWindowResize(HWND window) {
+void Win32PlatformApplication::OnWindowResize() {
   RECT activeWindowSize;
-  if (GetClientRect(window, &activeWindowSize)) {
+  if (GetClientRect(mWindowHandle, &activeWindowSize)) {
     UpdateWindowSize(&activeWindowSize);
   }
 }
@@ -475,7 +475,7 @@ void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
   info->ptMaxTrackSize.y = ZSharp::Clamp(info->ptMaxTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
 }
 
-void Win32PlatformApplication::OnWindowVisibility(HWND window, WPARAM param) {
+void Win32PlatformApplication::OnWindowVisibility(WPARAM param) {
   // Stop rendering if the window becomes minimized since we can't see anything.
   if (param == SIZE_MINIMIZED) {
     mFlags.mHidden = 1;
@@ -484,27 +484,27 @@ void Win32PlatformApplication::OnWindowVisibility(HWND window, WPARAM param) {
     mFlags.mHidden = 0;
 
     RECT activeWindowSize;
-    if (GetClientRect(window, &activeWindowSize)) {
+    if (GetClientRect(mWindowHandle, &activeWindowSize)) {
       UpdateWindowSize(&activeWindowSize);
     }
   }
   else if (param == SIZE_MAXIMIZED) {
     RECT activeWindowSize;
-    if (GetClientRect(window, &activeWindowSize)) {
+    if (GetClientRect(mWindowHandle, &activeWindowSize)) {
       UpdateWindowSize(&activeWindowSize);
     }
   }
 }
 
-void Win32PlatformApplication::OnClose(HWND window) {
-  DestroyWindow(window);
+void Win32PlatformApplication::OnClose() {
+  DestroyWindow(mWindowHandle);
 }
 
-void Win32PlatformApplication::OnDestroy(HWND window) {
+void Win32PlatformApplication::OnDestroy() {
   timeEndPeriod(MinTimerPeriod);
 
   if (mWindowContext != nullptr) {
-    ReleaseDC(window, mWindowContext);
+    ReleaseDC(mWindowHandle, mWindowContext);
   }
 
   mFlags.mRunning = 0;
@@ -512,7 +512,7 @@ void Win32PlatformApplication::OnDestroy(HWND window) {
   PostQuitMessage(0);
 }
 
-void Win32PlatformApplication::UpdateFrame(HWND window, const ZSharp::uint8* data) {
+void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
   ZSharp::NamedScopedTimer(BlitFrame);
 
   SetDIBitsToDevice(mWindowContext, 
@@ -528,10 +528,10 @@ void Win32PlatformApplication::UpdateFrame(HWND window, const ZSharp::uint8* dat
     mBitmapInfo, 
     DIB_RGB_COLORS);
 
-  ValidateRect(window, NULL);
+  ValidateRect(mWindowHandle, NULL);
 }
 
-void Win32PlatformApplication::SplatTexture(HWND window, const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel) {
+void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel) {
   if (data == nullptr) {
     return;
   }
@@ -557,7 +557,7 @@ void Win32PlatformApplication::SplatTexture(HWND window, const ZSharp::uint8* da
     &info,
     DIB_RGB_COLORS);
 
-  ValidateRect(window, NULL);
+  ValidateRect(mWindowHandle, NULL);
 }
 
 void Win32PlatformApplication::UpdateAudio() {
@@ -591,7 +591,7 @@ void Win32PlatformApplication::UpdateWindowSize(const RECT* rect) {
   }
 }
 
-void Win32PlatformApplication::TranslateKey(HWND window, WPARAM key, WORD scanCode, bool isDown) {
+void Win32PlatformApplication::TranslateKey(WPARAM key, WORD scanCode, bool isDown) {
   // NOTE: We must update the keyboard state prior to translation.
   //  This ensures that the state of keys such as CAPS or SHIFT are taken into account.
   //  Each time a virtual key changes we translate and update its state on the keyboard.
@@ -600,7 +600,7 @@ void Win32PlatformApplication::TranslateKey(HWND window, WPARAM key, WORD scanCo
   if (IsSpecialKey((ZSharp::int32)key)) {
     ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(key);
     if (isDown) {
-      OnKeyDown(window, inputKey);
+      OnKeyDown(inputKey);
     }
     else {
       OnKeyUp(inputKey);
@@ -614,7 +614,7 @@ void Win32PlatformApplication::TranslateKey(HWND window, WPARAM key, WORD scanCo
     if(ToAscii(uKeyCode, scanCode, mKeyboard, &translatedKey, 0)) {
       ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(translatedKey);
       if (isDown) {
-        OnKeyDown(window, inputKey);
+        OnKeyDown(inputKey);
       }
       else {
         OnKeyUp(inputKey);

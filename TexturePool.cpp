@@ -27,6 +27,8 @@ int32 TexturePool::LoadTexture(Asset& asset) {
   }
 
   if (asset.Extension() == "png") {
+    NamedScopedTimer(PNGDeserialize);
+
     MemoryDeserializer pngDeserializer(asset.Loader());
 
     PNG png;
@@ -45,6 +47,8 @@ int32 TexturePool::LoadTexture(Asset& asset) {
     return index;
   }
   else if (asset.Extension() == "jpg") {
+    NamedScopedTimer(JPGDeserialize);
+
     MemoryDeserializer jpgDeserializer(asset.Loader());
 
     JPEG jpg;

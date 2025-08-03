@@ -64,9 +64,11 @@ class GameInstance final {
     int64 mRotationAmount = 0;
     int64 mRotationSpeed = 4;
 
-    bool mPauseTransforms = false;
-    bool mDrawStats = true;
-    bool mVisualizeDepth = false;
+    struct {
+      bool mPauseTransforms : 1;
+      bool mDrawStats : 1;
+      bool mVisualizeDepth : 1;
+    } mFlags;
   };
 
   ExtraState* mExtraState = nullptr;

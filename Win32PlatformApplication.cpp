@@ -105,7 +105,7 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
 
   mGameInstance->Initialize(false);
 
-  mFlags.mRunning = 1;
+  mFlags.mRunning = true;
 
   ShowWindow(mWindowHandle, SW_SHOW);
   for (MSG msg; mFlags.mRunning;) {
@@ -366,7 +366,7 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
   case VK_SPACE:
   {
     if (!mGameInstance->IsDevConsoleOpen()) {
-       mFlags.mPaused = ~mFlags.mPaused;
+       mFlags.mPaused = !mFlags.mPaused;
     }
     else {
       inputManager->Update(key, ZSharp::InputManager::KeyState::Down);
@@ -478,10 +478,10 @@ void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
 void Win32PlatformApplication::OnWindowVisibility(WPARAM param) {
   // Stop rendering if the window becomes minimized since we can't see anything.
   if (param == SIZE_MINIMIZED) {
-    mFlags.mHidden = 1;
+    mFlags.mHidden = true;
   }
   else if (param == SIZE_RESTORED) {
-    mFlags.mHidden = 0;
+    mFlags.mHidden = false;
 
     RECT activeWindowSize;
     if (GetClientRect(mWindowHandle, &activeWindowSize)) {
@@ -507,7 +507,7 @@ void Win32PlatformApplication::OnDestroy() {
     ReleaseDC(mWindowHandle, mWindowContext);
   }
 
-  mFlags.mRunning = 0;
+  mFlags.mRunning = false;
 
   PostQuitMessage(0);
 }

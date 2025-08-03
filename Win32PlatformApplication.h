@@ -26,9 +26,9 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   private:
   struct {
-    ZSharp::uint8 mPaused : 1;
-    ZSharp::uint8 mHidden : 1;
-    ZSharp::uint8 mRunning : 1;
+    bool mPaused : 1;
+    bool mHidden : 1;
+    bool mRunning : 1;
   } mFlags;
   HWND mWindowHandle;
   HDC mWindowContext = nullptr;

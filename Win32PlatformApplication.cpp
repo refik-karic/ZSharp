@@ -14,7 +14,6 @@
 #include "PlatformTime.h"
 #include "CommandLineParser.h"
 
-#include <synchapi.h>
 #include <timeapi.h>
 #include <processenv.h>
 #include <shellapi.h>
@@ -53,7 +52,7 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     app->OnCreate(hwnd);
     return 0;
   case WM_PAINT:
-    app->OnPaint();
+    app->OnPaint(hwnd);
     return 0;
   case WM_ERASEBKGND:
     return true;
@@ -67,28 +66,26 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
     app->OnMouseMove(LOWORD(lParam), HIWORD(lParam));
     return 0;
   case WM_KEYDOWN:
-    app->TranslateKey(wParam, LOBYTE(HIWORD(lParam)), true);
+    app->TranslateKey(hwnd, wParam, LOBYTE(HIWORD(lParam)), true);
     return 0;
   case WM_KEYUP:
-    app->TranslateKey(wParam, LOBYTE(HIWORD(lParam)), false);
+    app->TranslateKey(hwnd, wParam, LOBYTE(HIWORD(lParam)), false);
     return 0;
   case WM_GETMINMAXINFO:
     app->OnPreWindowSizeChanged((LPMINMAXINFO)lParam);
     break;
   case WM_SIZE:
-    app->OnWindowVisibility(wParam);
+    app->OnWindowVisibility(hwnd, wParam);
     break;
   case WM_SIZING:
-    app->OnWindowResize();
+    app->OnWindowResize(hwnd);
     break;
   case WM_CLOSE:
-    app->OnClose();
+    app->OnClose(hwnd);
     break;
   case WM_DESTROY:
-    app->OnDestroy();
+    app->OnDestroy(hwnd);
     break;
-  case WM_QUIT:
-    return wParam;
   default:
     return DefWindowProcW(hwnd, uMsg, wParam, lParam);
   }
@@ -97,16 +94,10 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
 }
 
 int Win32PlatformApplication::Run(HINSTANCE instance) {
-  if (mWindowHandle != nullptr) {
-    return -1;
-  }
-
-  mInstance = instance;
-
   ReadCommandLine();
 
-  mWindowHandle = SetupWindow();
-  if (mWindowHandle == nullptr) {
+  HWND windowHandle = SetupWindow(instance);
+  if (windowHandle == nullptr) {
     DWORD error = GetLastError();
     HRESULT result = HRESULT_FROM_WIN32(error);
     return result;
@@ -114,18 +105,20 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
 
   mGameInstance->Initialize(false);
 
-  ShowWindow(mWindowHandle, SW_SHOW);
-  for (MSG msg; mWindowHandle != nullptr;) {
-    while (PeekMessageW(&msg, mWindowHandle, 0, 0, PM_REMOVE)) {
+  mFlags.mRunning = 1;
+
+  ShowWindow(windowHandle, SW_SHOW);
+  for (MSG msg; mFlags.mRunning;) {
+    while (PeekMessageW(&msg, windowHandle, 0, 0, PM_REMOVE)) {
       DispatchMessageW(&msg);
     }
-      
+    
     UpdateAudio();
-
-    SleepEx(MinTimerPeriod, true);
+    
+    Sleep(Tick(windowHandle));
   }
 
-  UnregisterClassW(WindowClassName.Str(), mInstance);
+  UnregisterClassW(WindowClassName.Str(), instance);
   return 0;
 }
 
@@ -143,7 +136,7 @@ void Win32PlatformApplication::ApplyCursor(ZSharp::AppCursor cursor) {
 }
 
 void Win32PlatformApplication::Shutdown() {
-  OnDestroy();
+  PostMessageW(NULL, WM_CLOSE, 0, 0);
 }
 
 Win32PlatformApplication::Win32PlatformApplication()
@@ -159,6 +152,8 @@ Win32PlatformApplication::Win32PlatformApplication()
   mBitmapInfo->bmiHeader.biYPelsPerMeter = 0;
   mBitmapInfo->bmiHeader.biClrUsed = 0;
   mBitmapInfo->bmiHeader.biClrImportant = 0;
+
+  memset(&mFlags, 0, sizeof(mFlags));
 
   memset(mKeyboard, 0, 256);
 
@@ -207,14 +202,14 @@ void Win32PlatformApplication::ReadCommandLine() {
   }
 }
 
-HWND Win32PlatformApplication::SetupWindow() {
+HWND Win32PlatformApplication::SetupWindow(HINSTANCE instance) {
   WNDCLASSEXW wc{
     sizeof(WNDCLASSEXW),
     CS_HREDRAW | CS_VREDRAW,
     &Win32PlatformApplication::MessageLoop,
     0,
     0,
-    mInstance,
+    instance,
     nullptr,
     nullptr,
     nullptr,
@@ -243,7 +238,7 @@ HWND Win32PlatformApplication::SetupWindow() {
     clientRect.bottom - clientRect.top,
     nullptr,
     nullptr,
-    mInstance,
+    instance,
     nullptr
   );
 }
@@ -267,13 +262,6 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
 
   mCurrentCursor = ZSharp::AppCursor::Arrow;
 
-  mHighPrecisionTimer = CreateWaitableTimerW(NULL, false, TimerName.Str());
-
-  if (mHighPrecisionTimer == INVALID_HANDLE_VALUE) {
-    DestroyWindow(initialHandle);
-    return;
-  }
-
   // We need to broadcast the final window size to the game code before start ticking.
   RECT activeWindowSize;
   if (GetClientRect(initialHandle, &activeWindowSize)) {
@@ -285,44 +273,35 @@ void Win32PlatformApplication::OnCreate(HWND initialHandle) {
     DestroyWindow(initialHandle);
     return;
   }
-
-  StartTimer((ZSharp::int64)1, (1000 / (*LockedFPS)));
 }
 
-void Win32PlatformApplication::OnTimer(LPVOID optionalArg, DWORD timerLowVal, DWORD timerHighValue) {
-  (void)optionalArg;
-  (void)timerLowVal;
-  (void)timerHighValue;
+DWORD Win32PlatformApplication::Tick(HWND window) {
+  size_t frameDeltaTime = ZSharp::PlatformHighResClock();
 
-  Win32PlatformApplication* app = GlobalApplication;
-  if (!app->mPaused && !app->mHidden) {
-    size_t frameDeltaTime = ZSharp::PlatformHighResClock();
-
-    app->PauseTimer();
-
-    if (app->mCurrentCursor != ZSharp::AppCursor::Arrow) {
-      app->ApplyCursor(ZSharp::AppCursor::Arrow);
+  if (!mFlags.mPaused && !mFlags.mHidden) {
+    if (mCurrentCursor != ZSharp::AppCursor::Arrow) {
+      ApplyCursor(ZSharp::AppCursor::Arrow);
     }
 
-    app->mGameInstance->Tick();
+    mGameInstance->Tick();
 
-    InvalidateRect(app->mWindowHandle, NULL, false);
-
-    // Sleep if we have some time left in the frame, otherwise start again immediately.
-    frameDeltaTime = ZSharp::PlatformHighResClockDeltaMs(frameDeltaTime);
-    const size_t lockedMs = (1000 / (*LockedFPS));
-    if (frameDeltaTime >= lockedMs || (*UncappedFPS)) {
-      frameDeltaTime = 1;
-    }
-    else {
-      frameDeltaTime = (lockedMs - frameDeltaTime) * 10000;
-    }
-
-    app->StartTimer((ZSharp::int64)frameDeltaTime, lockedMs);
+    InvalidateRect(window, NULL, false);
   }
+
+  // Sleep if we have some time left in the frame, otherwise start again immediately.
+  frameDeltaTime = ZSharp::PlatformHighResClockDeltaMs(frameDeltaTime);
+  const size_t lockedMs = (1000 / (*LockedFPS));
+  if (frameDeltaTime >= lockedMs || (*UncappedFPS)) {
+    frameDeltaTime = 0;
+  }
+  else {
+    frameDeltaTime = lockedMs - frameDeltaTime;
+  }
+
+  return (DWORD)frameDeltaTime;
 }
 
-void Win32PlatformApplication::OnPaint() {
+void Win32PlatformApplication::OnPaint(HWND window) {
 #if DEBUG_TEXTURE_PNG
   ZSharp::NamedScopedTimer(SplatTexture);
 
@@ -358,7 +337,7 @@ void Win32PlatformApplication::OnPaint() {
     ZSharp::PlatformFree(jpgData);
   }
 #else
-  UpdateFrame(mGameInstance->GetCurrentFrame());
+  UpdateFrame(window, mGameInstance->GetCurrentFrame());
 
   mGameInstance->RunBackgroundJobs();
 #endif
@@ -380,14 +359,14 @@ void Win32PlatformApplication::OnMouseMove(ZSharp::int32 x, ZSharp::int32 y) {
   inputManager->UpdateMousePosition(x, y);
 }
 
-void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
+void Win32PlatformApplication::OnKeyDown(HWND window, ZSharp::uint8 key) {
   ZSharp::InputManager* inputManager = ZSharp::GlobalInputManager;
 
   switch (key) {
   case VK_SPACE:
   {
     if (!mGameInstance->IsDevConsoleOpen()) {
-       mPaused = !mPaused;
+       mFlags.mPaused = ~mFlags.mPaused;
     }
     else {
       inputManager->Update(key, ZSharp::InputManager::KeyState::Down);
@@ -395,7 +374,7 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
   }
     break;
   case VK_ESCAPE:
-    DestroyWindow(mWindowHandle);
+    DestroyWindow(window);
     break;
   case VK_UP:
   {
@@ -477,9 +456,9 @@ void Win32PlatformApplication::OnKeyUp(ZSharp::uint8 key) {
   }
 }
 
-void Win32PlatformApplication::OnWindowResize() {
+void Win32PlatformApplication::OnWindowResize(HWND window) {
   RECT activeWindowSize;
-  if (GetClientRect(mWindowHandle, &activeWindowSize)) {
+  if (GetClientRect(window, &activeWindowSize)) {
     UpdateWindowSize(&activeWindowSize);
   }
 }
@@ -496,49 +475,44 @@ void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
   info->ptMaxTrackSize.y = ZSharp::Clamp(info->ptMaxTrackSize.y, (LONG)height.Min(), (LONG)height.Max());
 }
 
-void Win32PlatformApplication::OnWindowVisibility(WPARAM param) {
+void Win32PlatformApplication::OnWindowVisibility(HWND window, WPARAM param) {
   // Stop rendering if the window becomes minimized since we can't see anything.
   if (param == SIZE_MINIMIZED) {
-    mHidden = true;
+    mFlags.mHidden = 1;
   }
   else if (param == SIZE_RESTORED) {
-    mHidden = false;
+    mFlags.mHidden = 0;
 
     RECT activeWindowSize;
-    if (GetClientRect(mWindowHandle, &activeWindowSize)) {
+    if (GetClientRect(window, &activeWindowSize)) {
       UpdateWindowSize(&activeWindowSize);
     }
   }
   else if (param == SIZE_MAXIMIZED) {
     RECT activeWindowSize;
-    if (GetClientRect(mWindowHandle, &activeWindowSize)) {
+    if (GetClientRect(window, &activeWindowSize)) {
       UpdateWindowSize(&activeWindowSize);
     }
   }
 }
 
-void Win32PlatformApplication::OnClose() {
-  DestroyWindow(mWindowHandle);
+void Win32PlatformApplication::OnClose(HWND window) {
+  DestroyWindow(window);
 }
 
-void Win32PlatformApplication::OnDestroy() {
-  if (mHighPrecisionTimer != INVALID_HANDLE_VALUE) {
-    PauseTimer();
-    CloseHandle(mHighPrecisionTimer);
-  }
-
+void Win32PlatformApplication::OnDestroy(HWND window) {
   timeEndPeriod(MinTimerPeriod);
 
   if (mWindowContext != nullptr) {
-    ReleaseDC(mWindowHandle, mWindowContext);
+    ReleaseDC(window, mWindowContext);
   }
 
-  mWindowHandle = nullptr;
+  mFlags.mRunning = 0;
 
   PostQuitMessage(0);
 }
 
-void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
+void Win32PlatformApplication::UpdateFrame(HWND window, const ZSharp::uint8* data) {
   ZSharp::NamedScopedTimer(BlitFrame);
 
   SetDIBitsToDevice(mWindowContext, 
@@ -554,10 +528,10 @@ void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {
     mBitmapInfo, 
     DIB_RGB_COLORS);
 
-  ValidateRect(mWindowHandle, NULL);
+  ValidateRect(window, NULL);
 }
 
-void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel) {
+void Win32PlatformApplication::SplatTexture(HWND window, const ZSharp::uint8* data, size_t width, size_t height, size_t bitsPerPixel) {
   if (data == nullptr) {
     return;
   }
@@ -583,27 +557,11 @@ void Win32PlatformApplication::SplatTexture(const ZSharp::uint8* data, size_t wi
     &info,
     DIB_RGB_COLORS);
 
-  ValidateRect(mWindowHandle, NULL);
+  ValidateRect(window, NULL);
 }
 
 void Win32PlatformApplication::UpdateAudio() {
   mGameInstance->TickAudio();
-}
-
-void Win32PlatformApplication::PauseTimer() {
-  CancelWaitableTimer(mHighPrecisionTimer);
-}
-
-void Win32PlatformApplication::StartTimer(ZSharp::int64 relativeNanoseconds, size_t lockedMs) {
-  LARGE_INTEGER dueTime;
-  dueTime.QuadPart = -1 * relativeNanoseconds;
-
-  SetWaitableTimer(mHighPrecisionTimer,
-    &dueTime,
-    (LONG)(lockedMs - 2),
-    &Win32PlatformApplication::OnTimer,
-    nullptr,
-    true);
 }
 
 void Win32PlatformApplication::UpdateWindowSize(const RECT* rect) {
@@ -633,7 +591,7 @@ void Win32PlatformApplication::UpdateWindowSize(const RECT* rect) {
   }
 }
 
-void Win32PlatformApplication::TranslateKey(WPARAM key, WORD scanCode, bool isDown) {
+void Win32PlatformApplication::TranslateKey(HWND window, WPARAM key, WORD scanCode, bool isDown) {
   // NOTE: We must update the keyboard state prior to translation.
   //  This ensures that the state of keys such as CAPS or SHIFT are taken into account.
   //  Each time a virtual key changes we translate and update its state on the keyboard.
@@ -642,7 +600,7 @@ void Win32PlatformApplication::TranslateKey(WPARAM key, WORD scanCode, bool isDo
   if (IsSpecialKey((ZSharp::int32)key)) {
     ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(key);
     if (isDown) {
-      OnKeyDown(inputKey);
+      OnKeyDown(window, inputKey);
     }
     else {
       OnKeyUp(inputKey);
@@ -656,7 +614,7 @@ void Win32PlatformApplication::TranslateKey(WPARAM key, WORD scanCode, bool isDo
     if(ToAscii(uKeyCode, scanCode, mKeyboard, &translatedKey, 0)) {
       ZSharp::uint8 inputKey = static_cast<ZSharp::uint8>(translatedKey);
       if (isDown) {
-        OnKeyDown(inputKey);
+        OnKeyDown(window, inputKey);
       }
       else {
         OnKeyUp(inputKey);

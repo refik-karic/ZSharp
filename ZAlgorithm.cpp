@@ -197,6 +197,8 @@ int32 SutherlandHodgmanClip(float* inputVerts, float* outputVerts, const int32 n
   int32 numOutputVerts = 0;
   const int32 vertByteSize = stride * sizeof(float);
 
+  bool p0Inside = InsidePlane(inputVerts, clipEdge, edgeNormal);
+
   for (int32 i = 0; i < numInputVerts; ++i) {
     // Mod causes an idiv, this instead generates a cmov which is actually much faster.
     const int32 nextIndex = ((i + 1) == numInputVerts) ? 0 : (i + 1);
@@ -204,20 +206,16 @@ int32 SutherlandHodgmanClip(float* inputVerts, float* outputVerts, const int32 n
     const float* currentOffset = inputVerts + (i * stride);
     const float* nextOffset = inputVerts + (nextIndex * stride);
 
-    const bool p0Inside = InsidePlane(currentOffset, clipEdge, edgeNormal);
     const bool p1Inside = InsidePlane(nextOffset, clipEdge, edgeNormal);
 
-    if (!p0Inside && !p1Inside) {
-      continue;
-    }
-    else if (p0Inside && p1Inside) {
+    if (p0Inside && p1Inside) {
       // Unchanged input vertex.
       memcpy(outputVerts + (numOutputVerts * stride),
         currentOffset,
         vertByteSize);
       ++numOutputVerts;
     }
-    else {
+    else if(p0Inside || p1Inside) {
       const float parametricValue = ParametricLinePlaneIntersection(currentOffset, nextOffset, edgeNormal, clipEdge);
       float clipPoint[4];
       GetParametricVector4D(parametricValue, currentOffset, nextOffset, clipPoint);
@@ -230,11 +228,6 @@ int32 SutherlandHodgmanClip(float* inputVerts, float* outputVerts, const int32 n
         ++numOutputVerts;
       }
 
-      /*
-        NOTE: We intentionaly do not add the second vertex when the first is outside the clip region.
-          This avoids duplicating vertices since only those inside the clip region are added.
-      */
-
       // Clipped vertex.
       float* outputOffset = (outputVerts + (numOutputVerts * stride));
       memcpy(outputOffset, clipPoint, sizeof(clipPoint));
@@ -243,8 +236,11 @@ int32 SutherlandHodgmanClip(float* inputVerts, float* outputVerts, const int32 n
       for (int32 j = 4; j < stride; j+=4) {
         Unaligned_LerpAttribute(currentOffset + j, nextOffset + j, outputOffset + j, parametricValue);
       }
+
       ++numOutputVerts;
     }
+
+    p0Inside = p1Inside;
   }
 
   return numOutputVerts;

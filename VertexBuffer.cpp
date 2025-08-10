@@ -107,10 +107,7 @@ void VertexBuffer::ApplyTransform(const Mat4x4& transform) {
 }
 
 void VertexBuffer::AppendClipData(const float* data, int32 lengthBytes, int32 numVertices) {
-  int32 usedBytes = (mInputSize + (mClipLength * mStride)) * sizeof(float);
-  if ((usedBytes + lengthBytes) > mAllocatedSize) {
-    return;
-  }
+  ZAssert(((mInputSize + (mClipLength * mStride)) * sizeof(float) + lengthBytes) < mAllocatedSize);
 
   memcpy(mClipData + (mClipLength * mStride), data, lengthBytes);
   mClipLength += numVertices;

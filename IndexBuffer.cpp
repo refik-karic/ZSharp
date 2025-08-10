@@ -89,9 +89,7 @@ void IndexBuffer::Reset() {
 }
 
 void IndexBuffer::AppendClipData(const int32* data, const int32 length) {
-  if (mWorkingSize + mClipLength + length > mAllocatedSize) {
-    return;
-  }
+  ZAssert(mWorkingSize + mClipLength + length < mAllocatedSize);
 
   memcpy(mClipData + mClipLength, data, length * sizeof(int32));
   mClipLength += length;

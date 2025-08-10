@@ -53,48 +53,28 @@ void ClipTrianglesNearPlane(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer
     const int32 numClippedVerts = SutherlandHodgmanClip(clipBuffer, clipBuffer + ScatchSize, 3, nearEdge, edgeNormal, stride);
 
     if (numClippedVerts > 0) {
-      ZAssert(numClippedVerts < 7);
+      // There should never be more than 4 verts after a near clip pass since we don't clip against any other planes.
+      ZAssert(numClippedVerts < 5);
 
       int32 currentClipIndex = vertexBuffer.GetClipLength();
 
       vertexBuffer.AppendClipData(clipBuffer + ScatchSize, numClippedVerts * vertByteSize, numClippedVerts);
 
-      int32 nextTriangle[3] = { currentClipIndex * stride, (currentClipIndex + 1) * stride, (currentClipIndex + 2) * stride };
-      indexBuffer.AppendClipData(nextTriangle, 3);
+      int32 clippedTriangle[6];
+      int32 clipLength = 3;
+
+      clippedTriangle[0] = currentClipIndex * stride;
+      clippedTriangle[1] = (currentClipIndex + 1) * stride;
+      clippedTriangle[2] = (currentClipIndex + 2) * stride;
 
       if (numClippedVerts == 4) {
-        const int32 clip0 = (currentClipIndex + 0) * stride;
-        const int32 clip1 = (currentClipIndex + 2) * stride;
-        const int32 clip2 = (currentClipIndex + 3) * stride;
-
-        int32 clippedTriangle[3] = { clip0, clip1, clip2 };
-        indexBuffer.AppendClipData(clippedTriangle, 3);
+        clippedTriangle[3] = (currentClipIndex + 0) * stride;
+        clippedTriangle[4] = (currentClipIndex + 2) * stride;
+        clippedTriangle[5] = (currentClipIndex + 3) * stride;
+        clipLength += 3;
       }
-      else if (numClippedVerts == 5) {
-        const int32 clip0 = (currentClipIndex + 0) * stride;
-        const int32 clip1 = (currentClipIndex + 2) * stride;
-        const int32 clip2 = (currentClipIndex + 3) * stride;
-        const int32 clip3 = (currentClipIndex + 3) * stride;
-        const int32 clip4 = (currentClipIndex + 4) * stride;
-        const int32 clip5 = (currentClipIndex + 0) * stride;
 
-        int32 clippedTriangle[6] = { clip0, clip1, clip2, clip3, clip4, clip5 };
-        indexBuffer.AppendClipData(clippedTriangle, 6);
-      }
-      else if (numClippedVerts == 6) {
-        const int32 clip0 = (currentClipIndex + 0) * stride;
-        const int32 clip1 = (currentClipIndex + 2) * stride;
-        const int32 clip2 = (currentClipIndex + 3) * stride;
-        const int32 clip3 = (currentClipIndex + 0) * stride;
-        const int32 clip4 = (currentClipIndex + 3) * stride;
-        const int32 clip5 = (currentClipIndex + 4) * stride;
-        const int32 clip6 = (currentClipIndex + 4) * stride;
-        const int32 clip7 = (currentClipIndex + 5) * stride;
-        const int32 clip8 = (currentClipIndex + 0) * stride;
-
-        int32 clippedTriangle[9] = { clip0, clip1, clip2, clip3, clip4, clip5, clip6, clip7, clip8 };
-        indexBuffer.AppendClipData(clippedTriangle, 9);
-      }
+      indexBuffer.AppendClipData(clippedTriangle, clipLength);
     }
   }
 
@@ -153,42 +133,35 @@ void ClipTriangles(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer) {
 
       vertexBuffer.AppendClipData(clipBuffer + ScatchSize, numClippedVerts * vertByteSize, numClippedVerts);
 
-      int32 nextTriangle[3] = { currentClipIndex * stride, (currentClipIndex + 1) * stride, (currentClipIndex + 2) * stride };
-      indexBuffer.AppendClipData(nextTriangle, 3);
+      int32 clippedTriangle[12];
+      int32 clipLength = 3;
 
-      if (numClippedVerts == 4) {
-        const int32 clip0 = (currentClipIndex + 0) * stride;
-        const int32 clip1 = (currentClipIndex + 2) * stride;
-        const int32 clip2 = (currentClipIndex + 3) * stride;
+      clippedTriangle[0] = currentClipIndex * stride;
+      clippedTriangle[1] = (currentClipIndex + 1) * stride;
+      clippedTriangle[2] = (currentClipIndex + 2) * stride;
 
-        int32 clippedTriangle[3] = { clip0, clip1, clip2 };
-        indexBuffer.AppendClipData(clippedTriangle, 3);
+      if (numClippedVerts >= 4) {
+        clippedTriangle[3] = (currentClipIndex + 0) * stride;
+        clippedTriangle[4] = (currentClipIndex + 2) * stride;
+        clippedTriangle[5] = (currentClipIndex + 3) * stride;
+        clipLength += 3;
       }
-      else if (numClippedVerts == 5) {
-        const int32 clip0 = (currentClipIndex + 0) * stride;
-        const int32 clip1 = (currentClipIndex + 2) * stride;
-        const int32 clip2 = (currentClipIndex + 3) * stride;
-        const int32 clip3 = (currentClipIndex + 3) * stride;
-        const int32 clip4 = (currentClipIndex + 4) * stride;
-        const int32 clip5 = (currentClipIndex + 0) * stride;
 
-        int32 clippedTriangle[6] = { clip0, clip1, clip2, clip3, clip4, clip5 };
-        indexBuffer.AppendClipData(clippedTriangle, 6);
+      if (numClippedVerts >= 5) {
+        clippedTriangle[6] = (currentClipIndex + 0) * stride;
+        clippedTriangle[7] = (currentClipIndex + 3) * stride;
+        clippedTriangle[8] = (currentClipIndex + 4) * stride;
+        clipLength += 3;
       }
-      else if (numClippedVerts == 6) {
-        const int32 clip0 = (currentClipIndex + 0) * stride;
-        const int32 clip1 = (currentClipIndex + 2) * stride;
-        const int32 clip2 = (currentClipIndex + 3) * stride;
-        const int32 clip3 = (currentClipIndex + 0) * stride;
-        const int32 clip4 = (currentClipIndex + 3) * stride;
-        const int32 clip5 = (currentClipIndex + 4) * stride;
-        const int32 clip6 = (currentClipIndex + 4) * stride;
-        const int32 clip7 = (currentClipIndex + 5) * stride;
-        const int32 clip8 = (currentClipIndex + 0) * stride;
 
-        int32 clippedTriangle[9] = { clip0, clip1, clip2, clip3, clip4, clip5, clip6, clip7, clip8 };
-        indexBuffer.AppendClipData(clippedTriangle, 9);
+      if (numClippedVerts >= 6) {
+        clippedTriangle[9] = (currentClipIndex + 0) * stride;
+        clippedTriangle[10] = (currentClipIndex + 4) * stride;
+        clippedTriangle[11] = (currentClipIndex + 5) * stride;
+        clipLength += 3;
       }
+
+      indexBuffer.AppendClipData(clippedTriangle, clipLength);
     }
   }
 }
@@ -208,29 +181,20 @@ int32 SutherlandHodgmanClip(float* inputVerts, float* outputVerts, const int32 n
 
     const bool p1Inside = InsidePlane(nextOffset, clipEdge, edgeNormal);
 
-    if (p0Inside && p1Inside) {
+    if (p0Inside) {
       // Unchanged input vertex.
       memcpy(outputVerts + (numOutputVerts * stride),
         currentOffset,
         vertByteSize);
       ++numOutputVerts;
     }
-    else if(p0Inside || p1Inside) {
+    
+    if((p0Inside && !p1Inside) || (!p0Inside && p1Inside)) {
       const float parametricValue = ParametricLinePlaneIntersection(currentOffset, nextOffset, edgeNormal, clipEdge);
-      float clipPoint[4];
-      GetParametricVector4D(parametricValue, currentOffset, nextOffset, clipPoint);
-
-      if (p0Inside) {
-        // Unchanged input vertex.
-        memcpy(outputVerts + (numOutputVerts * stride),
-          currentOffset,
-          vertByteSize);
-        ++numOutputVerts;
-      }
-
-      // Clipped vertex.
+      
+      // Clipped vertex, implicitly stores the clipped vertex in the clip buffer.
       float* outputOffset = (outputVerts + (numOutputVerts * stride));
-      memcpy(outputOffset, clipPoint, sizeof(clipPoint));
+      GetParametricVector4D(parametricValue, currentOffset, nextOffset, outputOffset);
 
       // Clipped attributes.
       for (int32 j = 4; j < stride; j+=4) {

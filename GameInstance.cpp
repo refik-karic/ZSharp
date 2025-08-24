@@ -29,8 +29,9 @@ GameInstance::GameInstance()
     mFrontEnd(new FrontEnd()), mCamera(new Camera()), mWorld(new World()), mRenderer(new Renderer()), 
     mThreadPool(new ThreadPool()), mExtraState(new ExtraState()), mDevConsole(new DevConsole()),
     mCameraReset(new ConsoleVariable<void>("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this))) {
-  memset(&(mExtraState->mFlags), 0, sizeof(mExtraState->mFlags));
-  mExtraState->mFlags.mDrawStats = true;
+  mExtraState->mPauseTransforms = false;
+  mExtraState->mDrawStats = true;
+  mExtraState->mVisualizeDepth = false;
 }
 
 GameInstance::~GameInstance() {
@@ -138,7 +139,7 @@ void GameInstance::TickWorld() {
   inputManager->Process();
 
   if (*DebugTransforms) {
-    if (!(mExtraState->mFlags.mPauseTransforms)) {
+    if (!(mExtraState->mPauseTransforms)) {
       mExtraState->mRotationAmount += mExtraState->mRotationSpeed;
     }
 
@@ -175,13 +176,13 @@ void GameInstance::TickWorld() {
   float cullRatio = (float)remainingTriangles / (float)numTriangles;
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Post Clip/Cull Triangles: {0}, {1:4}%\n", remainingTriangles, cullRatio)));
 
-  if (mExtraState->mFlags.mDrawStats) {
+  if (mExtraState->mDrawStats) {
     stats.EmplaceBack(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDeltaUs(renderFrameTime)));
 
     size_t bufferWidth = mRenderer->GetFrameBuffer().GetWidth();
     uint8* buffer;
     ZColor color;
-    if (mExtraState->mFlags.mVisualizeDepth) {
+    if (mExtraState->mVisualizeDepth) {
       buffer = mRenderer->GetDepth();
       color = ZColors::GREEN;
     }
@@ -198,7 +199,7 @@ void GameInstance::TickWorld() {
   }
 
   if (mDevConsole->IsOpen()) {
-    uint8* buffer = mExtraState->mFlags.mVisualizeDepth ? mRenderer->GetDepth() : mRenderer->GetFrameBuffer().GetBuffer();
+    uint8* buffer = mExtraState->mVisualizeDepth ? mRenderer->GetDepth() : mRenderer->GetFrameBuffer().GetBuffer();
     mDevConsole->Draw((uint32*)buffer);
   }
 }
@@ -279,7 +280,7 @@ void GameInstance::ResetCamera() {
 }
 
 void GameInstance::PauseTransforms() {
-  mExtraState->mFlags.mPauseTransforms = !(mExtraState->mFlags.mPauseTransforms);
+  mExtraState->mPauseTransforms = !(mExtraState->mPauseTransforms);
 }
 
 void GameInstance::Initialize(bool skipTitleScreen) {
@@ -320,7 +321,7 @@ uint8* GameInstance::GetCurrentFrame() {
   if (mFrontEnd->IsVisible()) {
     return mRenderer->GetFrame();
   }
-  else if (!(mExtraState->mFlags.mVisualizeDepth)) {
+  else if (!(mExtraState->mVisualizeDepth)) {
     return mRenderer->GetFrame();
   }
   else {
@@ -366,10 +367,10 @@ void GameInstance::OnKeyDown(uint8 key) {
     mRenderer->ToggleRenderMode(RenderMode::FILL);
     break;
   case 'i':
-    mExtraState->mFlags.mDrawStats = !(mExtraState->mFlags.mDrawStats);
+    mExtraState->mDrawStats = !(mExtraState->mDrawStats);
     break;
   case 'z':
-    mExtraState->mFlags.mVisualizeDepth = !(mExtraState->mFlags.mVisualizeDepth);
+    mExtraState->mVisualizeDepth = !(mExtraState->mVisualizeDepth);
     break;
   default:
     break;

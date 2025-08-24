@@ -68,7 +68,7 @@ class GameInstance final {
       bool mPauseTransforms : 1;
       bool mDrawStats : 1;
       bool mVisualizeDepth : 1;
-    } mFlags;
+    };
   };
 
   ExtraState* mExtraState = nullptr;

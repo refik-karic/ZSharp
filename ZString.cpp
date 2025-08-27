@@ -589,35 +589,23 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
 
   const char* str = format;
   const char* lastPosition = format;
-  const char* lastChar = nullptr;
+  char lastChar = '\0';
+  const char* openBrace = nullptr;
+  const char* digitSpec = nullptr;
   for (; *str != '\0'; ++str) {
     char currentChar = *str;
-    bool isEscaped = (lastChar != nullptr) ? ((*lastChar) == '\\') : false;
 
+    bool isEscaped = lastChar == '\\';
     if (!isEscaped && (currentChar == '{')) {
-      size_t jumpAhead = 0;
-      size_t numDigits = 0;
-
-      for (const char* endFormat = str + 1; *endFormat != '\0'; ++endFormat) {
-        if (*endFormat == '}') {
-          jumpAhead = (endFormat - str);
-          break;
-        }
-        else if (*endFormat == ':') {
-          if (endFormat[1] != '}') {
-            numDigits = endFormat - str + 1;
-          }
-        }
-      }
-
-      if (jumpAhead == 0) {
-        ZAssert(false); // Invalid format.
-        break;
-      }
-
+      openBrace = str;
+    }
+    else if (!isEscaped && openBrace != nullptr && (currentChar == ':')) {
+      digitSpec = str;
+    }
+    else if (!isEscaped && openBrace != nullptr && (currentChar == '}')) {
       // Get the index specified by the argument.
-      int32 argIndex = atoi(str + 1);
-      ZAssert(argIndex >= 0);
+      int32 argIndex = atoi(openBrace + 1);
+      ZAssert(argIndex >= 0 && argIndex < numArgs);
 
       if (argIndex >= numArgs) {
         ZAssert(false); // OOB
@@ -625,28 +613,26 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
       }
 
       // Append format str up until the current position.
-      Append(lastPosition, 0, str - lastPosition);
+      Append(lastPosition, 0, openBrace - lastPosition);
 
       // Append the VariableArg based on its type.
       const VariableArg& arg = args[argIndex];
-      if (numDigits != 0) {
-        int32 digits = atoi(str + numDigits);
+      if (digitSpec != nullptr && digitSpec > openBrace) {
+        int32 digits = atoi(digitSpec + 1);
         arg.ToString(*this, digits);
       }
       else {
         arg.ToString(*this);
       }
 
-      str += jumpAhead;
       lastPosition = str + 1;
-      lastChar = str + 1;
+      openBrace = nullptr;
+      digitSpec = nullptr;
     }
-    else {
-      lastChar = str;
-    }
+
+    lastChar = currentChar;
   }
 
-  // Append trailing characters that may be present after the last format specifier.
   Append(lastPosition, 0, str - lastPosition);
 }
 

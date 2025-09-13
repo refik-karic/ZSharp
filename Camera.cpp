@@ -17,8 +17,8 @@ namespace ZSharp {
 ConsoleVariable<bool> BackfaceCull("BackfaceCull", true);
 
 Camera::Camera() 
-  : mLook(0.f, 0.f, -1.f), mUp(0.f, 1.f, 0.f), mFovHoriz(70.f), mFovVert(45.f), 
-  mNearPlane(10.f), mFarPlane(1000.f) {
+  : mLook(0.f, 0.f, -1.f), mUp(0.f, 1.f, 0.f), mNearPlane(10.f), mFarPlane(1000.f), mFovHoriz(70.f), mFovVert(45.f)
+   {
   //mNearPlane = 0.02f;
   //mFarPlane = 1000.f;
 

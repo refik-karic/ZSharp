@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
+project(ZSharp VERSION 1.0)
+
 add_library(ZSharp)
 
 set(ZSharp_Header_Files 

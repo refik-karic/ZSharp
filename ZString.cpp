@@ -1329,36 +1329,25 @@ bool WideString::FitsInSmall(size_t size) {
 void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* args, size_t numArgs) {
   ZAssert(format != nullptr);
 
+  const wchar_t* str = format;
   const wchar_t* lastPosition = format;
-  const wchar_t* lastChar = nullptr;
-  for (const wchar_t* str = format; *str != L'\0'; ++str) {
+  wchar_t lastChar = L'\0';
+  const wchar_t* openBrace = nullptr;
+  const wchar_t* digitSpec = nullptr;
+  for (; *str != L'\0'; ++str) {
     wchar_t currentChar = *str;
-    bool isEscaped = (lastChar != nullptr) ? ((*lastChar) == L'\\') : false;
 
+    bool isEscaped = lastChar == L'\\';
     if (!isEscaped && (currentChar == L'{')) {
-      size_t jumpAhead = 0;
-      size_t numDigits = 0;
-
-      for (const wchar_t* endFormat = str + 1; *endFormat != L'\0'; ++endFormat) {
-        if (*endFormat == L'}') {
-          jumpAhead = (endFormat - str) + 1;
-          break;
-        }
-        else if (*endFormat == L':') {
-          if (endFormat[1] != L'}') {
-            numDigits = endFormat - str + 1;
-          }
-        }
-      }
-
-      if (jumpAhead == 0) {
-        ZAssert(false); // Invalid format.
-        break;
-      }
-
+      openBrace = str;
+    }
+    else if (!isEscaped && openBrace != nullptr && (currentChar == L':')) {
+      digitSpec = str;
+    }
+    else if (!isEscaped && openBrace != nullptr && (currentChar == L'}')) {
       // Get the index specified by the argument.
-      int32 argIndex = static_cast<int32>(wcstol(str + 1, NULL, 10));
-      ZAssert(argIndex >= 0);
+      int32 argIndex = static_cast<int32>(wcstol(openBrace + 1, NULL, 10));
+      ZAssert(argIndex >= 0 && argIndex < numArgs);
 
       if (argIndex >= numArgs) {
         ZAssert(false); // OOB
@@ -1366,24 +1355,27 @@ void WideString::VariadicArgsAppend(const wchar_t* format, const VariableArg* ar
       }
 
       // Append format str up until the current position.
-      Append(lastPosition, 0, str - lastPosition);
+      Append(lastPosition, 0, openBrace - lastPosition);
 
       // Append the VariableArg based on its type.
       const VariableArg& arg = args[argIndex];
-      if (numDigits != 0) {
-        int32 digits = static_cast<int32>(wcstol(str + numDigits, NULL, 10));
+      if (digitSpec != nullptr && digitSpec > openBrace) {
+        int32 digits = static_cast<int32>(wcstol(digitSpec + 1, NULL, 10));
         arg.ToString(*this, digits);
       }
       else {
         arg.ToString(*this);
       }
 
-      str += jumpAhead;
-      lastPosition = str;
+      lastPosition = str + 1;
+      openBrace = nullptr;
+      digitSpec = nullptr;
     }
 
-    lastChar = str;
+    lastChar = currentChar;
   }
+
+  Append(lastPosition, 0, str - lastPosition);
 }
 
 WideString::VariableArg::VariableArg(const wchar_t arg) 

@@ -17,7 +17,7 @@ void CorrectOverlappingObjects(PhysicsObject& a, PhysicsObject& b) {
   // TODO: We need to apply a realistic counter force here.
   //  Depending on the mass and object properties, we need to handle elasticity.
   const float hackyCounterForce = fabsf(a.Velocity()[1]) * 0.5f;
-  a.Velocity() = Vec3(0.f, hackyCounterForce, 0.f);
+  a.Velocity() = { 0.f, hackyCounterForce, 0.f };
 }
 
 float MinDistanceForTime(PhysicsObject& a, PhysicsObject& b, float t) {

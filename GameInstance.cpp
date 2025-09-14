@@ -80,7 +80,7 @@ void GameInstance::LoadWorld() {
 
   mWorld->Load();
 
-  mCamera->Position() = Vec3(0.f, 5.f, 50.f);
+  mCamera->Position() = {0.f, 5.f, 50.f};
   // Clip the model at the origin by moving the camera far away.
   // From there we can see how long the clipping pass takes for a given scene.
   //mCamera.Position() = Vec3(0.f, 0.f, 200.f);
@@ -236,21 +236,21 @@ void GameInstance::MoveCamera(Direction direction) {
 
   switch (direction) {
   case Direction::FORWARD:
-    mCamera->Position() = mCamera->Position() + cameraLook;
+    mCamera->Position() += cameraLook;
     break;
   case Direction::BACK:
-    mCamera->Position() = mCamera->Position() - cameraLook;
+    mCamera->Position() -= cameraLook;
     break;
   case Direction::LEFT:
   {
     Vec3 sideVec(mCamera->GetUp().Cross(cameraLook));
-    mCamera->Position() = mCamera->Position() + sideVec;
+    mCamera->Position() += sideVec;
   }
   break;
   case Direction::RIGHT:
   {
     Vec3 sideVec(mCamera->GetUp().Cross(cameraLook));
-    mCamera->Position() = mCamera->Position() - sideVec;
+    mCamera->Position() -= sideVec;
   }
   break;
   }
@@ -275,7 +275,7 @@ void GameInstance::ChangeSpeed(int64 amount) {
 void GameInstance::ResetCamera() {
   if (!mFrontEnd->IsVisible() && mWorld->IsLoaded()) {
     mCamera->ResetOrientation();
-    mCamera->Position() = Vec3(0.f, 5.f, 50.f);
+    mCamera->Position() = { 0.f, 5.f, 50.f };
   }
 }
 
@@ -434,10 +434,10 @@ void GameInstance::OnAsyncKeyDown(uint8 key) {
     }
     break;
     case 'q':
-      RotateCamera(Quaternion(DegreesToRadians(1.f), Vec3(0.f, 1.f, 0.f)));
+      RotateCamera(Quaternion(DegreesToRadians(1.f), { 0.f, 1.f, 0.f }));
       break;
     case 'e':
-      RotateCamera(Quaternion(DegreesToRadians(-1.f), Vec3(0.f, 1.f, 0.f)));
+      RotateCamera(Quaternion(DegreesToRadians(-1.f), { 0.f, 1.f, 0.f }));
       break;
     default:
       break;
@@ -506,10 +506,10 @@ Vec3 GameInstance::ProjectClick(float x, float y) {
   float r = (newX * newX) + (newY * newY);
   if (r > 1.f) {
     float s = 1.f / sqrtf(r);
-    return Vec3(-newX * s, newY * s, 0.f);
+    return { -newX * s, newY * s, 0.f };
   }
   else {
-    return Vec3(-newX, newY, sqrtf(1.f - r));
+    return { -newX, newY, sqrtf(1.f - r) };
   }
 }
 

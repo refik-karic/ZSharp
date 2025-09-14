@@ -171,8 +171,16 @@ void Aligned_128Add(const float* a, const float* b, float* dest) {
   _mm_store_ps(dest, _mm_add_ps(_mm_load_ps(a), _mm_load_ps(b)));
 }
 
+void Aligned_128AddInPlace(float* a, const float* b) {
+  _mm_store_ps(a, _mm_add_ps(_mm_load_ps(a), _mm_load_ps(b)));
+}
+
 void Aligned_128Sub(const float* a, const float* b, float* dest) {
   _mm_store_ps(dest, _mm_sub_ps(_mm_load_ps(a), _mm_load_ps(b)));
+}
+
+void Aligned_128SubInPlace(float* a, const float* b) {
+  _mm_store_ps(a, _mm_sub_ps(_mm_load_ps(a), _mm_load_ps(b)));
 }
 
 void Aligned_128MulByValue(const float* a, const float b, float* dest) {

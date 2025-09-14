@@ -33,8 +33,8 @@ Camera::~Camera() {
 }
 
 void Camera::ResetOrientation() {
-  mLook = Vec3(0.f, 0.f, -1.f);
-  mUp = Vec3(0.f, 1.f, 0.f);
+  mLook = { 0.f, 0.f, -1.f };
+  mUp = { 0.f, 1.f, 0.f };
 }
 
 Vec3 Camera::GetLook() const {

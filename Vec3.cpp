@@ -4,7 +4,6 @@
 #include "PlatformIntrinsics.h"
 #include "Vec4.h"
 
-#include <cmath>
 #include <cstring>
 
 namespace ZSharp {
@@ -34,7 +33,7 @@ void Vec3::operator=(const Vec3& vector) {
     return;
   }
 
-  memcpy(mData, *vector, sizeof(mData));
+  memcpy(mData, vector.mData, sizeof(mData));
 }
 
 void Vec3::operator=(const Vec4& vector) {
@@ -46,7 +45,7 @@ bool Vec3::operator==(const Vec3& vector) const {
     return true;
   }
 
-  return memcmp(mData, *vector, sizeof(mData)) == 0;
+  return memcmp(mData, vector.mData, sizeof(mData)) == 0;
 }
 
 float* Vec3::operator*() {
@@ -84,6 +83,12 @@ void Vec3::operator*=(float scalar) {
   mData[0] *= scalar;
   mData[1] *= scalar;
   mData[2] *= scalar;
+}
+
+void Vec3::operator-=(const Vec3& vector) {
+  mData[0] -= vector.mData[0];
+  mData[1] -= vector.mData[1];
+  mData[2] -= vector.mData[2];
 }
 
 Vec3 Vec3::operator-(const Vec3& vector) const {

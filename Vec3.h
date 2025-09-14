@@ -2,7 +2,6 @@
 
 #include "ZBaseTypes.h"
 #include "ZString.h"
-#include "PlatformDefines.h"
 
 namespace ZSharp {
 
@@ -39,6 +38,8 @@ public:
   void operator+=(const Vec3& vector);
 
   void operator*=(float scalar);
+
+  void operator-=(const Vec3& vector);
 
   Vec3 operator-(const Vec3& vector) const;
 

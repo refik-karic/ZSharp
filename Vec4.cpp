@@ -2,7 +2,6 @@
 
 #include "Vec3.h"
 
-#include <cmath>
 #include <cstring>
 
 #include "PlatformIntrinsics.h"
@@ -47,7 +46,7 @@ void Vec4::operator=(const Vec4& vector) {
     return;
   }
 
-  memcpy(mData, *vector, sizeof(mData));
+  memcpy(mData, vector.mData, sizeof(mData));
 }
 
 bool Vec4::operator==(const Vec4& vector) const {
@@ -55,7 +54,7 @@ bool Vec4::operator==(const Vec4& vector) const {
     return true;
   }
 
-  return memcmp(mData, *vector, sizeof(mData)) == 0;
+  return memcmp(mData, vector.mData, sizeof(mData)) == 0;
 }
 
 float* Vec4::operator*() {
@@ -106,6 +105,14 @@ void Vec4::operator*=(float scalar) {
   Aligned_128MulByValueInPlace(mData, scalar);
 }
 
+void Vec4::operator+=(const Vec4& vector) {
+  Aligned_128AddInPlace(mData, vector.mData);
+}
+
+void Vec4::operator-=(const Vec4& vector) {
+  Aligned_128SubInPlace(mData, vector.mData);
+}
+
 float Vec4::operator*(const Vec4& vector) const {
   return Aligned_128MulSum(mData, vector.mData);
 }
@@ -123,7 +130,7 @@ void Vec4::Homogenize() {
 }
 
 void Vec4::Homogenize(Vec3& vec) const {
-  Unaligned_Vec4HomogenizeToVec3(mData, *vec);
+  Unaligned_Vec4HomogenizeToVec3(mData, (float*)(&vec));
 }
 
 void Vec4::Clear() {

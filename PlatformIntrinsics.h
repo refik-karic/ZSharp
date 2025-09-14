@@ -27,7 +27,11 @@ String PlatformCPUBrand();
 
 void Aligned_128Add(const float* a, const float* b, float* dest);
 
+void Aligned_128AddInPlace(float* a, const float* b);
+
 void Aligned_128Sub(const float* a, const float* b, float* dest);
+
+void Aligned_128SubInPlace(float* a, const float* b);
 
 void Aligned_128MulByValue(const float* a, const float b, float* dest);
 

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Common.h"
-#include "ZBaseTypes.h"
 #include "ZAssert.h"
+#include "ZBaseTypes.h"
 #include "PlatformMemory.h"
-#include "Serializer.h"
 #include "ISerializable.h"
+#include "Common.h"
 
 #include <initializer_list>
+#include <type_traits>
 
 #pragma warning(disable : 4324)
 
@@ -99,6 +99,20 @@ class alignas(32) Array final : public ISerializable {
         new(mData + i) T(rhs[i]);
       }
     }
+  }
+
+  bool operator==(const Array& rhs) const {
+    if (mSize != rhs.mSize) {
+      return false;
+    }
+
+    for (size_t i = 0; i < mSize; ++i) {
+      if (mData[i] != rhs.mData[i]) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   T& operator[](size_t index) {
@@ -251,8 +265,15 @@ class alignas(32) Array final : public ISerializable {
     const size_t sizeT = sizeof(T);
     serializer.Serialize(&sizeT, sizeof(sizeT));
 
-    const size_t sizeBytes = mSize * sizeT;
-    serializer.Serialize(mData, sizeBytes);
+    if constexpr (std::is_base_of<ISerializable, T>::value) {
+      for (size_t i = 0; i < mSize; ++i) {
+        mData[i].Serialize(serializer);
+      }
+    }
+    else {
+      const size_t sizeBytes = mSize * sizeT;
+      serializer.Serialize(mData, sizeBytes);
+    }
   }
 
   virtual void Deserialize(IDeserializer& deserializer) override {
@@ -275,9 +296,17 @@ class alignas(32) Array final : public ISerializable {
       Free();
     }
 
-    FreshAllocNoInit(savedSize);
-    const size_t sizeBytes = savedSize * sizeof(T);
-    deserializer.Deserialize(mData, sizeBytes);
+    if constexpr (std::is_base_of<ISerializable, T>::value) {
+      FreshAlloc(savedSize);
+      for (size_t i = 0; i < savedSize; ++i) {
+        mData[i].Deserialize(deserializer);
+      }
+    }
+    else {
+      FreshAllocNoInit(savedSize);
+      const size_t sizeBytes = savedSize * sizeof(T);
+      deserializer.Deserialize(mData, sizeBytes);
+    }
   }
 
   private:

@@ -135,6 +135,8 @@ class String final : public ISerializable {
 
   bool operator==(const String& rhs) const;
 
+  bool operator!=(const String& rhs) const;
+
   bool operator==(const char* rhs) const;
 
   bool operator>(const String& rhs) const;

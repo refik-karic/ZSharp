@@ -78,6 +78,10 @@ bool String::operator==(const String& rhs) const {
   return strcmp(Str(), rhs.Str()) == 0;
 }
 
+bool String::operator!=(const String& rhs) const {
+  return strcmp(Str(), rhs.Str()) != 0;
+}
+
 bool String::operator==(const char* rhs) const {
   return strcmp(Str(), rhs) == 0;
 }

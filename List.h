@@ -2,15 +2,16 @@
 
 #include "ZAssert.h"
 #include "ZBaseTypes.h"
-
 #include "PlatformMemory.h"
+#include "ISerializable.h"
 
 #include <initializer_list>
+#include <type_traits>
 
 namespace ZSharp {
 
 template<typename T>
-class List final {
+class List final : public ISerializable {
   private:
 
   struct Node {
@@ -100,6 +101,26 @@ class List final {
         Add(item);
       }
     }
+  }
+
+  bool operator==(const List& rhs) const {
+    if (mSize != rhs.mSize) {
+      return false;
+    }
+
+    Iterator lhsIter = begin();
+    Iterator lhsEnd = end();
+    Iterator rhsIter = rhs.begin();
+    while (lhsIter != lhsEnd) {
+      if ((*lhsIter) != *(rhsIter)) {
+        return false;
+      }
+
+      lhsIter++;
+      rhsIter++;
+    }
+
+    return true;
   }
 
   void Add(const T& item) {
@@ -240,6 +261,69 @@ class List final {
 
   Iterator rend() const {
     return Iterator(nullptr);
+  }
+
+  virtual void Serialize(ISerializer& serializer) override {
+    // Must write size even if 0.
+    // This makes it so Deserialize can check for size 0 and return.
+    serializer.Serialize(&mSize, sizeof(mSize));
+
+    if (mSize == 0) {
+      return;
+    }
+
+    // Write out size of element in case something changes.
+    const size_t sizeT = sizeof(T);
+    serializer.Serialize(&sizeT, sizeof(sizeT));
+
+    if constexpr (std::is_base_of<ISerializable, T>::value) {
+      Node* node = mHead;
+      for (size_t i = 0; i < mSize; ++i, node = node->mNext) {
+        node->mValue.Serialize(serializer);
+      }
+    }
+    else {
+      Node* node = mHead;
+      for (size_t i = 0; i < mSize; ++i, node = node->mNext) {
+        serializer.Serialize(&(node->mValue), sizeT);
+      }
+    }
+  }
+
+  virtual void Deserialize(IDeserializer& deserializer) override {
+    size_t savedSize = 0;
+    deserializer.Deserialize(&savedSize, sizeof(savedSize));
+
+    if (savedSize == 0) {
+      return;
+    }
+
+    size_t savedTSize = 0;
+    deserializer.Deserialize(&savedTSize, sizeof(savedTSize));
+
+    if (savedTSize != sizeof(T)) {
+      ZAssert(false);
+      return;
+    }
+
+    if (mSize != 0) {
+      Clear();
+    }
+
+    if constexpr (std::is_base_of<ISerializable, T>::value) {
+      T item;
+      for (size_t i = 0; i < savedSize; ++i) {
+        item.Deserialize(deserializer);
+        Add(item);
+      }
+    }
+    else {
+      uint8 buffer[sizeof(T)];
+      for (size_t i = 0; i < savedSize; ++i) {
+        deserializer.Deserialize(buffer, sizeof(T));
+        Add(*((T*)buffer));
+      }
+    }
   }
 
   /*

@@ -87,15 +87,15 @@ void AABB::ToPoints(Vec3 points[8]) const {
   const float* min = *mMin;
   const float* max = *mMax;
 
-  points[0] = Vec3(min[0], min[1], max[2]);
-  points[1] = Vec3(max[0], min[1], max[2]);
-  points[2] = Vec3(max[0], max[1], max[2]);
-  points[3] = Vec3(min[0], max[1], max[2]);
+  points[0] = { min[0], min[1], max[2] };
+  points[1] = { max[0], min[1], max[2] };
+  points[2] = { max[0], max[1], max[2] };
+  points[3] = { min[0], max[1], max[2] };
 
-  points[4] = Vec3(min[0], min[1], min[2]);
-  points[5] = Vec3(max[0], min[1], min[2]);
-  points[6] = Vec3(max[0], max[1], min[2]);
-  points[7] = Vec3(min[0], max[1], min[2]);
+  points[4] = { min[0], min[1], min[2] };
+  points[5] = { max[0], min[1], min[2] };
+  points[6] = { max[0], max[1], min[2] };
+  points[7] = { min[0], max[1], min[2] };
 }
 
 AABB AABB::TransformAndRealign(const AABB& inAABB, const Mat4x4& matrix) {

@@ -276,7 +276,7 @@ class List final : public ISerializable {
     const size_t sizeT = sizeof(T);
     serializer.Serialize(&sizeT, sizeof(sizeT));
 
-    if constexpr (std::is_base_of<ISerializable, T>::value) {
+    if constexpr (std::is_base_of_v<ISerializable, T>) {
       Node* node = mHead;
       for (size_t i = 0; i < mSize; ++i, node = node->mNext) {
         node->mValue.Serialize(serializer);
@@ -310,7 +310,7 @@ class List final : public ISerializable {
       Clear();
     }
 
-    if constexpr (std::is_base_of<ISerializable, T>::value) {
+    if constexpr (std::is_base_of_v<ISerializable, T>) {
       T item;
       for (size_t i = 0; i < savedSize; ++i) {
         item.Deserialize(deserializer);

@@ -86,8 +86,14 @@ class alignas(32) Array final : public ISerializable {
 
   Array(const Array& rhs) {
     FreshAllocNoInit(rhs.mSize);
-    for (size_t i = 0; i < mSize; ++i) {
-      new(mData + i) T(rhs[i]);
+    
+    if constexpr (std::is_standard_layout_v<T>) {
+      memcpy(mData, rhs.mData, mSize * sizeof(T));
+    }
+    else {
+      for (size_t i = 0; i < mSize; ++i) {
+        new(mData + i) T(rhs[i]);
+      }
     }
   }
 
@@ -95,8 +101,14 @@ class alignas(32) Array final : public ISerializable {
     if (this != &rhs && rhs.mSize > 0) {
       Free();
       FreshAllocNoInit(rhs.mSize);
-      for (size_t i = 0; i < mSize; ++i) {
-        new(mData + i) T(rhs[i]);
+
+      if constexpr (std::is_standard_layout_v<T>) {
+        memcpy(mData, rhs.mData, mSize * sizeof(T));
+      }
+      else {
+        for (size_t i = 0; i < mSize; ++i) {
+          new(mData + i) T(rhs[i]);
+        }
       }
     }
   }
@@ -106,9 +118,16 @@ class alignas(32) Array final : public ISerializable {
       return false;
     }
 
-    for (size_t i = 0; i < mSize; ++i) {
-      if (mData[i] != rhs.mData[i]) {
+    if constexpr (std::is_standard_layout_v<T>) {
+      if (memcmp(mData, rhs.mData, mSize * sizeof(T))) {
         return false;
+      }
+    }
+    else {
+      for (size_t i = 0; i < mSize; ++i) {
+        if (mData[i] != rhs.mData[i]) {
+          return false;
+        }
       }
     }
 
@@ -170,13 +189,21 @@ class alignas(32) Array final : public ISerializable {
 
       if (mSize < size) {
         mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
-        for (size_t i = mSize; i < size; ++i) {
-          new(mData + i) T();
+
+        if constexpr (std::is_standard_layout_v<T>) {
+          memset(mData + mSize, 0, (size - mSize) * sizeof(T));
+        }
+        else {
+          for (size_t i = mSize; i < size; ++i) {
+            new(mData + i) T();
+          }
         }
       }
       else {
-        for (size_t i = size; i < mSize; ++i) {
-          (mData + i)->~T();
+        if constexpr (!(std::is_standard_layout_v<T>)) {
+          for (size_t i = size; i < mSize; ++i) {
+            (mData + i)->~T();
+          }
         }
 
         mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
@@ -265,7 +292,7 @@ class alignas(32) Array final : public ISerializable {
     const size_t sizeT = sizeof(T);
     serializer.Serialize(&sizeT, sizeof(sizeT));
 
-    if constexpr (std::is_base_of<ISerializable, T>::value) {
+    if constexpr (std::is_base_of_v<ISerializable, T>) {
       for (size_t i = 0; i < mSize; ++i) {
         mData[i].Serialize(serializer);
       }
@@ -296,7 +323,7 @@ class alignas(32) Array final : public ISerializable {
       Free();
     }
 
-    if constexpr (std::is_base_of<ISerializable, T>::value) {
+    if constexpr (std::is_base_of_v<ISerializable, T>) {
       FreshAlloc(savedSize);
       for (size_t i = 0; i < savedSize; ++i) {
         mData[i].Deserialize(deserializer);
@@ -318,12 +345,17 @@ class alignas(32) Array final : public ISerializable {
     const size_t slack = size * 2;
     const size_t totalSize = sizeof(T) * slack;
 
-    mData = static_cast<T*>(PlatformMalloc(totalSize));
     mSize = size;
     mCapacity = slack;
 
-    for (size_t i = 0; i < mSize; ++i) {
-      new(mData + i) T();
+    if constexpr (std::is_standard_layout_v<T>) {
+      mData = static_cast<T*>(PlatformCalloc(totalSize));
+    }
+    else {
+      mData = static_cast<T*>(PlatformMalloc(totalSize));
+      for (size_t i = 0; i < mSize; ++i) {
+        new(mData + i) T();
+      }
     }
   }
 
@@ -355,8 +387,10 @@ class alignas(32) Array final : public ISerializable {
 
   void Free() {
     if (mData != nullptr) {
-      for (size_t i = 0; i < mSize; ++i) {
-        (mData + i)->~T();
+      if constexpr (!(std::is_standard_layout_v<T>)) {
+        for (size_t i = 0; i < mSize; ++i) {
+          (mData + i)->~T();
+        }
       }
 
       PlatformFree(mData);

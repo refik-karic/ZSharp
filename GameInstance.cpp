@@ -83,7 +83,7 @@ void GameInstance::LoadWorld() {
   mCamera->Position() = {0.f, 5.f, 50.f};
   // Clip the model at the origin by moving the camera far away.
   // From there we can see how long the clipping pass takes for a given scene.
-  //mCamera.Position() = Vec3(0.f, 0.f, 200.f);
+  //mCamera.Position() = {0.f, 0.f, 200.f};
 
   InputManager* inputManager = GlobalInputManager;
   inputManager->OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
@@ -146,7 +146,7 @@ void GameInstance::TickWorld() {
     for (Model& model : mWorld->GetModels()) {
       // TODO: Hacking some stuff together real quick for physics.
       if (model.Tag() == PhysicsTag::Dynamic) {
-        model.Rotation() = Quaternion(DegreesToRadians(static_cast<float>(mExtraState->mRotationAmount % 360)), Vec3(0.f, 1.f, 0.f));
+        model.Rotation() = Quaternion(DegreesToRadians(static_cast<float>(mExtraState->mRotationAmount % 360)), { 0.f, 1.f, 0.f });
       }
     }
   }

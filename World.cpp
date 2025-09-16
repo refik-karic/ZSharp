@@ -134,7 +134,7 @@ void World::TickPhysics(size_t deltaMs) {
   // Update forces for all dynamic objects at the start of the time step.
   for (PhysicsObject*& currentObject : mDynamicObjects) {
     // Accumulate current forces for this frame.
-    currentObject->Velocity() += Vec3(0.f, GravityPerSecond * (float)deltaMs, 0.f);
+    currentObject->Velocity() += {0.f, GravityPerSecond* (float)deltaMs, 0.f};
   }
 
   for (PhysicsObject*& currentObject : mDynamicObjects) {
@@ -206,7 +206,7 @@ void World::LoadModels() {
       }
       else {
         if (*PhysicsEnabled) {
-          model.Position() += Vec3(0.f, 15.f, 0.f);
+          model.Position() += {0.f, 15.f, 0.f};
           model.Tag() = PhysicsTag::Dynamic;
         }
         else {

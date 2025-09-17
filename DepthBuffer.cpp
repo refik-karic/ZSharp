@@ -45,7 +45,7 @@ void DepthBuffer::Clear(size_t begin, size_t size) {
     Aligned_Memset(((uint8*)mData) + begin, *reinterpret_cast<const uint32*>(&clearValue), nearestSize);
   }
 
-  for (size_t i = nearestSize / 4; i < size / 4; ++i) {
+  for (size_t i = nearestSize >> 2; i < (size >> 2); ++i) {
     *(mData + i) = clearValue;
   }
 }

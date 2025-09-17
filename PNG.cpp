@@ -353,7 +353,7 @@ const uint8* PNG::DataOffset() {
 }
 
 const uint8* PNG::DataBitOffset() {
-  return reinterpret_cast<const uint8*>(mDataPtr) + mDataOffset + (mBitOffset / 8);
+  return reinterpret_cast<const uint8*>(mDataPtr) + mDataOffset + (mBitOffset >> 3);
 }
 
 uint32 PNG::ReadBits(size_t count) {
@@ -367,7 +367,7 @@ uint32 PNG::ReadBits(size_t count) {
     return 0;
   }
 
-  const uint8* data = (mChunkedIDATData + (mBitOffset / 8));
+  const uint8* data = (mChunkedIDATData + (mBitOffset >> 3));
   const size_t bitsReadInByte = (mBitOffset % 8);
 
   // Read the first bytes, drop unneeded bits.
@@ -665,7 +665,7 @@ uint8* PNG::FilterDeflatedImage(uint8* image) {
           int64 prevIndex = x - mChannels;
           uint32 prev = (prevIndex < 0) ? 0 : outputImage[outputRowIndex + prevIndex];
 
-          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + ((prev + above) / 2)) % 256);
+          outputImage[outputRowIndex + x] = (uint8)(((uint32)image[rowData + x] + ((prev + above) >> 1)) % 256);
         }
       }
         break;

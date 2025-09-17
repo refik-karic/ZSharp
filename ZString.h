@@ -419,6 +419,8 @@ class WideString final : public ISerializable {
 
   bool operator==(const WideString& rhs) const;
 
+  bool operator!=(const WideString& rhs) const;
+
   bool operator==(const wchar_t* rhs) const;
 
   bool operator>(const WideString& rhs) const;

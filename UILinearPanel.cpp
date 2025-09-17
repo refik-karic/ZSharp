@@ -38,7 +38,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
       break;
     case UIHorizontalAlignment::Center:
     {
-      currX += (GetWidth() / 2);
+      currX += (GetWidth() >> 1);
     }
       break;
     case UIHorizontalAlignment::Right:
@@ -55,7 +55,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
       break;
     case UIVerticalAlignment::Center:
     {
-      currY += (GetHeight() / 2);
+      currY += (GetHeight() >> 1);
     }
       break;
     case UIVerticalAlignment::Bottom:
@@ -73,7 +73,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
       }
 
       yOffset = Min(currY, yOffset);
-      currY -= (yOffset / 2);
+      currY -= (yOffset >> 1);
     }
     else if (mVerticalAlignment == UIVerticalAlignment::Bottom) {
       size_t yOffset = 0;
@@ -99,8 +99,8 @@ void UILinearPanel::Layout(size_t x, size_t y) {
       }
 
       xOffset = Clamp(xOffset, (size_t)0, mWidth);
-      currX -= (xOffset / 2);
-      currX -= (spacing / 2);
+      currX -= (xOffset >> 1);
+      currX -= (spacing >> 1);
     }
     else if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
       size_t xOffset = 0;
@@ -130,7 +130,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
           break;
         case UIVerticalAlignment::Center:
         {
-          size_t centerPoint = (GetHeight() - itemYOffset - item->GetHeight()) / 2;
+          size_t centerPoint = (GetHeight() - itemYOffset - item->GetHeight()) >> 1;
 
           itemYOffset += centerPoint;
         }
@@ -165,8 +165,8 @@ void UILinearPanel::Layout(size_t x, size_t y) {
       }
 
       yOffset = Clamp(yOffset, (size_t)0, mHeight);
-      currY -= (yOffset / 2);
-      currY -= (spacing / 2);
+      currY -= (yOffset >> 1);
+      currY -= (spacing >> 1);
     }
     else if (mVerticalAlignment == UIVerticalAlignment::Bottom) {
       size_t yOffset = 0;
@@ -193,7 +193,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
       }
 
       xOffset = Min(currX, xOffset);
-      currX -= (xOffset / 2);
+      currX -= (xOffset >> 1);
     }
     else if (mHorizontalAlignment == UIHorizontalAlignment::Right) {
       size_t xOffset = 0;
@@ -223,7 +223,7 @@ void UILinearPanel::Layout(size_t x, size_t y) {
             largestItem = Max(largestItem, itemWidth);
           }
 
-          itemXOffset = (itemXOffset + (largestItem / 2)) - (item->GetWidth() / 2);
+          itemXOffset = (itemXOffset + (largestItem >> 1)) - (item->GetWidth() >> 1);
         }
           break;
         case UIHorizontalAlignment::Right:

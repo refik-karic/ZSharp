@@ -199,7 +199,7 @@ float Aligned_128MulSum(const float* a, const float* b) {
 }
 
 void Aligned_Memset(void* __restrict dest, uint32 value, const size_t numBytes) {
-  __stosd((unsigned long*)dest, value, numBytes / 4);
+  __stosd((unsigned long*)dest, value, numBytes >> 2);
 }
 
 void Aligned_Memcpy(void* __restrict dest, const void* __restrict src, size_t numBytes) {

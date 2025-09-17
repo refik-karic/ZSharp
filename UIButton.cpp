@@ -30,7 +30,7 @@ void UIButton::Layout(size_t x, size_t y) {
         break;
       case UIVerticalAlignment::Center:
       {
-        yOffset += ((mHeight / 2) - (mLabel->GetHeight() / 2));
+        yOffset += ((mHeight >> 1) - (mLabel->GetHeight() >> 1));
       }
         break;
       case UIVerticalAlignment::Bottom:
@@ -47,7 +47,7 @@ void UIButton::Layout(size_t x, size_t y) {
         break;
       case UIHorizontalAlignment::Center:
       {
-        xOffset += ((mWidth / 2) - (mLabel->GetWidth() / 2));
+        xOffset += ((mWidth >> 1) - (mLabel->GetWidth() >> 1));
       }
         break;
       case UIHorizontalAlignment::Right:

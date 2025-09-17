@@ -75,11 +75,21 @@ String* String::operator=(const String& rhs) {
 }
 
 bool String::operator==(const String& rhs) const {
-  return strcmp(Str(), rhs.Str()) == 0;
+  const size_t length = Length();
+  if (length != rhs.Length()) {
+    return false;
+  }
+
+  return memcmp(Str(), rhs.Str(), length) == 0;
 }
 
 bool String::operator!=(const String& rhs) const {
-  return strcmp(Str(), rhs.Str()) != 0;
+  const size_t length = Length();
+  if (length != rhs.Length()) {
+    return true;
+  }
+
+  return memcmp(Str(), rhs.Str(), length) != 0;
 }
 
 bool String::operator==(const char* rhs) const {
@@ -830,7 +840,21 @@ WideString* WideString::operator=(const WideString& rhs) {
 }
 
 bool WideString::operator==(const WideString& rhs) const {
-  return wcscmp(Str(), rhs.Str()) == 0;
+  const size_t length = Length();
+  if (length != rhs.Length()) {
+    return false;
+  }
+
+  return memcmp(Str(), rhs.Str(), length * sizeof(wchar_t)) == 0;
+}
+
+bool WideString::operator!=(const WideString& rhs) const {
+  const size_t length = Length();
+  if (length != rhs.Length()) {
+    return true;
+  }
+
+  return memcmp(Str(), rhs.Str(), length * sizeof(wchar_t)) != 0;
 }
 
 bool WideString::operator==(const wchar_t* rhs) const {

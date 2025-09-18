@@ -87,7 +87,7 @@ class alignas(32) Array final : public ISerializable {
   Array(const Array& rhs) {
     FreshAllocNoInit(rhs.mSize);
     
-    if constexpr (std::is_standard_layout_v<T>) {
+    if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
       memcpy(mData, rhs.mData, mSize * sizeof(T));
     }
     else {
@@ -97,12 +97,19 @@ class alignas(32) Array final : public ISerializable {
     }
   }
 
+  Array(Array&& rhs) {
+    mData = rhs.mData;
+    mSize = rhs.mSize;
+    mCapacity = rhs.mCapacity;
+    rhs.mData = nullptr;
+  }
+
   void operator=(const Array& rhs) {
     if (this != &rhs && rhs.mSize > 0) {
       Free();
       FreshAllocNoInit(rhs.mSize);
 
-      if constexpr (std::is_standard_layout_v<T>) {
+      if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
         memcpy(mData, rhs.mData, mSize * sizeof(T));
       }
       else {
@@ -113,12 +120,19 @@ class alignas(32) Array final : public ISerializable {
     }
   }
 
+  void operator=(Array&& rhs) {
+    mData = rhs.mData;
+    mSize = rhs.mSize;
+    mCapacity = rhs.mCapacity;
+    rhs.mData = nullptr;
+  }
+
   bool operator==(const Array& rhs) const {
     if (mSize != rhs.mSize) {
       return false;
     }
 
-    if constexpr (std::is_standard_layout_v<T>) {
+    if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
       if (memcmp(mData, rhs.mData, mSize * sizeof(T))) {
         return false;
       }
@@ -190,7 +204,7 @@ class alignas(32) Array final : public ISerializable {
       if (mSize < size) {
         mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
 
-        if constexpr (std::is_standard_layout_v<T>) {
+        if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
           memset(mData + mSize, 0, (size - mSize) * sizeof(T));
         }
         else {
@@ -200,7 +214,7 @@ class alignas(32) Array final : public ISerializable {
         }
       }
       else {
-        if constexpr (!(std::is_standard_layout_v<T>)) {
+        if constexpr (!(std::is_trivially_default_constructible_v<T>) && !(std::is_trivially_destructible_v<T>)) {
           for (size_t i = size; i < mSize; ++i) {
             (mData + i)->~T();
           }
@@ -348,7 +362,7 @@ class alignas(32) Array final : public ISerializable {
     mSize = size;
     mCapacity = slack;
 
-    if constexpr (std::is_standard_layout_v<T>) {
+    if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
       mData = static_cast<T*>(PlatformCalloc(totalSize));
     }
     else {
@@ -387,7 +401,7 @@ class alignas(32) Array final : public ISerializable {
 
   void Free() {
     if (mData != nullptr) {
-      if constexpr (!(std::is_standard_layout_v<T>)) {
+      if constexpr (!(std::is_trivially_default_constructible_v<T>) && !(std::is_trivially_destructible_v<T>)) {
         for (size_t i = 0; i < mSize; ++i) {
           (mData + i)->~T();
         }

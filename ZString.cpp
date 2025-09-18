@@ -35,13 +35,20 @@ String::String(const char* str, size_t offset, size_t length) {
 }
 
 String::String(const String& rhs) {
-  const char* str = rhs.Str();
-  size_t length = rhs.Length();
   if (rhs.IsMarkedShort()) {
-    CopyShort(str, length);
+    mOverlapData = rhs.mOverlapData;
   }
   else {
+    const char* str = rhs.Str();
+    size_t length = rhs.Length();
     CopyLong(str, length);
+  }
+}
+
+String::String(String&& rhs) {
+  mOverlapData = rhs.mOverlapData;
+  if (!rhs.IsMarkedShort()) {
+    rhs.MarkShort(true);
   }
 }
 
@@ -72,6 +79,13 @@ String* String::operator=(const String& rhs) {
   }
 
   return this;
+}
+
+void String::operator=(String&& rhs) {
+  mOverlapData = rhs.mOverlapData;
+  if (!rhs.IsMarkedShort()) {
+    rhs.MarkShort(true);
+  }
 }
 
 bool String::operator==(const String& rhs) const {
@@ -810,6 +824,13 @@ WideString::WideString(const WideString& rhs) {
   }
 }
 
+WideString::WideString(WideString&& rhs) {
+  mOverlapData = rhs.mOverlapData;
+  if (!rhs.IsMarkedShort()) {
+    rhs.MarkShort(true);
+  }
+}
+
 WideString::~WideString() {
   if (!IsMarkedShort()) {
     FreeLong();
@@ -837,6 +858,13 @@ WideString* WideString::operator=(const WideString& rhs) {
   }
 
   return this;
+}
+
+void WideString::operator=(WideString&& rhs) {
+  mOverlapData = rhs.mOverlapData;
+  if (!rhs.IsMarkedShort()) {
+    rhs.MarkShort(true);
+  }
 }
 
 bool WideString::operator==(const WideString& rhs) const {

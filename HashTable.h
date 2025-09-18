@@ -97,6 +97,12 @@ class HashTable final {
     : mSize(rhs.mSize), mMinCapacity(rhs.mMinCapacity), mStorage(rhs.mStorage)  {
   }
   
+  HashTable(HashTable&& rhs) {
+    mSize = rhs.mSize;
+    mMinCapacity = rhs.mMinCapacity;
+    mStorage = static_cast<Array<HashTable::TableEntry>&&>(rhs.mStorage);
+  }
+
   void operator=(const HashTable& rhs) {
     if (this == &rhs) {
       return;
@@ -105,6 +111,12 @@ class HashTable final {
     mSize = rhs.mSize;
     mMinCapacity = rhs.mMinCapacity;
     mStorage = rhs.mStorage;
+  }
+
+  void operator=(HashTable&& rhs) {
+    mSize = rhs.mSize;
+    mMinCapacity = rhs.mMinCapacity;
+    mStorage = static_cast<Array<HashTable::TableEntry>&&>(rhs.mStorage);
   }
 
   Value& operator[](const Key& key) {

@@ -94,6 +94,14 @@ class List final : public ISerializable {
     }
   }
 
+  List(List&& rhs) {
+    mHead = rhs.mHead;
+    mTail = rhs.mTail;
+    mSize = rhs.mSize;
+    rhs.mHead = nullptr;
+    rhs.mTail = nullptr;
+  }
+
   void operator=(const List& rhs) {
     if (this != &rhs) {
       Clear();
@@ -101,6 +109,14 @@ class List final : public ISerializable {
         Add(item);
       }
     }
+  }
+
+  void operator=(List&& rhs) {
+    mHead = rhs.mHead;
+    mTail = rhs.mTail;
+    mSize = rhs.mSize;
+    rhs.mHead = nullptr;
+    rhs.mTail = nullptr;
   }
 
   bool operator==(const List& rhs) const {

@@ -127,11 +127,15 @@ class String final : public ISerializable {
 
   String(const String& rhs);
 
+  String(String&& rhs);
+
   ~String();
 
   const char* Str() const;
 
   String* operator=(const String& rhs);
+
+  void operator=(String&& rhs);
 
   bool operator==(const String& rhs) const;
 
@@ -411,11 +415,15 @@ class WideString final : public ISerializable {
 
   WideString(const WideString& rhs);
 
+  WideString(WideString&& rhs);
+
   ~WideString();
 
   const wchar_t* Str() const;
 
   WideString* operator=(const WideString& rhs);
+
+  void operator=(WideString&& rhs);
 
   bool operator==(const WideString& rhs) const;
 

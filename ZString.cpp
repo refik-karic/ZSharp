@@ -50,6 +50,8 @@ String::String(String&& rhs) {
   if (!rhs.IsMarkedShort()) {
     rhs.MarkShort(true);
   }
+
+  rhs.Copy("");
 }
 
 String::~String() {
@@ -86,6 +88,8 @@ void String::operator=(String&& rhs) {
   if (!rhs.IsMarkedShort()) {
     rhs.MarkShort(true);
   }
+
+  rhs.Copy("");
 }
 
 bool String::operator==(const String& rhs) const {
@@ -829,6 +833,8 @@ WideString::WideString(WideString&& rhs) {
   if (!rhs.IsMarkedShort()) {
     rhs.MarkShort(true);
   }
+
+  rhs.Copy(L"");
 }
 
 WideString::~WideString() {
@@ -865,6 +871,8 @@ void WideString::operator=(WideString&& rhs) {
   if (!rhs.IsMarkedShort()) {
     rhs.MarkShort(true);
   }
+
+  rhs.Copy(L"");
 }
 
 bool WideString::operator==(const WideString& rhs) const {

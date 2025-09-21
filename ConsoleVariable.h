@@ -44,7 +44,17 @@ template<typename T>
 class ConsoleVariable {
   public:
 
-  ConsoleVariable(const String& name, Delegate<void>& callback) 
+  ConsoleVariable() = default;
+
+  ConsoleVariable(const ConsoleVariable& rhs) = delete;
+
+  ConsoleVariable(ConsoleVariable&& rhs) {
+    mValue = static_cast<T&&>(rhs.mValue);
+    mName = static_cast<String&&>(rhs.mName);
+    mCallback = static_cast<Delegate<void>&&>(rhs.mCallback);
+  }
+
+  ConsoleVariable(const String& name, const Delegate<void>& callback) 
     : mName(name), mCallback(callback) {
     if (!GlobalConsoleCommands().HasKey(name)) {
       GlobalConsoleCommands().Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
@@ -58,7 +68,7 @@ class ConsoleVariable {
     }
   }
 
-  ConsoleVariable(const String& name, const T& value, Delegate<void>& callback)
+  ConsoleVariable(const String& name, const T& value, const Delegate<void>& callback)
     : mName(name), mValue(value), mCallback(callback) {
     if (!GlobalConsoleCommands().HasKey(name)) {
       GlobalConsoleCommands().Add(name, Delegate<const String&>::FromMember<ConsoleVariable, &ConsoleVariable::Set>(this));
@@ -69,6 +79,12 @@ class ConsoleVariable {
     if (GlobalConsoleCommands().HasKey(mName)) {
       GlobalConsoleCommands().Remove(mName);
     }
+  }
+
+  void operator=(ConsoleVariable&& rhs) {
+    mValue = static_cast<T&&>(rhs.mValue);
+    mName = static_cast<String&&>(rhs.mName);
+    mCallback = static_cast<Delegate<void>&&>(rhs.mCallback);
   }
 
   T& operator*() {
@@ -94,14 +110,16 @@ template<>
 class ConsoleVariable<void> {
   public:
 
-  ConsoleVariable(const String& name, Delegate<void>& callback)
-    : mName(name), mCallback(callback) {
-    if (!GlobalConsoleCommandsValueless().HasKey(name)) {
-      GlobalConsoleCommandsValueless().Add(name, Delegate<void>::FromMember<ConsoleVariable, &ConsoleVariable::Invoke>(this));
-    }
+  ConsoleVariable() = default;
+
+  ConsoleVariable(const ConsoleVariable<void>& rhs) = delete;
+
+  ConsoleVariable(ConsoleVariable<void>&& rhs) {
+    mName = static_cast<String&&>(rhs.mName);
+    mCallback = static_cast<Delegate<void>&&>(rhs.mCallback);
   }
 
-  ConsoleVariable(const String& name, Delegate<void> callback)
+  ConsoleVariable(const String& name, const Delegate<void>& callback)
     : mName(name), mCallback(callback) {
     if (!GlobalConsoleCommandsValueless().HasKey(name)) {
       GlobalConsoleCommandsValueless().Add(name, Delegate<void>::FromMember<ConsoleVariable, &ConsoleVariable::Invoke>(this));
@@ -112,6 +130,11 @@ class ConsoleVariable<void> {
     if (GlobalConsoleCommandsValueless().HasKey(mName)) {
       GlobalConsoleCommandsValueless().Remove(mName);
     }
+  }
+
+  void operator=(ConsoleVariable<void>&& rhs) {
+    mName = static_cast<String&&>(rhs.mName);
+    mCallback = static_cast<Delegate<void>&&>(rhs.mCallback);
   }
 
   void Invoke() {

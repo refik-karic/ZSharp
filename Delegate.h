@@ -10,8 +10,31 @@ class Delegate final {
   public:
   Delegate() : mObjPtr(nullptr), mClassSignature(nullptr) {}
 
+  Delegate(const Delegate& rhs) : mObjPtr(rhs.mObjPtr), mClassSignature(rhs.mClassSignature) {}
+
+  Delegate(Delegate&& rhs) {
+    mObjPtr = rhs.mObjPtr;
+    mClassSignature = rhs.mClassSignature;
+    rhs.mObjPtr = nullptr;
+    rhs.mClassSignature = nullptr;
+  }
+
   bool operator==(const Delegate& rhs) const {
     return (mObjPtr == rhs.mObjPtr) && (mClassSignature == rhs.mClassSignature);
+  }
+
+  void operator=(const Delegate& rhs) {
+    if (this != &rhs) {
+      mObjPtr = rhs.mObjPtr;
+      mClassSignature = rhs.mClassSignature;
+    }
+  }
+
+  void operator=(Delegate&& rhs) {
+    mObjPtr = rhs.mObjPtr;
+    mClassSignature = rhs.mClassSignature;
+    rhs.mObjPtr = nullptr;
+    rhs.mClassSignature = nullptr;
   }
 
   static Delegate FromFreeFunction(void (*funcPtr)(Signature...)) {
@@ -72,8 +95,31 @@ class Delegate<void> final {
   public:
   Delegate() : mObjPtr(nullptr), mClassSignature(nullptr) {}
 
+  Delegate(const Delegate& rhs) : mObjPtr(rhs.mObjPtr), mClassSignature(rhs.mClassSignature) {}
+
+  Delegate(Delegate&& rhs) {
+    mObjPtr = rhs.mObjPtr;
+    mClassSignature = rhs.mClassSignature;
+    rhs.mObjPtr = nullptr;
+    rhs.mClassSignature = nullptr;
+  }
+
   bool operator==(const Delegate& rhs) const {
     return (mObjPtr == rhs.mObjPtr) && (mClassSignature == rhs.mClassSignature);
+  }
+
+  void operator=(const Delegate& rhs) {
+    if (this != &rhs) {
+      mObjPtr = rhs.mObjPtr;
+      mClassSignature = rhs.mClassSignature;
+    }
+  }
+
+  void operator=(Delegate&& rhs) {
+    mObjPtr = rhs.mObjPtr;
+    mClassSignature = rhs.mClassSignature;
+    rhs.mObjPtr = nullptr;
+    rhs.mClassSignature = nullptr;
   }
 
   static Delegate FromFreeFunction(void (*funcPtr)()) {

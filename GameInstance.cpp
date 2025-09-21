@@ -284,7 +284,7 @@ void GameInstance::PauseTransforms() {
 }
 
 void GameInstance::Initialize(bool skipTitleScreen) {
-  if (skipTitleScreen) {
+  if (!skipTitleScreen) {
     LoadWorld();
   }
   else {

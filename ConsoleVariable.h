@@ -4,6 +4,7 @@
 #include "Delegate.h"
 #include "ZString.h"
 #include "HashTable.h"
+#include "MoveHelpers.h"
 
 namespace ZSharp {
 
@@ -49,9 +50,9 @@ class ConsoleVariable {
   ConsoleVariable(const ConsoleVariable& rhs) = delete;
 
   ConsoleVariable(ConsoleVariable&& rhs) {
-    mValue = static_cast<T&&>(rhs.mValue);
-    mName = static_cast<String&&>(rhs.mName);
-    mCallback = static_cast<Delegate<void>&&>(rhs.mCallback);
+    mValue = Move(rhs.mValue);
+    mName = Move(rhs.mName);
+    mCallback = Move(rhs.mCallback);
   }
 
   ConsoleVariable(const String& name, const Delegate<void>& callback) 
@@ -82,9 +83,9 @@ class ConsoleVariable {
   }
 
   void operator=(ConsoleVariable&& rhs) {
-    mValue = static_cast<T&&>(rhs.mValue);
-    mName = static_cast<String&&>(rhs.mName);
-    mCallback = static_cast<Delegate<void>&&>(rhs.mCallback);
+    mValue = Move(rhs.mValue);
+    mName = Move(rhs.mName);
+    mCallback = Move(rhs.mCallback);
   }
 
   T& operator*() {
@@ -115,8 +116,8 @@ class ConsoleVariable<void> {
   ConsoleVariable(const ConsoleVariable<void>& rhs) = delete;
 
   ConsoleVariable(ConsoleVariable<void>&& rhs) {
-    mName = static_cast<String&&>(rhs.mName);
-    mCallback = static_cast<Delegate<void>&&>(rhs.mCallback);
+    mName = Move(rhs.mName);
+    mCallback = Move(rhs.mCallback);
   }
 
   ConsoleVariable(const String& name, const Delegate<void>& callback)
@@ -133,8 +134,8 @@ class ConsoleVariable<void> {
   }
 
   void operator=(ConsoleVariable<void>&& rhs) {
-    mName = static_cast<String&&>(rhs.mName);
-    mCallback = static_cast<Delegate<void>&&>(rhs.mCallback);
+    mName = Move(rhs.mName);
+    mCallback = Move(rhs.mCallback);
   }
 
   void Invoke() {

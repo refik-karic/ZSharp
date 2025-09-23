@@ -55,6 +55,16 @@ void* PlatformAlignedMalloc(size_t length, size_t alignment) {
   return _aligned_malloc(length, alignment);
 }
 
+void* PlatformAlignedCalloc(size_t length, size_t alignment) {
+  void* memory = _aligned_malloc(length, alignment);
+  memset(memory, 0, length);
+  return memory;
+}
+
+void* PlatformAlignedReAlloc(void* memory, size_t length, size_t alignment) {
+  return _aligned_realloc(memory, length, alignment);
+}
+
 void PlatformAlignedFree(void* alignedMemory) {
   _aligned_free(alignedMemory);
 }

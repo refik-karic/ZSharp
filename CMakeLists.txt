@@ -41,6 +41,7 @@ set(ZSharp_Header_Files
     Mat4x4.h
     Mesh.h
     Model.h
+    MoveHelpers.h
     MP3.h
     OBJFile.h
     Pair.h

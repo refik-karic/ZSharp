@@ -17,6 +17,10 @@ void PlatformFree(void* memory);
 
 void* PlatformAlignedMalloc(size_t length, size_t alignment);
 
+void* PlatformAlignedCalloc(size_t length, size_t alignment);
+
+void* PlatformAlignedReAlloc(void* memory, size_t length, size_t alignment);
+
 void PlatformAlignedFree(void* alignedMemory);
 
 }

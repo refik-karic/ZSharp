@@ -3,6 +3,7 @@
 #include "Array.h"
 #include "CommonMath.h"
 #include "HashFunctions.h"
+#include "MoveHelpers.h"
 #include "Pair.h"
 #include "PlatformMemory.h"
 #include "ZAssert.h"
@@ -100,7 +101,7 @@ class HashTable final {
   HashTable(HashTable&& rhs) {
     mSize = rhs.mSize;
     mMinCapacity = rhs.mMinCapacity;
-    mStorage = static_cast<Array<HashTable::TableEntry>&&>(rhs.mStorage);
+    mStorage = Move(rhs.mStorage);
   }
 
   void operator=(const HashTable& rhs) {
@@ -116,7 +117,7 @@ class HashTable final {
   void operator=(HashTable&& rhs) {
     mSize = rhs.mSize;
     mMinCapacity = rhs.mMinCapacity;
-    mStorage = static_cast<Array<HashTable::TableEntry>&&>(rhs.mStorage);
+    mStorage = Move(rhs.mStorage);
   }
 
   Value& operator[](const Key& key) {

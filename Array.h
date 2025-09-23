@@ -5,6 +5,7 @@
 #include "PlatformMemory.h"
 #include "ISerializable.h"
 #include "Common.h"
+#include "MoveHelpers.h"
 
 #include <initializer_list>
 #include <type_traits>
@@ -13,6 +14,7 @@
 
 namespace ZSharp {
 
+// TODO: Remove the alignment here at some point. It assumes anything that touches the members of the class are also aligned.
 template<typename T>
 class alignas(32) Array final : public ISerializable {
   public:
@@ -202,7 +204,7 @@ class alignas(32) Array final : public ISerializable {
       mCapacity = size * 2;
 
       if (mSize < size) {
-        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
+        mData = static_cast<T*>(PlatformAlignedReAlloc(mData, mCapacity * sizeof(T), 32));
 
         if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
           memset(mData + mSize, 0, (size - mSize) * sizeof(T));
@@ -220,7 +222,7 @@ class alignas(32) Array final : public ISerializable {
           }
         }
 
-        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
+        mData = static_cast<T*>(PlatformAlignedReAlloc(mData, mCapacity * sizeof(T), 32));
       }
 
       mSize = size;
@@ -248,12 +250,12 @@ class alignas(32) Array final : public ISerializable {
     T* result;
 
     if (mCapacity <= mSize) {
-      size_t currentSize = mSize;
+      const size_t currentSize = mSize;
       ResizeNoInit(mSize + 1);
-      result = new(mData + currentSize) T(args...);
+      result = new(mData + currentSize) T(Forward<Args>(args)...);
     }
     else {
-      result = new(mData + mSize) T(args...);
+      result = new(mData + mSize) T(Forward<Args>(args)...);
       ++mSize;
     }
 
@@ -363,10 +365,10 @@ class alignas(32) Array final : public ISerializable {
     mCapacity = slack;
 
     if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
-      mData = static_cast<T*>(PlatformCalloc(totalSize));
+      mData = static_cast<T*>(PlatformAlignedCalloc(totalSize, 32));
     }
     else {
-      mData = static_cast<T*>(PlatformMalloc(totalSize));
+      mData = static_cast<T*>(PlatformAlignedMalloc(totalSize, 32));
       for (size_t i = 0; i < mSize; ++i) {
         new(mData + i) T();
       }
@@ -376,7 +378,7 @@ class alignas(32) Array final : public ISerializable {
   void FreshAllocNoInit(size_t size) {
     const size_t slack = size * 2;
     const size_t totalSize = sizeof(T) * slack;
-    mData = static_cast<T*>(PlatformMalloc(totalSize));
+    mData = static_cast<T*>(PlatformAlignedMalloc(totalSize, 32));
     mSize = size;
     mCapacity = slack;
   }
@@ -389,7 +391,7 @@ class alignas(32) Array final : public ISerializable {
       mCapacity = size * 2;
 
       if (mSize < size) {
-        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
+        mData = static_cast<T*>(PlatformAlignedReAlloc(mData, mCapacity * sizeof(T), 32));
       }
       else {
         ZAssert(false);
@@ -407,7 +409,7 @@ class alignas(32) Array final : public ISerializable {
         }
       }
 
-      PlatformFree(mData);
+      PlatformAlignedFree(mData);
       mData = nullptr;
       mSize = 0;
       mCapacity = 0;

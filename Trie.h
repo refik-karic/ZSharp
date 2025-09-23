@@ -1,6 +1,5 @@
 #pragma once
 
-#pragma warning(disable : 4316)
 
 #include "ZBaseTypes.h"
 #include "PlatformMemory.h"
@@ -315,4 +314,3 @@ class Trie {
 
 }
 
-#pragma warning(default : 4316)

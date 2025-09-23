@@ -10,7 +10,7 @@
 #include "Span.h"
 
 namespace ZSharp {
-struct alignas(8) OBJFaceElement {
+struct OBJFaceElement {
   uint32 vertexIndex = 0;
   uint32 uvIndex = 0;
   uint32 normalIndex = 0;

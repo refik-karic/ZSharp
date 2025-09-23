@@ -10,13 +10,10 @@
 #include <initializer_list>
 #include <type_traits>
 
-#pragma warning(disable : 4324)
-
 namespace ZSharp {
 
-// TODO: Remove the alignment here at some point. It assumes anything that touches the members of the class are also aligned.
 template<typename T>
-class alignas(32) Array final : public ISerializable {
+class Array final : public ISerializable {
   public:
 
   class Iterator {
@@ -204,7 +201,7 @@ class alignas(32) Array final : public ISerializable {
       mCapacity = size * 2;
 
       if (mSize < size) {
-        mData = static_cast<T*>(PlatformAlignedReAlloc(mData, mCapacity * sizeof(T), 32));
+        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
 
         if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
           memset(mData + mSize, 0, (size - mSize) * sizeof(T));
@@ -222,7 +219,7 @@ class alignas(32) Array final : public ISerializable {
           }
         }
 
-        mData = static_cast<T*>(PlatformAlignedReAlloc(mData, mCapacity * sizeof(T), 32));
+        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
       }
 
       mSize = size;
@@ -365,10 +362,10 @@ class alignas(32) Array final : public ISerializable {
     mCapacity = slack;
 
     if constexpr (std::is_trivially_default_constructible_v<T> && std::is_trivially_destructible_v<T>) {
-      mData = static_cast<T*>(PlatformAlignedCalloc(totalSize, 32));
+      mData = static_cast<T*>(PlatformCalloc(totalSize));
     }
     else {
-      mData = static_cast<T*>(PlatformAlignedMalloc(totalSize, 32));
+      mData = static_cast<T*>(PlatformMalloc(totalSize));
       for (size_t i = 0; i < mSize; ++i) {
         new(mData + i) T();
       }
@@ -378,7 +375,7 @@ class alignas(32) Array final : public ISerializable {
   void FreshAllocNoInit(size_t size) {
     const size_t slack = size * 2;
     const size_t totalSize = sizeof(T) * slack;
-    mData = static_cast<T*>(PlatformAlignedMalloc(totalSize, 32));
+    mData = static_cast<T*>(PlatformMalloc(totalSize));
     mSize = size;
     mCapacity = slack;
   }
@@ -391,7 +388,7 @@ class alignas(32) Array final : public ISerializable {
       mCapacity = size * 2;
 
       if (mSize < size) {
-        mData = static_cast<T*>(PlatformAlignedReAlloc(mData, mCapacity * sizeof(T), 32));
+        mData = static_cast<T*>(PlatformReAlloc(mData, mCapacity * sizeof(T)));
       }
       else {
         ZAssert(false);
@@ -409,7 +406,7 @@ class alignas(32) Array final : public ISerializable {
         }
       }
 
-      PlatformAlignedFree(mData);
+      PlatformFree(mData);
       mData = nullptr;
       mSize = 0;
       mCapacity = 0;

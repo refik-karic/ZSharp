@@ -16,7 +16,7 @@ class Tree {
     TreeNode* parent;
     TreeNode* left;
     TreeNode* right;
-    enum class NodeColor {
+    enum class NodeColor : uint8 {
       RED,
       BLACK
     } color;

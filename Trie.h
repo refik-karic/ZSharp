@@ -26,14 +26,16 @@ class Trie {
 
   struct TrieNode {
     TrieStorage children;
-    bool isWord = false;
     TrieNode* parent = nullptr;
+    uint32 isWord : 1;
+    uint32 length : 31;
 
-    TrieNode() : children(255) {
+    TrieNode() : children(255), parent(nullptr), isWord(0), length(0) {
 
     }
 
-    TrieNode(const TrieNode& rhs) : children(rhs.children), isWord(rhs.isWord), parent(rhs.parent) {
+    TrieNode(const TrieNode& rhs) : children(rhs.children), parent(rhs.parent), 
+      isWord(rhs.isWord), length(rhs.length) {
 
     }
 
@@ -91,22 +93,29 @@ class Trie {
     }
 
     String operator*() const {
-      String result;
+      if (mNode == nullptr) {
+        return {};
+      }
+
+      const size_t wordLength = mNode->length;
+      char* buff = (char*)PlatformMalloc(wordLength);
+      size_t buffIndex = wordLength - 1;
 
       for (TrieNode* node = mNode; node != nullptr; node = node->parent) {
         TrieNode* parent = node->parent;
         if (parent != nullptr) {
           for (Pair<char, TrieNode*>& child : parent->children) {
             if (child.mValue == node) {
-              char buff[] = {child.mKey};
-              result.Append(buff, 0, 1);
+              buff[buffIndex] = child.mKey;
+              buffIndex--;
               break;
             }
           }
         }
       }
 
-      result.Reverse();
+      String result(buff, 0, wordLength);
+      PlatformFree(buff);
       return result;
     }
 
@@ -194,7 +203,8 @@ class Trie {
       }
 
       if (currentIndex + 1 >= inLength) {
-        current->isWord = true;
+        current->isWord = 1;
+        current->length = inLength;
         result = true;
       }
     }

@@ -109,11 +109,20 @@ void DevConsole::OnKeyDown(uint8 key) {
     return;
   }
 
-  mActiveBuffer[mCaret++] = key;
+  if (key == '\t') {
+    if (!mLastSuggestion.IsEmpty()) {
+      size_t caretPos = mLastSuggestion.Length();
+      memcpy(mActiveBuffer, mLastSuggestion.Str(), caretPos);
+      mCaret = caretPos;
+    }
+  }
+  else {
+    mActiveBuffer[mCaret++] = key;
 
-  String substring((const char*)mActiveBuffer, 0, mCaret);
-  Pair<Trie::Iterator, Trie::Iterator> lastSuggestion = mSuggestions.NextWords(substring);
-  mLastSuggestion = *(lastSuggestion.mKey);
+    String substring((const char*)mActiveBuffer, 0, mCaret);
+    Pair<Trie::Iterator, Trie::Iterator> lastSuggestion = mSuggestions.NextWords(substring);
+    mLastSuggestion = *(lastSuggestion.mKey);
+  }
 }
 
 void DevConsole::OnKeyUp(uint8 key) {
@@ -161,11 +170,11 @@ void DevConsole::OnMiscKeyDown(MiscKey key) {
   }
 
   if (key == MiscKey::ENTER) {
-    const String message(mActiveBuffer, 0, mCaret);
-    if (mHistory.Size() > 10) {
-      mHistory.RemoveFront();
+    if (mCaret == 0) {
+      return;
     }
 
+    const String message(mActiveBuffer, 0, mCaret);
     const char* commandSplit = message.FindFirst(' ');
     if (commandSplit != nullptr) {
       size_t offset = commandSplit - message.Str();
@@ -181,6 +190,10 @@ void DevConsole::OnMiscKeyDown(MiscKey key) {
         Delegate<void>& func = GlobalConsoleCommandsValueless()[message];
         func();
       }
+    }
+
+    if (mHistory.Size() > 10) {
+      mHistory.RemoveFront();
     }
 
     mHistory.Add(message);

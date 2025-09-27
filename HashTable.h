@@ -216,6 +216,10 @@ class HashTable final {
     mStorage = tempTable.mStorage;
   }
 
+  bool IsEmpty() const {
+    return mSize == 0;
+  }
+
   size_t Size() const {
     return mSize;
   }

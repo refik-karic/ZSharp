@@ -15,7 +15,7 @@ class String final : public ISerializable {
   private:
   class VariableArg {
     private:
-    enum Type {
+    enum Type : uint8 {
       CHAR,
       SIZE_T,
       BOOL,

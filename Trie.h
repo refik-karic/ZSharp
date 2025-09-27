@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "ZBaseTypes.h"
 #include "PlatformMemory.h"
 
@@ -98,7 +97,8 @@ class Trie {
       }
 
       const size_t wordLength = mNode->length;
-      char* buff = (char*)PlatformMalloc(wordLength);
+      char* buff = (char*)PlatformMalloc(wordLength + 1);
+      buff[wordLength] = NULL;
       size_t buffIndex = wordLength - 1;
 
       for (TrieNode* node = mNode; node != nullptr; node = node->parent) {
@@ -114,7 +114,7 @@ class Trie {
         }
       }
 
-      String result(buff, 0, wordLength);
+      String result(buff, 0, wordLength + 1);
       PlatformFree(buff);
       return result;
     }
@@ -126,7 +126,7 @@ class Trie {
         return nullptr;
       }
 
-      if (node->children.Size() > 0) {
+      if (!node->children.IsEmpty()) {
         TrieNode* child = node->children.begin()->mValue;
         if (child->isWord) {
           return child;
@@ -228,7 +228,7 @@ class Trie {
 
         bool reachedEnd = currentIndex + 1 >= inLength;
         if (reachedEnd) {
-          if (current->children.Size() > 0) {
+          if (!current->children.IsEmpty()) {
             iters.mKey = Iterator(current, current->parent);
             iters.mValue = Iterator(current->parent, current->parent);
             iters.mKey++;
@@ -260,9 +260,9 @@ class Trie {
 
         bool reachedEnd = currentIndex + 1 >= inLength;
         if (reachedEnd) {
-          if (current->children.Size() > 0) {
+          if (!current->children.IsEmpty()) {
             if (current->isWord) {
-              current->isWord = false;
+              current->isWord = 0;
               result = true;
             }
 
@@ -316,7 +316,7 @@ class Trie {
 
     parent->children.Remove(*keyToDelete);
 
-    if (parent->children.Size() == 0) {
+    if (parent->children.IsEmpty()) {
       DeleteUpwards(parent, parent->parent);
     }
   }

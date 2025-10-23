@@ -29,7 +29,7 @@ class DevConsole final {
   size_t mCaret = 0;
   int8* mActiveBuffer;
   List<String> mHistory;
-  size_t mHistoryPos = 0;
+  List<String>::Iterator mHistoryPos;
 
   Trie mSuggestions;
   String mLastSuggestion;

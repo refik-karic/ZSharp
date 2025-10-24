@@ -156,6 +156,8 @@ void Unaligned_AABB_SSE(const float* vertices, size_t numVertices, size_t stride
 
 void Unaligned_AABB_AVX(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
 
+bool Unaligned_AABB_Intersects(const float* aMin, const float* aMax, const float* bMin, const float* bMax);
+
 typedef void (*RGBShaderFunc)(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
   const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer);
 

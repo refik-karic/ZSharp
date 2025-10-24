@@ -1610,6 +1610,20 @@ void Unaligned_AABB_AVX(const float* vertices, size_t numVertices, size_t stride
   }
 }
 
+bool Unaligned_AABB_Intersects(const float* aMin, const float* aMax, const float* bMin, const float* bMax) {
+  __m128 aMinV = _mm_set_ps(0.f, aMin[2], aMin[1], aMin[0]);
+  __m128 aMaxV = _mm_set_ps(0.f, aMax[2], aMax[1], aMax[0]);
+  __m128 bMinV = _mm_set_ps(0.f, bMin[2], bMin[1], bMin[0]);
+  __m128 bMaxV = _mm_set_ps(0.f, bMax[2], bMax[1], bMax[0]);
+
+  __m128 maxMinResult = _mm_cmplt_ps(aMaxV, bMinV);
+  __m128 minMaxResult = _mm_cmpgt_ps(aMinV, bMaxV);
+
+  __m128 combinedResult = _mm_or_ps(maxMinResult, minMaxResult);
+
+  return _mm_testc_si128(_mm_setzero_si128(), _mm_castps_si128(combinedResult));
+}
+
 void Unaligned_Shader_RGB_SSE(const float* __restrict vertices, const int32* __restrict indices, const int32 end, const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer) {
   const int32 sMaxWidth = (int32)maxWidth;
 

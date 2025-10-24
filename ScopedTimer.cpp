@@ -1,6 +1,7 @@
 #include "ScopedTimer.h"
 
 #include "Logger.h"
+#include "PlatformDebug.h"
 #include "PlatformTime.h"
 #include "ZString.h"
 

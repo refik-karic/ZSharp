@@ -76,11 +76,12 @@ Mat4x4& Mat4x4::operator*=(const Mat4x4& matrix) {
 }
 
 void Mat4x4::Identity() {
-  Clear();
-  mData[0][0] = 1.f;
-  mData[1][1] = 1.f;
-  mData[2][2] = 1.f;
-  mData[3][3] = 1.f;
+  memset(mData, 0, sizeof(mData));
+  float* data = (float*)mData;
+  data[0] = 1.f;
+  data[5] = 1.f;
+  data[10] = 1.f;
+  data[15] = 1.f;
 }
 
 void Mat4x4::Clear() {
@@ -114,9 +115,11 @@ Mat4x4 Mat4x4::Transpose() const {
 }
 
 void Mat4x4::SetTranslation(const Vec3& translation) {
-  mData[0][3] = translation[0];
-  mData[1][3] = translation[1];
-  mData[2][3] = translation[2];
+  float* data = (float*)mData;
+  const float* vecData = (const float*)(&translation);
+  data[3] = vecData[0];
+  data[7] = vecData[1];
+  data[11] = vecData[2];
 }
 
 void Mat4x4::SetTranslation(const Vec4& translation) {
@@ -127,10 +130,12 @@ void Mat4x4::SetTranslation(const Vec4& translation) {
 }
 
 void Mat4x4::SetScale(const Vec4& scale) {
-  mData[0][0] = scale[0];
-  mData[1][1] = scale[1];
-  mData[2][2] = scale[2];
-  mData[3][3] = scale[3];
+  float* data = (float*)mData;
+  const float* vecData = (const float*)(&scale);
+  data[0] = vecData[0];
+  data[5] = vecData[1];
+  data[10] = vecData[2];
+  data[15] = vecData[3];
 }
 
 void Mat4x4::SetRotation(const Quaternion& quat) {

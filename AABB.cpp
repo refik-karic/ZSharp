@@ -104,131 +104,26 @@ AABB AABB::TransformAndRealign(const AABB& inAABB, const Mat4x4& matrix) {
         float f = matrix[i][j] * inMax[j];
 
         if(e < f) {
-          outMin[j] += e;
-          outMax[j] += f;
+          outMin[i] += e;
+          outMax[i] += f;
         }
         else {
-          outMin[j] += f;
-          outMax[j] += e;
+          outMin[i] += f;
+          outMax[i] += e;
         }
       }
     }
   */
 
-  const float* inMin = *inAABB.MinBounds();
-  const float* inMax = *inAABB.MaxBounds();
+  const float* inMin = (const float*)&inAABB.mMin;
+  const float* inMax = (const float*)&inAABB.mMax;
 
-  float outMin[3] = { matrix[0][3], matrix[1][3], matrix[2][3] };
-  float outMax[3] = { matrix[0][3], matrix[1][3], matrix[2][3] };
+  const float* matData = (const float*)&matrix;
 
-  float e00 = matrix[0][0] * inMin[0];
-  float f00 = matrix[0][0] * inMax[0];
+  float outMin[4] = { matData[3], matData[7], matData[11], 0.f };
+  float outMax[4] = { matData[3], matData[7], matData[11], 0.f };
 
-  if (e00 < f00) {
-    outMin[0] += e00;
-    outMax[0] += f00;
-  }
-  else {
-    outMin[0] += f00;
-    outMax[0] += e00;
-  }
-
-  float e01 = matrix[0][1] * inMin[1];
-  float f01 = matrix[0][1] * inMax[1];
-
-  if (e01 < f01) {
-    outMin[0] += e01;
-    outMax[0] += f01;
-  }
-  else {
-    outMin[0] += f01;
-    outMax[0] += e01;
-  }
-
-  float e02 = matrix[0][2] * inMin[2];
-  float f02 = matrix[0][2] * inMax[2];
-
-  if (e02 < f02) {
-    outMin[0] += e02;
-    outMax[0] += f02;
-  }
-  else {
-    outMin[0] += f02;
-    outMax[0] += e02;
-  }
-
-  float e10 = matrix[1][0] * inMin[0];
-  float f10 = matrix[1][0] * inMax[0];
-
-  if (e10 < f10) {
-    outMin[1] += e10;
-    outMax[1] += f10;
-  }
-  else {
-    outMin[1] += f10;
-    outMax[1] += e10;
-  }
-
-  float e11 = matrix[1][1] * inMin[1];
-  float f11 = matrix[1][1] * inMax[1];
-
-  if (e11 < f11) {
-    outMin[1] += e11;
-    outMax[1] += f11;
-  }
-  else {
-    outMin[1] += f11;
-    outMax[1] += e11;
-  }
-
-  float e12 = matrix[1][2] * inMin[2];
-  float f12 = matrix[1][2] * inMax[2];
-
-  if (e12 < f12) {
-    outMin[1] += e12;
-    outMax[1] += f12;
-  }
-  else {
-    outMin[1] += f12;
-    outMax[1] += e12;
-  }
-
-  float e20 = matrix[2][0] * inMin[0];
-  float f20 = matrix[2][0] * inMax[0];
-
-  if (e20 < f20) {
-    outMin[2] += e20;
-    outMax[2] += f20;
-  }
-  else {
-    outMin[2] += f20;
-    outMax[2] += e20;
-  }
-
-  float e21 = matrix[2][1] * inMin[1];
-  float f21 = matrix[2][1] * inMax[1];
-
-  if (e21 < f21) {
-    outMin[2] += e21;
-    outMax[2] += f21;
-  }
-  else {
-    outMin[2] += f21;
-    outMax[2] += e21;
-  }
-
-  float e22 = matrix[2][2] * inMin[2];
-  float f22 = matrix[2][2] * inMax[2];
-
-  if (e22 < f22) {
-    outMin[2] += e22;
-    outMax[2] += f22;
-  }
-  else {
-    outMin[2] += f22;
-    outMax[2] += e22;
-  }
-
+  Unaligned_AABB_TransformAndRealign(inMin, inMax, outMin, outMax, matData);
   AABB outAABB(outMin, outMax);
   return outAABB;
 }

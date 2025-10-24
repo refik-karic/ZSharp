@@ -287,6 +287,23 @@ void Unaligned_Vec4HomogenizeToVec3(const float* __restrict a, float* __restrict
   _mm_store_ss(b + 2, _mm_div_ss(z, w));
 }
 
+void Unaligned_Mat4x4Transpose(const float inMatrix[4][4], float outMatrix[4][4]) {
+  __m128 r0 = _mm_loadu_ps(inMatrix[0]);
+  __m128 r1 = _mm_loadu_ps(inMatrix[1]);
+  __m128 r2 = _mm_loadu_ps(inMatrix[2]);
+  __m128 r3 = _mm_loadu_ps(inMatrix[3]);
+
+  __m128 t0 = _mm_unpacklo_ps(r0, r1); // X0X1Y0Y1
+  __m128 t1 = _mm_unpacklo_ps(r2, r3); // X2X3Y2Y3
+  __m128 t2 = _mm_unpackhi_ps(r0, r1); // Z0Z1W0W1
+  __m128 t3 = _mm_unpackhi_ps(r2, r3); // Z2Z3W2W3
+
+  _mm_storeu_ps(outMatrix[0], _mm_movelh_ps(t0, t1));
+  _mm_storeu_ps(outMatrix[1], _mm_movehl_ps(t1, t0));
+  _mm_storeu_ps(outMatrix[2], _mm_movelh_ps(t2, t3));
+  _mm_storeu_ps(outMatrix[3], _mm_movehl_ps(t3, t2));
+}
+
 void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __restrict a, float* __restrict b) {
   __m128 matrixX = _mm_loadu_ps(matrix[0]);
   __m128 matrixY = _mm_loadu_ps(matrix[1]);
@@ -1622,6 +1639,61 @@ bool Unaligned_AABB_Intersects(const float* aMin, const float* aMax, const float
   __m128 combinedResult = _mm_or_ps(maxMinResult, minMaxResult);
 
   return _mm_testc_si128(_mm_setzero_si128(), _mm_castps_si128(combinedResult));
+}
+
+void Unaligned_AABB_TransformAndRealign(const float* inMin, const float* inMax, float* outMin, float* outMax, const float* matrix) {
+  __m128 r0 = _mm_loadu_ps(matrix);
+  __m128 r1 = _mm_loadu_ps(matrix + 4);
+  __m128 r2 = _mm_loadu_ps(matrix + 8);
+  __m128 r3 = _mm_loadu_ps(matrix + 12);
+
+  __m128 t0 = _mm_unpacklo_ps(r0, r1); // X0X1Y0Y1
+  __m128 t1 = _mm_unpacklo_ps(r2, r3); // X2X3Y2Y3
+  __m128 t2 = _mm_unpackhi_ps(r0, r1); // Z0Z1W0W1
+  __m128 t3 = _mm_unpackhi_ps(r2, r3); // Z2Z3W2W3
+
+  r0 = _mm_movelh_ps(t0, t1);
+  r1 = _mm_movehl_ps(t1, t0);
+  r2 = _mm_movelh_ps(t2, t3);
+
+  __m128 min0Vec = _mm_set_ps1(inMin[0]);
+  __m128 min1Vec = _mm_set_ps1(inMin[1]);
+  __m128 min2Vec = _mm_set_ps1(inMin[2]);
+
+  __m128 max0Vec = _mm_set_ps1(inMax[0]);
+  __m128 max1Vec = _mm_set_ps1(inMax[1]);
+  __m128 max2Vec = _mm_set_ps1(inMax[2]);
+
+  __m128 e0 = _mm_mul_ps(r0, min0Vec);
+  __m128 f0 = _mm_mul_ps(r0, max0Vec);
+
+  __m128 e1 = _mm_mul_ps(r1, min1Vec);
+  __m128 f1 = _mm_mul_ps(r1, max1Vec);
+
+  __m128 e2 = _mm_mul_ps(r2, min2Vec);
+  __m128 f2 = _mm_mul_ps(r2, max2Vec);
+
+  __m128 mask0 = _mm_cmplt_ps(e0, f0);
+  __m128 mask1 = _mm_cmplt_ps(e1, f1);
+  __m128 mask2 = _mm_cmplt_ps(e2, f2);
+
+  __m128 result0Min = _mm_blendv_ps(f0, e0, mask0);
+  __m128 result1Min = _mm_blendv_ps(f1, e1, mask1);
+  __m128 result2Min = _mm_blendv_ps(f2, e2, mask2);
+
+  __m128 result0Max = _mm_blendv_ps(e0, f0, mask0);
+  __m128 result1Max = _mm_blendv_ps(e1, f1, mask1);
+  __m128 result2Max = _mm_blendv_ps(e2, f2, mask2);
+
+  // Note: We explicitly reserved space for 4 components so we can load/store a full vector.
+  __m128 outMinVec = _mm_loadu_ps(outMin);
+  __m128 outMaxVec = _mm_loadu_ps(outMax);
+
+  outMinVec = _mm_add_ps(_mm_add_ps(_mm_add_ps(result0Min, outMinVec), result1Min), result2Min);
+  outMaxVec = _mm_add_ps(_mm_add_ps(_mm_add_ps(result0Max, outMaxVec), result1Max), result2Max);
+
+  _mm_storeu_ps(outMin, outMinVec);
+  _mm_storeu_ps(outMax, outMaxVec);
 }
 
 void Unaligned_Shader_RGB_SSE(const float* __restrict vertices, const int32* __restrict indices, const int32 end, const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer) {

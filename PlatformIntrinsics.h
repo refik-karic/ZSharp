@@ -70,6 +70,8 @@ void Unaligned_Vec4Homogenize(float* a);
 
 void Unaligned_Vec4HomogenizeToVec3(const float* __restrict a, float* __restrict b);
 
+void Unaligned_Mat4x4Transpose(const float inMatrix[4][4], float outMatrix[4][4]);
+
 void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __restrict a, float* __restrict b);
 
 void Unaligned_Mat4x4Vec4TransformInPlace(const float matrix[4][4], float* a);
@@ -157,6 +159,8 @@ void Unaligned_AABB_SSE(const float* vertices, size_t numVertices, size_t stride
 void Unaligned_AABB_AVX(const float* vertices, size_t numVertices, size_t stride, float outMin[4], float outMax[4]);
 
 bool Unaligned_AABB_Intersects(const float* aMin, const float* aMax, const float* bMin, const float* bMax);
+
+void Unaligned_AABB_TransformAndRealign(const float* inMin, const float* inMax, float* outMin, float* outMax, const float* matrix);
 
 typedef void (*RGBShaderFunc)(const float* __restrict vertices, const int32* __restrict indices, const int32 end,
   const float maxWidth, uint8* __restrict framebuffer, float* __restrict depthBuffer);

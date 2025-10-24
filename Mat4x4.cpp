@@ -90,27 +90,7 @@ void Mat4x4::Clear() {
 
 Mat4x4 Mat4x4::Transpose() const {
   Mat4x4 result;
-  
-  result[0][0] = mData[0][0];
-  result[0][1] = mData[1][0];
-  result[0][2] = mData[2][0];
-  result[0][3] = mData[3][0];
-
-  result[1][0] = mData[0][1];
-  result[1][1] = mData[1][1];
-  result[1][2] = mData[2][1];
-  result[1][3] = mData[3][1];
-
-  result[2][0] = mData[0][2];
-  result[2][1] = mData[1][2];
-  result[2][2] = mData[2][2];
-  result[2][3] = mData[3][2];
-
-  result[3][0] = mData[0][3];
-  result[3][1] = mData[1][3];
-  result[3][2] = mData[2][3];
-  result[3][3] = mData[3][3];
-
+  Unaligned_Mat4x4Transpose((const float(*)[4])mData, (float(*)[4])result.mData);
   return result;
 }
 

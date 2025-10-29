@@ -172,6 +172,28 @@ void DevConsole::OnMiscKeyDown(MiscKey key) {
       return;
     }
   }
+  else if (key == MiscKey::DOWN_ARROW) {
+    if (mHistory.Size() > 0) {
+      if (mHistoryPos == mHistory.rend()) {
+        mHistoryPos = mHistory.begin();
+      }
+      else {
+        mHistoryPos++;
+
+        if (mHistoryPos == mHistory.end()) {
+          mHistoryPos = mHistory.rend();
+          mCaret = 0;
+          return;
+        }
+      }
+
+      const String& lastCommand = *mHistoryPos;
+      size_t caretPos = lastCommand.Length();
+      memcpy(mActiveBuffer, lastCommand.Str(), caretPos);
+      mCaret = caretPos;
+      return;
+    }
+  }
   else if (key == MiscKey::RIGHT_ARROW) {
     if (!mLastSuggestion.IsEmpty()) {
       size_t caretPos = mLastSuggestion.Length() - 1;

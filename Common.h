@@ -1,14 +1,15 @@
 #pragma once
 
 #include "ZBaseTypes.h"
+#include "MoveHelpers.h"
 
 namespace ZSharp {
 
 template<typename T>
 void Swap(T& lhs, T& rhs) {
-  const T temp(rhs);
-  rhs = lhs;
-  lhs = temp;
+  T temp(Move(rhs));
+  rhs = Move(lhs);
+  lhs = Move(temp);
 }
 
 uint16 EndianSwap(uint16 value);

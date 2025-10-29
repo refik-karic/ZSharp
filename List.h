@@ -105,7 +105,7 @@ class List final : public ISerializable {
   void operator=(const List& rhs) {
     if (this != &rhs) {
       Clear();
-      for (T& item : rhs) {
+      for (const T& item : rhs) {
         Add(item);
       }
     }

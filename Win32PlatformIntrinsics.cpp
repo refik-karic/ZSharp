@@ -298,10 +298,10 @@ void Unaligned_Mat4x4Transpose(const float inMatrix[4][4], float outMatrix[4][4]
   __m128 t2 = _mm_unpackhi_ps(r0, r1); // Z0Z1W0W1
   __m128 t3 = _mm_unpackhi_ps(r2, r3); // Z2Z3W2W3
 
-  _mm_storeu_ps(outMatrix[0], _mm_movelh_ps(t0, t1));
-  _mm_storeu_ps(outMatrix[1], _mm_movehl_ps(t1, t0));
-  _mm_storeu_ps(outMatrix[2], _mm_movelh_ps(t2, t3));
-  _mm_storeu_ps(outMatrix[3], _mm_movehl_ps(t3, t2));
+  _mm_storeu_ps(outMatrix[0], _mm_shuffle_ps(t0, t1, 0b01000100));
+  _mm_storeu_ps(outMatrix[1], _mm_shuffle_ps(t0, t1, 0b11101110));
+  _mm_storeu_ps(outMatrix[2], _mm_shuffle_ps(t2, t3, 0b01000100));
+  _mm_storeu_ps(outMatrix[3], _mm_shuffle_ps(t2, t3, 0b11101110));
 }
 
 void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __restrict a, float* __restrict b) {
@@ -1652,9 +1652,9 @@ void Unaligned_AABB_TransformAndRealign(const float* inMin, const float* inMax, 
   __m128 t2 = _mm_unpackhi_ps(r0, r1); // Z0Z1W0W1
   __m128 t3 = _mm_unpackhi_ps(r2, r3); // Z2Z3W2W3
 
-  r0 = _mm_movelh_ps(t0, t1);
-  r1 = _mm_movehl_ps(t1, t0);
-  r2 = _mm_movelh_ps(t2, t3);
+  r0 = _mm_shuffle_ps(t0, t1, 0b01000100);
+  r1 = _mm_shuffle_ps(t0, t1, 0b11101110);
+  r2 = _mm_shuffle_ps(t2, t3, 0b01000100);
 
   __m128 min0Vec = _mm_set_ps1(inMin[0]);
   __m128 min1Vec = _mm_set_ps1(inMin[1]);

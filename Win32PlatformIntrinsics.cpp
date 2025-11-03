@@ -2085,14 +2085,11 @@ void Unaligned_Shader_UV_SSE(const float* __restrict vertices, const int32* __re
   // We want the UV values to be scaled by the width/height.
   // Doing that here saves us from having to do that at each pixel.
   // We must still multiply the stride and channels separately because of rounding error.
-  size_t texWidth = texture->Width(mipLevel);
   size_t texHeight = texture->Height(mipLevel);
   uint32* __restrict textureData = (uint32 * __restrict)texture->Data(mipLevel);
 
   __m128 yStride = _mm_set_ps1((float)(texHeight));
-
-  __m128 maxUValue = _mm_set_ps1((float)(texWidth - 1));
-  __m128 maxVValue = _mm_set_ps1((float)(texHeight - 1));
+  __m128 maxUVValue = _mm_set_ps1((float)(texHeight - 1));
 
   __m128 initMultiplier = _mm_set_ps(3.f, 2.f, 1.f, 0.f);
   __m128 stepMultiplier = _mm_set_ps1(4.f);
@@ -2155,22 +2152,21 @@ void Unaligned_Shader_UV_SSE(const float* __restrict vertices, const int32* __re
     __m128 z1z0 = _mm_sub_ps(invVert1, invVert0);
     __m128 z2z0 = _mm_sub_ps(invVert2, invVert0);
 
-    __m128 uScaleFactor = _mm_mul_ps(invArea, maxUValue);
-    __m128 vScaleFactor = _mm_mul_ps(invArea, maxVValue);
+    __m128 uvScaleFactor = _mm_mul_ps(invArea, maxUVValue);
 
     __m128 u0 = _mm_shuffle_ps(v1Attrs, v1Attrs, 0b00000000);
-    __m128 invAttr00 = _mm_mul_ps(u0, uScaleFactor);
-    __m128 invAttr01 = _mm_mul_ps(_mm_shuffle_ps(v2Attrs, v2Attrs, 0b00000000), uScaleFactor);
-    __m128 invAttr02 = _mm_mul_ps(_mm_shuffle_ps(v3Attrs, v3Attrs, 0b00000000), uScaleFactor);
-    u0 = _mm_mul_ps(u0, maxUValue);
+    __m128 invAttr00 = _mm_mul_ps(u0, uvScaleFactor);
+    __m128 invAttr01 = _mm_mul_ps(_mm_shuffle_ps(v2Attrs, v2Attrs, 0b00000000), uvScaleFactor);
+    __m128 invAttr02 = _mm_mul_ps(_mm_shuffle_ps(v3Attrs, v3Attrs, 0b00000000), uvScaleFactor);
+    u0 = _mm_mul_ps(u0, maxUVValue);
     __m128 u1u0 = _mm_sub_ps(invAttr01, invAttr00);
     __m128 u2u0 = _mm_sub_ps(invAttr02, invAttr00);
 
     __m128 v0 = _mm_shuffle_ps(v1Attrs, v1Attrs, 0b01010101);
-    __m128 invAttr10 = _mm_mul_ps(v0, vScaleFactor);
-    __m128 invAttr11 = _mm_mul_ps(_mm_shuffle_ps(v2Attrs, v2Attrs, 0b01010101), vScaleFactor);
-    __m128 invAttr12 = _mm_mul_ps(_mm_shuffle_ps(v3Attrs, v3Attrs, 0b01010101), vScaleFactor);
-    v0 = _mm_mul_ps(v0, maxVValue);
+    __m128 invAttr10 = _mm_mul_ps(v0, uvScaleFactor);
+    __m128 invAttr11 = _mm_mul_ps(_mm_shuffle_ps(v2Attrs, v2Attrs, 0b01010101), uvScaleFactor);
+    __m128 invAttr12 = _mm_mul_ps(_mm_shuffle_ps(v3Attrs, v3Attrs, 0b01010101), uvScaleFactor);
+    v0 = _mm_mul_ps(v0, maxUVValue);
     __m128 v1v0 = _mm_sub_ps(invAttr11, invAttr10);
     __m128 v2v0 = _mm_sub_ps(invAttr12, invAttr10);
 
@@ -2241,9 +2237,9 @@ void Unaligned_Shader_UV_SSE(const float* __restrict vertices, const int32* __re
           __m128 vValues = _mm_add_ps(_mm_add_ps(weightedAttr10, weightedAttr11), weightedAttr12);
 
           // Clamp UV so that we don't index outside of the texture.
-          uValues = _mm_min_ps(uValues, maxUValue);
+          uValues = _mm_min_ps(uValues, maxUVValue);
           uValues = _mm_max_ps(uValues, _mm_setzero_ps());
-          vValues = _mm_min_ps(vValues, maxVValue);
+          vValues = _mm_min_ps(vValues, maxUVValue);
           vValues = _mm_max_ps(vValues, _mm_setzero_ps());
 
           // We must round prior to multiplying the stride and channels.
@@ -2285,14 +2281,11 @@ void Unaligned_Shader_UV_AVX(const float* __restrict vertices, const int32* __re
   // We want the UV values to be scaled by the width/height.
   // Doing that here saves us from having to do that at each pixel.
   // We must still multiply the stride and channels separately because of rounding error.
-  size_t texWidth = texture->Width(mipLevel);
   size_t texHeight = texture->Height(mipLevel);
   uint32* __restrict textureData = (uint32 * __restrict)texture->Data(mipLevel);
 
   __m256 yStride = _mm256_set1_ps((float)(texHeight));
-
-  __m256 maxUValue = _mm256_set1_ps((float)(texWidth - 1));
-  __m256 maxVValue = _mm256_set1_ps((float)(texHeight - 1));
+  __m256 maxUVValue = _mm256_set1_ps((float)(texHeight - 1));
 
   __m256 initMultiplier = _mm256_set_ps(7.f, 6.f, 5.f, 4.f, 3.f, 2.f, 1.f, 0.f);
   __m256 stepMultiplier = _mm256_set1_ps(8.f);
@@ -2353,22 +2346,21 @@ void Unaligned_Shader_UV_AVX(const float* __restrict vertices, const int32* __re
     __m256 z1z0 = _mm256_sub_ps(invVert1, invVert0);
     __m256 z2z0 = _mm256_sub_ps(invVert2, invVert0);
 
-    __m256 uScaleFactor = _mm256_mul_ps(invArea, maxUValue);
-    __m256 vScaleFactor = _mm256_mul_ps(invArea, maxVValue);
+    __m256 uvScaleFactor = _mm256_mul_ps(invArea, maxUVValue);
 
     __m256 u0 = _mm256_permutevar8x32_ps(v1All, uShuffle);
-    __m256 invAttr00 = _mm256_mul_ps(u0, uScaleFactor);
-    __m256 invAttr01 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v2All, uShuffle), uScaleFactor);
-    __m256 invAttr02 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v3All, uShuffle), uScaleFactor);
-    u0 = _mm256_mul_ps(u0, maxUValue);
+    __m256 invAttr00 = _mm256_mul_ps(u0, uvScaleFactor);
+    __m256 invAttr01 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v2All, uShuffle), uvScaleFactor);
+    __m256 invAttr02 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v3All, uShuffle), uvScaleFactor);
+    u0 = _mm256_mul_ps(u0, maxUVValue);
     __m256 u1u0 = _mm256_sub_ps(invAttr01, invAttr00);
     __m256 u2u0 = _mm256_sub_ps(invAttr02, invAttr00);
 
     __m256 v0 = _mm256_permutevar8x32_ps(v1All, vShuffle);
-    __m256 invAttr10 = _mm256_mul_ps(v0, vScaleFactor);
-    __m256 invAttr11 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v2All, vShuffle), vScaleFactor);
-    __m256 invAttr12 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v3All, vShuffle), vScaleFactor);
-    v0 = _mm256_mul_ps(v0, maxVValue);
+    __m256 invAttr10 = _mm256_mul_ps(v0, uvScaleFactor);
+    __m256 invAttr11 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v2All, vShuffle), uvScaleFactor);
+    __m256 invAttr12 = _mm256_mul_ps(_mm256_permutevar8x32_ps(v3All, vShuffle), uvScaleFactor);
+    v0 = _mm256_mul_ps(v0, maxUVValue);
     __m256 v1v0 = _mm256_sub_ps(invAttr11, invAttr10);
     __m256 v2v0 = _mm256_sub_ps(invAttr12, invAttr10);
 
@@ -2430,8 +2422,8 @@ void Unaligned_Shader_UV_AVX(const float* __restrict vertices, const int32* __re
         // If this isn't done, we may jump to a completely different set of pixels because of rounding.
         vValues = _mm256_floor_ps(vValues);
 
-        uValues = _mm256_max_ps(_mm256_min_ps(uValues, maxUValue), _mm256_setzero_ps());
-        vValues = _mm256_max_ps(_mm256_min_ps(vValues, maxVValue), _mm256_setzero_ps());
+        uValues = _mm256_max_ps(_mm256_min_ps(uValues, maxUVValue), _mm256_setzero_ps());
+        vValues = _mm256_max_ps(_mm256_min_ps(vValues, maxUVValue), _mm256_setzero_ps());
 
         __m256i colorValues = _mm256_cvtps_epi32(_mm256_fmadd_ps(vValues, yStride, uValues));
 

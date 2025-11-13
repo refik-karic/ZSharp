@@ -3,6 +3,7 @@
 
 #include "ZAssert.h"
 #include "PlatformMemory.h"
+#include "CommonMath.h"
 
 #include <cstdlib>
 #include <cstring>
@@ -651,6 +652,7 @@ void String::VariadicArgsAppend(const char* format, const VariableArg* args, siz
       const VariableArg& arg = args[argIndex];
       if (digitSpec != nullptr && digitSpec > openBrace) {
         int32 digits = atoi(digitSpec + 1);
+        Clamp(digits, 0, 32);
         arg.ToString(*this, digits);
       }
       else {
@@ -717,7 +719,7 @@ void String::VariableArg::ToString(String& str, int32 numDigits) const {
   switch (mType) {
     case Type::SIZE_T:
     {
-      char buffer[64];
+      char buffer[32];
       size_t length = snprintf(buffer, sizeof(buffer), "%llu", mData.size_value);
       str.Append(buffer, 0, length);
     }
@@ -736,35 +738,35 @@ void String::VariableArg::ToString(String& str, int32 numDigits) const {
     break;
     case Type::INT32:
     {
-      char buffer[64];
+      char buffer[16];
       size_t length = snprintf(buffer, sizeof(buffer), "%d", mData.int32_value);
       str.Append(buffer, 0, length);
     }
       break;
     case Type::UINT32:
     {
-      char buffer[64];
+      char buffer[16];
       size_t length = snprintf(buffer, sizeof(buffer), "%u", mData.uint32_value);
       str.Append(buffer, 0, length);
     }
       break;
     case Type::INT64:
     {
-      char buffer[64];
+      char buffer[32];
       size_t length = snprintf(buffer, sizeof(buffer), "%lld", mData.int64_value);
       str.Append(buffer, 0, length);
     }
       break;
     case Type::UINT64:
     {
-      char buffer[64];
+      char buffer[32];
       size_t length = snprintf(buffer, sizeof(buffer), "%llu", mData.uint64_value);
       str.Append(buffer, 0, length);
     }
       break;
     case Type::FLOAT:
     {
-      char buffer[64];
+      char buffer[32];
       int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
       size_t length = snprintf(buffer, sizeof(buffer), "%.*f", significantFigures, mData.float_value);
       str.Append(buffer, 0, length);
@@ -772,7 +774,7 @@ void String::VariableArg::ToString(String& str, int32 numDigits) const {
       break;
     case Type::DOUBLE:
     {
-      char buffer[64];
+      char buffer[32];
       int32 significantFigures = (numDigits == 0) ? 6 : numDigits;
       size_t length = snprintf(buffer, sizeof(buffer), "%.*lf", significantFigures, mData.double_value);
       str.Append(buffer, 0, length);

@@ -3,6 +3,8 @@
 #include "ZFile.h"
 #include "Span.h"
 
+#include <cstring>
+
 namespace ZSharp {
 
 IniFile::IniFile(const FileString& fileName)

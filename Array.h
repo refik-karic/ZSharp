@@ -7,6 +7,7 @@
 #include "Common.h"
 #include "MoveHelpers.h"
 
+#include <cstring>
 #include <initializer_list>
 #include <type_traits>
 

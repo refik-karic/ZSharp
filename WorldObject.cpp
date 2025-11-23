@@ -50,7 +50,7 @@ Mat4x4 WorldObject::ObjectTransform() const {
   scale.SetScale(mScale);
   translation.SetTranslation(mTranslation);
 
-  return position * scale * rotation * translation;
+  return Mat4x4::Combine(position, scale, rotation, translation);
 }
 
 }

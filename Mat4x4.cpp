@@ -123,4 +123,9 @@ void Mat4x4::SetRotation(const Quaternion& quat) {
   (*this) *= quatMat;
 }
 
+void Mat4x4::CombineImpl(Mat4x4& output, const Mat4x4** inArr, size_t size) {
+  memcpy(output.mData, inArr[0]->mData, sizeof(output.mData));
+  Unaligned_Mat4x4Mul_Combine((const float**)inArr, size, (float*)(&output));
+}
+
 }

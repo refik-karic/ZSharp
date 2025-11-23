@@ -38,6 +38,14 @@ class Mat4x4 final {
 
   Mat4x4& operator*=(const Mat4x4& matrix);
 
+  template<typename... Args>
+  static Mat4x4 Combine(const Args&... args) {
+	  const Mat4x4* inArgs[] = { &args... };
+    Mat4x4 result;
+    CombineImpl(result, inArgs, sizeof...(args));
+    return result;
+  }
+
   void Identity();
   
   void Clear();
@@ -54,6 +62,8 @@ class Mat4x4 final {
 
   private:
   Vec4 mData[4];
+
+  static void CombineImpl(Mat4x4& output, const Mat4x4** inArr, size_t size);
 };
 
 }

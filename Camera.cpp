@@ -104,7 +104,7 @@ void Camera::Tick() {
   unhing[2][3] = standardNearPlane;
   unhing[3][2] = -(standardFarPlane - standardNearPlane);
 
-  mPerspectiveTransform = (unhing * (scale * (uToE * translation)));
+  mPerspectiveTransform = Mat4x4::Combine(unhing, scale, uToE, translation);
 }
 
 void Camera::PerspectiveProjection(VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, ClipBounds clipBounds, const Mat4x4& objectTransform) {

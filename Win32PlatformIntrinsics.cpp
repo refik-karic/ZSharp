@@ -506,57 +506,67 @@ void Unaligned_Mat4x4MulInPlace(float* a, const float* b) {
 }
 
 void Unaligned_Mat4x4Mul_Combine(const float** inMats, size_t size, float* result) {
+  __m128 ar0 = _mm_loadu_ps(result);
+  __m128 ar1 = _mm_loadu_ps(result + 4);
+  __m128 ar2 = _mm_loadu_ps(result + 8);
+  __m128 ar3 = _mm_loadu_ps(result + 12);
+
   for (size_t i = 1; i < size; ++i) {
-    __m128 a0 = _mm_set_ps1(result[0]);
-    __m128 a1 = _mm_set_ps1(result[1]);
-    __m128 a2 = _mm_set_ps1(result[2]);
-    __m128 a3 = _mm_set_ps1(result[3]);
-
-    __m128 a4 = _mm_set_ps1(result[4]);
-    __m128 a5 = _mm_set_ps1(result[5]);
-    __m128 a6 = _mm_set_ps1(result[6]);
-    __m128 a7 = _mm_set_ps1(result[7]);
-
-    __m128 a8 = _mm_set_ps1(result[8]);
-    __m128 a9 = _mm_set_ps1(result[9]);
-    __m128 a10 = _mm_set_ps1(result[10]);
-    __m128 a11 = _mm_set_ps1(result[11]);
-
-    __m128 a12 = _mm_set_ps1(result[12]);
-    __m128 a13 = _mm_set_ps1(result[13]);
-    __m128 a14 = _mm_set_ps1(result[14]);
-    __m128 a15 = _mm_set_ps1(result[15]);
-
     __m128 br0 = _mm_loadu_ps(inMats[i]);
     __m128 br1 = _mm_loadu_ps(inMats[i] + 4);
     __m128 br2 = _mm_loadu_ps(inMats[i] + 8);
     __m128 br3 = _mm_loadu_ps(inMats[i] + 12);
+
+    __m128 a0 = _mm_shuffle_ps(ar0, ar0, 0b00000000);
+    __m128 a1 = _mm_shuffle_ps(ar0, ar0, 0b01010101);
+    __m128 a2 = _mm_shuffle_ps(ar0, ar0, 0b10101010);
+    __m128 a3 = _mm_shuffle_ps(ar0, ar0, 0b11111111);
 
     __m128 result0 = _mm_mul_ps(a0, br0);
     __m128 result1 = _mm_mul_ps(a1, br1);
     __m128 result2 = _mm_mul_ps(a2, br2);
     __m128 result3 = _mm_mul_ps(a3, br3);
 
+    __m128 a4 = _mm_shuffle_ps(ar1, ar1, 0b00000000);
+    __m128 a5 = _mm_shuffle_ps(ar1, ar1, 0b01010101);
+    __m128 a6 = _mm_shuffle_ps(ar1, ar1, 0b10101010);
+    __m128 a7 = _mm_shuffle_ps(ar1, ar1, 0b11111111);
+
     __m128 result4 = _mm_mul_ps(a4, br0);
     __m128 result5 = _mm_mul_ps(a5, br1);
     __m128 result6 = _mm_mul_ps(a6, br2);
     __m128 result7 = _mm_mul_ps(a7, br3);
+
+    __m128 a8 = _mm_shuffle_ps(ar2, ar2, 0b00000000);
+    __m128 a9 = _mm_shuffle_ps(ar2, ar2, 0b01010101);
+    __m128 a10 = _mm_shuffle_ps(ar2, ar2, 0b10101010);
+    __m128 a11 = _mm_shuffle_ps(ar2, ar2, 0b11111111);
 
     __m128 result8 = _mm_mul_ps(a8, br0);
     __m128 result9 = _mm_mul_ps(a9, br1);
     __m128 result10 = _mm_mul_ps(a10, br2);
     __m128 result11 = _mm_mul_ps(a11, br3);
 
+    __m128 a12 = _mm_shuffle_ps(ar3, ar3, 0b00000000);
+    __m128 a13 = _mm_shuffle_ps(ar3, ar3, 0b01010101);
+    __m128 a14 = _mm_shuffle_ps(ar3, ar3, 0b10101010);
+    __m128 a15 = _mm_shuffle_ps(ar3, ar3, 0b11111111);
+
     __m128 result12 = _mm_mul_ps(a12, br0);
     __m128 result13 = _mm_mul_ps(a13, br1);
     __m128 result14 = _mm_mul_ps(a14, br2);
     __m128 result15 = _mm_mul_ps(a15, br3);
 
-    _mm_store_ps(result, _mm_add_ps(_mm_add_ps(_mm_add_ps(result0, result1), result2), result3));
-    _mm_store_ps(result + 4, _mm_add_ps(_mm_add_ps(_mm_add_ps(result4, result5), result6), result7));
-    _mm_store_ps(result + 8, _mm_add_ps(_mm_add_ps(_mm_add_ps(result8, result9), result10), result11));
-    _mm_store_ps(result + 12, _mm_add_ps(_mm_add_ps(_mm_add_ps(result12, result13), result14), result15));
+    ar0 = _mm_add_ps(_mm_add_ps(_mm_add_ps(result0, result1), result2), result3);
+    ar1 = _mm_add_ps(_mm_add_ps(_mm_add_ps(result4, result5), result6), result7);
+    ar2 = _mm_add_ps(_mm_add_ps(_mm_add_ps(result8, result9), result10), result11);
+    ar3 = _mm_add_ps(_mm_add_ps(_mm_add_ps(result12, result13), result14), result15);
   }
+
+  _mm_storeu_ps(result, ar0);
+  _mm_storeu_ps(result + 4, ar1);
+  _mm_storeu_ps(result + 8, ar2);
+  _mm_storeu_ps(result + 12, ar3);
 }
 
 void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {

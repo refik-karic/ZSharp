@@ -237,7 +237,6 @@ if(WIN32)
         /WX
         /Zi
         /diagnostics:caret
-        /jumptablerdata
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
         -mavx2
@@ -256,7 +255,6 @@ if(WIN32)
         /WX
         /Zi
         /diagnostics:caret
-        /jumptablerdata
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
         -mavx2
@@ -279,7 +277,6 @@ if(WIN32)
         /diagnostics:caret
         /Gw
 		/Gy
-        /jumptablerdata
         -flto
         -fvirtual-function-elimination
         -Wno-sign-compare

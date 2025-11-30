@@ -5,6 +5,7 @@
 #include "FrontEnd.h"
 #include "InputManager.h"
 #include "Mat4x4.h"
+#include "Player.h"
 #include "Quaternion.h"
 #include "Renderer.h"
 #include "Span.h"
@@ -21,13 +22,6 @@ void FreeGlobals();
 
 class GameInstance final {
   public:
-
-  enum class Direction {
-    LEFT,
-    RIGHT,
-    FORWARD,
-    BACK
-  };
 
   GameInstance();
   ~GameInstance();
@@ -51,7 +45,7 @@ class GameInstance final {
 
   private:
   FrontEnd* mFrontEnd = nullptr;
-  Camera* mCamera = nullptr;
+  Player* mPlayer = nullptr;
   World* mWorld = nullptr;
   Renderer* mRenderer = nullptr;
   ThreadPool* mThreadPool = nullptr;
@@ -87,29 +81,17 @@ class GameInstance final {
 
   void TickFrontEnd();
 
-  void MoveCamera(Direction direction);
-
-  void RotateCamera(const Quaternion& quat);
-
-  Vec3 ProjectClick(float x, float y);
-
   void ChangeSpeed(int64 amount);
-
-  void ResetCamera();
 
   void OnKeyDown(uint8 key);
 
-  void OnAsyncKeyDown(uint8 key);
-
   void OnMiscKeyDown(MiscKey key);
-
-  void OnMiscKeyUp(MiscKey key);
-
-  void OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y);
 
   void FastClearFrameBuffer(Span<uint8> data);
 
   void FastClearDepthBuffer(Span<uint8> data);
+
+  void ResetCamera();
 };
 
 }

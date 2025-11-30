@@ -70,6 +70,8 @@ void Unaligned_Vec4Homogenize(float* a);
 
 void Unaligned_Vec4HomogenizeToVec3(const float* __restrict a, float* __restrict b);
 
+void Unaligned_Mat4x4Scale(const float inMatrix[4][4], float outMatrix[4][4], float scalar);
+
 void Unaligned_Mat4x4Transpose(const float inMatrix[4][4], float outMatrix[4][4]);
 
 void Unaligned_Mat4x4Vec4Transform(const float matrix[4][4], const float* __restrict a, float* __restrict b);

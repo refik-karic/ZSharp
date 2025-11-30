@@ -44,12 +44,7 @@ const float* Mat4x4::operator*() const {
 
 Mat4x4 Mat4x4::operator*(float scalar) {
   Mat4x4 result;
-
-  result[0] = mData[0] * scalar;
-  result[1] = mData[1] * scalar;
-  result[2] = mData[2] * scalar;
-  result[3] = mData[3] * scalar;
-
+  Unaligned_Mat4x4Scale((const float(*)[4])mData, (float(*)[4])result.mData, scalar);
   return result;
 }
 
@@ -124,7 +119,6 @@ void Mat4x4::SetRotation(const Quaternion& quat) {
 }
 
 void Mat4x4::CombineImpl(Mat4x4& output, const Mat4x4** inArr, size_t size) {
-  memcpy(output.mData, inArr[0]->mData, sizeof(output.mData));
   Unaligned_Mat4x4Mul_Combine((const float**)inArr, size, (float*)(&output));
 }
 

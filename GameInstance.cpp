@@ -3,7 +3,6 @@
 #include "Bundle.h"
 #include "CommonMath.h"
 #include "Constants.h"
-#include "ConsoleVariable.h"
 #include "DebugText.h"
 #include "Logger.h"
 #include "PlatformTime.h"
@@ -20,18 +19,17 @@
 
 namespace ZSharp {
 ConsoleVariable<bool> DebugTransforms("DebugTransforms", true);
-ConsoleVariable<float> CameraSpeed("CameraSpeed", 1.f);
-ConsoleVariable<float> CameraRotation("CameraRotation", 5.f);
 ConsoleVariable<ZColor> ClearColor("ClearColor", ZColor(ZColors::ORANGE));
 
 GameInstance::GameInstance()
   : 
-    mFrontEnd(new FrontEnd()), mCamera(new Camera()), mWorld(new World()), mRenderer(new Renderer()), 
+    mFrontEnd(new FrontEnd()), mWorld(new World()), mRenderer(new Renderer()), 
     mThreadPool(new ThreadPool()), mExtraState(new ExtraState()), mDevConsole(new DevConsole()),
     mCameraReset(new ConsoleVariable<void>("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this))) {
   mExtraState->mPauseTransforms = false;
   mExtraState->mDrawStats = true;
   mExtraState->mVisualizeDepth = false;
+  mPlayer = new Player(mDevConsole);
 }
 
 GameInstance::~GameInstance() {
@@ -43,8 +41,8 @@ GameInstance::~GameInstance() {
     delete mFrontEnd;
   }
 
-  if (mCamera) {
-    delete mCamera;
+  if (mPlayer) {
+    delete mPlayer;
   }
 
   if (mWorld) {
@@ -69,10 +67,7 @@ GameInstance::~GameInstance() {
 
   InputManager* inputManager = GlobalInputManager;
   inputManager->OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
-  inputManager->OnAsyncKeyDownDelegate.Remove(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnAsyncKeyDown>(this));
   inputManager->OnMiscKeyDownDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
-  inputManager->OnMiscKeyUpDelegate.Remove(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
-  inputManager->OnMouseDragDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
 void GameInstance::LoadWorld() {
@@ -80,17 +75,14 @@ void GameInstance::LoadWorld() {
 
   mWorld->Load();
 
-  mCamera->Position() = {0.f, 5.f, 50.f};
+  mPlayer->Load();
   // Clip the model at the origin by moving the camera far away.
   // From there we can see how long the clipping pass takes for a given scene.
   //mCamera.Position() = {0.f, 0.f, 200.f};
 
   InputManager* inputManager = GlobalInputManager;
   inputManager->OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnKeyDown>(this));
-  inputManager->OnAsyncKeyDownDelegate.Add(Delegate<uint8>::FromMember<GameInstance, &GameInstance::OnAsyncKeyDown>(this));
   inputManager->OnMiscKeyDownDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyDown>(this));
-  inputManager->OnMiscKeyUpDelegate.Add(Delegate<MiscKey>::FromMember<GameInstance, &GameInstance::OnMiscKeyUp>(this));
-  inputManager->OnMouseDragDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<GameInstance, &GameInstance::OnMouseMove>(this));
 }
 
 void GameInstance::LoadFrontEnd() {
@@ -116,8 +108,8 @@ void GameInstance::TickWorld() {
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame: {0}\n", mExtraState->mFrameCount)));
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame Delta: {0}ms\n", frameDeltaMs)));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera: {0}\n", mCamera->Position().ToString())));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera View: {0}\n", mCamera->GetLook().ToString())));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera: {0}\n", mPlayer->Position().ToString())));
+  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera View: {0}\n", mPlayer->ViewCamera()->GetLook().ToString())));
 
   size_t numModels = mWorld->GetModels().Size();
   size_t numVerts = 0;
@@ -151,17 +143,18 @@ void GameInstance::TickWorld() {
     }
   }
 
-  mCamera->Tick();
+  mPlayer->Tick();
 
   size_t physicsTickTime = Clamp(frameDeltaMs, (size_t)0, FRAMERATE_60HZ_MS);
 
   size_t startPhysics = PlatformHighResClockDeltaUs(mExtraState->mLastFrameTime);
+  // TODO: Take into account player when calculating physics.
   mWorld->TickPhysics(physicsTickTime);
   size_t endPhysics = PlatformHighResClockDeltaUs(mExtraState->mLastFrameTime);
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics)));
 
-  mRenderer->RenderNextFrame(*mWorld, *mCamera);
+  mRenderer->RenderNextFrame(*mWorld, *mPlayer->ViewCamera());
 
   size_t remainingTriangles = 0;
   for (IndexBuffer& indexBuffer : mWorld->GetIndexBuffers()) {
@@ -229,37 +222,6 @@ void GameInstance::TickFrontEnd() {
   mFrontEnd->Draw(buffer, width, height);
 }
 
-void GameInstance::MoveCamera(Direction direction) {
-  Vec3 cameraLook(mCamera->GetLook());
-
-  cameraLook *= (*CameraSpeed);
-
-  switch (direction) {
-  case Direction::FORWARD:
-    mCamera->Position() += cameraLook;
-    break;
-  case Direction::BACK:
-    mCamera->Position() -= cameraLook;
-    break;
-  case Direction::LEFT:
-  {
-    Vec3 sideVec(mCamera->GetUp().Cross(cameraLook));
-    mCamera->Position() += sideVec;
-  }
-  break;
-  case Direction::RIGHT:
-  {
-    Vec3 sideVec(mCamera->GetUp().Cross(cameraLook));
-    mCamera->Position() -= sideVec;
-  }
-  break;
-  }
-}
-
-void GameInstance::RotateCamera(const Quaternion& quat) {
-  mCamera->RotateCamera(quat);
-}
-
 void GameInstance::ChangeSpeed(int64 amount) {
   if (mExtraState->mRotationSpeed + amount > 10) {
     mExtraState->mRotationSpeed = 10;
@@ -274,8 +236,7 @@ void GameInstance::ChangeSpeed(int64 amount) {
 
 void GameInstance::ResetCamera() {
   if (!mFrontEnd->IsVisible() && mWorld->IsLoaded()) {
-    mCamera->ResetOrientation();
-    mCamera->Position() = { 0.f, 5.f, 50.f };
+    mPlayer->ResetCamera();
   }
 }
 
@@ -377,73 +338,6 @@ void GameInstance::OnKeyDown(uint8 key) {
   }
 }
 
-void GameInstance::OnAsyncKeyDown(uint8 key) {
-  if (mDevConsole->IsOpen()) {
-    return;
-  }
-
-  InputManager* input = GlobalInputManager;
-
-  switch (key) {
-    case 'w':
-    {
-      if (input->GetKeyState('a') == InputManager::KeyState::Down) {
-        MoveCamera(GameInstance::Direction::LEFT);
-      }
-      else if (input->GetKeyState('d') == InputManager::KeyState::Down) {
-        MoveCamera(GameInstance::Direction::RIGHT);
-      }
-
-      MoveCamera(GameInstance::Direction::FORWARD);
-    }
-    break;
-    case 's':
-    {
-      if (input->GetKeyState('a') == InputManager::KeyState::Down) {
-        MoveCamera(GameInstance::Direction::LEFT);
-      }
-      else if (input->GetKeyState('d') == InputManager::KeyState::Down) {
-        MoveCamera(GameInstance::Direction::RIGHT);
-      }
-
-      MoveCamera(GameInstance::Direction::BACK);
-    }
-    break;
-    case 'a':
-    {
-      if (input->GetKeyState('w') == InputManager::KeyState::Down) {
-        MoveCamera(GameInstance::Direction::FORWARD);
-      }
-      else if (input->GetKeyState('s') == InputManager::KeyState::Down) {
-        MoveCamera(GameInstance::Direction::BACK);
-      }
-
-      MoveCamera(GameInstance::Direction::LEFT);
-    }
-    break;
-    case 'd':
-    {
-      if (input->GetKeyState('w') == InputManager::KeyState::Down) {
-        MoveCamera(GameInstance::Direction::FORWARD);
-      }
-      else if (input->GetKeyState('s') == InputManager::KeyState::Down) {
-        MoveCamera(GameInstance::Direction::BACK);
-      }
-
-      MoveCamera(GameInstance::Direction::RIGHT);
-    }
-    break;
-    case 'q':
-      RotateCamera(Quaternion(DegreesToRadians(1.f), { 0.f, 1.f, 0.f }));
-      break;
-    case 'e':
-      RotateCamera(Quaternion(DegreesToRadians(-1.f), { 0.f, 1.f, 0.f }));
-      break;
-    default:
-      break;
-  }
-}
-
 void GameInstance::OnMiscKeyDown(MiscKey key) {
   if (mDevConsole->IsOpen()) {
     return;
@@ -461,20 +355,6 @@ void GameInstance::OnMiscKeyDown(MiscKey key) {
   }
 }
 
-void GameInstance::OnMiscKeyUp(MiscKey key) {
-  (void)key;
-}
-
-void GameInstance::OnMouseMove(int32 oldX, int32 oldY, int32 x, int32 y) {
-  const Vec3 V1(ProjectClick((float)oldX, (float)oldY));
-  const Vec3 V2(ProjectClick((float)x, (float)y));
-
-  const Vec3 normal(V1.Cross(V2));
-  float theta = V1 * V2;
-  const Quaternion quat(theta, normal);
-  RotateCamera(quat);
-}
-
 void GameInstance::FastClearFrameBuffer(Span<uint8> data) {
   Framebuffer& frameBuffer = mRenderer->GetFrameBuffer();
   const size_t chunkSize = 4;
@@ -489,28 +369,6 @@ void GameInstance::FastClearDepthBuffer(Span<uint8> data) {
   size_t length = data.Size();
   const size_t chunkSize = 4;
   depthBuffer.Clear(start * chunkSize, length * chunkSize);
-}
-
-Vec3 GameInstance::ProjectClick(float x, float y) {
-  const ZConfig* config = GlobalConfig;
-  float width = (float)config->GetViewportWidth().Value();
-  float height = (float)config->GetViewportHeight().Value();
-
-  float radius = width * (*CameraRotation);
-
-  float newX = ((x - (width / 2.f)) / radius);
-  float newY = ((y - (height / 2.f)) / radius);
-
-  // Note that we flip the X axis so that left/right rotation looks natural.
-
-  float r = (newX * newX) + (newY * newY);
-  if (r > 1.f) {
-    float s = 1.f / sqrtf(r);
-    return { -newX * s, newY * s, 0.f };
-  }
-  else {
-    return { -newX, newY, sqrtf(1.f - r) };
-  }
 }
 
 void InitializeGlobals() {

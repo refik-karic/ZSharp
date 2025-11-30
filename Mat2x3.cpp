@@ -36,6 +36,12 @@ Mat2x3 Mat2x3::operator*(float scalar) const {
   return result;
 }
 
+Mat2x3& Mat2x3::operator*=(float scalar) {
+  mData[0] *= scalar;
+  mData[1] *= scalar;
+  return *this;
+}
+
 void Mat2x3::Identity() {
   Clear();
   mData[0][0] = 1.f;

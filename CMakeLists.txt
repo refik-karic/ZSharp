@@ -59,6 +59,7 @@ set(ZSharp_Header_Files
     PlatformMemory.h
     PlatformTime.h
     PlatformThread.h
+    Player.h
     PNG.h
     Quaternion.h
     Random.h
@@ -132,6 +133,7 @@ set(ZSharp_Source_Files
     OBJFile.cpp
     PhysicsAlgorithms.cpp
     PhysicsObject.cpp
+    Player.cpp
     PNG.cpp
     Quaternion.cpp
     Random.cpp

@@ -50,7 +50,8 @@ void Camera::RotateCamera(const Quaternion& quat) {
 
   mLook = rotationMatrix * Vec4(mLook);
 
-#if ROTATE_CAMERA_WORLD_CENTER
+//#if ROTATE_CAMERA_WORLD_CENTER
+#if 0
   mPosition = rotationMatrix * Vec4(mPosition);
 #endif
 
@@ -217,7 +218,7 @@ void Camera::OnResize(size_t width, size_t height) {
   mWindowTransform[0][2] = (float)width;
   mWindowTransform[1][1] = (float)height;
   mWindowTransform[1][2] = (float)height;
-  mWindowTransform = mWindowTransform * 0.5f;
+  mWindowTransform *= 0.5f;
   mWidth = (float)width;
   mHeight = (float)height;
 }

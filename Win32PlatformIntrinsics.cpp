@@ -287,6 +287,14 @@ void Unaligned_Vec4HomogenizeToVec3(const float* __restrict a, float* __restrict
   _mm_store_ss(b + 2, _mm_div_ss(z, w));
 }
 
+void Unaligned_Mat4x4Scale(const float inMatrix[4][4], float outMatrix[4][4], float scalar) {
+  __m128 scaleVec = _mm_set_ps1(scalar);
+  _mm_storeu_ps(outMatrix[0], _mm_mul_ps(_mm_loadu_ps(inMatrix[0]), scaleVec));
+  _mm_storeu_ps(outMatrix[1], _mm_mul_ps(_mm_loadu_ps(inMatrix[1]), scaleVec));
+  _mm_storeu_ps(outMatrix[2], _mm_mul_ps(_mm_loadu_ps(inMatrix[2]), scaleVec));
+  _mm_storeu_ps(outMatrix[3], _mm_mul_ps(_mm_loadu_ps(inMatrix[3]), scaleVec));
+}
+
 void Unaligned_Mat4x4Transpose(const float inMatrix[4][4], float outMatrix[4][4]) {
   __m128 r0 = _mm_loadu_ps(inMatrix[0]);
   __m128 r1 = _mm_loadu_ps(inMatrix[1]);
@@ -506,10 +514,10 @@ void Unaligned_Mat4x4MulInPlace(float* a, const float* b) {
 }
 
 void Unaligned_Mat4x4Mul_Combine(const float** inMats, size_t size, float* result) {
-  __m128 ar0 = _mm_loadu_ps(result);
-  __m128 ar1 = _mm_loadu_ps(result + 4);
-  __m128 ar2 = _mm_loadu_ps(result + 8);
-  __m128 ar3 = _mm_loadu_ps(result + 12);
+  __m128 ar0 = _mm_loadu_ps(inMats[0]);
+  __m128 ar1 = _mm_loadu_ps(inMats[0] + 4);
+  __m128 ar2 = _mm_loadu_ps(inMats[0] + 8);
+  __m128 ar3 = _mm_loadu_ps(inMats[0] + 12);
 
   for (size_t i = 1; i < size; ++i) {
     __m128 br0 = _mm_loadu_ps(inMats[i]);

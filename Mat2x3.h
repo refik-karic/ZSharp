@@ -9,12 +9,6 @@ namespace ZSharp {
 class Mat2x3 final {
   public:
 
-  enum class Axis {
-    X,
-    Y,
-    Z
-  };
-
   Mat2x3();
 
   Mat2x3(const Mat2x3& copy);
@@ -26,6 +20,8 @@ class Mat2x3 final {
   const Vec3& operator[](size_t index) const;
 
   Mat2x3 operator*(float scalar) const;
+
+  Mat2x3& operator*=(float scalar);
 
   void Identity();
 

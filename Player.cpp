@@ -1,9 +1,13 @@
 #include "Player.h"
 
+#include "CommonMath.h"
 #include "ConsoleVariable.h"
 #include "Delegate.h"
 #include "InputManager.h"
 #include "ZConfig.h"
+
+#include <cmath>
+#include <cstring>
 
 namespace ZSharp {
 
@@ -11,7 +15,12 @@ ConsoleVariable<float> CameraSpeed("CameraSpeed", 1.f);
 ConsoleVariable<float> CameraRotation("CameraRotation", 5.f);
 
 Player::Player(DevConsole* devConsole) : mCamera(new Camera()), mDevConsole(devConsole) {
+  // TODO: Need to find a good way to decide on the bounding box for the player.
+  const float min[3] = { -5.f, -5.f, -5.f };
+  const float max[3] = { 5.f, 5.f, 5.f };
+  mBoundingBox = AABB(min, max);
 
+  memset(&mState, 0, sizeof(mState));
 }
 
 Player::~Player() {
@@ -20,19 +29,37 @@ Player::~Player() {
   }
 
   InputManager* inputManager = GlobalInputManager;
+  inputManager->OnKeyDownDelegate.Remove(Delegate<uint8>::FromMember<Player, &Player::OnKeyDown>(this));
   inputManager->OnAsyncKeyDownDelegate.Remove(Delegate<uint8>::FromMember<Player, &Player::OnAsyncKeyDown>(this));
   inputManager->OnMouseDragDelegate.Remove(Delegate<int32, int32, int32, int32>::FromMember<Player, &Player::OnMouseMove>(this));
 }
 
 void Player::Load() {
-  mPosition = { 0.f, 5.f, 50.f };
+  mPosition = { 0.f, 15.f, 50.f };
 
   InputManager* inputManager = GlobalInputManager;
+  inputManager->OnKeyDownDelegate.Add(Delegate<uint8>::FromMember<Player, &Player::OnKeyDown>(this));
   inputManager->OnAsyncKeyDownDelegate.Add(Delegate<uint8>::FromMember<Player, &Player::OnAsyncKeyDown>(this));
   inputManager->OnMouseDragDelegate.Add(Delegate<int32, int32, int32, int32>::FromMember<Player, &Player::OnMouseMove>(this));
 }
 
 void Player::Tick() {
+  // TODO: Just hacking some stuff together quickly.
+  // What actually needs to happen is that player velocity needs to go up in the Y axis and then gradually slowed back down via gravity.
+  // We also need some fast reliable way to tell if we're at rest on a surface.
+  if (mState.jumping) {
+    if (!mState.airborne) {
+      mPosition[1] = 15.f;
+      mState.airborne = true;
+    }
+    else {
+      if (FloatLessThanEqual(mPosition[1], 10.f)) {
+        mState.airborne = false;
+        mState.jumping = false;
+      }
+    }
+  }
+
   mCamera->Position() = mPosition;
   mCamera->Tick();
 }
@@ -42,6 +69,7 @@ void Player::MoveCamera(Direction direction) {
 
   cameraLook *= (*CameraSpeed);
 
+  // TODO: Figure out a good way to make physics velocity play nice with camera position/movement.
   switch (direction) {
   case Direction::FORWARD:
     mPosition += cameraLook;
@@ -92,7 +120,6 @@ Vec3 Player::ProjectClick(float x, float y) {
 
 void Player::ResetCamera() {
   mCamera->ResetOrientation();
-  mPosition = { 0.f, 5.f, 50.f };
 }
 
 Vec3& Player::Position() {
@@ -101,6 +128,20 @@ Vec3& Player::Position() {
 
 Camera* Player::ViewCamera() {
   return mCamera;
+}
+
+void Player::OnKeyDown(uint8 key) {
+  if (mDevConsole->IsOpen()) {
+    return;
+  }
+
+  switch (key) {
+  case ' ':
+  {
+    mState.jumping = true;
+  }
+    break;
+  }
 }
 
 void Player::OnAsyncKeyDown(uint8 key) {

@@ -9,6 +9,7 @@
 #include "ShaderDefinition.h"
 #include "VertexBuffer.h"
 #include "PlatformAudio.h"
+#include "Player.h"
 #include "MP3.h"
 
 namespace ZSharp {
@@ -20,6 +21,8 @@ class World final {
   ~World();
 
   bool IsLoaded();
+
+  void AssignPlayer(Player* player);
 
   void Load();
 
@@ -40,6 +43,7 @@ class World final {
   private:
   bool mLoaded = false;
 
+  Player* mPlayer;
   Array<Model> mActiveModels;
   Array<VertexBuffer> mVertexBuffers;
   Array<IndexBuffer> mIndexBuffers;

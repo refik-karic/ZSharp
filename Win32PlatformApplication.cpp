@@ -365,12 +365,7 @@ void Win32PlatformApplication::OnKeyDown(ZSharp::uint8 key) {
   switch (key) {
   case VK_SPACE:
   {
-    if (!mGameInstance->IsDevConsoleOpen()) {
-       mFlags.mPaused = !mFlags.mPaused;
-    }
-    else {
-      inputManager->Update(key, ZSharp::InputManager::KeyState::Down);
-    }
+    inputManager->Update(key, ZSharp::InputManager::KeyState::Down);
   }
     break;
   case VK_ESCAPE:

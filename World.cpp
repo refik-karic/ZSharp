@@ -40,8 +40,16 @@ bool World::IsLoaded() {
   return mLoaded;
 }
 
+void World::AssignPlayer(Player* player) {
+  mPlayer = player;
+}
+
 void World::Load() {
   mLoaded = true;
+
+  if (mPlayer) {
+    mDynamicObjects.PushBack(mPlayer);
+  }
 
   if (*DebugAudio) {
     FileString audioPath(PlatformGetUserDesktopPath());

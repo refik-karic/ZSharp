@@ -73,9 +73,11 @@ GameInstance::~GameInstance() {
 void GameInstance::LoadWorld() {
   NamedScopedTimer(WorldLoad);
 
+  mWorld->AssignPlayer(mPlayer);
+  mPlayer->Load();
+
   mWorld->Load();
 
-  mPlayer->Load();
   // Clip the model at the origin by moving the camera far away.
   // From there we can see how long the clipping pass takes for a given scene.
   //mCamera.Position() = {0.f, 0.f, 200.f};
@@ -143,16 +145,15 @@ void GameInstance::TickWorld() {
     }
   }
 
-  mPlayer->Tick();
-
   size_t physicsTickTime = Clamp(frameDeltaMs, (size_t)0, FRAMERATE_60HZ_MS);
 
   size_t startPhysics = PlatformHighResClockDeltaUs(mExtraState->mLastFrameTime);
-  // TODO: Take into account player when calculating physics.
   mWorld->TickPhysics(physicsTickTime);
   size_t endPhysics = PlatformHighResClockDeltaUs(mExtraState->mLastFrameTime);
 
   Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics)));
+
+  mPlayer->Tick();
 
   mRenderer->RenderNextFrame(*mWorld, *mPlayer->ViewCamera());
 

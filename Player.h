@@ -1,14 +1,14 @@
 #pragma once
 
 #include "ZBaseTypes.h"
-#include "AABB.h"
 #include "Camera.h"
 #include "DevConsole.h"
+#include "PhysicsObject.h"
 #include "Vec3.h"
 
 namespace ZSharp {
 
-class Player final {
+class Player final : public PhysicsObject {
 	public:
 
 	Player(DevConsole* devConsole);
@@ -38,10 +38,15 @@ class Player final {
 	Camera* ViewCamera();
 
 	private:
-	AABB mBounds;
-	Vec3 mPosition;
 	Camera* mCamera = nullptr;
 	DevConsole* mDevConsole = nullptr;
+
+	struct PlayerState {
+		bool jumping : 1;
+		bool airborne : 1;
+	} mState;
+
+	void OnKeyDown(uint8 key);
 
 	void OnAsyncKeyDown(uint8 key);
 

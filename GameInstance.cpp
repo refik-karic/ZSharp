@@ -41,12 +41,12 @@ GameInstance::~GameInstance() {
     delete mFrontEnd;
   }
 
-  if (mPlayer) {
-    delete mPlayer;
-  }
-
   if (mWorld) {
     delete mWorld;
+  }
+
+  if (mPlayer) {
+    delete mPlayer;
   }
 
   if (mRenderer) {

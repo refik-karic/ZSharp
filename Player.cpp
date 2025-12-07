@@ -61,6 +61,7 @@ void Player::Tick() {
   }
 
   mCamera->Position() = mPosition;
+  mCamera->RotateCamera(mRotation);
   mCamera->Tick();
 }
 
@@ -93,7 +94,7 @@ void Player::MoveCamera(Direction direction) {
 }
 
 void Player::RotateCamera(const Quaternion& quat) {
-  mCamera->RotateCamera(quat);
+  mRotation = quat;
 }
 
 Vec3 Player::ProjectClick(float x, float y) {

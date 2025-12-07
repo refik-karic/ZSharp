@@ -39,6 +39,11 @@ Quaternion Quaternion::operator+(const Quaternion& rhs) const {
   return result;
 }
 
+Quaternion& Quaternion::operator+=(const Quaternion& rhs) {
+  mAngles += rhs.mAngles;
+  return *this;
+}
+
 Quaternion Quaternion::operator-(const Quaternion& rhs) const {
   Quaternion result(mAngles - rhs.mAngles);
   return result;

@@ -19,7 +19,7 @@ ConsoleVariable<bool> PhysicsForcesEnabled("PhysicsForcesEnabled", true);
 
 ConsoleVariable<bool> DebugModelsRGB("DebugModelsRGB", false);
 ConsoleVariable<bool> DebugAudio("DebugAudio", false);
-ConsoleVariable<bool> DebugTriangle("DebugTriangle", false);
+ConsoleVariable<bool> DebugTriangle("DebugTriangle", true);
 ConsoleVariable<bool> DebugTriangleTex("DebugTriangleTex", false);
 
 World::World() 
@@ -74,6 +74,11 @@ void World::Load() {
 
     ShaderDefinition shader(4, 4, ShadingMethod::RGB);
     DebugLoadTriangle(v3, v2, v1, shader, 8);
+
+    *PhysicsForcesEnabled = false;
+    if (mPlayer) {
+      mPlayer->Position() = {0.f, 0.f, 50.f};
+    }
   }
   else if (*DebugTriangleTex) {
     const float X = 5.f;
@@ -86,6 +91,11 @@ void World::Load() {
 
     ShaderDefinition shader(4, 4, ShadingMethod::UV);
     DebugLoadTriangle(v3, v2, v1, shader, 8);
+
+    *PhysicsForcesEnabled = false;
+    if (mPlayer) {
+      mPlayer->Position() = { 0.f, 0.f, 50.f };
+    }
   }
   else {
     ZConfig* config = GlobalConfig;

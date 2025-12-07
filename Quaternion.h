@@ -34,6 +34,8 @@ class Quaternion final {
 
   Quaternion operator+(const Quaternion& rhs) const;
 
+  Quaternion& operator+=(const Quaternion& rhs);
+
   Quaternion operator-(const Quaternion& rhs) const;
 
   Quaternion operator*(const Quaternion& rhs) const;

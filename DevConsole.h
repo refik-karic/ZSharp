@@ -47,4 +47,6 @@ class DevConsole final {
   void UpdateSuggestions();
 };
 
+extern DevConsole* GlobalConsole;
+
 }

@@ -4,6 +4,7 @@
 #include "CommonMath.h"
 #include "Constants.h"
 #include "DebugText.h"
+#include "DevConsole.h"
 #include "Logger.h"
 #include "PlatformTime.h"
 #include "PlatformMemory.h"
@@ -16,6 +17,7 @@
 #include "PlatformIntrinsics.h"
 
 #include <cmath>
+#include <cstring>
 
 namespace ZSharp {
 ConsoleVariable<bool> DebugTransforms("DebugTransforms", true);
@@ -24,12 +26,12 @@ ConsoleVariable<ZColor> ClearColor("ClearColor", ZColor(ZColors::ORANGE));
 GameInstance::GameInstance()
   : 
     mFrontEnd(new FrontEnd()), mWorld(new World()), mRenderer(new Renderer()), 
-    mThreadPool(new ThreadPool()), mExtraState(new ExtraState()), mDevConsole(new DevConsole()),
+    mThreadPool(new ThreadPool()), mExtraState(new ExtraState()),
     mCameraReset(new ConsoleVariable<void>("CameraReset", Delegate<void>::FromMember<GameInstance, &GameInstance::ResetCamera>(this))) {
   mExtraState->mPauseTransforms = false;
   mExtraState->mDrawStats = true;
   mExtraState->mVisualizeDepth = false;
-  mPlayer = new Player(mDevConsole);
+  mPlayer = new Player();
 }
 
 GameInstance::~GameInstance() {
@@ -51,10 +53,6 @@ GameInstance::~GameInstance() {
 
   if (mRenderer) {
     delete mRenderer;
-  }
-
-  if (mDevConsole) {
-    delete mDevConsole;
   }
 
   if (mThreadPool) {
@@ -192,9 +190,9 @@ void GameInstance::TickWorld() {
     }
   }
 
-  if (mDevConsole->IsOpen()) {
+  if (GlobalConsole && GlobalConsole->IsOpen()) {
     uint8* buffer = mExtraState->mVisualizeDepth ? mRenderer->GetDepth() : mRenderer->GetFrameBuffer().GetBuffer();
-    mDevConsole->Draw((uint32*)buffer);
+    GlobalConsole->Draw((uint32*)buffer);
   }
 }
 
@@ -291,10 +289,6 @@ uint8* GameInstance::GetCurrentFrame() {
   }
 }
 
-bool GameInstance::IsDevConsoleOpen() const {
-  return mDevConsole->IsOpen();
-}
-
 void GameInstance::RunBackgroundJobs() {
   if (!mWorld->IsLoaded()) {
     return;
@@ -314,10 +308,6 @@ void GameInstance::WaitForBackgroundJobs() {
 }
 
 void GameInstance::OnKeyDown(uint8 key) {
-  if (mDevConsole->IsOpen()) {
-    return;
-  }
-
   switch (key) {
   case 'p':
     PauseTransforms();
@@ -340,10 +330,6 @@ void GameInstance::OnKeyDown(uint8 key) {
 }
 
 void GameInstance::OnMiscKeyDown(MiscKey key) {
-  if (mDevConsole->IsOpen()) {
-    return;
-  }
-
   switch (key) {
     case MiscKey::UP_ARROW:
       ChangeSpeed(1);
@@ -407,9 +393,17 @@ void InitializeGlobals() {
   else {
     ZAssert(false);
   }
+
+  if (strcmp(BUILD_TYPE, "Release")) {
+    GlobalConsole = new DevConsole();
+  }
 }
 
 void FreeGlobals() {
+  if (GlobalConsole) {
+    delete GlobalConsole;
+  }
+  
   if (GlobalTexturePool) {
     delete GlobalTexturePool;
   }

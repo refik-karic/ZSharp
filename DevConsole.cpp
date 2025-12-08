@@ -5,7 +5,6 @@
 #include "Delegate.h"
 #include "PlatformMemory.h"
 #include "PlatformIntrinsics.h"
-#include "PlatformMisc.h"
 #include "ZConfig.h"
 #include "ZColor.h"
 #include "PlatformApplication.h"
@@ -15,11 +14,9 @@
 
 namespace ZSharp {
 
-DevConsole::DevConsole() : mHistoryPos(mHistory.rend()) {
-  if (PlatformGetBuildType() == "Release") {
-    return;
-  }
+DevConsole* GlobalConsole = nullptr;
 
+DevConsole::DevConsole() : mHistoryPos(mHistory.rend()) {
   mActiveBuffer = (int8*)PlatformMalloc(512);
 
   InputManager* inputManager = GlobalInputManager;
@@ -35,10 +32,6 @@ DevConsole::DevConsole() : mHistoryPos(mHistory.rend()) {
 }
 
 DevConsole::~DevConsole() {
-  if (PlatformGetBuildType() == "Release") {
-    return;
-  }
-
   if (mActiveBuffer != nullptr) {
     PlatformFree(mActiveBuffer);
   }

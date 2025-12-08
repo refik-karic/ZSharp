@@ -19,7 +19,7 @@ ConsoleVariable<bool> PhysicsForcesEnabled("PhysicsForcesEnabled", true);
 
 ConsoleVariable<bool> DebugModelsRGB("DebugModelsRGB", false);
 ConsoleVariable<bool> DebugAudio("DebugAudio", false);
-ConsoleVariable<bool> DebugTriangle("DebugTriangle", true);
+ConsoleVariable<bool> DebugTriangle("DebugTriangle", false);
 ConsoleVariable<bool> DebugTriangleTex("DebugTriangleTex", false);
 
 World::World() 

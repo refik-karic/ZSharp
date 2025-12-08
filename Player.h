@@ -2,7 +2,6 @@
 
 #include "ZBaseTypes.h"
 #include "Camera.h"
-#include "DevConsole.h"
 #include "PhysicsObject.h"
 #include "Vec3.h"
 
@@ -11,7 +10,7 @@ namespace ZSharp {
 class Player final : public PhysicsObject {
 	public:
 
-	Player(DevConsole* devConsole);
+	Player();
 	~Player();
 
 	enum class Direction {
@@ -39,7 +38,6 @@ class Player final : public PhysicsObject {
 
 	private:
 	Camera* mCamera = nullptr;
-	DevConsole* mDevConsole = nullptr;
 
 	struct PlayerState {
 		bool jumping : 1;

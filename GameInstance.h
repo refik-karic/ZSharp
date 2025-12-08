@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Camera.h"
-#include "DevConsole.h"
 #include "FrontEnd.h"
 #include "InputManager.h"
 #include "Mat4x4.h"
@@ -37,8 +36,6 @@ class GameInstance final {
 
   uint8* GetCurrentFrame();
 
-  bool IsDevConsoleOpen() const;
-
   void RunBackgroundJobs();
 
   void WaitForBackgroundJobs();
@@ -66,8 +63,6 @@ class GameInstance final {
   };
 
   ExtraState* mExtraState = nullptr;
-
-  DevConsole* mDevConsole = nullptr;
 
   ConsoleVariable<void>* mCameraReset = nullptr;
 

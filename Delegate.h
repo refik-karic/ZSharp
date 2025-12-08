@@ -64,6 +64,10 @@ class Delegate final {
     return (mObjPtr != nullptr) ? (mClassSignature != nullptr) : (mFreeFunctionSignature != nullptr);
   }
 
+  bool IsBoundToObject(void* object) {
+    return mObjPtr == object;
+  }
+
   void Unbind() {
     mObjPtr = nullptr;
     mClassSignature = nullptr;
@@ -149,6 +153,10 @@ class Delegate<void> final {
     return (mObjPtr != nullptr) ? (mClassSignature != nullptr) : (mFreeFunctionSignature != nullptr);
   }
 
+  bool IsBoundToObject(void* object) {
+    return mObjPtr == object;
+  }
+
   void Unbind() {
     mObjPtr = nullptr;
     mClassSignature = nullptr;
@@ -212,6 +220,10 @@ class ResultDelegate final {
     return (mObjPtr != nullptr) ? (mClassSignature != nullptr) : (mFreeFunctionSignature != nullptr);
   }
 
+  bool IsBoundToObject(void* object) {
+    return mObjPtr == object;
+  }
+
   void Unbind() {
     mObjPtr = nullptr;
     mClassSignature = nullptr;
@@ -259,6 +271,14 @@ class BroadcastDelegate final {
   void Broadcast(Signature... args) {
     for (Delegate<Signature...>& delegate : mCallList) {
       delegate(args...);
+    }
+  }
+
+  void BroadcastToObject(Signature... args, void* object) {
+    for (Delegate<Signature...>& delegate : mCallList) {
+      if (delegate.IsBoundToObject(object)) {
+        delegate(args...);
+      }
     }
   }
 

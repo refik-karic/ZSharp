@@ -1,4 +1,6 @@
 #include "InputManager.h"
+
+#include "DevConsole.h"
 #include "PlatformApplication.h"
 
 namespace ZSharp {
@@ -35,41 +37,108 @@ void InputManager::UpdateMouseState(bool pressedDown) {
 }
 
 void InputManager::Process() {
-  for (uint8 i = 0; i < mKeyboard.Size(); ++i) {
-    switch (mKeyboard[i]) {
+  bool devConsolePriority = GlobalConsole && GlobalConsole->IsOpen();
+
+  if (devConsolePriority) {
+    for (uint8 i = 0; i < mKeyboard.Size(); ++i) {
+      switch (mKeyboard[i]) {
       case KeyState::Clear:
         break;
       case KeyState::Down:
+      {
+        OnKeyDownDelegate.BroadcastToObject(i, GlobalConsole);
+        OnAsyncKeyDownDelegate.BroadcastToObject(i, GlobalConsole);
+        mKeyboard[i] = KeyState::Stale;
+        break;
+      }
+      case KeyState::Up:
+      {
+        OnKeyUpDelegate.BroadcastToObject(i, GlobalConsole);
+        mKeyboard[i] = KeyState::Clear;
+        break;
+      }
+      case KeyState::Stale:
+      {
+        OnAsyncKeyDownDelegate.BroadcastToObject(i, GlobalConsole);
+        break;
+      }
+      }
+    }
+
+    for (uint8 i = 0; i < mMiscKeys.Size(); ++i) {
+      switch (mMiscKeys[i]) {
+      case KeyState::Clear:
+        break;
+      case KeyState::Down:
+      {
+        OnMiscKeyDownDelegate.BroadcastToObject(static_cast<MiscKey>(i), GlobalConsole);
+        OnAsyncMiscKeyDownDelegate.BroadcastToObject(static_cast<MiscKey>(i), GlobalConsole);
+        mMiscKeys[i] = KeyState::Stale;
+        break;
+      }
+      case KeyState::Up:
+      {
+        OnMiscKeyUpDelegate.BroadcastToObject(static_cast<MiscKey>(i), GlobalConsole);
+        mMiscKeys[i] = KeyState::Clear;
+        break;
+      }
+      case KeyState::Stale:
+      {
+        OnAsyncMiscKeyDownDelegate.BroadcastToObject(static_cast<MiscKey>(i), GlobalConsole);
+        break;
+      }
+      }
+    }
+  }
+  else {
+    for (uint8 i = 0; i < mKeyboard.Size(); ++i) {
+      switch (mKeyboard[i]) {
+      case KeyState::Clear:
+        break;
+      case KeyState::Down:
+      {
         OnKeyDownDelegate.Broadcast(i);
         OnAsyncKeyDownDelegate.Broadcast(i);
         mKeyboard[i] = KeyState::Stale;
         break;
+      }
       case KeyState::Up:
+      {
         OnKeyUpDelegate.Broadcast(i);
         mKeyboard[i] = KeyState::Clear;
         break;
+      }
       case KeyState::Stale:
+      {
         OnAsyncKeyDownDelegate.Broadcast(i);
         break;
+      }
+      }
     }
-  }
 
-  for (uint8 i = 0; i < mMiscKeys.Size(); ++i) {
-    switch (mMiscKeys[i]) {
+    for (uint8 i = 0; i < mMiscKeys.Size(); ++i) {
+      switch (mMiscKeys[i]) {
       case KeyState::Clear:
         break;
       case KeyState::Down:
+      {
         OnMiscKeyDownDelegate.Broadcast(static_cast<MiscKey>(i));
         OnAsyncMiscKeyDownDelegate.Broadcast(static_cast<MiscKey>(i));
         mMiscKeys[i] = KeyState::Stale;
         break;
+      }
       case KeyState::Up:
+      {
         OnMiscKeyUpDelegate.Broadcast(static_cast<MiscKey>(i));
         mMiscKeys[i] = KeyState::Clear;
         break;
+      }
       case KeyState::Stale:
+      {
         OnAsyncMiscKeyDownDelegate.Broadcast(static_cast<MiscKey>(i));
         break;
+      }
+      }
     }
   }
 

@@ -14,7 +14,7 @@ namespace ZSharp {
 ConsoleVariable<float> CameraSpeed("CameraSpeed", 1.f);
 ConsoleVariable<float> CameraRotation("CameraRotation", 5.f);
 
-Player::Player(DevConsole* devConsole) : mCamera(new Camera()), mDevConsole(devConsole) {
+Player::Player() : mCamera(new Camera()) {
   // TODO: Need to find a good way to decide on the bounding box for the player.
   const float min[3] = { -5.f, -5.f, -5.f };
   const float max[3] = { 5.f, 5.f, 5.f };
@@ -132,10 +132,6 @@ Camera* Player::ViewCamera() {
 }
 
 void Player::OnKeyDown(uint8 key) {
-  if (mDevConsole->IsOpen()) {
-    return;
-  }
-
   switch (key) {
   case ' ':
   {
@@ -146,10 +142,6 @@ void Player::OnKeyDown(uint8 key) {
 }
 
 void Player::OnAsyncKeyDown(uint8 key) {
-  if (mDevConsole->IsOpen()) {
-    return;
-  }
-
   InputManager* input = GlobalInputManager;
 
   switch (key) {

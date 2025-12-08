@@ -115,6 +115,11 @@ void World::Load() {
 
       ShaderDefinition shader(4, 4, ShadingMethod::RGB);
       DebugLoadTriangle(v3, v2, v1, shader, 8);
+
+      *PhysicsForcesEnabled = false;
+      if (mPlayer) {
+        mPlayer->Position() = { 0.f, 0.f, 50.f };
+      }
     }
   }
 }

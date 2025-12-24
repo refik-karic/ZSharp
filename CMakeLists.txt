@@ -308,6 +308,21 @@ if(WIN32)
         /diagnostics:caret
     )
 
+    # VS2026
+    if(${MSVC_VERSION} GREATER_EQUAL 1950)
+	    list(APPEND ZSharp_Compile_Options_MinSizeRel
+		    /jumptablerdata
+	    )
+
+	    list(APPEND ZSharp_Compile_Options_RelWithDebInfo
+		    /jumptablerdata
+	    )
+
+	    list(APPEND ZSharp_Compile_Options_Release
+		    /jumptablerdata
+	    )
+	endif()
+
     list(APPEND ZSharp_Compile_Options_MinSizeRel
         /O1
         /Ob1
@@ -321,7 +336,6 @@ if(WIN32)
         /WX
         /Zi
         /diagnostics:caret
-        /jumptablerdata
     )
 
     list(APPEND ZSharp_Compile_Options_RelWithDebInfo
@@ -337,7 +351,6 @@ if(WIN32)
         /WX
         /Zi
         /diagnostics:caret
-        /jumptablerdata
     )
 
     list(APPEND ZSharp_Compile_Options_Release
@@ -358,7 +371,6 @@ if(WIN32)
 		/Gw
 		/Gy
         /diagnostics:caret
-        /jumptablerdata
     )
   endif()
 

@@ -185,6 +185,11 @@ target_sources(ZSharp
         ${ZSharp_Source_Files}
 )
 
+set(CMAKE_CXX_FLAGS_DEBUG "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_MINSIZEREL "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "" CACHE STRING "" FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "" CACHE STRING "" FORCE)
+
 set(ZSharp_Compile_Options_Debug )
 
 set(ZSharp_Compile_Options_MinSizeRel )

@@ -12,12 +12,16 @@ const float GravityPerSecond = -1.0e-4f;
 const float IntervalEpsilon = 1.0e-4f;
 
 void CorrectOverlappingObjects(PhysicsObject& a, PhysicsObject& b) {
-  (void)b;
-
   // TODO: We need to apply a realistic counter force here.
   //  Depending on the mass and object properties, we need to handle elasticity.
-  const float hackyCounterForce = fabsf(a.Velocity()[1]) * 0.5f;
-  a.Velocity() = { 0.f, hackyCounterForce, 0.f };
+
+  // Apply counter force to A in case of dynamic A against static B.
+  // Apply counter force to both in the dynamic/dynamic case.
+  a.Velocity() = -(a.Velocity() * 0.5f);
+
+  if (b.Tag() == PhysicsTag::Dynamic) {
+    b.Velocity() = -(b.Velocity() * 0.5f);
+  }
 }
 
 float MinDistanceForTime(PhysicsObject& a, PhysicsObject& b, float t) {
@@ -115,12 +119,46 @@ bool StaticContinuousTest(PhysicsObject& a, PhysicsObject& b, float t0, float t1
   }
 }
 
-bool DynamicDynamicIntersectionTest(PhysicsObject& a, PhysicsObject& b, float& timeOfImpact) {
-  (void)a;
-  (void)b;
-  (void)timeOfImpact;
+bool DynamicContinuousTest(PhysicsObject& a, PhysicsObject& b, float t0, float t1, float& timeOfImpact) {
+  /*
+    Perform a recursive binary search over the movement for the current timestep.
 
-  return false;
+    If the objects never reach each other for the timestep we can early out.
+    Otherwise, we check the first half of the space and then the second.
+    Eventually A will come very close to B but not actually collide with it.
+    At that point, we can use something like GJK to approximate an impact point and handle the collision.
+  */
+
+  float maxMoveA = MaxMovementForTime(a, t0, t1);
+
+  // NOTE: In a dynamic/dynamic case we must consider the other moving object.
+  float maxMoveB = MaxMovementForTime(b, t0, t1);
+
+  float maxMoveDistance = maxMoveA + maxMoveB;
+
+  float minDistanceStart = MinDistanceForTime(a, b, t0);
+  if (minDistanceStart > maxMoveDistance) {
+    return false;
+  }
+
+  float minDistanceEnd = MinDistanceForTime(a, b, t1);
+  if (minDistanceEnd > maxMoveDistance) {
+    return false;
+  }
+
+  if ((t1 - t0) < IntervalEpsilon) {
+    timeOfImpact = t0;
+    return true;
+  }
+
+  float midTime = (t0 + t1) * 0.5f;
+
+  if (DynamicContinuousTest(a, b, t0, midTime, timeOfImpact)) {
+    return true;
+  }
+  else {
+    return DynamicContinuousTest(a, b, midTime, t1, timeOfImpact);
+  }
 }
 
 bool GJKTestAABB(PhysicsObject& a, PhysicsObject& b, float t, Vec3 aPoints[8], Vec3 bPoints[8], size_t simplexIndices[8]) {

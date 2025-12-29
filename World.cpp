@@ -161,8 +161,8 @@ void World::TickPhysics(size_t deltaMs) {
   }
 
   for (PhysicsObject*& currentObject : mDynamicObjects) {
+    // Check for collision against static objects.
     for (PhysicsObject*& staticObject : mStaticObjects) {
-      // Check for collision against static objects.
       float t0 = 0.f;
       float t1 = 1.f;
       float timeOfImpact = 0.f;
@@ -177,16 +177,26 @@ void World::TickPhysics(size_t deltaMs) {
       }
     }
 
-#if 0
+    // Check for collision against dynamic objects.
     for (PhysicsObject*& dynamicObject : mDynamicObjects) {
-      // Check for collision against dynamic objects.
       if (currentObject == dynamicObject) {
         continue;
       }
 
+      // Check for collision against dynamic objects.
+      float t0 = 0.f;
+      float t1 = 1.f;
+      float timeOfImpact = 0.f;
 
+      if (DynamicContinuousTest(*currentObject, *dynamicObject, t0, t1, timeOfImpact)) {
+        //currentObject->OnCollisionStartDelegate(staticObject);
+        CorrectOverlappingObjects(*currentObject, *dynamicObject);
+        //currentObject->OnCollisionEndDelegate(staticObject);
+      }
+      else if (currentObject->TransformedAABB().Intersects(dynamicObject->TransformedAABB())) {
+        CorrectOverlappingObjects(*currentObject, *dynamicObject);
+      }
     }
-#endif
   }
 
   if (*PhysicsForcesEnabled) {

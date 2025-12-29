@@ -18,7 +18,7 @@ float MaxMovementForTime(PhysicsObject& object, float t0, float t1);
 
 bool StaticContinuousTest(PhysicsObject& a, PhysicsObject& b, float t0, float t1, float& timeOfImpact);
 
-bool DynamicDynamicIntersectionTest(PhysicsObject& a, PhysicsObject& b, float& timeOfImpact);
+bool DynamicContinuousTest(PhysicsObject& a, PhysicsObject& b, float t0, float t1, float& timeOfImpact);
 
 bool GJKTestAABB(PhysicsObject& a, PhysicsObject& b, float t, Vec3 aPoints[8], Vec3 bPoints[8], size_t simplexIndices[8]);
 

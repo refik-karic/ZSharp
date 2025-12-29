@@ -146,13 +146,13 @@ void World::Reload() {
 }
 
 void World::TickPhysics(size_t deltaMs) {
-  NamedScopedTimer(WorldTickPhysics);
-
-  Logger::Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
-
   if (!(*PhysicsEnabled)) {
     return;
   }
+
+  NamedScopedTimer(WorldTickPhysics);
+
+  Logger::Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
 
   // Update forces for all dynamic objects at the start of the time step.
   for (PhysicsObject*& currentObject : mDynamicObjects) {

@@ -11,7 +11,8 @@ namespace ZSharp {
 enum class PhysicsTag {
   Unbound,
   Dynamic,
-  Static
+  Static,
+  Player
 };
 
 class PhysicsObject : public WorldObject {

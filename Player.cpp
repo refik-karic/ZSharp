@@ -11,7 +11,7 @@
 
 namespace ZSharp {
 
-ConsoleVariable<float> CameraSpeed("CameraSpeed", 1.f);
+ConsoleVariable<float> CameraSpeed("CameraSpeed", 0.1f);
 ConsoleVariable<float> CameraRotation("CameraRotation", 5.f);
 
 Player::Player() : mCamera(new Camera()) {
@@ -21,6 +21,7 @@ Player::Player() : mCamera(new Camera()) {
   mBoundingBox = AABB(min, max);
 
   memset(&mState, 0, sizeof(mState));
+  mTag = PhysicsTag::Dynamic;
 }
 
 Player::~Player() {
@@ -73,21 +74,21 @@ void Player::MoveCamera(Direction direction) {
   // TODO: Figure out a good way to make physics velocity play nice with camera position/movement.
   switch (direction) {
   case Direction::FORWARD:
-    mPosition += cameraLook;
+    mVelocity += cameraLook;
     break;
   case Direction::BACK:
-    mPosition -= cameraLook;
+    mVelocity -= cameraLook;
     break;
   case Direction::LEFT:
   {
     Vec3 sideVec(mCamera->GetUp().Cross(cameraLook));
-    mPosition += sideVec;
+    mVelocity += sideVec;
   }
   break;
   case Direction::RIGHT:
   {
     Vec3 sideVec(mCamera->GetUp().Cross(cameraLook));
-    mPosition -= sideVec;
+    mVelocity -= sideVec;
   }
   break;
   }

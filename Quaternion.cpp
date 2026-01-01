@@ -90,6 +90,21 @@ Mat4x4 Quaternion::GetRotationMatrix() const {
   return result;
 }
 
+Mat4x4 Quaternion::GetScaledRotationMatrix(const Vec3& scale) const {
+  Mat4x4 result;
+  result[0][0] = scale[0] * (1.f - (2.f * (mAngles[QuatAxis::Y] * mAngles[QuatAxis::Y])) - (2.f * (mAngles[QuatAxis::Z] * mAngles[QuatAxis::Z])));
+  result[0][1] = (2.f * mAngles[QuatAxis::X] * mAngles[QuatAxis::Y]) - (2.f * mAngles[QuatAxis::W] * mAngles[QuatAxis::Z]);
+  result[0][2] = (2.f * mAngles[QuatAxis::X] * mAngles[QuatAxis::Z]) + (2.f * mAngles[QuatAxis::W] * mAngles[QuatAxis::Y]);
+  result[1][0] = (2.f * mAngles[QuatAxis::X] * mAngles[QuatAxis::Y]) + (2.f * mAngles[QuatAxis::W] * mAngles[QuatAxis::Z]);
+  result[1][1] = scale[1] * (1.f - (2.f * (mAngles[QuatAxis::X] * mAngles[QuatAxis::X])) - (2.f * (mAngles[QuatAxis::Z] * mAngles[QuatAxis::Z])));
+  result[1][2] = (2.f * mAngles[QuatAxis::Y] * mAngles[QuatAxis::Z]) - (2.f * mAngles[QuatAxis::W] * mAngles[QuatAxis::X]);
+  result[2][0] = (2.f * mAngles[QuatAxis::X] * mAngles[QuatAxis::Z]) - (2.f * mAngles[QuatAxis::W] * mAngles[QuatAxis::Y]);
+  result[2][1] = (2.f * mAngles[QuatAxis::Y] * mAngles[QuatAxis::Z]) + (2.f * mAngles[QuatAxis::W] * mAngles[QuatAxis::X]);
+  result[2][2] = scale[2] * (1.f - (2.f * (mAngles[QuatAxis::X] * mAngles[QuatAxis::X])) - (2.f * (mAngles[QuatAxis::Y] * mAngles[QuatAxis::Y])));
+  result[3][3] = 1.f;
+  return result;
+}
+
 const Vec4& Quaternion::Vector() {
   return mAngles;
 }

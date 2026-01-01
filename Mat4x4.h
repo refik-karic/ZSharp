@@ -18,6 +18,8 @@ class Mat4x4 final {
 
   Mat4x4(const Mat4x4& copy);
 
+  Mat4x4(const Vec3& scale, const Quaternion& rotation, const Vec3& translation);
+
   void operator=(const Mat4x4& matrix);
 
   Vec4& operator[](size_t index);

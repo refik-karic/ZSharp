@@ -18,6 +18,15 @@ Mat4x4::Mat4x4(const Mat4x4& copy)
   : mData{copy.mData[0], copy.mData[1], copy.mData[2], copy.mData[3]} {
 }
 
+Mat4x4::Mat4x4(const Vec3& scale, const Quaternion& rotation, const Vec3& translation) {
+  Mat4x4 scaledRotated(rotation.GetScaledRotationMatrix(scale));
+  memcpy(mData, scaledRotated.mData, sizeof(mData));
+
+  mData[0][3] = translation[0];
+  mData[1][3] = translation[1];
+  mData[2][3] = translation[2];
+}
+
 void Mat4x4::operator=(const Mat4x4& matrix) {
   if (this == &matrix) {
     return;

@@ -40,17 +40,11 @@ const Vec3& WorldObject::Translation() const {
 }
 
 Mat4x4 WorldObject::ObjectTransform() const {
-  Mat4x4 position, scale, translation;
-  position.Identity();
-  scale.Identity();
-  Mat4x4 rotation(mRotation.GetRotationMatrix());
-  translation.Identity();
-
-  position.SetTranslation(mPosition);
-  scale.SetScale(mScale);
-  translation.SetTranslation(mTranslation);
-
-  return Mat4x4::Combine(position, scale, rotation, translation);
+  Mat4x4 srt(mScale, mRotation, mTranslation);
+  Mat4x4 result;
+  result.Identity();
+  result.SetTranslation(mPosition);
+  return result * srt;
 }
 
 }

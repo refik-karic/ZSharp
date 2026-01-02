@@ -92,6 +92,10 @@ void Unaligned_Mat4x4MulInPlace(float* a, const float* b);
 
 void Unaligned_Mat4x4Mul_Combine(const float** inMats, size_t size, float* result);
 
+void Unaligned_QuaternionToMat4x4(const float quat[4], float outMatrix[4][4]);
+
+void Unaligned_QuaternionToMat4x4_Scaled(const float quat[4], float outMatrix[4][4], const float scale[3]);
+
 void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes);
 
 void Unaligned_BGRToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes);

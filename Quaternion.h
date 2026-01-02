@@ -44,6 +44,8 @@ class Quaternion final {
 
   Mat4x4 GetScaledRotationMatrix(const Vec3& scale) const;
 
+  void GetScaledRotationMatrix(const Vec3& scale, Mat4x4& mat) const;
+
   const Vec4& Vector();
 
   private:

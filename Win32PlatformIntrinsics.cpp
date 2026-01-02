@@ -577,6 +577,100 @@ void Unaligned_Mat4x4Mul_Combine(const float** inMats, size_t size, float* resul
   _mm_storeu_ps(result + 12, ar3);
 }
 
+void Unaligned_QuaternionToMat4x4(const float quat[4], float outMatrix[4][4]) {
+  __m128 one = _mm_set_ps(0.f, 1.f, 1.f, 1.f);
+  __m128 two = _mm_set_ps(0.f, 2.f, 2.f, 2.f);
+  __m128 q = _mm_loadu_ps(quat);
+  // NOTE: The order of operations matters! Precision loss can lead to invalid results!
+  // q -> WXYZ
+  // R0
+  __m128 r0t00 = _mm_shuffle_ps(q, q, 0b00010110); // _XXY
+  __m128 r0t01 = _mm_shuffle_ps(q, q, 0b00111010); // _ZYY
+  __m128 r0t10 = _mm_shuffle_ps(q, q, 0b00000011); // _WWZ
+  __m128 r0t11 = _mm_shuffle_ps(q, q, 0b00101111); // _YZZ
+
+  __m128 r0t0 = _mm_mul_ps(two, _mm_mul_ps(r0t00, r0t01));
+  __m128 r0t1 = _mm_mul_ps(two, _mm_mul_ps(r0t10, r0t11));
+
+  __m128 r0 = _mm_blend_ps(_mm_sub_ps(_mm_blend_ps(_mm_sub_ps(one, r0t0), r0t0, 0b1110), r0t1), _mm_add_ps(r0t0, r0t1), 0b1100);
+  _mm_storeu_ps(outMatrix[0], r0);
+  // Identity
+  _mm_storeu_ps(outMatrix[3], _mm_set_ps(1.f, 0.f, 0.f, 0.f));
+
+  // R1
+  __m128 r1t00 = _mm_shuffle_ps(q, q, 0b00100101); // _YXX
+  __m128 r1t01 = _mm_shuffle_ps(q, q, 0b00110110); // _ZXY
+  __m128 r1t10 = _mm_shuffle_ps(q, q, 0b00001100); // _WZW
+  __m128 r1t11 = _mm_shuffle_ps(q, q, 0b00011111); // _XZZ
+
+  __m128 r1t0 = _mm_mul_ps(two, _mm_mul_ps(r1t00, r1t01));
+  __m128 r1t1 = _mm_mul_ps(two, _mm_mul_ps(r1t10, r1t11));
+
+  __m128 r1 = _mm_blend_ps(_mm_sub_ps(_mm_blend_ps(_mm_sub_ps(one, r1t0), r1t0, 0b1101), r1t1), _mm_add_ps(r1t0, r1t1), 0b1001);
+  _mm_storeu_ps(outMatrix[1], r1);
+
+  // R2
+  __m128 r2t00 = _mm_shuffle_ps(q, q, 0b00011001); // _XYX
+  __m128 r2t01 = _mm_shuffle_ps(q, q, 0b00011111); // _XZZ
+  __m128 r2t10 = _mm_shuffle_ps(q, q, 0b00100000); // _YWW
+  __m128 r2t11 = _mm_shuffle_ps(q, q, 0b00100110); // _YXY
+
+  __m128 r2t0 = _mm_mul_ps(two, _mm_mul_ps(r2t00, r2t01));
+  __m128 r2t1 = _mm_mul_ps(two, _mm_mul_ps(r2t10, r2t11));
+
+  __m128 r2 = _mm_blend_ps(_mm_sub_ps(_mm_blend_ps(_mm_sub_ps(one, r2t0), r2t0, 0b1011), r2t1), _mm_add_ps(r2t0, r2t1), 0b1010);
+  _mm_storeu_ps(outMatrix[2], r2);
+}
+
+void Unaligned_QuaternionToMat4x4_Scaled(const float quat[4], float outMatrix[4][4], const float scale[3]) {
+  __m128 one = _mm_set_ps(0.f, 1.f, 1.f, 1.f);
+  __m128 two = _mm_set_ps(0.f, 2.f, 2.f, 2.f);
+  __m128 sVec = _mm_set_ps(0.f, scale[2], scale[1], scale[0]);
+  __m128 q = _mm_loadu_ps(quat);
+  // NOTE: The order of operations matters! Precision loss can lead to invalid results!
+  // q -> WXYZ
+  // R0
+  __m128 r0t00 = _mm_shuffle_ps(q, q, 0b00010110); // _XXY
+  __m128 r0t01 = _mm_shuffle_ps(q, q, 0b00111010); // _ZYY
+  __m128 r0t10 = _mm_shuffle_ps(q, q, 0b00000011); // _WWZ
+  __m128 r0t11 = _mm_shuffle_ps(q, q, 0b00101111); // _YZZ
+
+  __m128 r0t0 = _mm_mul_ps(two, _mm_mul_ps(r0t00, r0t01));
+  __m128 r0t1 = _mm_mul_ps(two, _mm_mul_ps(r0t10, r0t11));
+
+  __m128 r0 = _mm_blend_ps(_mm_sub_ps(_mm_blend_ps(_mm_sub_ps(one, r0t0), r0t0, 0b1110), r0t1), _mm_add_ps(r0t0, r0t1), 0b1100);
+  __m128 r0Scaled = _mm_blend_ps(_mm_mul_ps(sVec, r0), r0, 0b1110);
+  _mm_storeu_ps(outMatrix[0], r0Scaled);
+  // Identity
+  _mm_storeu_ps(outMatrix[3], _mm_set_ps(1.f, 0.f, 0.f, 0.f));
+
+  // R1
+  __m128 r1t00 = _mm_shuffle_ps(q, q, 0b00100101); // _YXX
+  __m128 r1t01 = _mm_shuffle_ps(q, q, 0b00110110); // _ZXY
+  __m128 r1t10 = _mm_shuffle_ps(q, q, 0b00001100); // _WZW
+  __m128 r1t11 = _mm_shuffle_ps(q, q, 0b00011111); // _XZZ
+
+  __m128 r1t0 = _mm_mul_ps(two, _mm_mul_ps(r1t00, r1t01));
+  __m128 r1t1 = _mm_mul_ps(two, _mm_mul_ps(r1t10, r1t11));
+
+  __m128 r1 = _mm_blend_ps(_mm_sub_ps(_mm_blend_ps(_mm_sub_ps(one, r1t0), r1t0, 0b1101), r1t1), _mm_add_ps(r1t0, r1t1), 0b1001);
+  __m128 r1Scaled = _mm_blend_ps(_mm_mul_ps(sVec, r1), r1, 0b1101);
+  _mm_storeu_ps(outMatrix[1], r1Scaled);
+
+  // R2
+  __m128 r2t00 = _mm_shuffle_ps(q, q, 0b00011001); // _XYX
+  __m128 r2t01 = _mm_shuffle_ps(q, q, 0b00011111); // _XZZ
+  __m128 r2t10 = _mm_shuffle_ps(q, q, 0b00100000); // _YWW
+  __m128 r2t11 = _mm_shuffle_ps(q, q, 0b00100110); // _YXY
+
+  __m128 r2t0 = _mm_mul_ps(two, _mm_mul_ps(r2t00, r2t01));
+  __m128 r2t1 = _mm_mul_ps(two, _mm_mul_ps(r2t10, r2t11));
+
+  __m128 r2 = _mm_blend_ps(_mm_sub_ps(_mm_blend_ps(_mm_sub_ps(one, r2t0), r2t0, 0b1011), r2t1), _mm_add_ps(r2t0, r2t1), 0b1010);
+  __m128 r2Scaled = _mm_blend_ps(_mm_mul_ps(sVec, r2), r2, 0b1011);
+  _mm_storeu_ps(outMatrix[2], r2Scaled);
+}
+
 void Unaligned_RGBXToBGRA(const uint8* rgb, uint8* rgba, size_t rgbBytes) {
   if (PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight)) {
     // [RGBX, RGBX, RGBX, RGBX, RGBX, RGBX, RGBX, RGBX] => [BGRA, BGRA, BGRA, BGRA, BGRA, BGRA, BGRA, BGRA]

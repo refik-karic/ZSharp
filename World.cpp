@@ -263,6 +263,7 @@ void World::LoadModels() {
           mStaticObjects.PushBack(&model);
           break;
         case PhysicsTag::Unbound:
+        case PhysicsTag::Player:
           Logger::Log(LogCategory::Info, String::FromFormat("Asset {0} will not be considered for physics.\n", asset.Name()));
           break;
       }

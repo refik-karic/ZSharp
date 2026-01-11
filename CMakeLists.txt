@@ -64,6 +64,7 @@ set(ZSharp_Header_Files
     Quaternion.h
     Random.h
     Renderer.h
+    RingBuffer.h
     ScopedTimer.h
     Serializer.h
     ShaderDefinition.h
@@ -198,18 +199,30 @@ set(ZSharp_Compile_Options_RelWithDebInfo )
 
 set(ZSharp_Compile_Options_Release )
 
-set(ZSharp_Preprocessor_Defines HW_PLATFORM_X86)
+set(ZSharp_Preprocessor_Defines_Debug HW_PLATFORM_X86)
+
+set(ZSharp_Preprocessor_Defines_Release HW_PLATFORM_X86)
 
 message("Generating with compiler ${CMAKE_CXX_COMPILER_ID}")
 
 if(WIN32)
-  list(APPEND ZSharp_Preprocessor_Defines 
+  set(ZSharp_Preprocessor_Common 
     PLATFORM_WINDOWS
     _CRT_SECURE_NO_WARNINGS
 	_HAS_EXCEPTIONS=0
     WIN32_LEAN_AND_MEAN
     PLATFORM_MAX_PATH=260
     BUILD_TYPE="${CMAKE_BUILD_TYPE}"
+  )
+
+  list(APPEND ZSharp_Preprocessor_Defines_Debug
+    _DEBUG
+    ${ZSharp_Preprocessor_Common}
+  )
+
+  list(APPEND ZSharp_Preprocessor_Defines_Release 
+    NDEBUG
+    ${ZSharp_Preprocessor_Common}
   )
 
   if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
@@ -374,9 +387,6 @@ if(WIN32)
     )
   endif()
 
-  target_compile_definitions(ZSharp PRIVATE 
-    ${ZSharp_Preprocessor_Defines})
-
 endif(WIN32)
 
 if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
@@ -384,17 +394,29 @@ if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
 		target_compile_options(ZSharp PRIVATE 
 			${ZSharp_Compile_Options_Debug})
 
+        target_compile_definitions(ZSharp PRIVATE 
+            ${ZSharp_Preprocessor_Defines_Debug})
+
     elseif("${CMAKE_BUILD_TYPE}" STREQUAL "MinSizeRel")
 		target_compile_options(ZSharp PRIVATE 
 			${ZSharp_Compile_Options_MinSizeRel})
+
+        target_compile_definitions(ZSharp PRIVATE 
+            ${ZSharp_Preprocessor_Defines_Debug})
 
     elseif("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
 		target_compile_options(ZSharp PRIVATE 
 			${ZSharp_Compile_Options_RelWithDebInfo})
 
+        target_compile_definitions(ZSharp PRIVATE 
+            ${ZSharp_Preprocessor_Defines_Debug})
+
 	elseif("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 		target_compile_options(ZSharp PRIVATE 
 			${ZSharp_Compile_Options_Release})
+
+        target_compile_definitions(ZSharp PRIVATE 
+            ${ZSharp_Preprocessor_Defines_Release})
 
 	else()
 		message(FATAL_ERROR "Must specify -DCMAKE_BUILD_TYPE=Debug|MinSizeRel|RelWithDebInfo|Release when using Ninja.")
@@ -408,13 +430,25 @@ else()
     target_compile_options(ZSharp PRIVATE 
 	    "$<$<CONFIG:DEBUG>:${ZSharp_Compile_Options_Debug}>")
 
+    target_compile_definitions(ZSharp PRIVATE 
+        "$<$<CONFIG:DEBUG>:${ZSharp_Preprocessor_Defines_Debug}>")
+
     target_compile_options(ZSharp PRIVATE 
 	    "$<$<CONFIG:MINSIZEREL>:${ZSharp_Compile_Options_MinSizeRel}>")
+
+    target_compile_definitions(ZSharp PRIVATE 
+        "$<$<CONFIG:MINSIZEREL>:${ZSharp_Preprocessor_Defines_Debug}>")
 
     target_compile_options(ZSharp PRIVATE 
 	    "$<$<CONFIG:RELWITHDEBINFO>:${ZSharp_Compile_Options_RelWithDebInfo}>")
 
+    target_compile_definitions(ZSharp PRIVATE 
+        "$<$<CONFIG:RELWITHDEBINFO>:${ZSharp_Preprocessor_Defines_Debug}>")
+
     target_compile_options(ZSharp PRIVATE 
 	    "$<$<CONFIG:RELEASE>:${ZSharp_Compile_Options_Release}>")
+
+    target_compile_definitions(ZSharp PRIVATE 
+        "$<$<CONFIG:RELEASE>:${ZSharp_Preprocessor_Defines_Release}>")
 
 endif()

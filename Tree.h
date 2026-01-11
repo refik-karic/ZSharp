@@ -605,11 +605,13 @@ class Tree {
   }
 
   bool ValidBlackHeight(const TreeNode* node, size_t expectedHeight) const {
+#ifdef _DEBUG
     if (node != nullptr && !IsRoot(node)) {
       bool isLeftNode = node->parent->left == node;
       bool isRightNode = node->parent->right == node;
       ZAssert(isLeftNode || isRightNode);
     }
+#endif
 
     if (node == nullptr) {
       bool isZero = expectedHeight == 0;

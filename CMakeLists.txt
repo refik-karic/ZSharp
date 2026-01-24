@@ -424,6 +424,33 @@ if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
         target_compile_definitions(ZSharp PRIVATE 
             ${ZSharp_Preprocessor_Defines_Release})
 
+    elseif((${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang") AND ("${CMAKE_BUILD_TYPE}" STREQUAL "Release_PGO_Collect"))
+        set(ZSharp_Compile_Options_Release_PGO_Collect
+            ${ZSharp_Compile_Options_Release}
+            -gdwarf
+            -gline-tables-only
+			/clang:-fdebug-info-for-profiling
+			/clang:-funique-internal-linkage-names
+        )
+
+		target_compile_options(ZSharp PRIVATE 
+			${ZSharp_Compile_Options_Release_PGO_Collect})
+
+        target_compile_definitions(ZSharp PRIVATE 
+            ${ZSharp_Preprocessor_Defines_Release})
+
+    elseif((${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang") AND ("${CMAKE_BUILD_TYPE}" STREQUAL "Release_PGO_Optimize"))
+        set(ZSharp_Compile_Options_Release_PGO_Optimize
+            ${ZSharp_Compile_Options_Release}
+			-fprofile-sample-use=${CMAKE_BINARY_DIR}/SoftwareRenderer/profile.prof
+        )
+
+		target_compile_options(ZSharp PRIVATE 
+			${ZSharp_Compile_Options_Release_PGO_Optimize})
+
+        target_compile_definitions(ZSharp PRIVATE 
+            ${ZSharp_Preprocessor_Defines_Release})
+
     elseif((${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM") AND ("${CMAKE_BUILD_TYPE}" STREQUAL "Release_PGO_Collect"))
         set(ZSharp_Compile_Options_Release_PGO_Collect
             ${ZSharp_Compile_Options_Release}

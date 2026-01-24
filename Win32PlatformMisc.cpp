@@ -15,7 +15,9 @@ String PlatformGetBuildType() {
 }
 
 String PlatformGetToolchain() {
-#ifdef __clang__
+#ifdef __INTEL_LLVM_COMPILER
+  String toolchain(String::FromFormat("ICX {0}", __VERSION__));
+#elif __clang__
   String toolchain(String::FromFormat("Clang {0}", __clang_version__));
 #elif _MSC_VER
   String toolchain(String::FromFormat("MSVC {0}", _MSC_VER));

@@ -225,7 +225,7 @@ if(WIN32)
     ${ZSharp_Preprocessor_Common}
   )
 
-  if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+  if((${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang") OR (${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM"))
     list(APPEND ZSharp_Compile_Options_Debug
         /Od
         /Ob0
@@ -296,14 +296,20 @@ if(WIN32)
         /Zi
         /diagnostics:caret
         /Gw
-		/Gy
-        -flto
-        -fvirtual-function-elimination
+	    /Gy
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
         -mavx2
         -mfma
     )
+
+    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+        list(APPEND ZSharp_Compile_Options_Release
+            -flto
+            -fvirtual-function-elimination
+        )
+    endif()
+
   else()
     list(APPEND ZSharp_Compile_Options_Debug
         /Od
@@ -414,6 +420,28 @@ if("${CMAKE_GENERATOR}" STREQUAL "Ninja")
 	elseif("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
 		target_compile_options(ZSharp PRIVATE 
 			${ZSharp_Compile_Options_Release})
+
+        target_compile_definitions(ZSharp PRIVATE 
+            ${ZSharp_Preprocessor_Defines_Release})
+
+    elseif((${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM") AND ("${CMAKE_BUILD_TYPE}" STREQUAL "Release_PGO_Collect"))
+        set(ZSharp_Compile_Options_Release_PGO_Collect
+            ${ZSharp_Compile_Options_Release}
+        )
+
+		target_compile_options(ZSharp PRIVATE 
+			${ZSharp_Compile_Options_Release_PGO_Collect})
+
+        target_compile_definitions(ZSharp PRIVATE 
+            ${ZSharp_Preprocessor_Defines_Release})
+
+    elseif((${CMAKE_CXX_COMPILER_ID} STREQUAL "IntelLLVM") AND ("${CMAKE_BUILD_TYPE}" STREQUAL "Release_PGO_Optimize"))
+        set(ZSharp_Compile_Options_Release_PGO_Optimize
+            ${ZSharp_Compile_Options_Release}
+        )
+
+		target_compile_options(ZSharp PRIVATE 
+			${ZSharp_Compile_Options_Release_PGO_Optimize})
 
         target_compile_definitions(ZSharp PRIVATE 
             ${ZSharp_Preprocessor_Defines_Release})

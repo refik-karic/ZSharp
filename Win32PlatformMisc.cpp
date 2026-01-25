@@ -16,11 +16,13 @@ String PlatformGetBuildType() {
 
 String PlatformGetToolchain() {
 #ifdef __INTEL_LLVM_COMPILER
-  String toolchain(String::FromFormat("ICX {0}", __VERSION__));
+  String toolchain(__VERSION__);
 #elif __clang__
-  String toolchain(String::FromFormat("Clang {0}", __clang_version__));
+  String toolchain("Clang " __clang_version__);
 #elif _MSC_VER
-  String toolchain(String::FromFormat("MSVC {0}", _MSC_VER));
+#define STR(x) #x
+#define XSTR(x) STR(x)
+  String toolchain("MSVC " XSTR(_MSC_VER));
 #else
   String toolchain("Unknown");
 #endif

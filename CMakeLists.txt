@@ -241,6 +241,7 @@ if(WIN32)
         /diagnostics:caret
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
+		-Wno-int-to-pointer-cast
         -mavx2
         -mfma
     )
@@ -259,6 +260,7 @@ if(WIN32)
         /diagnostics:caret
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
+		-Wno-int-to-pointer-cast
         -mavx2
         -mfma
     )
@@ -277,6 +279,7 @@ if(WIN32)
         /diagnostics:caret
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
+		-Wno-int-to-pointer-cast
         -mavx2
         -mfma
     )
@@ -299,6 +302,7 @@ if(WIN32)
 	    /Gy
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
+		-Wno-int-to-pointer-cast
         -mavx2
         -mfma
     )

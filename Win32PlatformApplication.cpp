@@ -21,8 +21,7 @@
 #define DEBUG_TEXTURE_PNG 0
 #define DEBUG_TEXTURE_JPG 0
 
-static ZSharp::WideString WindowClassName(L"SoftwareRendererWindowClass");
-static ZSharp::WideString TimerName(L"MainLoop");
+ATOM WindowAtom = 0;
 UINT MinTimerPeriod = 0;
 DWORD WindowStyle = WS_BORDER | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
 
@@ -118,7 +117,7 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
     Sleep(Tick());
   }
 
-  UnregisterClassW(WindowClassName.Str(), instance);
+  UnregisterClassW((LPCWSTR)WindowAtom, instance);
   return 0;
 }
 
@@ -214,11 +213,13 @@ HWND Win32PlatformApplication::SetupWindow(HINSTANCE instance) {
     nullptr,
     nullptr,
     nullptr,
-    WindowClassName.Str(),
+    L"SoftwareRendererWindowClass",
     nullptr
   };
 
-  if (!RegisterClassExW(&wc)) {
+  WindowAtom = RegisterClassExW(&wc);
+
+  if (!WindowAtom) {
     return nullptr;
   }
 
@@ -229,7 +230,7 @@ HWND Win32PlatformApplication::SetupWindow(HINSTANCE instance) {
 
   return CreateWindowExW(
     WS_EX_OVERLAPPEDWINDOW,
-    WindowClassName.Str(),
+    (LPCWSTR)WindowAtom,
     config->GetWindowTitle().ToWide().Str(),
     WindowStyle,
     CW_USEDEFAULT,

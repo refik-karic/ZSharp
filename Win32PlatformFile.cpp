@@ -217,6 +217,11 @@ size_t PlatformGetFileSize(PlatformFileHandle* handle) {
   }
 }
 
+bool PlatformFileExists(const FileString& filename) {
+  DWORD attributes = GetFileAttributesA(filename.GetAbsolutePath().Str());
+  return (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY));
+}
+
 bool PlatformUpdateFileAccessTime(PlatformFileHandle* handle) {
   FILETIME systemTime;
   GetSystemTimeAsFileTime(&systemTime);

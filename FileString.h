@@ -31,6 +31,8 @@ class FileString final {
 
   bool IsEmpty() const;
 
+  bool Exists() const;
+
   private:
   char* mDrive = nullptr;
   char* mDirs = nullptr;

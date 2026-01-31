@@ -2,6 +2,7 @@
 
 #include "ZAssert.h"
 #include "ZBaseTypes.h"
+#include "PlatformFile.h"
 
 #include <cstring>
 
@@ -161,6 +162,10 @@ bool FileString::HasExtension() const {
 
 bool FileString::IsEmpty() const {
   return mPathLength == 0;
+}
+
+bool FileString::Exists() const {
+  return PlatformFileExists(*this);
 }
 
 void FileString::Initialize(const String& absoluteFilePath) {

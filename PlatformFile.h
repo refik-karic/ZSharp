@@ -37,6 +37,8 @@ bool PlatformFlushMemoryMapFile(PlatformMemoryMappedFileHandle* memoryMappedFile
 // OS file info.
 size_t PlatformGetFileSize(PlatformFileHandle* handle);
 
+bool PlatformFileExists(const FileString& filename);
+
 bool PlatformUpdateFileAccessTime(PlatformFileHandle* handle);
 
 bool PlatformUpdateFileModificationTime(PlatformFileHandle* handle);

@@ -21,24 +21,23 @@ struct ThreadJob {
 struct WorkerThreadControl;
 
 struct ThreadControl {
+  Array<WorkerThreadControl> workers;
+};
+
+struct WorkerThreadControl {
   enum class RunStatus {
     SLEEP,
     RUNNING,
     END
   };
 
-  RunStatus status = RunStatus::SLEEP;
-  PlatformMutex lock;
-  PlatformMonitor* monitor;
-  PlatformMonitor* asyncMonitor;
-  Array<WorkerThreadControl> workers;
-};
+  volatile RunStatus status = RunStatus::SLEEP;
 
-struct WorkerThreadControl {
   ThreadControl* masterControl = nullptr;
   size_t id = 0;
   PlatformMutex jobLock;
-  PlatformMonitor* jobMonitor;
+  PlatformMonitor* runningMonitor;
+  PlatformMonitor* waitingMonitor;
   List<ThreadJob> jobs;
 };
 

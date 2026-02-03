@@ -8,14 +8,12 @@ namespace ZSharp {
 
 int32 BackgroundWorker(void* data) {
   WorkerThreadControl& workerControl = *((WorkerThreadControl*)data);
-  ThreadControl& control = *(workerControl.masterControl);
+  // TODO: We expose the other worker queue's here so that in the future we can steal work if some threads finish before others.
+  //ThreadControl& control = *(workerControl.masterControl);
 
   while (true) {
-    if (control.status == ThreadControl::RunStatus::RUNNING) {
+    if (workerControl.status == WorkerThreadControl::RunStatus::RUNNING) {
       // Don't let anyone modify the job queue while we're inspecting it
-      // Use a separate monitor for testing when the job is complete or not
-      // This lets us add/remove jobs to the queue but also know whether a thread is still executing a final job before sleeping
-      PlatformClearMonitor(workerControl.jobMonitor);
       workerControl.jobLock.Aquire();
 
       if (!workerControl.jobs.IsEmpty()) {
@@ -24,50 +22,27 @@ int32 BackgroundWorker(void* data) {
         workerControl.jobLock.Release();
 
         job.func(job.data);
-        PlatformSignalMonitor(workerControl.jobMonitor);
       }
       else {
         workerControl.jobLock.Release();
-        PlatformSignalMonitor(workerControl.jobMonitor);
       }
 
-      control.lock.Aquire();
-
-      if (control.status == ThreadControl::RunStatus::SLEEP) {
-        control.lock.Release();
-        continue;
-      }
-
-      size_t remainingJobs = 0;
-
-      for (WorkerThreadControl& worker : control.workers) {
-        remainingJobs += worker.jobs.Size();
-      }
-
-      if (remainingJobs == 0) {
-        // Jobs that have been pop'd off the queue may still be running, wait until they're complete.
-        for (WorkerThreadControl& worker : control.workers) {
-          PlatformWaitMonitor(worker.jobMonitor);
-        }
-
-        PlatformClearMonitor(control.monitor);
-        control.status = ThreadControl::RunStatus::SLEEP;
-        PlatformSignalMonitor(control.asyncMonitor);
-      }
-
-      control.lock.Release();
-
-      if (remainingJobs > 0) {
-        PlatformBusySpin();
+      if (workerControl.jobs.IsEmpty()) {
+        workerControl.status = WorkerThreadControl::RunStatus::SLEEP;
+        PlatformClearMonitor(workerControl.runningMonitor);
       }
     }
-    else if (control.status == ThreadControl::RunStatus::SLEEP) {
-      PlatformWaitMonitor(control.monitor);
+    else if (workerControl.status == WorkerThreadControl::RunStatus::SLEEP) {
+      PlatformSignalMonitor(workerControl.waitingMonitor);
+      PlatformWaitMonitor(workerControl.runningMonitor);
+      PlatformClearMonitor(workerControl.waitingMonitor);
     }
-    else if (control.status == ThreadControl::RunStatus::END) {
+    else if (workerControl.status == WorkerThreadControl::RunStatus::END) {
       break;
     }
   }
+
+  PlatformSignalMonitor(workerControl.waitingMonitor);
 
   return 0;
 }
@@ -76,15 +51,14 @@ ThreadPool::ThreadPool() {
   size_t numCores = PlatformGetNumPhysicalCores();
   mPool.Resize(numCores);
 
-  mControl.monitor = PlatformCreateMonitor();
-  mControl.asyncMonitor = PlatformCreateMonitor();
   mControl.workers.Resize(numCores);
 
   for (size_t i = 0; i < numCores; ++i) {
     WorkerThreadControl& control = mControl.workers[i];
     control.masterControl = &mControl;
     control.id = i;
-    control.jobMonitor = PlatformCreateMonitor();
+    control.runningMonitor = PlatformCreateMonitor(false);
+    control.waitingMonitor = PlatformCreateMonitor(true);
   }
 
   for (size_t i = 0; i < numCores; ++i) {
@@ -92,36 +66,55 @@ ThreadPool::ThreadPool() {
   }
 
   PlatformPinThreadsToProcessors(mPool.GetData(), mPool.Size(), false);
-  PlatformSignalMonitor(mControl.asyncMonitor);
 }
 
 ThreadPool::~ThreadPool() {
-  mControl.status = ThreadControl::RunStatus::END;
-  PlatformSignalMonitor(mControl.monitor);
+  for (WorkerThreadControl& worker : mControl.workers) {
+    PlatformWaitMonitor(worker.waitingMonitor);
+    worker.status = WorkerThreadControl::RunStatus::END;
+    PlatformSignalMonitor(worker.runningMonitor);
+  }
 
   PlatformJoinThreadPool(mPool.GetData(), mPool.Size());
 
   for (WorkerThreadControl& control : mControl.workers) {
-    PlatformDestroyMonitor(control.jobMonitor);
+    PlatformDestroyMonitor(control.waitingMonitor);
+    PlatformDestroyMonitor(control.runningMonitor);
   }
-
-  PlatformDestroyMonitor(mControl.monitor);
-  PlatformDestroyMonitor(mControl.asyncMonitor);
 }
 
 void ThreadPool::Wake() {
-  mControl.status = ThreadControl::RunStatus::RUNNING;
-
-  PlatformSignalMonitor(mControl.monitor);
-  PlatformClearMonitor(mControl.asyncMonitor);
+  for (WorkerThreadControl& worker : mControl.workers) {
+    worker.status = WorkerThreadControl::RunStatus::RUNNING;
+    PlatformSignalMonitor(worker.runningMonitor);
+  }
 }
 
 void ThreadPool::Sleep() {
-  mControl.status = ThreadControl::RunStatus::SLEEP;
+  for (WorkerThreadControl& worker : mControl.workers) {
+    worker.status = WorkerThreadControl::RunStatus::SLEEP;
+    PlatformClearMonitor(worker.runningMonitor);
+  }
 }
 
 void ThreadPool::WaitForJobs() {
-  PlatformWaitMonitor(mControl.asyncMonitor);
+  Array<PlatformMonitor*> monitors(mControl.workers.Size());
+
+  size_t numWaiting = 0;
+  for (size_t i = 0; i < monitors.Size(); ++i) {
+    WorkerThreadControl& worker = mControl.workers[i];
+    if (worker.status == WorkerThreadControl::RunStatus::RUNNING) {
+      monitors[numWaiting] = worker.waitingMonitor;
+      ++numWaiting;
+    }
+  }
+
+  // Only issue a true wait if we know there are still some threads running.
+  // Most of the time the worker threads should be idle unless we're backed up.
+  // Waiting for all the handles can be expensive, up to around 500us, so avoid it if we can.
+  if (numWaiting > 0) {
+    PlatformWaitMonitors(monitors.GetData(), numWaiting);
+  }
 }
 
 void ThreadPool::Execute(ParallelRange& range, void* data, size_t length) {

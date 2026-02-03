@@ -30,6 +30,8 @@ ZSharp::ConsoleVariable<ZSharp::int32> LockedFPS("LockedFPS", 60);
 
 Win32PlatformApplication* GlobalApplication = nullptr;
 
+size_t FrameDelta = 0;
+
 namespace ZSharp {
 
 BroadcastDelegate<size_t, size_t>& OnWindowSizeChangedDelegate() {
@@ -112,9 +114,37 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
       DispatchMessageW(&msg);
     }
     
-    UpdateAudio();
-    
-    Sleep(Tick());
+    /*
+      1) Tick the simulation and render
+      2) Queue the frame to be drawn via InvalidateRect
+      3) Wait until OnPaint() completes and that becomes the total frame time such that it includes waiting on the Win32 message loop
+      4) Queue any background jobs and sleep the main thread if we have time left in the frame
+    */
+    if (!mFlags.mWaitingForPaint) {
+      if (FrameDelta > 0) {
+        // Run background jobs as soon as the last frame is drawn.
+        mGameInstance->RunBackgroundJobs();
+
+        // Sleep if we have some time left in the frame, otherwise start again immediately.
+        const size_t lockedMs = (1000 / (*LockedFPS));
+        if (FrameDelta >= lockedMs || (*UncappedFPS)) {
+          FrameDelta = 0;
+        }
+        else {
+          FrameDelta = lockedMs - FrameDelta;
+        }
+
+        Sleep((DWORD)FrameDelta);
+      }
+
+      UpdateAudio();
+
+      FrameDelta = ZSharp::PlatformHighResClock();
+
+      mFlags.mWaitingForPaint = true;
+
+      Tick();
+    }
   }
 
   UnregisterClassW((LPCWSTR)WindowAtom, instance);
@@ -276,9 +306,7 @@ void Win32PlatformApplication::OnCreate(HWND window) {
   }
 }
 
-DWORD Win32PlatformApplication::Tick() {
-  size_t frameDeltaTime = ZSharp::PlatformHighResClock();
-
+void Win32PlatformApplication::Tick() {
   if (!mFlags.mPaused && !mFlags.mHidden) {
     if (mCurrentCursor != ZSharp::AppCursor::Arrow) {
       ApplyCursor(ZSharp::AppCursor::Arrow);
@@ -288,18 +316,10 @@ DWORD Win32PlatformApplication::Tick() {
 
     InvalidateRect(mWindowHandle, NULL, false);
   }
-
-  // Sleep if we have some time left in the frame, otherwise start again immediately.
-  frameDeltaTime = ZSharp::PlatformHighResClockDeltaMs(frameDeltaTime);
-  const size_t lockedMs = (1000 / (*LockedFPS));
-  if (frameDeltaTime >= lockedMs || (*UncappedFPS)) {
-    frameDeltaTime = 0;
-  }
   else {
-    frameDeltaTime = lockedMs - frameDeltaTime;
+    FrameDelta = ZSharp::PlatformHighResClockDeltaMs(FrameDelta);
+    mFlags.mWaitingForPaint = false;
   }
-
-  return (DWORD)frameDeltaTime;
 }
 
 void Win32PlatformApplication::OnPaint() {
@@ -340,7 +360,8 @@ void Win32PlatformApplication::OnPaint() {
 #else
   UpdateFrame(mGameInstance->GetCurrentFrame());
 
-  mGameInstance->RunBackgroundJobs();
+  FrameDelta = ZSharp::PlatformHighResClockDeltaMs(FrameDelta);
+  mFlags.mWaitingForPaint = false;
 #endif
 }
 

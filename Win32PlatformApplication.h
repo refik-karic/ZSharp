@@ -29,6 +29,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
     bool mPaused : 1;
     bool mHidden : 1;
     bool mRunning : 1;
+    bool mWaitingForPaint : 1;
   } mFlags;
   HWND mWindowHandle;
   HDC mWindowContext = nullptr;
@@ -48,7 +49,7 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
 
   void OnCreate(HWND window);
 
-  DWORD Tick();
+  void Tick();
 
   void OnPaint();
 

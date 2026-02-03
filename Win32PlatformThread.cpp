@@ -100,11 +100,10 @@ void PlatformJoinThreadPool(PlatformThread** threads, size_t numThreads) {
     return;
   }
 
-  Array<HANDLE> handles;
+  Array<HANDLE> handles(numThreads);
   PlatformThread** currentThread = threads;
   for (size_t i = 0; i < numThreads; ++i) {
-    handles.PushBack((*currentThread)->threadHandle);
-    ++currentThread;
+    handles[i] = (currentThread[i])->threadHandle;
   }
 
   WaitForMultipleObjects((DWORD)numThreads, handles.GetData(), true, INFINITE);
@@ -113,15 +112,13 @@ void PlatformJoinThreadPool(PlatformThread** threads, size_t numThreads) {
     CloseHandle(handle);
   }
 
-  currentThread = threads;
   for (size_t i = 0; i < numThreads; ++i) {
-    delete (*currentThread);
-    ++currentThread;
+    delete currentThread[i];
   }
 }
 
-PlatformMonitor* PlatformCreateMonitor() {
-  HANDLE handle = CreateEventA(NULL, true, false, NULL);
+PlatformMonitor* PlatformCreateMonitor(bool signaled) {
+  HANDLE handle = CreateEventA(NULL, true, signaled, NULL);
 
   if (handle == NULL) {
     return nullptr;
@@ -138,6 +135,20 @@ void PlatformWaitMonitor(PlatformMonitor* monitor) {
   }
 
   WaitForSingleObject(monitor->monitorHandle, INFINITE);
+}
+
+void PlatformWaitMonitors(PlatformMonitor** monitors, size_t count) {
+  if (monitors == nullptr) {
+    return;
+  }
+
+  Array<HANDLE> handles(count);
+  PlatformMonitor** currentMonitor = monitors;
+  for (size_t i = 0; i < count; ++i) {
+    handles[i] = (currentMonitor[i])->monitorHandle;
+  }
+
+  WaitForMultipleObjects((DWORD)count, handles.GetData(), true, INFINITE);
 }
 
 void PlatformSignalMonitor(PlatformMonitor* monitor) {

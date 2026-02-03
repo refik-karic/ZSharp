@@ -18,9 +18,11 @@ void PlatformJoinThread(PlatformThread* thread);
 
 void PlatformJoinThreadPool(PlatformThread** threads, size_t numThreads);
 
-PlatformMonitor* PlatformCreateMonitor();
+PlatformMonitor* PlatformCreateMonitor(bool signaled);
 
 void PlatformWaitMonitor(PlatformMonitor* monitor);
+
+void PlatformWaitMonitors(PlatformMonitor** monitors, size_t count);
 
 void PlatformSignalMonitor(PlatformMonitor* monitor);
 

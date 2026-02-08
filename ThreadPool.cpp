@@ -113,7 +113,12 @@ void ThreadPool::WaitForJobs() {
   // Most of the time the worker threads should be idle unless we're backed up.
   // Waiting for all the handles can be expensive, up to around 500us, so avoid it if we can.
   if (numWaiting > 0) {
-    PlatformWaitMonitors(monitors.GetData(), numWaiting);
+    if (numWaiting == 1) {
+      PlatformWaitMonitor(monitors[0]);
+    }
+    else {
+      PlatformWaitMonitors(monitors.GetData(), numWaiting);
+    }
   }
 }
 

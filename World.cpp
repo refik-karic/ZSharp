@@ -15,6 +15,7 @@
 
 namespace ZSharp {
 ConsoleVariable<bool> PhysicsEnabled("PhysicsEnabled", true);
+ConsoleVariable<bool> PhysicsGravityEnabled("PhysicsGravityEnabled", true);
 ConsoleVariable<bool> PhysicsForcesEnabled("PhysicsForcesEnabled", true);
 
 ConsoleVariable<bool> DebugModelsRGB("DebugModelsRGB", false);
@@ -75,7 +76,7 @@ void World::Load() {
     ShaderDefinition shader(4, 4, ShadingMethod::RGB);
     DebugLoadTriangle(v3, v2, v1, shader, 8);
 
-    *PhysicsForcesEnabled = false;
+    *PhysicsGravityEnabled = false;
     if (mPlayer) {
       mPlayer->Position() = {0.f, 0.f, 50.f};
     }
@@ -92,7 +93,7 @@ void World::Load() {
     ShaderDefinition shader(4, 4, ShadingMethod::UV);
     DebugLoadTriangle(v3, v2, v1, shader, 8);
 
-    *PhysicsForcesEnabled = false;
+    *PhysicsGravityEnabled = false;
     if (mPlayer) {
       mPlayer->Position() = { 0.f, 0.f, 50.f };
     }
@@ -116,7 +117,7 @@ void World::Load() {
       ShaderDefinition shader(4, 4, ShadingMethod::RGB);
       DebugLoadTriangle(v3, v2, v1, shader, 8);
 
-      *PhysicsForcesEnabled = false;
+      *PhysicsGravityEnabled = false;
       if (mPlayer) {
         mPlayer->Position() = { 0.f, 0.f, 50.f };
       }
@@ -155,9 +156,11 @@ void World::TickPhysics(size_t deltaMs) {
   Logger::Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
 
   // Update forces for all dynamic objects at the start of the time step.
-  for (PhysicsObject*& currentObject : mDynamicObjects) {
-    // Accumulate current forces for this frame.
-    currentObject->Velocity() += {0.f, GravityPerSecond* (float)deltaMs, 0.f};
+  if (*PhysicsGravityEnabled) {
+    for (PhysicsObject*& currentObject : mDynamicObjects) {
+      // Accumulate current forces for this frame.
+      currentObject->Velocity() += {0.f, GravityPerSecond* (float)deltaMs, 0.f};
+    }
   }
 
   for (PhysicsObject*& currentObject : mDynamicObjects) {

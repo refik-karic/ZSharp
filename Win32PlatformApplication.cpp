@@ -113,21 +113,14 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
 
   ShowWindow(mWindowHandle, SW_SHOW);
   for (MSG msg;;) {
-    bool shouldQuit = false;
-
     while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
       if (msg.message == WM_QUIT) {
-        shouldQuit = true;
-        break;
+        goto shutdown_app;
       }
 
       DispatchMessageW(&msg);
     }
     
-    if (shouldQuit) {
-      break;
-    }
-
     /*
       1) Tick the simulation and render
       2) Queue the frame to be drawn via InvalidateRect
@@ -160,6 +153,8 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
       Tick();
     }
   }
+
+shutdown_app:
 
   UnregisterClassW((LPCWSTR)WindowAtom, instance);
   return 0;

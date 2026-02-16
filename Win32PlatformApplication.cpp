@@ -24,6 +24,8 @@
 ATOM WindowAtom = 0;
 UINT MinTimerPeriod = 0;
 DWORD WindowStyle = WS_BORDER | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU | WS_THICKFRAME;
+HCURSOR PointCursor = nullptr;
+HCURSOR HandCursor = nullptr;
 
 ZSharp::ConsoleVariable<bool> UncappedFPS("UncappedFPS", false);
 ZSharp::ConsoleVariable<ZSharp::int32> LockedFPS("LockedFPS", 60);
@@ -87,6 +89,9 @@ LRESULT Win32PlatformApplication::MessageLoop(HWND hwnd, UINT uMsg, WPARAM wPara
   case WM_DESTROY:
     app->OnDestroy();
     break;
+  case WM_SETCURSOR:
+    app->OnCursor();
+    break;
   default:
     return DefWindowProcW(hwnd, uMsg, wParam, lParam);
   }
@@ -106,14 +111,23 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
 
   mGameInstance->Initialize(false);
 
-  mFlags.mRunning = true;
-
   ShowWindow(mWindowHandle, SW_SHOW);
-  for (MSG msg; mFlags.mRunning;) {
-    while (PeekMessageW(&msg, mWindowHandle, 0, 0, PM_REMOVE)) {
+  for (MSG msg;;) {
+    bool shouldQuit = false;
+
+    while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE)) {
+      if (msg.message == WM_QUIT) {
+        shouldQuit = true;
+        break;
+      }
+
       DispatchMessageW(&msg);
     }
     
+    if (shouldQuit) {
+      break;
+    }
+
     /*
       1) Tick the simulation and render
       2) Queue the frame to be drawn via InvalidateRect
@@ -153,15 +167,6 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
 
 void Win32PlatformApplication::ApplyCursor(ZSharp::AppCursor cursor) {
   mCurrentCursor = cursor;
-
-  switch (mCurrentCursor) {
-    case ZSharp::AppCursor::Arrow:
-      SetCursor(mPointCursor);
-      break;
-    case ZSharp::AppCursor::Hand:
-      SetCursor(mHandCursor);
-      break;
-  }
 }
 
 void Win32PlatformApplication::Shutdown() {
@@ -169,7 +174,7 @@ void Win32PlatformApplication::Shutdown() {
 }
 
 Win32PlatformApplication::Win32PlatformApplication()
-  : mBitmapInfo{new BITMAPINFO()}, mKeyboard(new BYTE[256]), mPointCursor(nullptr), mHandCursor(nullptr) {
+  : mBitmapInfo{new BITMAPINFO()}, mKeyboard(new BYTE[256]) {
   mBitmapInfo->bmiHeader.biSize = sizeof(BITMAPINFO);
   mBitmapInfo->bmiHeader.biWidth = 0;
   mBitmapInfo->bmiHeader.biHeight = 0;
@@ -207,28 +212,25 @@ Win32PlatformApplication::~Win32PlatformApplication() {
 }
 
 void Win32PlatformApplication::ReadCommandLine() {
-  LPWSTR cmdLine = GetCommandLineW();
   ZSharp::int32 argC = 0;
-  LPWSTR* argV = CommandLineToArgvW(cmdLine, &argC);
+  LPWSTR* argV = CommandLineToArgvW(GetCommandLineW(), &argC);
 
-  ZSharp::Array<ZSharp::CLICommand> commands;
+  if (argC > 1) {
+    ZSharp::Array<ZSharp::CLICommand> commands;
 
-  ZSharp::Array<ZSharp::String> globalOptions;
-  globalOptions.EmplaceBack("fullscreen");
+    ZSharp::Array<ZSharp::String> globalOptions;
+    globalOptions.EmplaceBack("fullscreen");
 
-  ZSharp::CLIParser cliParser(commands, globalOptions);
-  ZSharp::int32 result = cliParser.Evaluate(argC, (const wchar_t**)argV, true); 
+    ZSharp::CLIParser cliParser(commands, globalOptions);
+    cliParser.Evaluate(argC, (const wchar_t**)argV, true);
+
+    // TODO: It might be a good idea to break this out into another file since it could be used elsewhere.
+    if (cliParser.WasPassed("fullscreen")) {
+      WindowStyle |= WS_MAXIMIZE;
+    }
+  }
   
   LocalFree(argV);
-
-  if(result != 0) {
-    return;
-  }
-
-  // TODO: It might be a good idea to break this out into another file since it could be used elsewhere.
-  if (cliParser.WasPassed("fullscreen")) {
-    WindowStyle |= WS_MAXIMIZE;
-  }
 }
 
 HWND Win32PlatformApplication::SetupWindow(HINSTANCE instance) {
@@ -288,8 +290,8 @@ void Win32PlatformApplication::OnCreate(HWND window) {
     return;
   }
 
-  mPointCursor = LoadCursor(NULL, IDC_ARROW);
-  mHandCursor = LoadCursor(NULL, IDC_HAND);
+  PointCursor = LoadCursor(NULL, IDC_ARROW);
+  HandCursor = LoadCursor(NULL, IDC_HAND);
 
   mCurrentCursor = ZSharp::AppCursor::Arrow;
 
@@ -307,7 +309,7 @@ void Win32PlatformApplication::OnCreate(HWND window) {
 }
 
 void Win32PlatformApplication::Tick() {
-  if (!mFlags.mPaused && !mFlags.mHidden) {
+  if (!mFlags.mPaused && !IsIconic(mWindowHandle)) {
     if (mCurrentCursor != ZSharp::AppCursor::Arrow) {
       ApplyCursor(ZSharp::AppCursor::Arrow);
     }
@@ -493,19 +495,7 @@ void Win32PlatformApplication::OnPreWindowSizeChanged(LPMINMAXINFO info) {
 }
 
 void Win32PlatformApplication::OnWindowVisibility(WPARAM param) {
-  // Stop rendering if the window becomes minimized since we can't see anything.
-  if (param == SIZE_MINIMIZED) {
-    mFlags.mHidden = true;
-  }
-  else if (param == SIZE_RESTORED) {
-    mFlags.mHidden = false;
-
-    RECT activeWindowSize;
-    if (GetClientRect(mWindowHandle, &activeWindowSize)) {
-      UpdateWindowSize(&activeWindowSize);
-    }
-  }
-  else if (param == SIZE_MAXIMIZED) {
+ if (param == SIZE_RESTORED || param == SIZE_MAXIMIZED) {
     RECT activeWindowSize;
     if (GetClientRect(mWindowHandle, &activeWindowSize)) {
       UpdateWindowSize(&activeWindowSize);
@@ -524,9 +514,18 @@ void Win32PlatformApplication::OnDestroy() {
     ReleaseDC(mWindowHandle, mWindowContext);
   }
 
-  mFlags.mRunning = false;
-
   PostQuitMessage(0);
+}
+
+void Win32PlatformApplication::OnCursor() {
+  switch (mCurrentCursor) {
+  case ZSharp::AppCursor::Arrow:
+    SetCursor(PointCursor);
+    break;
+  case ZSharp::AppCursor::Hand:
+    SetCursor(HandCursor);
+    break;
+  }
 }
 
 void Win32PlatformApplication::UpdateFrame(const ZSharp::uint8* data) {

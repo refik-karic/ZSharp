@@ -5,7 +5,7 @@
 
 namespace ZSharp {
 
-enum class AppCursor {
+enum class AppCursor : uint8_t {
   Arrow,
   Hand
 };

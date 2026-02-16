@@ -27,17 +27,12 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   private:
   struct {
     bool mPaused : 1;
-    bool mHidden : 1;
-    bool mRunning : 1;
     bool mWaitingForPaint : 1;
   } mFlags;
   HWND mWindowHandle;
   HDC mWindowContext = nullptr;
   BITMAPINFO* mBitmapInfo = nullptr;
   BYTE* mKeyboard = nullptr;
-
-  HCURSOR mPointCursor = nullptr;
-  HCURSOR mHandCursor = nullptr;
 
   ZSharp::GameInstance* mGameInstance = nullptr;
 
@@ -72,6 +67,8 @@ class Win32PlatformApplication : public ZSharp::PlatformApplication {
   void OnClose();
 
   void OnDestroy();
+
+  void OnCursor();
 
   // Everything else not related to message loop.
 

@@ -28,7 +28,7 @@ HCURSOR PointCursor = nullptr;
 HCURSOR HandCursor = nullptr;
 
 ZSharp::ConsoleVariable<bool> UncappedFPS("UncappedFPS", false);
-ZSharp::ConsoleVariable<ZSharp::int32> LockedFPS("LockedFPS", 60);
+ZSharp::ConsoleVariable<ZSharp::uint32> LockedFPS("LockedFPS", 60U);
 
 Win32PlatformApplication* GlobalApplication = nullptr;
 
@@ -133,7 +133,7 @@ int Win32PlatformApplication::Run(HINSTANCE instance) {
         mGameInstance->RunBackgroundJobs();
 
         // Sleep if we have some time left in the frame, otherwise start again immediately.
-        const size_t lockedMs = (1000 / (*LockedFPS));
+        const size_t lockedMs = (1000U / (*LockedFPS));
         if (FrameDelta >= lockedMs || (*UncappedFPS)) {
           FrameDelta = 0;
         }

@@ -57,6 +57,7 @@ set(ZSharp_Header_Files
     PlatformIntrinsics.h
     PlatformMisc.h
     PlatformMemory.h
+    PlatformProcess.h
     PlatformTime.h
     PlatformThread.h
     Player.h
@@ -167,6 +168,7 @@ set(ZSharp_Source_Files
     Win32PlatformIntrinsics.cpp
     Win32PlatformMisc.cpp
     Win32PlatformMemory.cpp
+    Win32PlatformProcess.cpp
     Win32PlatformTime.cpp
     Win32PlatformThread.cpp
     World.cpp

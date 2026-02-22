@@ -12,6 +12,7 @@
 #include "ZConfig.h"
 #include "ZString.h"
 #include "PlatformTime.h"
+#include "PlatformProcess.h"
 #include "CommandLineParser.h"
 
 #include <timeapi.h>
@@ -33,6 +34,15 @@ ZSharp::ConsoleVariable<ZSharp::uint32> LockedFPS("LockedFPS", 60U);
 Win32PlatformApplication* GlobalApplication = nullptr;
 
 size_t FrameDelta = 0;
+
+void* WinMMHandle = nullptr;
+
+typedef MMRESULT(__cdecl* timeGetDevCapsFunc)(LPTIMECAPS, UINT);
+timeGetDevCapsFunc timeGetDevCapsImpl = nullptr;
+typedef MMRESULT(__cdecl* timeBeginPeriodFunc)(UINT);
+timeBeginPeriodFunc timeBeginPeriodImpl = nullptr;
+typedef MMRESULT(__cdecl* timeEndPeriodFunc)(UINT);
+timeEndPeriodFunc timeEndPeriodImpl = nullptr;
 
 namespace ZSharp {
 
@@ -272,15 +282,24 @@ HWND Win32PlatformApplication::SetupWindow(HINSTANCE instance) {
 }
 
 void Win32PlatformApplication::OnCreate(HWND window) {
+  WinMMHandle = ZSharp::PlatformLoadLibrary("Winmm");
+  if (WinMMHandle == nullptr) {
+    return;
+  }
+
+  timeGetDevCapsImpl = (timeGetDevCapsFunc)ZSharp::PlatformGetLibraryFunc(WinMMHandle, "timeGetDevCaps");
+  timeBeginPeriodImpl = (timeBeginPeriodFunc)ZSharp::PlatformGetLibraryFunc(WinMMHandle, "timeBeginPeriod");
+  timeEndPeriodImpl = (timeEndPeriodFunc)ZSharp::PlatformGetLibraryFunc(WinMMHandle, "timeEndPeriod");
+
   TIMECAPS timecaps;
-  if (timeGetDevCaps(&timecaps, sizeof(timecaps)) != MMSYSERR_NOERROR) {
+  if (timeGetDevCapsImpl(&timecaps, sizeof(timecaps)) != MMSYSERR_NOERROR) {
     DestroyWindow(window);
     return;
   }
 
   MinTimerPeriod = timecaps.wPeriodMin;
 
-  if (timeBeginPeriod(MinTimerPeriod) != MMSYSERR_NOERROR) {
+  if (timeBeginPeriodImpl(MinTimerPeriod) != MMSYSERR_NOERROR) {
     DestroyWindow(window);
     return;
   }
@@ -503,7 +522,9 @@ void Win32PlatformApplication::OnClose() {
 }
 
 void Win32PlatformApplication::OnDestroy() {
-  timeEndPeriod(MinTimerPeriod);
+  timeEndPeriodImpl(MinTimerPeriod);
+
+  ZSharp::PlatformUnloadLibrary(WinMMHandle);
 
   if (mWindowContext != nullptr) {
     ReleaseDC(mWindowHandle, mWindowContext);

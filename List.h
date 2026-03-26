@@ -4,6 +4,7 @@
 #include "ZBaseTypes.h"
 #include "PlatformMemory.h"
 #include "ISerializable.h"
+#include "MoveHelpers.h"
 
 #include <initializer_list>
 #include <type_traits>
@@ -24,6 +25,29 @@ class List final : public ISerializable {
       if (prev != nullptr) {
         prev->mNext = this;
       }
+    }
+
+    template<typename... Args>
+    Node(Node* prev, Args&&... args) : mValue(args...), mPrev(prev) {
+      if (prev != nullptr) {
+        prev->mNext = this;
+      }
+    }
+
+    Node(Node&& rhs) {
+      mValue = Move(rhs.mValue);
+      mNext = rhs.mNext;
+      mPrev = rhs.mPrev;
+      rhs.mNext = nullptr;
+      rhs.mPrev = nullptr;
+    }
+
+    void operator=(Node&& rhs) {
+      mValue = Move(rhs.mValue);
+      mNext = rhs.mNext;
+      mPrev = rhs.mPrev;
+      rhs.mNext = nullptr;
+      rhs.mPrev = nullptr;
     }
   };
 
@@ -146,6 +170,17 @@ class List final : public ISerializable {
     }
     else {
       mTail = ConstructNode(mTail, item);
+    }
+  }
+
+  template<typename... Args>
+  void Emplace(Args&&... args) {
+    if (mTail == nullptr) {
+      mHead = EmplaceNode(mHead, Forward<Args>(args)...);
+      mTail = mHead;
+    }
+    else {
+      mTail = EmplaceNode(mTail, Forward<Args>(args)...);
     }
   }
 
@@ -374,6 +409,13 @@ class List final : public ISerializable {
 
   Node* ConstructNode(Node* prev, const T& value) {
     Node* node = new Node(value, prev);
+    mSize++;
+    return node;
+  }
+
+  template<typename... Args>
+  Node* EmplaceNode(Node* prev, Args&&... args) {
+    Node* node = new Node(prev, args...);
     mSize++;
     return node;
   }

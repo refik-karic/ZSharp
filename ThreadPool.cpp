@@ -132,13 +132,10 @@ void ThreadPool::Execute(ParallelRange& range, void* data, size_t length) {
   // If we can't evenly distribute the work among threads, throw everything on one worker thread.
   if (length < numThreads) {
     Span<uint8> threadData((uint8*)data, length);
-    ThreadJob job;
-    job.data = threadData;
-    job.func = range;
 
     WorkerThreadControl& worker = mControl.workers[0];
     worker.jobLock.Aquire();
-    worker.jobs.Add(job);
+    worker.jobs.Emplace(range, threadData);
     worker.jobLock.Release();
   }
   else {
@@ -153,12 +150,9 @@ void ThreadPool::Execute(ParallelRange& range, void* data, size_t length) {
       }
 
       Span<uint8> threadData(((uint8*)data) + i, nextChunk);
-      ThreadJob job;
-      job.data = threadData;
-      job.func = range;
       WorkerThreadControl& worker = mControl.workers[j];
       worker.jobLock.Aquire();
-      worker.jobs.Add(job);
+      worker.jobs.Emplace(range, threadData);
       worker.jobLock.Release();
 
       i += nextChunk;

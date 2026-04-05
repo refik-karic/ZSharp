@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZBaseTypes.h"
+#include "ZString.h"
 
 namespace ZSharp {
 
@@ -13,6 +14,8 @@ struct PlatformMonitor;
 PlatformThread* PlatformCreateThread(PlatformThreadFunction threadFunction, void* threadData);
 
 void PlatformPinThreadsToProcessors(PlatformThread** threads, size_t numThreads, bool logical);
+
+bool PlatformSetThreadName(PlatformThread* thread, const String& name);
 
 void PlatformJoinThread(PlatformThread* thread);
 

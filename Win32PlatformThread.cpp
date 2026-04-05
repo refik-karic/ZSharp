@@ -84,6 +84,41 @@ void PlatformPinThreadsToProcessors(PlatformThread** threads, size_t numThreads,
 
 #pragma warning (default : 4334)
 
+bool PlatformSetThreadName(PlatformThread* thread, const String& name) {
+  if (!thread) {
+    return false;
+  }
+
+  typedef LONG(WINAPI* RtlGetVersionPtr)(PRTL_OSVERSIONINFOW);
+
+  HMODULE module = GetModuleHandleA("ntdll.dll");
+  if (!module) {
+    return false;
+  }
+
+  RtlGetVersionPtr rtlGetVersonFunc = (RtlGetVersionPtr)GetProcAddress(module, "RtlGetVersion");
+  if (!rtlGetVersonFunc) {
+    return false;
+  }
+
+  RTL_OSVERSIONINFOW VersionInfo{};
+  VersionInfo.dwOSVersionInfoSize = sizeof(VersionInfo);
+  rtlGetVersonFunc(&VersionInfo);
+
+  // Extract values
+  DWORD Major = VersionInfo.dwMajorVersion;
+  DWORD Minor = VersionInfo.dwMinorVersion;
+  DWORD Build = VersionInfo.dwBuildNumber;
+
+  // Requires at least Win 10 1607
+  if (Major >= 10 && Minor >= 0 && Build >= 14393) {
+    return SetThreadDescription(thread->threadHandle, name.ToWide().Str()) == S_OK;
+  }
+  else {
+    return false;
+  }
+}
+
 void PlatformJoinThread(PlatformThread* thread) {
   if (thread == nullptr) {
     return;

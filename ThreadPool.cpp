@@ -63,6 +63,7 @@ ThreadPool::ThreadPool() {
 
   for (size_t i = 0; i < numCores; ++i) {
     mPool[i] = PlatformCreateThread(&BackgroundWorker, &(mControl.workers[i]));
+    PlatformSetThreadName(mPool[i], String::FromFormat("Worker Thread {0}", i));
   }
 
   PlatformPinThreadsToProcessors(mPool.GetData(), mPool.Size(), false);

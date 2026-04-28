@@ -106,10 +106,10 @@ void GameInstance::TickWorld() {
   size_t frameDeltaMs = (mExtraState->mLastFrameTime == 0) ? FRAMERATE_60HZ_MS : PlatformHighResClockDeltaMs(mExtraState->mLastFrameTime);
   mExtraState->mLastFrameTime = PlatformHighResClock();
 
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame: {0}\n", mExtraState->mFrameCount)));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame Delta: {0}ms\n", frameDeltaMs)));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera: {0}\n", mPlayer->Position().ToString())));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera View: {0}\n", mPlayer->ViewCamera()->GetLook().ToString())));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame: {0}\n", mExtraState->mFrameCount)));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Frame Delta: {0}ms\n", frameDeltaMs)));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera: {0}\n", mPlayer->Position().ToString())));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Camera View: {0}\n", mPlayer->ViewCamera()->GetLook().ToString())));
 
   size_t numModels = mWorld->GetModels().Size();
   size_t numVerts = 0;
@@ -121,9 +121,9 @@ void GameInstance::TickWorld() {
     numTriangles += mesh.GetTriangleFaceTable().Size();
   }
 
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Models: {0}\n", numModels)));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Verts: {0}\n", numVerts)));
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Triangles: {0}\n", numTriangles)));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Models: {0}\n", numModels)));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Verts: {0}\n", numVerts)));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Num Triangles: {0}\n", numTriangles)));
 
   ++(mExtraState->mFrameCount);
 
@@ -149,7 +149,7 @@ void GameInstance::TickWorld() {
   mWorld->TickPhysics(physicsTickTime);
   size_t endPhysics = PlatformHighResClockDeltaUs(mExtraState->mLastFrameTime);
 
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics)));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Physics time: {0}us\n", endPhysics - startPhysics)));
 
   mPlayer->Tick();
 
@@ -166,7 +166,7 @@ void GameInstance::TickWorld() {
   }
 
   float cullRatio = (float)remainingTriangles / (float)numTriangles;
-  Logger::Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Post Clip/Cull Triangles: {0}, {1:4}%\n", remainingTriangles, cullRatio)));
+  GlobalLog->Log(LogCategory::Info, stats.EmplaceBack(String::FromFormat("Post Clip/Cull Triangles: {0}, {1:4}%\n", remainingTriangles, cullRatio)));
 
   if (mExtraState->mDrawStats) {
     stats.EmplaceBack(String::FromFormat("Render Frame: {0}us", PlatformHighResClockDeltaUs(renderFrameTime)));

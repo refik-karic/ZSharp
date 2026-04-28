@@ -21,10 +21,6 @@ Logger::~Logger() {
 }
 
 void Logger::Log(LogCategory category, const String& message) {
-  GlobalLog->InternalLog(category, message);
-}
-
-void Logger::InternalLog(LogCategory category, const String& message) {
   String logMessage;
 
   bool logStdOutput = true;
@@ -142,7 +138,7 @@ void Logger::LogPrologue() {
 
   prologue.Append("==========End Sys Info==========\n\n");
 
-  InternalLog(LogCategory::System, prologue);
+  Log(LogCategory::System, prologue);
 }
 
 }

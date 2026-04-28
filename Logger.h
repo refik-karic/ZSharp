@@ -15,10 +15,10 @@ enum class LogCategory {
   System
 };
 
-class Logger {
+class Logger final {
   public:
 
-  static void Log(LogCategory category, const String& message);
+  void Log(LogCategory category, const String& message);
 
   Logger();
 
@@ -29,8 +29,6 @@ class Logger {
   static FileString LogFilePath();
 
   bool IsExcessiveSize(const size_t nextMessageLength) const;
-
-  void InternalLog(LogCategory category, const String& message);
 
   void LogPrologue();
 

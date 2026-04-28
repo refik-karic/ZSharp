@@ -104,7 +104,7 @@ void World::Load() {
       LoadModels();
     }
     else {
-      Logger::Log(LogCategory::Warning, "Asset path was empty. Loading debug triangle.\n");
+      GlobalLog->Log(LogCategory::Warning, "Asset path was empty. Loading debug triangle.\n");
 
       const float X = 5.f;
       const float Y = 5.f;
@@ -153,7 +153,7 @@ void World::TickPhysics(size_t deltaMs) {
 
   NamedScopedTimer(WorldTickPhysics);
 
-  Logger::Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
+  GlobalLog->Log(LogCategory::Perf, String::FromFormat("Ticking physics simulation for {0}ms.\n", deltaMs));
 
   // Update forces for all dynamic objects at the start of the time step.
   if (*PhysicsGravityEnabled) {
@@ -267,7 +267,7 @@ void World::LoadModels() {
           break;
         case PhysicsTag::Unbound:
         case PhysicsTag::Player:
-          Logger::Log(LogCategory::Info, String::FromFormat("Asset {0} will not be considered for physics.\n", asset.Name()));
+          GlobalLog->Log(LogCategory::Info, String::FromFormat("Asset {0} will not be considered for physics.\n", asset.Name()));
           break;
       }
     }

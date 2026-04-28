@@ -42,7 +42,7 @@ struct ConsoleVariableConverter<float> {
 };
 
 template<typename T>
-class ConsoleVariable {
+class ConsoleVariable final {
   public:
 
   ConsoleVariable() = default;
@@ -108,7 +108,7 @@ class ConsoleVariable {
 };
 
 template<>
-class ConsoleVariable<void> {
+class ConsoleVariable<void> final {
   public:
 
   ConsoleVariable() = default;

@@ -150,11 +150,15 @@ void FrontEnd::Load() {
   UIGridRow row1(.2f, "DemoRow1");
   UIGridRow row2(.1f, "DemoRow2");
 
-  UIImage* backgroundImage = new UIImage(width, height, "DemoBackgroundImage");
-  backgroundImage->SetTextureId(LoadBackgroundImage("mainmenu_background"));
-
   UIGrid* grid = new UIGrid(width, height, "DemoGrid");
-  grid->SetBackgroundImage(backgroundImage);
+
+  int32 backgroundImageID = LoadBackgroundImage("mainmenu_background");
+  if(backgroundImageID >= 0) {
+    UIImage* backgroundImage = new UIImage(width, height, "DemoBackgroundImage");
+    backgroundImage->SetTextureId(backgroundImageID);
+    grid->SetBackgroundImage(backgroundImage);
+  }
+
   grid->AddItem(linearPanel0);
   grid->AddItem(centerPanel);
   grid->AddItem(lowerGrid);
@@ -221,11 +225,11 @@ int32 FrontEnd::LoadBackgroundImage(const String& imageName) {
   Asset* textureAsset = bundle->GetAsset(imageName);
 
   if (textureAsset == nullptr) {
-    ZAssert(false);
-    return - 1;
+    return -1;
   }
-
-  return GlobalTexturePool->LoadTexture(*textureAsset);
+  else {
+    return GlobalTexturePool->LoadTexture(*textureAsset);
+  }
 }
 
 }

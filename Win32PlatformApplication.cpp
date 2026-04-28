@@ -6,8 +6,6 @@
 #include "ConsoleVariable.h"
 #include "InputManager.h"
 #include "PlatformMemory.h"
-#include "PNG.h"
-#include "JPEG.h"
 #include "ScopedTimer.h"
 #include "ZConfig.h"
 #include "ZString.h"
@@ -21,6 +19,14 @@
 
 #define DEBUG_TEXTURE_PNG 0
 #define DEBUG_TEXTURE_JPG 0
+
+#if DEBUG_TEXTURE_PNG
+#include "PNG.h"
+#endif
+
+#if DEBUG_TEXTURE_JPG
+#include "JPEG.h"
+#endif
 
 ATOM WindowAtom = 0;
 UINT MinTimerPeriod = 0;

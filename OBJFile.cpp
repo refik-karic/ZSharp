@@ -73,7 +73,7 @@ void OBJFile::ParseOBJLine(Span<const char>& line, const FileString& objFilePath
       else if (rawLine[1] == 'p') {
         // Vertex Parameters.
         // For curves and surfaces, ignoring for now.
-        Logger::Log(LogCategory::Info, String::FromFormat("Vertex Parameters: [{0}]\n", line));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Vertex Parameters: [{0}]\n", line));
       }
       else if (rawLine[1] == 't') {
         // Vertex Texture Coordinates (U, V, W).
@@ -102,7 +102,7 @@ void OBJFile::ParseOBJLine(Span<const char>& line, const FileString& objFilePath
     case 'l':
     {
       // Line.
-      Logger::Log(LogCategory::Info, String::FromFormat("Line: [{0}]\n", line));
+      GlobalLog->Log(LogCategory::Info, String::FromFormat("Line: [{0}]\n", line));
     }
     break;
     case 'm':
@@ -113,7 +113,7 @@ void OBJFile::ParseOBJLine(Span<const char>& line, const FileString& objFilePath
       break;
     default:
     {
-      Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", line));
+      GlobalLog->Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", line));
     }
     break;
   }
@@ -132,16 +132,16 @@ void OBJFile::ParseMTLLine(const char* currentLine, size_t length, const FileStr
       if (rawLine[1] == 's') {
         // Specular component weight.
         String choppedLine(rawLine + 3, 0, length - 3);
-        Logger::Log(LogCategory::Info, String::FromFormat("Specular Weight: [{0}]\n", choppedLine));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Specular Weight: [{0}]\n", choppedLine));
       }
       else if (rawLine[1] == 'i') {
         // Refraction.
         String choppedLine(rawLine + 3, 0, length - 3);
-        Logger::Log(LogCategory::Info, String::FromFormat("Refraction: [{0}]\n", choppedLine));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Refraction: [{0}]\n", choppedLine));
       }
       else {
         String choppedLine(rawLine + 3, 0, length - 3);
-        Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
       }
     }
       break;
@@ -150,26 +150,26 @@ void OBJFile::ParseMTLLine(const char* currentLine, size_t length, const FileStr
       if (rawLine[1] == 'a') {
         // Ambient.
         String choppedLine(rawLine + 3, 0, length - 3);
-        Logger::Log(LogCategory::Info, String::FromFormat("Ambient: [{0}]\n", choppedLine));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Ambient: [{0}]\n", choppedLine));
       }
       else if (rawLine[1] == 'd') {
         // Diffuse.
         String choppedLine(rawLine + 3, 0, length - 3);
-        Logger::Log(LogCategory::Info, String::FromFormat("Diffuse: [{0}]\n", choppedLine));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Diffuse: [{0}]\n", choppedLine));
       }
       else if (rawLine[1] == 's') {
         // Specular.
         String choppedLine(rawLine + 3, 0, length - 3);
-        Logger::Log(LogCategory::Info, String::FromFormat("Specular: [{0}]\n", choppedLine));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Specular: [{0}]\n", choppedLine));
       }
       else if (rawLine[1] == 'e') {
         // Emissive.
         String choppedLine(rawLine + 3, 0, length - 3);
-        Logger::Log(LogCategory::Info, String::FromFormat("Emissive: [{0}]\n", choppedLine));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Emissive: [{0}]\n", choppedLine));
       }
       else {
         String choppedLine(rawLine, 0, length);
-        Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
       }
       break;
     }
@@ -178,14 +178,14 @@ void OBJFile::ParseMTLLine(const char* currentLine, size_t length, const FileStr
     {
       // Dissolve.
       String choppedLine(rawLine + 2, 0, length - 2);
-      Logger::Log(LogCategory::Info, String::FromFormat("Dissolve: [{0}]\n", choppedLine));
+      GlobalLog->Log(LogCategory::Info, String::FromFormat("Dissolve: [{0}]\n", choppedLine));
     }
     break;
     case 'i':
     {
       // Illumination Mode.
       String choppedLine(rawLine + 6, 0, length - 6);
-      Logger::Log(LogCategory::Info, String::FromFormat("Illumination Mode: [{0}]\n", choppedLine));
+      GlobalLog->Log(LogCategory::Info, String::FromFormat("Illumination Mode: [{0}]\n", choppedLine));
     }
     break;
     case 'm':
@@ -199,22 +199,22 @@ void OBJFile::ParseMTLLine(const char* currentLine, size_t length, const FileStr
       }
       else if (choppedLine.FindString("map_Bump") != nullptr) {
         String filename(rawLine + 9, 0, length - 9);
-        Logger::Log(LogCategory::Info, String::FromFormat("Bump map: [{0}]\n", filename));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Bump map: [{0}]\n", filename));
       }
       else if (choppedLine.FindString("map_Ks") != nullptr) {
         String filename(rawLine + 7, 0, length - 7);
-        Logger::Log(LogCategory::Info, String::FromFormat("Specular map: [{0}]\n", filename));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Specular map: [{0}]\n", filename));
       }
       else {
         String filename(rawLine, 0, length);
-        Logger::Log(LogCategory::Info, String::FromFormat("Unknown map: [{0}]\n", filename));
+        GlobalLog->Log(LogCategory::Info, String::FromFormat("Unknown map: [{0}]\n", filename));
       }
     }
     break;
     default:
     {
       String choppedLine(rawLine, 0, length);
-      Logger::Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
+      GlobalLog->Log(LogCategory::Info, String::FromFormat("Unknown Line: [{0}]\n", choppedLine));
     }
     break;
   }
@@ -340,7 +340,7 @@ void OBJFile::ParseMaterial(Span<const char>& line, const FileString& objFilePat
 
   MemoryMappedFileReader reader(materialPath);
   if (!reader.IsOpen()) {
-    Logger::Log(LogCategory::Info, String::FromFormat("Material file doesn't exist: [{0}]\n", materialPath.GetAbsolutePath()));
+    GlobalLog->Log(LogCategory::Info, String::FromFormat("Material file doesn't exist: [{0}]\n", materialPath.GetAbsolutePath()));
     return;
   }
 

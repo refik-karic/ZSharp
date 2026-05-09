@@ -102,7 +102,7 @@ class List final : public ISerializable {
   List() {
   }
 
-  List(std::initializer_list<T> initList) {
+  List(const std::initializer_list<T>& initList) {
     for (const T& item : initList) {
       Add(item);
     }

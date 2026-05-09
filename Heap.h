@@ -59,7 +59,7 @@ class Heap final {
 
   Heap() {}
 
-  Heap(std::initializer_list<T> initList) {
+  Heap(const std::initializer_list<T>& initList) {
     for (const T& item : initList) {
       Add(item);
     }

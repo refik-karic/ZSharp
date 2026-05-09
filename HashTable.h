@@ -58,6 +58,12 @@ class HashTable final {
       return temp;
     }
 
+    Iterator operator--(int) {
+      Iterator temp(*this);
+      --(*this);
+      return temp;
+    }
+
     bool operator==(const Iterator& rhs) {
       return mIter == rhs.mIter;
     }

@@ -70,7 +70,7 @@ class Array final : public ISerializable {
     FreshAlloc(size);
   }
 
-  Array(std::initializer_list<T> initList) {
+  Array(const std::initializer_list<T>& initList) {
     const size_t size = initList.size();
     FreshAllocNoInit(size);
     size_t i = 0;

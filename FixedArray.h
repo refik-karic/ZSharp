@@ -4,6 +4,7 @@
 #include "ZBaseTypes.h"
 
 #include <cstring>
+#include <initializer_list>
 
 namespace ZSharp {
 
@@ -47,6 +48,15 @@ class FixedArray final {
   };
 
   FixedArray() = default;
+
+  FixedArray(const std::initializer_list<T>& initList) {
+    ZAssert(initList.size() == N);
+
+    const T* iter = initList.begin();
+    for (int32 i = 0; i < N; ++i, ++iter) {
+      mData[i] = *iter;
+    }
+  }
 
   FixedArray(const T& value) {
     for (size_t i = 0; i < N; ++i) {
@@ -103,11 +113,11 @@ class FixedArray final {
   }
 
   Iterator begin() const {
-    return Iterator(mData);
+    return Iterator((T*)mData);
   }
 
   Iterator end() const {
-    return Iterator(mData + N);
+    return Iterator((T*)(((uint8*)mData) + (N * sizeof(T))));
   }
 
   private:

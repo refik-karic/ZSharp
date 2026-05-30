@@ -100,7 +100,7 @@ void World::Load() {
   }
   else {
     ZConfig* config = GlobalConfig;
-    if (!config->GetAssetPath().GetAbsolutePath().IsEmpty()) {
+    if(config->GetAssetPath().Exists()) {
       LoadModels();
     }
     else {

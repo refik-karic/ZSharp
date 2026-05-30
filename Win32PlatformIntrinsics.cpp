@@ -16,6 +16,8 @@
 
 #include "Common.h"
 
+namespace {
+
 FORCE_INLINE void CPUIDSection00(int buffer[4]) {
   __cpuid(buffer, 0x00);
 
@@ -87,6 +89,8 @@ FORCE_INLINE __m128 Cross128(__m128 a, __m128 b) {
   __m128 b1 = _mm_castsi128_ps(_mm_shuffle_epi32(_mm_castps_si128(a0b), 0b11001001));
 
   return _mm_sub_ps(a0b0, b1);
+}
+
 }
 
 namespace ZSharp {

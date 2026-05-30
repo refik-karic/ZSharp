@@ -244,6 +244,7 @@ if(WIN32)
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
 		-Wno-int-to-pointer-cast
+        -Wno-unused-function
         -mavx2
         -mfma
     )
@@ -263,6 +264,7 @@ if(WIN32)
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
 		-Wno-int-to-pointer-cast
+        -Wno-unused-function
         -mavx2
         -mfma
     )
@@ -282,6 +284,7 @@ if(WIN32)
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
 		-Wno-int-to-pointer-cast
+        -Wno-unused-function
         -mavx2
         -mfma
     )
@@ -305,6 +308,7 @@ if(WIN32)
         -Wno-sign-compare
         -Wno-deprecated-copy-with-user-provided-copy
 		-Wno-int-to-pointer-cast
+        -Wno-unused-function
         -mavx2
         -mfma
     )

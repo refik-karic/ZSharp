@@ -354,6 +354,15 @@ const char* String::FindString(const char* pattern) const {
   return match;
 }
 
+bool String::EndsWith(const char* str) const {
+  size_t length = strlen(str);
+  if (length > Length()) {
+    return false;
+  }
+
+  return memcmp(Str() + Length() - length, str, length) == 0;
+}
+
 uint8 String::ToUint8() const {
   return static_cast<uint8>(strtoul(GetString(), NULL, 10));
 }

@@ -204,6 +204,8 @@ class String final : public ISerializable {
 
   const char* FindString(const char* pattern) const;
 
+  bool EndsWith(const char* str) const;
+
   uint8 ToUint8() const;
   
   uint16 ToUint16() const;

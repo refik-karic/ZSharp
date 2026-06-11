@@ -34,17 +34,17 @@ class FileString final {
   bool Exists() const;
 
   private:
-  char* mDrive = nullptr;
-  char* mDirs = nullptr;
-  char* mFilename = nullptr;
-  char* mExtension = nullptr;
   char mAbsolutePath[PLATFORM_MAX_PATH];
-  size_t mDriveLength = 0;
-  size_t mNumDirectories = 0;
-  size_t mDirectoryLength = 0;
-  size_t mFilenameLength = 0;
-  size_t mExtensionLength = 0;
-  size_t mPathLength = 0;
+  uint16 mDrive = 0;
+  uint16 mDirs = 0;
+  uint16 mFilename = 0;
+  uint16 mExtension = 0;
+  uint16 mDriveLength = 0;
+  uint16 mNumDirectories = 0;
+  uint16 mDirectoryLength = 0;
+  uint16 mFilenameLength = 0;
+  uint16 mExtensionLength = 0;
+  uint16 mPathLength = 0;
 
   void Initialize(const String& absoluteFilePath);
 

@@ -3,6 +3,7 @@
 #include "ZBaseTypes.h"
 #include "ZAssert.h"
 
+#include <cstring>
 #include <type_traits>
 
 namespace ZSharp {
@@ -68,8 +69,6 @@ class Span final {
     : mData(rhs.mData), mSize(rhs.mSize) {
 
   }
-
-  Span(Span&&) = delete;
 
   void operator=(const Span& rhs) {
     if (&rhs != this) {

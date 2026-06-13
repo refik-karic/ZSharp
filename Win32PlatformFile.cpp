@@ -94,7 +94,7 @@ PlatformFileHandle* PlatformOpenFile(const FileString& filename, size_t flags) {
   HANDLE fileHandle = NULL;
 
   if (isWriting && !isAppending) {
-    fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
+    fileHandle = CreateFileA(filename.GetAbsolutePath().GetData(),
       winFlags,
       shareFlags,
       NULL,
@@ -104,7 +104,7 @@ PlatformFileHandle* PlatformOpenFile(const FileString& filename, size_t flags) {
     );
   }
   else {
-    fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
+    fileHandle = CreateFileA(filename.GetAbsolutePath().GetData(),
       winFlags,
       shareFlags,
       NULL,
@@ -114,7 +114,7 @@ PlatformFileHandle* PlatformOpenFile(const FileString& filename, size_t flags) {
     );
 
     if (fileHandle == INVALID_HANDLE_VALUE && isWriting) {
-      fileHandle = CreateFileA(filename.GetAbsolutePath().Str(),
+      fileHandle = CreateFileA(filename.GetAbsolutePath().GetData(),
         winFlags,
         shareFlags,
         NULL,
@@ -218,7 +218,7 @@ size_t PlatformGetFileSize(PlatformFileHandle* handle) {
 }
 
 bool PlatformFileExists(const FileString& filename) {
-  DWORD attributes = GetFileAttributesA(filename.GetAbsolutePath().Str());
+  DWORD attributes = GetFileAttributesA(filename.GetAbsolutePath().GetData());
   return (attributes != INVALID_FILE_ATTRIBUTES && !(attributes & FILE_ATTRIBUTE_DIRECTORY));
 }
 
@@ -318,7 +318,7 @@ FileString PlatformGetWorkingDirectory() {
 PlatformFileSearchHandle* PlatformBeginFileSearch(const FileString& filter) {
   WIN32_FIND_DATAA findData{};
 
-  HANDLE result = FindFirstFileA(filter.GetAbsolutePath().Str(), &findData);
+  HANDLE result = FindFirstFileA(filter.GetAbsolutePath().GetData(), &findData);
 
   if (result != INVALID_HANDLE_VALUE) {
     PlatformFileSearchHandle* searchHandle = new PlatformFileSearchHandle;

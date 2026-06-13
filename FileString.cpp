@@ -56,8 +56,8 @@ String FileString::GetExtension() const {
   return extension;
 }
 
-String FileString::GetAbsolutePath() const {
-  String path(mAbsolutePath, 0, mPathLength);
+Span<const char> FileString::GetAbsolutePath() const {
+  Span<const char> path(mAbsolutePath, mPathLength);
   return path;
 }
 

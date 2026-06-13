@@ -55,7 +55,7 @@ void Asset::Serialize(ISerializer& serializer) {
   mName.Serialize(serializer);
   mExtension.Serialize(serializer);
   serializer.Serialize(&mLoose, sizeof(mLoose));
-  mLoosePath.GetAbsolutePath().Serialize(serializer);
+  String(mLoosePath.GetAbsolutePath().GetData()).Serialize(serializer);
   serializer.Serialize(&mAssetType, sizeof(mAssetType));
 }
 

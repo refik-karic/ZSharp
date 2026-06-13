@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ZString.h"
+#include "Span.h"
 
 namespace ZSharp {
 class FileString final {
@@ -19,7 +20,7 @@ class FileString final {
 
   String GetExtension() const;
 
-  String GetAbsolutePath() const;
+  Span<const char> GetAbsolutePath() const;
 
   void SetFilename(const String& filename);
 

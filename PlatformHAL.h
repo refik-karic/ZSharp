@@ -13,4 +13,10 @@ size_t PlatformGetTotalMemory();
 
 size_t PlatformGetPageSize();
 
+size_t PlatformGetL1DCacheSize();
+
+size_t PlatformGetL2DCacheSize();
+
+size_t PlatformGetL3DCacheSize();
+
 }

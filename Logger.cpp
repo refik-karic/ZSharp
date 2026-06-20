@@ -119,6 +119,10 @@ void Logger::LogPrologue() {
   prologue.Appendf("Cores: Physical={0}, Logical={1}\n",
     PlatformGetNumPhysicalCores(), 
     PlatformGetNumLogicalCores());
+  prologue.Appendf("D$ Sizes: L1={0}KB, L2={1}KB, L3={2}MB\n",
+    PlatformGetL1DCacheSize() >> 10,
+    PlatformGetL2DCacheSize() >> 10,
+    PlatformGetL3DCacheSize() >> 20);
   prologue.Appendf("SIMD: 4-Wide={0}, 8-Wide={1}, 16-Wide={2}\n",
     PlatformSupportsSIMDLanes(SIMDLaneWidth::Four),
     PlatformSupportsSIMDLanes(SIMDLaneWidth::Eight),

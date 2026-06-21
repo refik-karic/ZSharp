@@ -19,36 +19,35 @@ size_t PlatformGetNumPhysicalCores() {
     return numProcessors;
   }
 
-  DWORD structSize = sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION);
+  DWORD structSize = sizeof(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
   DWORD size = structSize;
-  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)PlatformCalloc(size);
+  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)PlatformCalloc(size);
 
-  bool ret = GetLogicalProcessorInformation(ptr, &size);
+  bool ret = GetLogicalProcessorInformationEx(RelationProcessorCore, ptr, &size);
 
   if (!ret && (GetLastError() == ERROR_INSUFFICIENT_BUFFER)) {
-    ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION)PlatformReAlloc(ptr, size);
-    ret = GetLogicalProcessorInformation(ptr, &size);
+    ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)PlatformReAlloc(ptr, size);
+    ret = GetLogicalProcessorInformationEx(RelationProcessorCore, ptr, &size);
   }
   
   if (ret) {
-    PSYSTEM_LOGICAL_PROCESSOR_INFORMATION currentPtr = ptr;
-    size_t totalProcessors = 0;
+    for (PBYTE current = (PBYTE)ptr, end = ((PBYTE)ptr) + size; current < end;) {
+      PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX currentPtr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)current;
 
-    for (size_t offset = 0; offset + structSize < size; offset += structSize) {
       switch (currentPtr->Relationship) {
         case RelationProcessorCore:
-          ++totalProcessors;
+        {
+          ++numProcessors;
+        }
           break;
         default:
           break;
       }
 
-      ++currentPtr;
+      current += currentPtr->Size;
     }
 
     PlatformFree(ptr);
-
-    numProcessors = totalProcessors;
     return numProcessors;
   }
   else {
@@ -59,9 +58,59 @@ size_t PlatformGetNumPhysicalCores() {
 }
 
 size_t PlatformGetNumLogicalCores() {
-  SYSTEM_INFO info{};
-  GetSystemInfo(&info);
-  return static_cast<size_t>(info.dwNumberOfProcessors);
+  static size_t numLogicalProcessors = 0;
+
+  // Only check once, this Win32 API requires malloc/free.
+  // The count of processors will never change during a programs execution.
+  if (numLogicalProcessors > 0) {
+    return numLogicalProcessors;
+  }
+
+  DWORD structSize = sizeof(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+  DWORD size = structSize;
+  PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)PlatformCalloc(size);
+
+  bool ret = GetLogicalProcessorInformationEx(RelationProcessorCore, ptr, &size);
+
+  if (!ret && (GetLastError() == ERROR_INSUFFICIENT_BUFFER)) {
+    ptr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)PlatformReAlloc(ptr, size);
+    ret = GetLogicalProcessorInformationEx(RelationProcessorCore, ptr, &size);
+  }
+
+  if (ret) {
+    for (PBYTE current = (PBYTE)ptr, end = ((PBYTE)ptr) + size; current < end;) {
+      PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX currentPtr = (PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)current;
+
+      switch (currentPtr->Relationship) {
+      case RelationProcessorCore:
+      {
+        PPROCESSOR_RELATIONSHIP processor = &currentPtr->Processor;
+        for (WORD i = 0; i < processor->GroupCount; ++i) {
+          PGROUP_AFFINITY affinity = &processor->GroupMask[i];
+          KAFFINITY mask = affinity->Mask;
+
+          while (mask) {
+            numLogicalProcessors += mask & 1;
+            mask >>= 1;
+          }
+        }
+      }
+      break;
+      default:
+        break;
+      }
+
+      current += currentPtr->Size;
+    }
+
+    PlatformFree(ptr);
+    return numLogicalProcessors;
+  }
+  else {
+    PlatformFree(ptr);
+    ZAssert(false);
+    return 0;
+  }
 }
 
 size_t PlatformGetTotalMemory() {
